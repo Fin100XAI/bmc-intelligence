@@ -1,0 +1,1196 @@
+@import 'tailwindcss';
+
+/* ==========================================================================
+   BMC Intelligence Infrastructure - Design Tokens
+   Maha AI · Urban Intelligence Infrastructure
+   --------------------------------------------------------------------------
+   Premium government-command aesthetic: a white command rail against bright,
+   layered content surfaces. Institutional blue carries authority,
+   teal marks intelligence and AI, amber warns, and red is reserved strictly
+   for genuinely critical conditions. Depth and colour do the work that
+   ornament would otherwise have to - nothing decorative, but nothing austere.
+   ========================================================================== */
+
+@theme {
+  /* --- Neutral / surface scale ------------------------------------------ */
+  --color-canvas: #eef2f7;
+  --color-surface: #ffffff;
+  --color-surface-sunken: #f6f8fc;
+  --color-surface-raised: #ffffff;
+
+  --color-ink-900: #0b1220;
+  --color-ink-800: #131e2f;
+  --color-ink-700: #22334a;
+  --color-ink-600: #3b5069;
+  --color-ink-500: #596e88;
+  --color-ink-400: #7e93ab;
+  --color-ink-300: #a7b7c8;
+  --color-ink-200: #cbd6e2;
+  --color-ink-100: #e3e9f1;
+  --color-ink-50: #f1f5f9;
+
+  /* --- Institutional blue (primary authority) --------------------------- */
+  --color-govt-50: #eef4ff;
+  --color-govt-100: #dae7ff;
+  --color-govt-200: #bcd3ff;
+  --color-govt-300: #8db4fe;
+  --color-govt-400: #5a8ffa;
+  --color-govt-500: #2f6bef;
+  --color-govt-600: #1d4fd8;
+  --color-govt-700: #1a3faf;
+  --color-govt-800: #1b378a;
+  --color-govt-900: #1b3170;
+  --color-govt-950: #101d45;
+
+  /* --- Portal chrome (mcgm.gov.in) ---------------------------------------
+     The public landing page is the one surface a Mumbai citizen may already
+     have seen, so it borrows the civic identity of the corporation's own
+     portal rather than inventing one. These values are read off
+     mcgm.gov.in's stylesheets, not eyeballed: `portal-700` is the exact
+     #0051bb of the site's top utility bar, `portal-500`/`portal-400` its
+     link blues, and the `gold` ramp is the ochre the site uses for rules,
+     active states and emphasis (#cda629 with its neighbouring steps).
+
+     They are deliberately separate from `govt-*`. The application behind the
+     sign-in wall keeps its own institutional blue; only the public chrome
+     speaks in the corporation's civic colours. */
+  --color-portal-50: #f2f7fc;
+  --color-portal-100: #e0ecf8;
+  --color-portal-200: #b9d3ee;
+  --color-portal-300: #7fb0e2;
+  --color-portal-400: #0081ff;
+  --color-portal-500: #0066ff;
+  --color-portal-600: #0051ba;
+  --color-portal-700: #0051bb;
+  --color-portal-800: #003f92;
+  --color-portal-900: #15455d;
+  --color-portal-950: #023a51;
+
+  --color-gold-50: #fdf9ec;
+  --color-gold-100: #f5ebcc;
+  --color-gold-200: #ecdba0;
+  --color-gold-300: #d6ba5f;
+  --color-gold-400: #d2b040;
+  --color-gold-500: #cda629;
+  --color-gold-600: #c2a01e;
+  --color-gold-700: #9a7d16;
+
+  /* --- Command rail ------------------------------------------------------
+     The navigation rail is a bright white panel: `--color-rail-text` is the
+     near-black used for navigation labels, `--color-rail-muted` the darker
+     slate used for section eyebrows and resting icons. The deep navy 900–400
+     steps remain - the sign-in hero still builds on them. */
+  --color-rail-900: #070d1c;
+  --color-rail-800: #0b1428;
+  --color-rail-700: #101d38;
+  --color-rail-600: #16264a;
+  --color-rail-500: #1d3160;
+  --color-rail-400: #294478;
+  --color-rail-text: #0b1220;
+  --color-rail-muted: #45566d;
+
+  /* --- Intelligence teal (analysis / AI accent) ------------------------- */
+  --color-intel-50: #ecfeff;
+  --color-intel-100: #cbf8fb;
+  --color-intel-200: #9deff5;
+  --color-intel-300: #5fdfec;
+  --color-intel-400: #22c4d8;
+  --color-intel-500: #08a3ba;
+  --color-intel-600: #05819a;
+  --color-intel-700: #0a677d;
+  --color-intel-800: #0f5366;
+  --color-intel-900: #124556;
+
+  /* --- Semantic status --------------------------------------------------- */
+  --color-ok-50: #ecfdf4;
+  --color-ok-100: #d0fbe4;
+  --color-ok-200: #a5f3cb;
+  --color-ok-300: #6ee7ae;
+  --color-ok-500: #10b57f;
+  --color-ok-600: #059468;
+  --color-ok-700: #047555;
+
+  --color-warn-50: #fffaeb;
+  --color-warn-100: #fef1c7;
+  --color-warn-200: #fde389;
+  --color-warn-300: #fbcf4d;
+  --color-warn-500: #f0a108;
+  --color-warn-600: #d17d04;
+  --color-warn-700: #ad5a08;
+
+  --color-risk-50: #fff6ed;
+  --color-risk-100: #ffead4;
+  --color-risk-200: #fed1a8;
+  --color-risk-300: #fdb271;
+  --color-risk-500: #f97316;
+  --color-risk-600: #e35708;
+  --color-risk-700: #bc4009;
+
+  --color-crit-50: #fef3f2;
+  --color-crit-100: #fee3e1;
+  --color-crit-200: #fecdc9;
+  --color-crit-300: #fca9a3;
+  --color-crit-500: #ef4444;
+  --color-crit-600: #d92d2d;
+  --color-crit-700: #b42222;
+
+  /* --- Google brand palette (metric cards) --------------------------------
+     The metric primitive is coloured in Google's four brand hues rather than
+     the institutional scales above. Steps are the published GM2 tints of
+     #4285F4 / #EA4335 / #FBBC04 / #34A853. Cards fill at 50, outline at 200
+     and set text at 700–900, so every pairing clears 5:1. The yellow 800–900
+     steps are an addition: Google's yellow stops at 700 (#EA8600), which does
+     not carry enough contrast for text on a yellow tint. */
+  --color-google-blue-50: #e8f0fe;
+  --color-google-blue-100: #d2e3fc;
+  --color-google-blue-200: #aecbfa;
+  --color-google-blue-300: #8ab4f8;
+  --color-google-blue-400: #669df6;
+  --color-google-blue-500: #4285f4;
+  --color-google-blue-600: #1a73e8;
+  --color-google-blue-700: #1967d2;
+  --color-google-blue-800: #185abc;
+  --color-google-blue-900: #174ea6;
+
+  --color-google-red-50: #fce8e6;
+  --color-google-red-100: #fad2cf;
+  --color-google-red-200: #f6aea9;
+  --color-google-red-300: #f28b82;
+  --color-google-red-400: #ee675c;
+  --color-google-red-500: #ea4335;
+  --color-google-red-600: #d93025;
+  --color-google-red-700: #c5221f;
+  --color-google-red-800: #b31412;
+  --color-google-red-900: #a50e0e;
+
+  --color-google-yellow-50: #fef7e0;
+  --color-google-yellow-100: #feefc3;
+  --color-google-yellow-200: #fde293;
+  --color-google-yellow-300: #fdd663;
+  --color-google-yellow-400: #fcc934;
+  --color-google-yellow-500: #fbbc04;
+  --color-google-yellow-600: #f29900;
+  --color-google-yellow-700: #ea8600;
+  --color-google-yellow-800: #b06000;
+  --color-google-yellow-900: #7a4f01;
+
+  --color-google-green-50: #e6f4ea;
+  --color-google-green-100: #ceead6;
+  --color-google-green-200: #a8dab5;
+  --color-google-green-300: #81c995;
+  --color-google-green-400: #5bb974;
+  --color-google-green-500: #34a853;
+  --color-google-green-600: #1e8e3e;
+  --color-google-green-700: #188038;
+  --color-google-green-800: #137333;
+  --color-google-green-900: #0d652d;
+
+  /* --- Typography -------------------------------------------------------- */
+  /* Devanagari faces are listed inside the Latin stack rather than beside it.
+     A bilingual screen mixes scripts inside a single line - "12 प्रभाग", a
+     Marathi heading over a Latin ward code - and a browser falls through the
+     stack per character, so one stack that can set both is what keeps the two
+     on the same baseline. Every face named here ships with a mainstream
+     operating system: this platform loads no font over the network, as it
+     loads nothing over the network. */
+  --font-devanagari:
+    'Noto Sans Devanagari', 'Nirmala UI', 'Kohinoor Devanagari', 'Shobhika',
+    'Mangal', 'Sakal Marathi', 'Lohit Devanagari', 'Samyak Devanagari';
+  --font-sans:
+    'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, var(--font-devanagari), sans-serif;
+  --font-mono:
+    ui-monospace, 'SF Mono', 'JetBrains Mono', 'Menlo', 'Consolas',
+    var(--font-devanagari), monospace;
+
+  --text-metric-sm: 1.5rem;
+  --text-metric-sm--line-height: 1.75rem;
+  --text-metric-sm--letter-spacing: -0.022em;
+  --text-metric: 2.125rem;
+  --text-metric--line-height: 2.375rem;
+  --text-metric--letter-spacing: -0.03em;
+  --text-metric-lg: 2.875rem;
+  --text-metric-lg--line-height: 3.125rem;
+  --text-metric-lg--letter-spacing: -0.035em;
+
+  /* --- Elevation - layered, not flat ------------------------------------- */
+  --shadow-card:
+    0 1px 2px -1px rgb(11 18 32 / 0.06), 0 2px 6px -2px rgb(11 18 32 / 0.05),
+    0 0 0 1px rgb(11 18 32 / 0.03);
+  --shadow-raised:
+    0 2px 4px -2px rgb(11 18 32 / 0.08), 0 8px 20px -6px rgb(11 18 32 / 0.12),
+    0 0 0 1px rgb(11 18 32 / 0.04);
+  --shadow-overlay:
+    0 12px 28px -8px rgb(11 18 32 / 0.18), 0 4px 10px -4px rgb(11 18 32 / 0.1);
+  --shadow-drawer: -16px 0 44px -12px rgb(11 18 32 / 0.22);
+  --shadow-rail:
+    1px 0 2px -1px rgb(11 18 32 / 0.06), 8px 0 24px -16px rgb(11 18 32 / 0.18);
+
+  /* --- Motion ------------------------------------------------------------ */
+  --ease-calm: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.28, 0.64, 1);
+
+  /* --- Layout metrics ---------------------------------------------------- */
+  --spacing-sidebar: 17rem;
+  --spacing-sidebar-collapsed: 4.25rem;
+  --spacing-topbar: 3.5rem;
+  --spacing-contextbar: 2.75rem;
+
+  /* --- Signature gradients ----------------------------------------------- */
+  --color-page-banner: #1a3faf;
+}
+
+/* ==========================================================================
+   Base layer
+   ========================================================================== */
+
+@layer base {
+  *,
+  ::before,
+  ::after {
+    border-color: var(--color-ink-100);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    margin: 0;
+    background-color: var(--color-canvas);
+    color: var(--color-ink-800);
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-variant-numeric: tabular-nums;
+  }
+
+  #root {
+    min-height: 100vh;
+    isolation: isolate;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-weight: 600;
+    letter-spacing: -0.014em;
+    color: var(--color-ink-900);
+  }
+
+  /* Visible, consistent focus for keyboard users only. */
+  :focus-visible {
+    outline: 2px solid var(--color-govt-500);
+    outline-offset: 2px;
+    border-radius: 0.3rem;
+  }
+
+  button:focus:not(:focus-visible),
+  a:focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  ::selection {
+    background-color: var(--color-govt-200);
+    color: var(--color-govt-900);
+  }
+}
+
+/* ==========================================================================
+   Component utilities
+   ========================================================================== */
+
+@layer components {
+  .surface-card {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-ink-100);
+    border-radius: 0.75rem;
+    box-shadow: var(--shadow-card);
+  }
+
+  .hairline {
+    border-color: var(--color-ink-100);
+  }
+
+  /* Institutional label - section eyebrows and metadata keys. */
+  .label-institutional {
+    font-size: 0.6875rem;
+    font-weight: 650;
+    letter-spacing: 0.085em;
+    text-transform: uppercase;
+    color: var(--color-ink-500);
+  }
+
+  .numeric {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum' 1;
+  }
+
+  /* Command rail behind the primary navigation.
+     White, so navigation reads as ink on paper. The single institutional tint
+     behind the brand block is the only colour here - the right-hand hairline
+     and `--shadow-rail` do the work of separating rail from workspace.
+     Do not pair this with `.dot-texture`: that utility sets `background-image`
+     and the utilities layer cascades after components, so it would silently
+     discard the tint. */
+  .rail-surface {
+    background-color: var(--color-surface);
+    background-image: radial-gradient(115% 48% at 0% 0%, rgb(47 107 239 / 0.045) 0%, transparent 62%);
+  }
+
+  /* The page identity banner every intelligence surface opens with. */
+  /* The page identity banner.
+     `--banner-base` is the institutional brand colour, set by `PageHeader` from
+     `municipality.branding.panelColor`. It is a variable rather than an inline
+     `background` because an inline background replaces the whole shorthand -
+     which is what used to happen, flattening every page banner in the platform
+     to a single blue rectangle and discarding the depth below. Setting the base
+     layer instead leaves the brand in charge of the colour and the stylesheet
+     in charge of the form. */
+  .banner-surface {
+    background:
+      radial-gradient(90% 140% at 100% 0%, rgb(8 163 186 / 0.32) 0%, transparent 58%),
+      radial-gradient(80% 120% at 0% 100%, rgb(47 107 239 / 0.42) 0%, transparent 62%),
+      var(
+        --banner-base,
+        linear-gradient(118deg, var(--color-govt-900) 0%, var(--color-govt-700) 52%, var(--color-govt-800) 100%)
+      );
+  }
+
+  /* A one-pixel highlight along the top edge, the way a lit panel catches its
+     own bezel. Costs nothing and is the difference between a coloured rectangle
+     and a surface. */
+  .banner-surface::before {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    top: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.28) 22%, rgb(255 255 255 / 0.28) 78%, transparent);
+    pointer-events: none;
+  }
+
+  /* Signature hero used by the sign-in screen. */
+  .hero-surface {
+    background:
+      radial-gradient(70% 90% at 85% 5%, rgb(8 163 186 / 0.28) 0%, transparent 55%),
+      radial-gradient(80% 90% at 5% 95%, rgb(47 107 239 / 0.34) 0%, transparent 58%),
+      linear-gradient(155deg, var(--color-rail-900) 0%, var(--color-govt-950) 55%, var(--color-rail-800) 100%);
+  }
+
+  /* Thin accent rule that opens a section heading. */
+  .accent-rule::before {
+    content: '';
+    display: inline-block;
+    width: 0.1875rem;
+    height: 0.875rem;
+    margin-right: 0.5rem;
+    border-radius: 999px;
+    vertical-align: -0.125rem;
+    background: linear-gradient(180deg, var(--color-govt-500), var(--color-intel-500));
+  }
+
+  /* ------------------------------------------------------------------------
+     The public portal's photographic bands
+     ------------------------------------------------------------------------
+     The portal is the one surface in this platform a citizen sees, and it is
+     the only one allowed a photograph. Everything behind sign-in is an
+     operations screen where an image would be ornament competing with a
+     figure; the front page has to establish an institution before it says
+     anything, and civic architecture is how a government portal does that.
+
+     A photograph dropped behind text is the usual way this goes wrong -
+     contrast collapses somewhere in the frame, and the copy is legible on one
+     screen and unreadable on the next. So the photograph is never the
+     background. It is a layer inside a composed band:
+
+       1. a deep navy base, which is what the text actually contrasts against
+       2. the photograph, blended in `luminosity` so it contributes its FORM
+          and none of its colour - a blue-hour sky and a noon sky land on the
+          same navy, and the band cannot be knocked off palette by swapping
+          the picture
+       3. a directional scrim, heaviest where the copy sits
+       4. film grain, which is what stops a large flat gradient from banding
+          on a projector
+
+     The result holds its contrast ratio wherever the crop falls, which is the
+     only reason a photograph is safe here at all. */
+  .civic-band {
+    position: relative;
+    isolation: isolate;
+    background:
+      radial-gradient(72% 96% at 88% 4%, rgb(8 163 186 / 0.26) 0%, transparent 56%),
+      radial-gradient(84% 96% at 2% 98%, rgb(47 107 239 / 0.32) 0%, transparent 60%),
+      linear-gradient(158deg, var(--color-rail-900) 0%, var(--color-govt-950) 54%, var(--color-rail-800) 100%);
+  }
+
+  /* The photograph. Absolutely positioned and `aria-hidden` at the call site:
+     it carries no information a screen reader needs, and the credit that does
+     matter is in the footer. */
+  .civic-band__photo {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.42;
+    mix-blend-mode: luminosity;
+    filter: grayscale(0.42) contrast(1.06) brightness(0.92);
+    pointer-events: none;
+  }
+
+  /* The scrim. Directional by default - solid under the left-hand copy column,
+     opening up towards the right where the photograph is allowed to read.
+     `data-scrim="even"` is the variant for a band whose copy is centred. */
+  .civic-band__scrim {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      linear-gradient(
+        100deg,
+        rgb(7 13 28 / 0.94) 0%,
+        rgb(7 13 28 / 0.86) 38%,
+        rgb(7 13 28 / 0.52) 72%,
+        rgb(7 13 28 / 0.38) 100%
+      ),
+      linear-gradient(0deg, rgb(7 13 28 / 0.72) 0%, transparent 46%);
+  }
+  .civic-band__scrim[data-scrim='even'] {
+    background:
+      linear-gradient(180deg, rgb(7 13 28 / 0.9) 0%, rgb(7 13 28 / 0.74) 45%, rgb(7 13 28 / 0.92) 100%),
+      radial-gradient(70% 90% at 50% 50%, transparent 0%, rgb(7 13 28 / 0.35) 100%);
+  }
+
+  /* Film grain. Kept at 4.5% and multiplied by an overlay blend, so it is
+     texture rather than noise - visible as tooth on a gradient, invisible as
+     specks on a photograph. */
+  .civic-band::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0.045;
+    mix-blend-mode: overlay;
+    background-size: 150px 150px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='150' height='150' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* The lit top edge, as on the page banner - the difference between a dark
+     rectangle and a surface. */
+  .civic-band::before {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    top: 0;
+    height: 1px;
+    z-index: -1;
+    pointer-events: none;
+    background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.24) 20%, rgb(255 255 255 / 0.24) 80%, transparent);
+  }
+
+  /* The gold hairline a government masthead sits on. One rule, three stops,
+     and it is what tells the eye the band above is institutional rather than
+     a marketing hero. */
+  /* The hairline between the navigation and the banner. It was gold, which
+     separated a navy bar from a green band well enough; with the band now blue
+     it was the one warm line on an otherwise entirely blue page and read as a
+     stray. Lightened blue instead - bright enough to hold the seam against the
+     navy above and the deep blue below, without introducing a second hue. */
+  .civic-rule {
+    height: 2px;
+    background: linear-gradient(90deg, #2f6bef 0%, #5a8ffa 26%, #93c5fd 50%, #5a8ffa 74%, #2f6bef 100%);
+  }
+
+
+  /* ------------------------------------------------------------------------
+     The campaign banner
+     ------------------------------------------------------------------------
+     The portal's own hero form, taken from the corporation's live site: a
+     full-bleed coloured band about a third of the viewport tall, copy on the
+     left, a photographic collage on the right, and along the bottom edge a
+     pale wave with a city skyline standing on it.
+
+     The palette here is the BANNER'S, not the platform's. It is deliberately
+     outside the theme tokens and therefore written as component CSS - a green
+     colour utility would fail `scripts/audit-layout.mjs`, and rightly: this
+     green must never reach an operations screen. Held in variables so the
+     whole band can be recoloured from one place. */
+  .mcgm-band {
+    /* Named for their ROLE, not their hue. The reference band is green and
+       this one is blue, and the names have already outlived one recolouring -
+       a `--mcgm-green-deep` holding a blue is how a stylesheet starts lying. */
+    --mcgm-ground-deep: #101d45;
+    --mcgm-ground: #1b3170;
+    --mcgm-ground-bright: #1a3faf;
+    --mcgm-wave: #eef4ff;
+    --mcgm-skyline: #5a8ffa;
+    /* White, not gold. A gold ring on a blue ground reads as a warning badge,
+       and these are photographs rather than alerts. */
+    --mcgm-ring: #ffffff;
+
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    color: #ffffff;
+    background:
+      radial-gradient(54% 116% at 87% 38%, rgb(90 143 250 / 0.30) 0%, transparent 62%),
+      radial-gradient(72% 130% at 10% 100%, rgb(26 63 175 / 0.50) 0%, transparent 64%),
+      linear-gradient(
+        104deg,
+        var(--mcgm-ground-deep) 0%,
+        var(--mcgm-ground) 52%,
+        var(--mcgm-ground-bright) 100%
+      );
+  }
+
+  /* The faint concentric rings the banner carries behind its artwork. Two
+     hairline circles, no image, no request. */
+  .mcgm-band::before {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    top: -18%;
+    right: -6%;
+    width: 46rem;
+    height: 46rem;
+    border-radius: 50%;
+    pointer-events: none;
+    background:
+      radial-gradient(circle, transparent 61%, rgb(255 255 255 / 0.05) 61.4%, transparent 63%),
+      radial-gradient(circle, transparent 43%, rgb(255 255 255 / 0.045) 43.4%, transparent 45%);
+  }
+
+  /* The gold ring around each photographic cut-out. */
+  .mcgm-cutout {
+    border: 4px solid var(--mcgm-ring);
+    box-shadow: 0 18px 42px -14px rgb(6 15 45 / 0.62);
+    /* These are archival municipal photographs: flat, hazy and beige. Left
+       untouched they read as pale discs floating clear of a deep blue ground.
+       A little contrast and saturation puts the architecture back in them, and
+       the slight cool shift ties them to the ground they sit on rather than
+       leaving them looking pasted over it. */
+    filter: saturate(1.14) contrast(1.1) brightness(1.02) hue-rotate(-4deg);
+  }
+
+  /* The slide cross-fade. Slides are stacked in a grid cell so the band keeps
+     the height of its tallest slide and nothing reflows as they change. */
+  .mcgm-slide {
+    grid-area: 1 / 1;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(0.75rem);
+    transition:
+      opacity 620ms var(--ease-calm),
+      transform 620ms var(--ease-calm),
+      visibility 0s linear 620ms;
+  }
+  .mcgm-slide[data-active='true'] {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+    transition:
+      opacity 620ms var(--ease-calm),
+      transform 620ms var(--ease-calm),
+      visibility 0s;
+  }
+
+  .mcgm-dot {
+    background: rgb(255 255 255 / 0.34);
+    transition:
+      width 260ms var(--ease-calm),
+      background-color 260ms var(--ease-calm);
+  }
+  .mcgm-dot[data-active='true'] {
+    width: 1.5rem;
+    background: var(--mcgm-ring);
+  }
+
+  /* ------------------------------------------------------------------------
+     The portal's own section idiom
+     ------------------------------------------------------------------------
+     Every band below the banner on the reference site opens the same way: a
+     centred heading in institutional blue over a short blue rule, on a pale
+     ground, with white cards under it carrying a gold rule along the bottom
+     edge and a gold "read more" affordance. One place, so the whole page
+     speaks with one voice. */
+  /* The rule is THIS element, not an `::after` on the heading's wrapper.
+     It began as the latter, and every one of the three call sites reached
+     for it the other way - a bare <span> under the heading - which left the
+     span invisible and the real rule drawn 14px below it by the pseudo
+     element's own margin. Three sections agreeing on how a class ought to
+     work is the class being wrong, not the call sites. */
+  .mcgm-heading-rule {
+    display: block;
+    width: 3.25rem;
+    height: 3px;
+    margin-inline: auto;
+    border-radius: 999px;
+    /* google-blue-600, the step every solid, plinth, active tab and heading
+       rule on this page now runs on. It was a shade of its own until the page
+       settled on one ramp; a rule that is nearly the shared blue but not
+       quite is worse than one that is obviously different. */
+    background: var(--color-google-blue-600);
+  }
+
+  .mcgm-card {
+    position: relative;
+    background: var(--color-surface);
+    border-radius: 0.5rem;
+    box-shadow: var(--shadow-card);
+    transition:
+      transform 200ms var(--ease-calm),
+      box-shadow 200ms var(--ease-calm);
+  }
+  /* The gold rule along the foot of every card on the reference site. Drawn
+     as a pseudo-element so it sits inside the radius. */
+  .mcgm-card::after {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    height: 3px;
+    border-radius: 0 0 0.5rem 0.5rem;
+    background: linear-gradient(90deg, #c9a028, #e6c765 55%, #c9a028);
+  }
+  .mcgm-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-raised);
+  }
+
+  .mcgm-more {
+    color: #a8801d;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .mcgm-slide {
+      transition: none;
+    }
+    .mcgm-card:hover {
+      transform: none;
+    }
+  }
+  :root[data-motion='reduced'] .mcgm-slide {
+    transition: none;
+  }
+  :root[data-motion='reduced'] .mcgm-card:hover {
+    transform: none;
+  }
+}
+
+/* ==========================================================================
+   Metric card colour cycle
+   --------------------------------------------------------------------------
+   Cards run through the four Google brand hues in grid order - blue, red,
+   amber, green - so no two neighbours ever share a colour and a hue only
+   returns on the fifth card. Position drives the colour, not status.
+
+   Each hue is the full-strength step that still carries white label text at
+   4.5:1 (blue 600, red 600, green 700). Amber is the exception the palette
+   always makes: no shade of Google yellow works under white, so it takes
+   near-black text instead - which is the one `color` declaration that flips.
+
+   Everything inside a card then resolves from `currentColor`, so the same
+   markup serves both the white-on-colour cards and the ink-on-amber one.
+
+   These rules are deliberately UNLAYERED. Unlayered CSS wins over every
+   Tailwind layer, which is what lets the scope restyle the chips, rails and
+   affordances that shared components render inside the card with tints meant
+   for a white surface - they would otherwise read as pale blobs.
+   ========================================================================== */
+
+.metric-cycle {
+  color: #ffffff;
+}
+.metric-cycle:nth-child(4n + 1) {
+  background-color: var(--color-google-blue-600);
+  border-color: var(--color-google-blue-700);
+}
+.metric-cycle:nth-child(4n + 2) {
+  background-color: var(--color-google-red-600);
+  border-color: var(--color-google-red-700);
+}
+.metric-cycle:nth-child(4n + 3) {
+  background-color: var(--color-google-yellow-500);
+  border-color: var(--color-google-yellow-600);
+  color: var(--color-ink-900);
+}
+.metric-cycle:nth-child(4n + 4) {
+  background-color: var(--color-google-green-700);
+  border-color: var(--color-google-green-800);
+}
+
+.metric-cycle .mini-bar {
+  background-color: color-mix(in srgb, currentColor 26%, transparent);
+}
+.metric-cycle .mini-bar > span {
+  background-color: currentColor;
+}
+
+.metric-cycle .info-hint {
+  border-color: color-mix(in srgb, currentColor 50%, transparent);
+  color: color-mix(in srgb, currentColor 88%, transparent);
+}
+.metric-cycle .info-hint:hover {
+  border-color: currentColor;
+  color: currentColor;
+}
+
+.metric-cycle .badge-chip {
+  background-color: color-mix(in srgb, currentColor 18%, transparent);
+  color: currentColor;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 36%, transparent);
+}
+
+/* ==========================================================================
+   Utilities
+   ========================================================================== */
+
+@layer utilities {
+  .scrollbar-slim {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-ink-200) transparent;
+  }
+  .scrollbar-slim::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  .scrollbar-slim::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scrollbar-slim::-webkit-scrollbar-thumb {
+    background-color: var(--color-ink-200);
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+  .scrollbar-slim::-webkit-scrollbar-thumb:hover {
+    background-color: var(--color-ink-300);
+    background-clip: content-box;
+  }
+
+  /* Slim scrollbar tuned for the white command rail. */
+  .scrollbar-rail {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-ink-200) transparent;
+  }
+  .scrollbar-rail::-webkit-scrollbar {
+    width: 6px;
+  }
+  .scrollbar-rail::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scrollbar-rail::-webkit-scrollbar-thumb {
+    background-color: var(--color-ink-200);
+    border-radius: 999px;
+  }
+  .scrollbar-rail::-webkit-scrollbar-thumb:hover {
+    background-color: var(--color-ink-300);
+  }
+
+  .grid-backdrop {
+    background-image:
+      linear-gradient(to right, rgb(148 163 184 / 0.09) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(148 163 184 / 0.09) 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
+
+  /* Faint dotted texture for dark panels. */
+  .dot-texture {
+    background-image: radial-gradient(rgb(195 210 232 / 0.13) 1px, transparent 1px);
+    background-size: 18px 18px;
+  }
+
+  /* Lifts a card on hover - restrained, 2px, no scaling. */
+  .lift-on-hover {
+    transition:
+      box-shadow 220ms var(--ease-calm),
+      transform 220ms var(--ease-calm),
+      border-color 220ms var(--ease-calm);
+  }
+  .lift-on-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-raised);
+  }
+
+  .animate-in-fade {
+    animation: mi-fade-in 0.24s var(--ease-calm) both;
+  }
+  .animate-in-rise {
+    animation: mi-rise-in 0.32s var(--ease-calm) both;
+  }
+  .animate-in-drawer {
+    animation: mi-drawer-in 0.26s var(--ease-calm) both;
+  }
+  .animate-in-scale {
+    animation: mi-scale-in 0.2s var(--ease-spring) both;
+  }
+  .animate-pulse-soft {
+    animation: mi-pulse-soft 2.4s var(--ease-calm) infinite;
+  }
+  .animate-sheen {
+    animation: mi-sheen 2.6s var(--ease-calm) infinite;
+  }
+
+  /* ------------------------------------------------------------------------
+     The live update line
+     ------------------------------------------------------------------------
+     The portal's ticker, and one of the few places in this interface where
+     motion carries meaning rather than decorating: the line moves because the
+     corporation is still publishing to it.
+
+     Built as a single track holding the notices twice and translated by
+     exactly half its own width, so the loop closes on itself - the second
+     copy is under the eye at the moment the first leaves, and there is no gap
+     and no jump at the seam.
+
+     Speed is set per instance through `--marquee-duration` and derived from
+     how many notices there are, so publishing one more lengthens the loop
+     instead of making every notice run past faster.
+
+     The track stops on hover and on focus-within as well as on the explicit
+     control: reaching for a link in a moving line is a fight, and a keyboard
+     tab into it would otherwise scroll the target out from under the ring. */
+  .marquee-viewport {
+    overflow: hidden;
+    -webkit-mask-image: linear-gradient(to right, transparent, black 1.5rem, black calc(100% - 1.5rem), transparent);
+    mask-image: linear-gradient(to right, transparent, black 1.5rem, black calc(100% - 1.5rem), transparent);
+  }
+  .marquee-track {
+    display: flex;
+    width: max-content;
+    animation: mi-marquee var(--marquee-duration, 60s) linear infinite;
+  }
+  .marquee-viewport:hover .marquee-track,
+  .marquee-viewport:focus-within .marquee-track,
+  .marquee-track[data-paused='true'] {
+    animation-play-state: paused;
+  }
+
+  /* ------------------------------------------------------------------------
+     Page entrance
+     ------------------------------------------------------------------------
+     Every screen is `PageBody`, and every screen is a stack of sections, so
+     the entrance is expressed once here rather than as an animation class
+     threaded through ninety-one pages.
+
+     The sections arrive in reading order, 40ms apart, which is enough for the
+     eye to follow the page assembling itself top-down and short enough that
+     the whole stack has settled inside a quarter of a second. Deliberately
+     capped at the eighth section: a longer ladder starts to feel like the
+     interface is loading slowly rather than arriving deliberately, and an
+     operator opening the same screen fifty times a day must never be made to
+     wait on decoration.
+
+     Only direct children animate. Anything deeper - a table row, a chart
+     series, a list item - is data, and data must not slide around while it is
+     being read.
+
+     `backwards`, never `both`. `both` retains the final keyframe, and the final
+     keyframe is `transform: translateY(0)` - a transform value, even an
+     identity one, makes the element a containing block, and `position: sticky`
+     on any descendant silently stops sticking. `SplitLayout`'s supporting rail
+     is sticky on every page that uses it, so `both` would have unstuck a rail
+     on a third of the platform with nothing to explain why. `backwards` applies
+     the opening keyframe through the delay and then hands the element back to
+     its own styles with no transform left behind. */
+  .page-enter > * {
+    animation: mi-rise-in 0.34s var(--ease-calm) backwards;
+  }
+  .page-enter > *:nth-child(1) {
+    animation-delay: 0ms;
+  }
+  .page-enter > *:nth-child(2) {
+    animation-delay: 40ms;
+  }
+  .page-enter > *:nth-child(3) {
+    animation-delay: 80ms;
+  }
+  .page-enter > *:nth-child(4) {
+    animation-delay: 120ms;
+  }
+  .page-enter > *:nth-child(5) {
+    animation-delay: 160ms;
+  }
+  .page-enter > *:nth-child(6) {
+    animation-delay: 200ms;
+  }
+  .page-enter > *:nth-child(7) {
+    animation-delay: 240ms;
+  }
+  .page-enter > *:nth-child(n + 8) {
+    animation-delay: 280ms;
+  }
+
+  /* ------------------------------------------------------------------------
+     Interaction polish
+     ------------------------------------------------------------------------
+     One easing curve and one duration for everything an operator can point at,
+     so the interface responds with a single voice rather than each component
+     having its own idea of how fast a hover is. */
+  .interactive-surface {
+    transition:
+      background-color 160ms var(--ease-calm),
+      border-color 160ms var(--ease-calm),
+      color 160ms var(--ease-calm),
+      box-shadow 160ms var(--ease-calm);
+  }
+
+  /* A tab, segment or nav item that carries the current selection. The marker
+     grows from the centre rather than appearing, so moving between tabs reads
+     as one indicator travelling rather than two indicators blinking. */
+  .selection-marker::after {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    bottom: -1px;
+    height: 2px;
+    border-radius: 999px;
+    background: var(--color-govt-600);
+    transform: scaleX(0);
+    transform-origin: center;
+    transition: transform 220ms var(--ease-calm);
+  }
+  .selection-marker[data-selected='true']::after {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes mi-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes mi-rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes mi-drawer-in {
+  from {
+    opacity: 0.4;
+    transform: translateX(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes mi-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes mi-pulse-soft {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+@keyframes mi-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes mi-sheen {
+  0% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0.35;
+  }
+}
+
+/* Respect operator preference - operations software should feel calm.
+   Two triggers, same rules: the OS-level media query, and the explicit
+   Settings → Preferences choice stamped on the root as `data-motion`. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .lift-on-hover:hover {
+    transform: none;
+  }
+}
+
+:root[data-motion='reduced'] *,
+:root[data-motion='reduced'] ::before,
+:root[data-motion='reduced'] ::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+:root[data-motion='reduced'] .lift-on-hover:hover {
+  transform: none;
+}
+
+/* The ticker is the one animation here that cannot simply be shortened to
+   nothing. Collapsing its duration to 0.001ms would land it on its END frame,
+   which is the track translated fully out of view - the notices would vanish
+   rather than hold still. So it is stopped at its first frame instead, the
+   viewport is made scrollable so the rest can still be reached by hand or by
+   keyboard, and the duplicate copy that exists only to close the loop is
+   dropped so nothing is read out twice. Placed after the two blocks above
+   because it has to overrule them. */
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track {
+    animation: none !important;
+    transform: none !important;
+  }
+  .marquee-viewport {
+    overflow-x: auto;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+  .marquee-loop-copy {
+    display: none;
+  }
+}
+
+:root[data-motion='reduced'] .marquee-track {
+  animation: none !important;
+  transform: none !important;
+}
+:root[data-motion='reduced'] .marquee-viewport {
+  overflow-x: auto;
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+:root[data-motion='reduced'] .marquee-loop-copy {
+  display: none;
+}
+
+/* ==========================================================================
+   High contrast - Settings → Preferences, stamped as `data-contrast`
+   --------------------------------------------------------------------------
+   Municipal control rooms are bright, often daylit, and frequently viewed on
+   projected displays where the mid-tones of a calm palette disappear. The high
+   contrast mode does not restyle the platform: it redefines the *tokens* the
+   whole design system is already built on, so every screen, chart and badge
+   deepens together rather than each surface needing its own variant.
+
+   Muted inks move up the scale, hairline borders become visible lines, and
+   dividing rules gain weight. Semantic hues (warn, risk, critical) are left
+   alone - their meaning is carried by hue, and shifting them would change what
+   an operator reads from a colour they have learned.
+   ========================================================================== */
+
+:root[data-contrast='high'] {
+  --color-canvas: #e6ecf4;
+  --color-surface-sunken: #eef3f9;
+
+  /* Secondary text moves two steps darker so it stops reading as decoration. */
+  --color-ink-500: #33455c;
+  --color-ink-400: #4a5f79;
+  --color-ink-300: #64798f;
+
+  /* Hairlines become lines. */
+  --color-ink-200: #93a5b8;
+  --color-ink-100: #b8c5d4;
+  --color-ink-50: #dde5ee;
+
+  /* Institutional blue darkens for text-on-tint pairings. */
+  --color-govt-500: #2358d8;
+  --color-govt-400: #3d78e8;
+}
+
+:root[data-contrast='high'] .surface-card,
+:root[data-contrast='high'] table thead tr {
+  border-color: var(--color-ink-200);
+}
+
+:root[data-contrast='high'] :focus-visible {
+  outline-width: 3px;
+  outline-offset: 2px;
+}
+
+/* ==========================================================================
+   Print - the report workspace produces institutional documents
+   ========================================================================== */
+
+@media print {
+  body {
+    background: #ffffff;
+  }
+  .print-hidden {
+    display: none !important;
+  }
+  .print-block {
+    display: block !important;
+  }
+  .print-full {
+    position: static !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    height: auto !important;
+  }
+  .surface-card {
+    box-shadow: none !important;
+    break-inside: avoid;
+  }
+  /* Banners and rails print as plain text blocks, not solid ink. */
+  .banner-surface,
+  .hero-surface,
+  .rail-surface,
+  .civic-band {
+    background: #ffffff !important;
+    color: #0b1220 !important;
+  }
+  /* The portal's photographic layers are atmosphere, and atmosphere costs a
+     full page of toner. The band prints as the text it carries. */
+  .civic-band__photo,
+  .civic-band__scrim,
+  .civic-band::before,
+  .civic-band::after {
+    display: none !important;
+  }
+  .print-page-break {
+    break-before: page;
+  }
+}

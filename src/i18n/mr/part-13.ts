@@ -1,0 +1,498 @@
+/** Marathi catalogue, part 13. Keyed by the exact English source. */
+export const MR_PART_13: Record<string, string> = {
+  'Objectives operational here': 'येथे कार्यरत असलेली उद्दिष्टे',
+  'Observed precision': 'निरीक्षित अचूकता',
+  'Observed rule precision': 'निरीक्षित नियम अचूकता',
+  'Occupied beds': 'भरलेल्या खाटा',
+  'of {0} controls exercised': '{0} पैकी नियंत्रणे तपासली',
+  'of {0} ML': '{0} ML पैकी',
+  'of {0} recorded windows': 'नोंदवलेल्या {0} कालखंडांपैकी',
+  'of {0} target': '{0} लक्ष्यापैकी',
+  'Of the items currently shown.': 'सध्या दाखवलेल्या बाबींपैकी.',
+  'of the platform services register': 'मंच सेवा नोंदवहीपैकी',
+  'of when or where flooding will occur.': 'पूर कधी किंवा कोठे येईल याचा.',
+  'Officer worklist': 'अधिकारी कार्यसूची',
+  'Oldest unactioned': 'सर्वात जुने, कार्यवाही न झालेले',
+  'On schedule': 'वेळापत्रकानुसार',
+  'On the forecast component': 'अंदाज घटकावर',
+  'On the worklist': 'कार्यसूचीवर',
+  'On this page': 'या पानावर',
+  'On track': 'मार्गावर',
+  "One composite across twelve dimensions of the city's condition, each computed from the corporation's own records. Every score can be opened to its positive and negative contributors - this page never shows a number it cannot explain.":
+    'शहराच्या स्थितीच्या बारा मितींवरील एकच एकत्रित निर्देशांक, प्रत्येक मिती महानगरपालिकेच्या स्वतःच्या नोंदींवरून काढलेली. प्रत्येक गुण उघडून त्यामागील सकारात्मक व नकारात्मक घटक पाहता येतात — ज्याचे स्पष्टीकरण देता येत नाही असा आकडा हे पान कधीही दाखवत नाही.',
+  'One run per model. Select a run to open its dimension scores.':
+    'प्रति प्रारूप एक फेरी. मितिनिहाय गुण पाहण्यासाठी फेरी निवडा.',
+  'One ward, one revenue stream, ninety days. These four measures are the whole of the scorecard: a pilot that reports twelve numbers reports none of them.':
+    'एक प्रभाग, एक महसूल प्रवाह, नव्वद दिवस. ही चार मापे म्हणजेच संपूर्ण गुणपत्रक: बारा आकडे सांगणारा प्रायोगिक प्रकल्प त्यांपैकी एकही आकडा प्रत्यक्षात सांगत नाही.',
+  "One workspace for the platform's three deterministic scenario engines. Every output is a simulation produced by a declared rule model with published driver weights, applied to the current position - it is never a forecast, and it never changes a live municipal record on its own.":
+    'मंचाच्या तीन निर्धारित परिस्थिती प्रणालींसाठी एकच कार्यक्षेत्र. प्रत्येक निर्गत ही प्रकाशित कारक भारांसह घोषित नियम प्रारूपाने सद्यस्थितीवर लागू करून तयार केलेली नक्कल आहे — तो कधीही अंदाज नसतो, आणि तो स्वतःहून कधीही प्रत्यक्ष महानगरपालिका नोंद बदलत नाही.',
+  'Open {0}': '{0} उघडा',
+  'Open / monitored AI risks': 'प्रलंबित / देखरेखीखालील कृत्रिम बुद्धिमत्ता जोखमी',
+  'Open AI incidents': 'प्रलंबित कृत्रिम बुद्धिमत्ता घटना',
+  'Open and monitored risk entries.': 'प्रलंबित व देखरेखीखालील जोखीम नोंदी.',
+  'Open asset {0}': 'मालमत्ता {0} उघडा',
+  'Open Building Intelligence': 'इमारत बुद्धिमत्ता उघडा',
+  'Open citizen complaints': 'प्रलंबित नागरिक तक्रारी',
+  'Open commitments': 'प्रलंबित वचनबद्धता',
+  'Open complaints': 'प्रलंबित तक्रारी',
+  'Open complaints (city-wide):': 'प्रलंबित तक्रारी (शहरभर):',
+  'Open complaints, scaled relative to the highest ward.':
+    'प्रलंबित तक्रारी, सर्वाधिक असलेल्या प्रभागाच्या तुलनेत प्रमाणित.',
+  'Open control verification': 'नियंत्रण पडताळणी उघडा',
+  'Open defects': 'प्रलंबित दोष',
+  'Open Evidence': 'पुरावा उघडा',
+  'Open faults': 'प्रलंबित बिघाड',
+  'Open full record': 'संपूर्ण नोंद उघडा',
+  'Open full record →': 'संपूर्ण नोंद उघडा →',
+  'Open Hospital Intelligence': 'रुग्णालय बुद्धिमत्ता उघडा',
+  'Open Incident Load': 'प्रलंबित घटना भार',
+  'Open incidents only': 'केवळ प्रलंबित घटना',
+  'Open Monsoon Intelligence': 'पावसाळी बुद्धिमत्ता उघडा',
+  'Open operational alerts raised against the public health domain.':
+    'सार्वजनिक आरोग्य क्षेत्राविरुद्ध उपस्थित केलेले प्रलंबित कामकाजविषयक इशारे.',
+  'Open pipeline →': 'प्रवाहसाखळी उघडा →',
+  'Open Procurement Intelligence': 'खरेदी बुद्धिमत्ता उघडा',
+  'Open Property Intelligence': 'मालमत्ता बुद्धिमत्ता उघडा',
+  'Open reports': 'प्रलंबित तक्रार नोंदी',
+  'Open Revenue Intelligence': 'महसूल बुद्धिमत्ता उघडा',
+  'Open service requests': 'प्रलंबित सेवा विनंत्या',
+  'Open space by kind': 'प्रकारानुसार मोकळ्या जागा',
+  'Open space register': 'मोकळ्या जागांची नोंदवही',
+  'Open spaces': 'मोकळ्या जागा',
+  'Open task {0}: {1}': 'काम {0} उघडा: {1}',
+  'Open this role in the role register': 'भूमिका नोंदवहीत ही भूमिका उघडा',
+  'Open vulnerabilities': 'प्रलंबित सुरक्षा त्रुटी',
+  'Open vulnerabilities by severity': 'तीव्रतेनुसार प्रलंबित सुरक्षा त्रुटी',
+  'Open ward profile for {0}': '{0} ची प्रभाग माहिती उघडा',
+  'open, average resolution': 'प्रलंबित, सरासरी निराकरण',
+  'Opening any evidence record tied to a governed dataset is itself a recorded audit event, attributed to the requesting officer, session and timestamp - see Evidence &amp; Audit for the live trail. No regulatory certification, data protection accreditation or formal privacy attestation is claimed for this environment.':
+    'कारभाराखालील माहितीसंचाशी जोडलेली कोणतीही पुरावा नोंद उघडणे हीच स्वतः एक नोंदवलेली लेखापरीक्षा घटना असते — ती विनंती करणारा अधिकारी, सत्र आणि वेळमुद्रेसह नोंदवली जाते; प्रत्यक्ष नोंदीसाठी पुरावा &amp; लेखापरीक्षा पहा. या वातावरणासाठी कोणतेही नियामक प्रमाणपत्र, माहिती संरक्षण मान्यता किंवा औपचारिक गोपनीयता प्रमाणन असल्याचा दावा केलेला नाही.',
+  'Operational Health': 'कामकाजविषयक स्थिती',
+  'Operational health index': 'कामकाजविषयक स्थिती निर्देशांक',
+  'Operational KPIs are not outcomes. Coverage achieved, kilometres resurfaced or works completed are outputs - what was done. An outcome is what that output changed for a resident - whether a corridor stays passable, a ward stops flooding, a signal is contained. This platform tracks both, and reports the outcome without adjustment, including where an intervention has demonstrably not been effective.':
+    'कामकाजाचे मापदंड म्हणजे निष्पत्ती नव्हे. साधलेली व्याप्ती, पुनःपृष्ठीकरण झालेले किलोमीटर किंवा पूर्ण झालेली कामे हे निर्गत आहेत — काय केले गेले ते. निष्पत्ती म्हणजे त्या निर्गताने रहिवाशासाठी काय बदलले — मार्गिका वाहतुकीयोग्य राहते का, प्रभागात पाणी साचणे थांबते का, संकेत नियंत्रणात येतो का. हा मंच दोन्हींचा मागोवा घेतो आणि निष्पत्ती कोणत्याही फेरबदलाशिवाय नोंदवतो — हस्तक्षेप स्पष्टपणे परिणामकारक ठरला नाही तेथेही.',
+  'Operational pump count, standby power, readiness and recent duty cycle for every dewatering station.':
+    'प्रत्येक पाणी उपसा केंद्राची कार्यरत पंप संख्या, राखीव वीज, सज्जता आणि अलीकडील कार्यचक्र.',
+  'Operational standard operating procedures': 'कार्यरत प्रमाणित कार्यपद्धती',
+  Operations: 'कामकाज',
+  Optional: 'ऐच्छिक',
+  'or more missed collections in the last 7 days - a recurring pattern rather than a single-day disruption. A further':
+    'किंवा अधिक संकलने मागील 7 दिवसांत चुकली — हा एका दिवसाचा व्यत्यय नसून पुनरावृत्त नमुना आहे. आणखी',
+  'Order a worklist against published, reviewable weights for human confirmation.':
+    'मानवी निश्चितीसाठी प्रकाशित, पुनरावलोकनयोग्य भारांनुसार कार्यसूचीचा क्रम लावणे.',
+  "Ordered by equity gap, most under-provisioned first. Every figure is carried from the ward's existing record - nothing on this register is computed for this page alone.":
+    'समन्यायातील तफावतीनुसार क्रमवारी, सर्वात कमी तरतूद असलेले प्रथम. प्रत्येक आकडा प्रभागाच्या विद्यमान नोंदीवरून घेतला आहे — या नोंदवहीतील काहीही केवळ या पानासाठी वेगळे मोजलेले नाही.',
+  'Ordered by target variance, most adverse first.':
+    'लक्ष्यातील फरकानुसार क्रमवारी, सर्वाधिक प्रतिकूल प्रथम.',
+  'Other conditions': 'इतर आजार',
+  'Outbreak Signal': 'उद्रेक संकेत',
+  'Outcome effectiveness distribution': 'निष्पत्ती परिणामकारकतेचे वितरण',
+  'Outcome evaluation': 'निष्पत्ती मूल्यमापन',
+  'Output is with a named officer for review, amendment or rejection.':
+    'निर्गत पुनरावलोकन, दुरुस्ती किंवा नामंजुरीसाठी नामनिर्देशित अधिकाऱ्याकडे आहे.',
+  'Over 90 days': '90 दिवसांहून अधिक',
+  'Over capacity': 'क्षमतेपेक्षा अधिक',
+  'Overall state': 'एकूण स्थिती',
+  'Overdue decisions': 'मुदतबाह्य निर्णय',
+  'Overdue inspections (> {0} days)': 'मुदतबाह्य तपासण्या (> {0} दिवस)',
+  'Overflow events (30d)': 'उतू जाण्याच्या घटना (30 दि)',
+  'Overflow-event concentration': 'उतू जाण्याच्या घटनांचे केंद्रीकरण',
+  'Oversight band': 'देखरेख पट्टा',
+  'Own-revenue collection efficiency for the ward - what has been collected against what was targeted for the year.':
+    'प्रभागाची स्वउत्पन्न वसुली कार्यक्षमता — वर्षासाठी ठरवलेल्या लक्ष्याच्या तुलनेत प्रत्यक्ष वसूल झालेली रक्कम.',
+  'Owner:': 'जबाबदार अधिकारी:',
+  'Ownership passes to the selected officer.': 'जबाबदारी निवडलेल्या अधिकाऱ्याकडे जाते.',
+  'Ownership passes to the selected officer. This action is recorded in the audit trail.':
+    'जबाबदारी निवडलेल्या अधिकाऱ्याकडे जाते. ही कृती लेखापरीक्षा नोंदीत नोंदवली जाते.',
+  'p95 latency': 'p95 विलंब',
+  'Parcel-level land-use classification is not yet integrated into this service layer. These views are built from ward planning region and infrastructure-adequacy band instead.':
+    'भूखंड पातळीवरील भूवापर वर्गीकरण अद्याप या सेवा स्तरात समाविष्ट केलेले नाही. त्याऐवजी ही दृश्ये प्रभाग नियोजन क्षेत्र आणि पायाभूत सुविधा पर्याप्तता पट्ट्यावरून उभारली आहेत.',
+  'Parking is a demand-management instrument': 'वाहनतळ हे मागणी-व्यवस्थापनाचे साधन आहे',
+  'Parking lots, public conveniences, bus shelters, drinking water posts and community halls - what the corporation holds, what condition it is in, and how far it reaches the people it is meant to serve. Street lighting is reported separately.':
+    'वाहनतळ, सार्वजनिक स्वच्छतागृहे, बसथांबे, पिण्याच्या पाण्याची ठिकाणे आणि समाजमंदिरे — महानगरपालिकेकडे काय आहे, त्याची स्थिती काय आहे, आणि ज्यांच्यासाठी ते आहे त्या लोकांपर्यंत ते किती पोहोचते. पथदिव्यांचा अहवाल स्वतंत्रपणे दिला जातो.',
+  'Partial match': 'अंशतः जुळणी',
+  'Partially effective': 'अंशतः परिणामकारक',
+  'Partially Protected': 'अंशतः संरक्षित',
+  Passphrase: 'सांकेतिक वाक्य',
+  'Past expectation': 'अपेक्षित मुदतीपलीकडे',
+  'Past freshness expectation': 'ताजेपणाच्या अपेक्षित मुदतीपलीकडे',
+  'Paused only': 'केवळ थांबवलेले',
+  'Pausing or removing this source does not recompute or hide the metrics above. In a live deployment they would continue to publish their last value with an ageing freshness label until it exceeded the platform&apos;s staleness threshold, at which point they would be withheld rather than shown stale — the platform never presents an aged figure as current.':
+    'हा स्रोत थांबवल्याने किंवा काढून टाकल्याने वरील मापदंड पुन्हा मोजले जात नाहीत किंवा लपवले जात नाहीत. प्रत्यक्ष अंमलबजावणीत ते आपले शेवटचे मूल्य जुनाट होत जाणाऱ्या ताजेपणा खुणेसह प्रकाशित करत राहतील — जोपर्यंत ते मंचाची शिळेपणाची मर्यादा ओलांडत नाही; त्यानंतर ते शिळे दाखवण्याऐवजी रोखले जातील — मंच जुना आकडा कधीही चालू म्हणून सादर करत नाही.',
+  'Paver Block': 'पेव्हर ब्लॉक',
+  'Payer-segment breakdown': 'देयकदार गटानुसार विभागणी',
+  'Peak-hour speed': 'गर्दीच्या वेळेतील वेग',
+  'Peer group': 'समकक्ष गट',
+  'Peer group median': 'समकक्ष गटाचा मध्यक',
+  'Pending approval': 'मान्यता प्रलंबित',
+  'per difficulty point': 'प्रति अडचण गुण',
+  'per resident rather than capital spent. Allocation is the decision the corporation makes and the thing a budget can correct; under-spend against an allocation is a delivery failure, which the utilisation column answers separately.':
+    'दरडोई, खर्च झालेल्या भांडवलाच्या ऐवजी. तरतूद हा महानगरपालिका घेत असलेला निर्णय असतो आणि अर्थसंकल्प तोच दुरुस्त करू शकतो; तरतुदीच्या तुलनेत कमी खर्च हे अंमलबजावणीतील अपयश आहे, ज्याचे उत्तर वापर स्तंभ स्वतंत्रपणे देतो.',
+  'Per-department movement - baseline → scenario': 'विभागनिहाय बदल — आधाररेषा → परिस्थिती',
+  'Percentage by which current cost exceeds the sanctioned cost, highest first.':
+    'सध्याचा खर्च मंजूर खर्चापेक्षा किती टक्क्यांनी अधिक आहे, सर्वाधिक प्रथम.',
+  'percentage points short': 'टक्के बिंदूंनी कमी',
+  "Percentile points by which a ward's capital provision sits below its assessed need. Wards provisioned at or above their need are not shown.":
+    'प्रभागाची भांडवली तरतूद त्याच्या मूल्यांकित गरजेपेक्षा किती शततमक बिंदूंनी कमी आहे. गरजेइतकी किंवा त्याहून अधिक तरतूद असलेले प्रभाग दाखवले जात नाहीत.',
+  'Performance index': 'कामगिरी निर्देशांक',
+  Peripheral: 'उपनगरीय',
+  'Permission counts by resource': 'साधननिहाय परवानग्यांची संख्या',
+  'Permission engine active': 'परवानगी प्रणाली कार्यरत',
+  'Permission matrix - roles × resources': 'परवानगी कोष्टक — भूमिका × साधने',
+  'Permissions held': 'धारण केलेल्या परवानग्या',
+  'Permissions held ({0})': 'धारण केलेल्या परवानग्या ({0})',
+  'Personal data: any': 'वैयक्तिक माहिती: कोणतीही',
+  'Phased target': 'टप्प्याटप्प्याचे लक्ष्य',
+  'Phased-plan expectation': 'टप्प्याटप्प्याच्या आराखड्याची अपेक्षा',
+  'Pilot & statutory return': 'प्रायोगिक प्रकल्प व वैधानिक विवरण',
+  'Pilot scorecard - {0}': 'प्रायोगिक प्रकल्प गुणपत्रक — {0}',
+  'Pilot ward': 'प्रायोगिक प्रभाग',
+  Pipeline: 'प्रवाहसाखळी',
+  'plan {0}%': 'आराखडा {0}%',
+  'Planned capabilities': 'नियोजित क्षमता',
+  'Planned closures:': 'नियोजित मार्ग बंद:',
+  Planted: 'लागवड केलेले',
+  'Platform engineering': 'मंच अभियांत्रिकी',
+  'Platform hierarchy': 'मंच उतरंड',
+  'Platform interpretation statement': 'मंच अन्वयार्थ निवेदन',
+  'Platform Resilience': 'मंच लवचिकता',
+  'points against the prior-period baseline · confidence':
+    'गुण, मागील कालावधीच्या आधाररेषेच्या तुलनेत · विश्वासार्हता',
+  'Points beyond {0} are marked as simulated in the tooltip. {1}':
+    '{0} पलीकडील बिंदू सूचनापट्टीत नक्कल म्हणून चिन्हांकित केले आहेत. {1}',
+  'Poles by lamp type': 'दिव्याच्या प्रकारानुसार खांब',
+  'Poles working': 'कार्यरत खांब',
+  'Police Liaison': 'पोलीस समन्वय',
+  'Policy register': 'धोरण नोंदवही',
+  'Policy violations (30d)': 'धोरण उल्लंघने (30 दि)',
+  Poor: 'निकृष्ट',
+  'Poor condition': 'निकृष्ट स्थिती',
+  'Population affected (est.)': 'बाधित लोकसंख्या (अंदाजे)',
+  'Population density scaled to a 0–100 band for shading; hover a ward for the underlying figure.':
+    'छटेसाठी लोकसंख्या घनता 0–100 पट्ट्यावर प्रमाणित; मूळ आकड्यासाठी प्रभागावर कर्सर न्या.',
+  'Population density scaled to a 0–100 shading band.':
+    'लोकसंख्या घनता 0–100 छटा पट्ट्यावर प्रमाणित.',
+  'Population exposed': 'धोक्यात असलेली लोकसंख्या',
+  'Population exposed (estimate)': 'धोक्यात असलेली लोकसंख्या (अंदाज)',
+  'Population exposed (modelled)': 'धोक्यात असलेली लोकसंख्या (प्रतिरूपित)',
+  'Population in affected areas': 'बाधित भागांतील लोकसंख्या',
+  'Population pressure, infrastructure adequacy, transport access and capital planning exposure across every ward, with a scenario engine for population growth, capital investment, transport demand and extreme rainfall frequency.':
+    'प्रत्येक प्रभागातील लोकसंख्येचा ताण, पायाभूत सुविधांची पर्याप्तता, वाहतूक सुलभता आणि भांडवली नियोजनातील धोका, तसेच लोकसंख्या वाढ, भांडवली गुंतवणूक, वाहतूक मागणी व अतिवृष्टीची वारंवारता यासाठी परिस्थिती प्रणाली.',
+  Position: 'पद',
+  'Position by revenue stream and ward': 'महसूल प्रवाह व प्रभागनिहाय स्थिती',
+  'Position in pipeline': 'प्रवाहसाखळीतील स्थान',
+  'Position one is the ward most in need of attention on the selected indicator, not the leader. Sort on any column to read it the other way round. Select a ward to open its full profile.':
+    'पहिले स्थान म्हणजे निवडलेल्या निर्देशकावर सर्वाधिक लक्ष आवश्यक असलेला प्रभाग, आघाडीवरचा नव्हे. उलट क्रमाने वाचण्यासाठी कोणत्याही स्तंभावर क्रमवारी लावा. संपूर्ण माहिती पाहण्यासाठी प्रभाग निवडा.',
+  'Positive = behind the phased plan (under-spent). Negative = ahead of the phased plan (over-spent).':
+    'धन = टप्प्याटप्प्याच्या आराखड्यापेक्षा मागे (कमी खर्च). ऋण = टप्प्याटप्प्याच्या आराखड्यापेक्षा पुढे (अधिक खर्च).',
+  'Post a command log entry.': 'नियंत्रण नोंदवहीत नोंद टाका.',
+  'Post-incident review records lessons for preparedness.':
+    'घटनेनंतरचे पुनरावलोकन सज्जतेसाठी धडे नोंदवते.',
+  Posture: 'स्थिती',
+  Pothole: 'खड्डा',
+  'Pre-filled from the source intelligence item. Review and adjust before submitting - the case enters the board in Draft.':
+    'स्रोत बुद्धिमत्ता नोंदीवरून आधीच भरलेले. सादर करण्यापूर्वी पुनरावलोकन करून आवश्यक ते बदल करा — प्रकरण मंडळात मसुदा स्थितीत दाखल होते.',
+  'Pre-monsoon readiness implication': 'पावसाळापूर्व सज्जतेवरील परिणाम',
+  'Pre-monsoon readiness: desilting completed, pump availability and preparation measured against the waterlogging locations recorded in the ward.':
+    'पावसाळापूर्व सज्जता: प्रभागात नोंदवलेल्या पाणी साचण्याच्या ठिकाणांच्या तुलनेत पूर्ण झालेली गाळ काढणी, पंप उपलब्धता आणि पूर्वतयारी.',
+  'Preparedness by hazard': 'धोक्यानुसार सज्जता',
+  'Preparedness posture, observed rainfall and tide conditions, and pumping and desilting position across every ward.':
+    'सज्जतेची स्थिती, निरीक्षित पर्जन्यमान व भरतीची स्थिती, आणि प्रत्येक प्रभागातील उपसा व गाळ काढणीची स्थिती.',
+  'Preparedness score': 'सज्जता गुण',
+  'Preparedness, not prediction': 'सज्जता, भाकीत नव्हे',
+  'Pressure profile by zone': 'झोननिहाय दाबाचे चित्र',
+  'Previous period': 'मागील कालावधी',
+  'Primary gap · {0}': 'प्रमुख तफावत · {0}',
+  'Primary unit': 'प्राथमिक एकक',
+  Principals: 'वापरकर्ते',
+  Principles: 'तत्त्वे',
+  Print: 'छापा',
+  'Print / Save as PDF': 'छापा / PDF म्हणून जतन करा',
+  'Priority {0}/100 · status {1} · {2} linked complaint(s)':
+    'प्राधान्य {0}/100 · स्थिती {1} · {2} जोडलेल्या तक्रारी',
+  'Priority band distribution': 'प्राधान्य पट्ट्यांचे वितरण',
+  'Priority queue': 'प्राधान्य रांग',
+  'Priority queue - top ranked defects': 'प्राधान्य रांग — सर्वोच्च क्रमांकाचे दोष',
+  'Privacy & legal': 'गोपनीयता व कायदेशीर बाबी',
+  'Privacy review': 'गोपनीयता पुनरावलोकन',
+  'Privileged accounts': 'विशेषाधिकार खाती',
+  'Privileged without MFA': 'बहुघटक प्रमाणीकरणाशिवाय विशेषाधिकार',
+  'Processing Plant': 'प्रक्रिया केंद्र',
+  'Processing, composting and bio-methanation load against landfill load. Transfer-station throughput is excluded as it passes onward to another facility.':
+    'भरावभूमीवरील भाराच्या तुलनेत प्रक्रिया, कंपोस्टिंग व जैव-मिथेनीकरण भार. हस्तांतरण केंद्रावरील प्रमाण वगळले आहे, कारण ते पुढे दुसऱ्या सुविधेकडे जाते.',
+  'Processing, transfer and disposal facilities': 'प्रक्रिया, हस्तांतरण व विल्हेवाट सुविधा',
+  'Procurement summary': 'खरेदी सारांश',
+  'Product family': 'उत्पादन गट',
+  'Product name': 'उत्पादनाचे नाव',
+  'Product subtitle': 'उत्पादनाचे उपशीर्षक',
+  'Production database': 'प्रत्यक्ष वापरातील माहितीकोश',
+  'Production identity provider': 'प्रत्यक्ष वापरातील ओळख पुरवठादार',
+  'Progression across the financial control stages for the current year: approved, revised, committed, actual to date and the modelled year-end forecast.':
+    'चालू वर्षासाठी वित्तीय नियंत्रण टप्प्यांतील प्रगती: मंजूर, सुधारित, वचनबद्ध, आजपर्यंतचा प्रत्यक्ष खर्च आणि वर्षअखेरचा प्रतिरूपित अंदाज.',
+  'Project · {0}% complete · risk {1}/100': 'प्रकल्प · {0}% पूर्ण · जोखीम {1}/100',
+  'Project a metric forward under stated assumptions, with confidence always attached.':
+    'नमूद गृहितकांनुसार मापदंडाचा पुढील प्रक्षेप काढणे, नेहमी विश्वासार्हतेसह.',
+  'Project expenditure linkage': 'प्रकल्प खर्चाची जोडणी',
+  'Project health': 'प्रकल्प स्थिती',
+  'Project infrastructure adequacy under a stated change to population, capital investment, transport demand and extreme rainfall frequency. This recomputes the table, map and rankings above.':
+    'लोकसंख्या, भांडवली गुंतवणूक, वाहतूक मागणी व अतिवृष्टीच्या वारंवारतेतील नमूद बदलानुसार पायाभूत सुविधा पर्याप्ततेचा प्रक्षेप काढा. यामुळे वरील कोष्टक, नकाशा व क्रमवारी पुन्हा मोजली जाते.',
+  'Project portfolio': 'प्रकल्प संच',
+  'Project released': 'प्रकल्प वितरित',
+  'Project Risk Engine': 'प्रकल्प जोखीम प्रणाली',
+  'Project sanctioned': 'प्रकल्प मंजूर',
+  'Projected population': 'प्रक्षेपित लोकसंख्या',
+  'Projected population:': 'प्रक्षेपित लोकसंख्या:',
+  'Projected to cross within {0} months': '{0} महिन्यांत ओलांडण्याचा प्रक्षेप',
+  'Projected utilisation': 'प्रक्षेपित वापर',
+  'Projects at risk': 'जोखमीतील प्रकल्प',
+  'Projects reported': 'नोंदवलेले प्रकल्प',
+  Promenade: 'सैरमार्ग',
+  'Prompt body': 'सूचनेचा मजकूर',
+  'Prompt registry': 'सूचना नोंदवही',
+  'Prompt registry - summary': 'सूचना नोंदवही — सारांश',
+  'Prompt templates': 'सूचना नमुने',
+  'Prompts in this registry are versioned, formally approved and immutable at runtime. A revision to an approved prompt is published as a new version with its own approval record - the platform never applies a silent in-place edit to a template already governing live requests.':
+    'या नोंदवहीतील सूचना आवृत्तीबद्ध, औपचारिकरीत्या मंजूर आणि चालू असताना अपरिवर्तनीय असतात. मंजूर सूचनेतील दुरुस्ती स्वतंत्र मान्यता नोंदीसह नवी आवृत्ती म्हणून प्रकाशित केली जाते — प्रत्यक्ष विनंत्या हाताळणाऱ्या नमुन्यात मंच कधीही मुकाट्याने जागच्या जागी बदल करत नाही.',
+  'properties due': 'देय मालमत्ता',
+  'Property assessments': 'मालमत्ता आकारणी',
+  "Property tax position by ward - the principal ward-attributable revenue stream. Row click opens the ward's full intelligence record.":
+    'प्रभागनिहाय मालमत्ता कर स्थिती — प्रभागाशी जोडता येणारा प्रमुख महसूल प्रवाह. ओळीवर टिचकी मारल्यास प्रभागाची संपूर्ण बुद्धिमत्ता नोंद उघडते.',
+  'Property tax reform and collection return': 'मालमत्ता कर सुधारणा व वसुलीचे विवरण',
+  'Proposal ageing': 'प्रस्तावांचे वयोमान',
+  Proposals: 'प्रस्ताव',
+  'Proposals in scrutiny': 'छाननीतील प्रस्ताव',
+  'Propose an action with a stated rationale, evidence and an accountable human owner.':
+    'नमूद कारणमीमांसा, पुरावा आणि जबाबदार मानवी अधिकाऱ्यासह कृती सुचवणे.',
+  'Propose configuration change': 'संरचनेत बदल सुचवा',
+  'Protected green cover on record: {0}.': 'नोंदीवरील संरक्षित हरित आच्छादन: {0}.',
+  'Protected length': 'संरक्षित लांबी',
+  Protection: 'संरक्षण',
+  'Protection works status': 'संरक्षण कामांची स्थिती',
+  Provenance: 'उगम',
+  'Provision is measured on capital': 'तरतुदीचे मोजमाप भांडवलावर होते',
+  "Provision measured against the people it serves rather than against last year's asset register.":
+    'मागील वर्षीच्या मालमत्ता नोंदवहीच्या तुलनेत नव्हे, तर ज्या लोकांना सेवा दिली जाते त्यांच्या तुलनेत मोजलेली तरतूद.',
+  'Provision shortfall against need': 'गरजेच्या तुलनेत तरतुदीतील तूट',
+  'Provisioning path': 'तरतूद मार्ग',
+  'Provisioning prerequisite': 'तरतुदीसाठी पूर्वअट',
+  'Public amenities': 'सार्वजनिक सुविधा',
+  'Public health': 'सार्वजनिक आरोग्य',
+  'Public health signal': 'सार्वजनिक आरोग्य संकेत',
+  'Public-health incidents, aggregate outbreak signals and hospital capacity.':
+    'सार्वजनिक आरोग्य घटना, एकत्रित उद्रेक संकेत आणि रुग्णालय क्षमता.',
+  'Public, internal, confidential and restricted classification is enforced consistently from data model through to the interface.':
+    'सार्वजनिक, अंतर्गत, गोपनीय व प्रतिबंधित हे वर्गीकरण माहिती प्रारूपापासून थेट पडद्यापर्यंत सातत्याने लागू केले जाते.',
+  'Published priority weights': 'प्रकाशित प्राधान्य भार',
+  "Published weights. Each bar is the component's contribution to the index.":
+    'प्रकाशित भार. प्रत्येक स्तंभ म्हणजे त्या घटकाचे निर्देशांकातील योगदान.',
+  'Published weights. The same arithmetic is applied to every supplier.':
+    'प्रकाशित भार. प्रत्येक पुरवठादारास हीच गणिती पद्धत लागू होते.',
+  "Published, weighted contribution to the selected reach's blockage-risk score.":
+    'निवडलेल्या भागाच्या अडथळा-जोखीम गुणातील प्रकाशित, भारित योगदान.',
+  'Pump availability, standby power and duty cycle over the last 30 days.':
+    'मागील 30 दिवसांतील पंप उपलब्धता, राखीव वीज आणि कार्यचक्र.',
+  'Pump Readiness': 'पंप सज्जता',
+  'Pumping capacity operational': 'कार्यरत उपसा क्षमता',
+  'Pumping station · {0}/{1} operational · readiness {2}/100':
+    'उपसा केंद्र · {1} पैकी {0} कार्यरत · सज्जता {2}/100',
+  'Pumping station · {0}/{1} pumps operational': 'उपसा केंद्र · {1} पैकी {0} पंप कार्यरत',
+  'Pumping Station Readiness': 'उपसा केंद्र सज्जता',
+  'Pumping station readiness register': 'उपसा केंद्र सज्जता नोंदवही',
+  'Pumping Station Status': 'उपसा केंद्र स्थिती',
+  'Pumping stations': 'उपसा केंद्रे',
+  'Pumping stations:': 'उपसा केंद्रे:',
+  'Pumps and response teams allocated': 'नेमून दिलेले पंप व प्रतिसाद पथके',
+  'Pumps below readiness': 'सज्जतेखालील पंप',
+  'Pumps operational:': 'कार्यरत पंप:',
+  'Pupil-teacher ratio': 'विद्यार्थी-शिक्षक प्रमाण',
+  Purpose: 'उद्देश',
+  'Purpose limitation': 'उद्देश मर्यादा',
+  'Purpose limitation, written down. A feed whose stated purpose has been served is one a reviewer can actually retire; a feed without one cannot be assessed at all.':
+    'लिखित स्वरूपातील उद्देश मर्यादा. ज्या प्रवाहाचा नमूद उद्देश साध्य झाला आहे, तो पुनरावलोकन करणारा प्रत्यक्षात बंद करू शकतो; उद्देशच नसलेल्या प्रवाहाचे मूल्यमापनच करता येत नाही.',
+  'Quality {0}/100': 'गुणवत्ता {0}/100',
+  'Quality assessment': 'गुणवत्ता मूल्यमापन',
+  'quality score /100': 'गुणवत्ता गुण /100',
+  Quarters: 'तिमाही',
+  'Query Raised': 'शंका उपस्थित',
+  'Rainfall by station against the seasonal normal, with intensity classification.':
+    'हंगामी सरासरीच्या तुलनेत केंद्रनिहाय पर्जन्यमान, तीव्रता वर्गीकरणासह.',
+  'Rainfall duration': 'पावसाचा कालावधी',
+  'Rainfall Observations': 'पर्जन्यमान निरीक्षणे',
+  'Raised from the Monsoon Intelligence Centre scenario tool. Inputs: rainfall {0}mm/24h, tide {1}m, pump availability {2}%, desilting {3}%, duration {4}h. {5}':
+    'पावसाळी बुद्धिमत्ता केंद्राच्या परिस्थिती साधनातून उपस्थित. निविष्टे: पर्जन्यमान {0}मिमी/24 तास, भरती {1}मी., पंप उपलब्धता {2}%, गाळ काढणी {3}%, कालावधी {4} तास. {5}',
+  'Raised from this session': 'या सत्रातून उपस्थित',
+  'Raised under {0}{1}. It appears on {2} under “Assigned to me”.':
+    '{0}{1} अंतर्गत उपस्थित. ते {2} वर “मला नेमून दिलेले” अंतर्गत दिसते.',
+  'Raises a new record in the unified incident register. The record enters at Detected and follows the standard incident lifecycle.':
+    'एकत्रित घटना नोंदवहीत नवी नोंद उपस्थित करते. ही नोंद “आढळले” या टप्प्यावर दाखल होते आणि प्रमाणित घटना जीवनचक्राचे अनुसरण करते.',
+  'Ranked across every ward within your authorised scope, whichever ward is selected above.':
+    'वर कोणताही प्रभाग निवडलेला असला तरी, तुमच्या अधिकृत व्याप्तीतील प्रत्येक प्रभागावर लावलेली क्रमवारी.',
+  'Ranked by composite risk index, highest first.':
+    'एकत्रित जोखीम निर्देशांकानुसार क्रमवारी, सर्वाधिक प्रथम.',
+  'Ranked by composite risk. Click a row to open the ward profile.':
+    'एकत्रित जोखमीनुसार क्रमवारी. प्रभाग माहिती उघडण्यासाठी ओळीवर टिचकी मारा.',
+  "Ranked by congestion index, highest first. The gap between free-flow and peak-hour speed is the corridor's congestion.":
+    'वाहतूक कोंडी निर्देशांकानुसार क्रमवारी, सर्वाधिक प्रथम. मोकळ्या वाहतुकीतील वेग आणि गर्दीच्या वेळेतील वेग यांतील तफावत म्हणजेच त्या मार्गिकेवरील वाहतूक कोंडी.',
+  'Ranked by how many distinct problems are stacking, weighted by the published signal weights.':
+    'किती वेगवेगळ्या अडचणी एकावर एक साचत आहेत यानुसार क्रमवारी, प्रकाशित संकेत भारांनुसार भारित.',
+  'Ranked by how much of the city fabric each connects to.':
+    'प्रत्येक घटक शहराच्या रचनेशी किती प्रमाणात जोडलेला आहे यानुसार क्रमवारी.',
+  'Ranked by priority score. Select a row to inspect its driver breakdown.':
+    'प्राधान्य गुणानुसार क्रमवारी. कारक घटकांची विभागणी पाहण्यासाठी ओळ निवडा.',
+  'Ranked by rate of deterioration across the {0} wards within your authorised scope. Rank 1 is the fastest-falling.':
+    'तुमच्या अधिकृत व्याप्तीतील {0} प्रभागांमधील ऱ्हासाच्या दरानुसार क्रमवारी. क्रमांक 1 म्हणजे सर्वात वेगाने घसरणारा.',
+  'Ranked by significance, most significant first.':
+    'महत्त्वानुसार क्रमवारी, सर्वाधिक महत्त्वाचे प्रथम.',
+  'Ranked by the widest variance against the phased plan, either direction.':
+    'टप्प्याटप्प्याच्या आराखड्याच्या तुलनेत सर्वाधिक फरकानुसार क्रमवारी, दोन्हींपैकी कोणत्याही दिशेने.',
+  'Ranked by weighted contribution to the composite. Select a dimension to open its drivers.':
+    'एकत्रित निर्देशांकातील भारित योगदानानुसार क्रमवारी. कारक घटक पाहण्यासाठी मिती निवडा.',
+  'Ranked collection efficiency - all wards': 'वसुली कार्यक्षमतेची क्रमवारी — सर्व प्रभाग',
+  'Ranked gap to target': 'लक्ष्यापासूनच्या तफावतीची क्रमवारी',
+  'Ranked lowest performance index first - the suppliers whose active work most warrants supervision.':
+    'सर्वात कमी कामगिरी निर्देशांक प्रथम अशी क्रमवारी — ज्यांच्या सुरू असलेल्या कामावर सर्वाधिक देखरेख आवश्यक आहे असे पुरवठादार.',
+  'Ranked lowest readiness first - the priority order for pre-monsoon works.':
+    'सर्वात कमी सज्जता प्रथम अशी क्रमवारी — पावसाळापूर्व कामांचा प्राधान्यक्रम.',
+  'Ranked on the composite service index - water points, toilet seats, paved lanes and working lights.':
+    'एकत्रित सेवा निर्देशांकावर क्रमवारी — पाण्याची ठिकाणे, शौचकूप, पक्क्या गल्ल्या आणि सुरू असलेले दिवे.',
+  'Ranked weakest first - where the corporation is least prepared to absorb a shock.':
+    'सर्वात कमकुवत प्रथम अशी क्रमवारी — धक्का पचवण्यासाठी महानगरपालिका सर्वात कमी सज्ज असलेली ठिकाणे.',
+  'Rateable value': 'करपात्र मूल्य',
+  'reachable by your principal contain personal data with no minimisation measure currently recorded against them - see &quot;Datasets containing personal data&quot; below for exactly which.':
+    'तुमच्या वापरकर्त्यास उपलब्ध असलेल्या यांमध्ये वैयक्तिक माहिती आहे आणि त्यांविरुद्ध सध्या कोणताही किमानीकरण उपाय नोंदवलेला नाही — नेमके कोणते ते पाहण्यासाठी खाली &quot;वैयक्तिक माहिती असलेले माहितीसंच&quot; पहा.',
+  'Reaches below target': 'लक्ष्याखालील भाग',
+  'Read as': 'याचा अर्थ',
+  'read below standard with few missed collections, consistent with an isolated, single-day disruption rather than a systemic shortfall.':
+    'मानकाखाली नोंदले गेले, मात्र चुकलेली संकलने अल्प — हे पद्धतशीर उणिवेऐवजी एकाच दिवसाच्या सुट्या व्यत्ययाशी सुसंगत आहे.',
+  'Read incorrectly? Ask one of these instead.':
+    'चुकीचा अर्थ लावला गेला? त्याऐवजी यांपैकी एक विचारा.',
+  'Read the AI model registry': 'कृत्रिम बुद्धिमत्ता प्रारूप नोंदवही वाचा',
+  'Read the budget position': 'अर्थसंकल्पीय स्थिती वाचा',
+  'Read the dataset register': 'माहितीसंच नोंदवही वाचा',
+  'Read the security posture': 'सुरक्षा स्थिती वाचा',
+  'Read the spread, not the leader': 'आघाडीवरचा नव्हे, पसरलेला फरक वाचा',
+  'Read the two enforcement series against each other rather than separately. Inspections rising while violations found stay flat usually means the inspections are going where they are easiest, not where they are needed - which is the failure mode the overdue count above is there to catch.':
+    'कारवाईच्या या दोन मालिका स्वतंत्रपणे नव्हे तर एकमेकांच्या तुलनेत वाचा. तपासण्या वाढत असताना आढळलेली उल्लंघने स्थिर राहणे याचा सहसा अर्थ असा की तपासण्या जिथे सोप्या आहेत तिथे होत आहेत, जिथे गरज आहे तिथे नाही — हाच तो दोष पकडण्यासाठी वरील मुदतबाह्य संख्या दिली आहे.',
+  'Read the user roster': 'वापरकर्त्यांची यादी वाचा',
+  'Readiness relevant to the current mode.': 'सध्याच्या पद्धतीशी संबंधित सज्जता.',
+  'Readiness score': 'सज्जता गुण',
+  'Readiness summary': 'सज्जता सारांश',
+  'Readiness under scenario': 'परिस्थितीनुसार सज्जता',
+  'Reading note': 'वाचनाची टीप',
+  'Real append-only audit store': 'प्रत्यक्ष केवळ-जोडणी लेखापरीक्षा कोश',
+  'Real connections to the systems of record - grievance, financial management, SCADA, asset registers - replacing every simulated adapter with a governed live feed.':
+    'नोंदींच्या मूळ प्रणालींशी प्रत्यक्ष जोडण्या — तक्रार निवारण, वित्तीय व्यवस्थापन, SCADA, मालमत्ता नोंदवह्या — प्रत्येक नक्कल अडॅप्टरच्या जागी कारभाराखालील प्रत्यक्ष प्रवाह.',
+  'Reason this candidate is not carried forward': 'हे प्रकरण पुढे न नेण्याचे कारण',
+  'Reassessment backlog - top ten wards': 'फेरआकारणीचा अनुशेष — पहिले दहा प्रभाग',
+  'Recalculate an outcome under a hypothetical input, always labelled as simulation.':
+    'काल्पनिक निविष्टानुसार निष्पत्ती पुन्हा मोजणे, नेहमी नक्कल म्हणून चिन्हांकित.',
+  'Recalculating the current scenario…': 'सध्याची परिस्थिती पुन्हा मोजत आहे…',
+  Receivables: 'येणे रक्कम',
+  Recency: 'नवीनता',
+  'Recent activity': 'अलीकडील हालचाल',
+  'Recent complaints': 'अलीकडील तक्रारी',
+  'Recent security events': 'अलीकडील सुरक्षा घटना',
+  'Recognition determines which delivery programmes a settlement is eligible for. It says nothing about the standing of anyone living there.':
+    'मान्यतेवरून वसाहत कोणत्या अंमलबजावणी कार्यक्रमांसाठी पात्र आहे हे ठरते. तेथे राहणाऱ्या कोणाच्याही स्थानाबद्दल ती काहीही सांगत नाही.',
+  'Recognition status': 'मान्यता स्थिती',
+  Recommend: 'शिफारस करणे',
+  Recommendation: 'शिफारस',
+  "Recommendations never execute automatically. Approving a recommendation here records the officer's decision against the audit trail; it does not itself deploy a resource, transfer funds or change a municipal record - the accountable department still carries out and records the resulting action through its own workflow.":
+    'शिफारशी कधीही आपोआप अंमलात येत नाहीत. येथे शिफारशीस मान्यता दिल्याने अधिकाऱ्याचा निर्णय लेखापरीक्षा नोंदीत नोंदवला जातो; त्यामुळे स्वतःहून कोणतीही साधनसामग्री तैनात होत नाही, निधी हस्तांतरित होत नाही किंवा महानगरपालिका नोंद बदलत नाही — त्यातून निघणारी कृती जबाबदार विभागच आपल्या कार्यप्रवाहातून पार पाडतो व नोंदवतो.',
+  'Recommended deployments': 'शिफारस केलेली तैनाती',
+  'Recommended next action': 'शिफारस केलेली पुढील कृती',
+  Reconciled: 'ताळमेळ झाला',
+  'Reconciliation candidates - never assertions of irregularity.':
+    'ताळमेळाची प्रकरणे — अनियमिततेचे दावे कधीही नव्हे.',
+  'Record a dispute': 'आक्षेप नोंदवा',
+  'Record a receipt': 'जमा नोंदवा',
+  'Record a revised demand': 'सुधारित मागणी नोंदवा',
+  'Record classification': 'नोंद वर्गीकरण',
+  'Record count': 'नोंदींची संख्या',
+  'Record department': 'नोंदीचा विभाग',
+  'Record domain': 'नोंदीचे क्षेत्र',
+  'Record of the candidate': 'प्रकरणाची नोंद',
+  'Record review outcome': 'पुनरावलोकनाचा निष्कर्ष नोंदवा',
+  'Record ward': 'नोंदीचा प्रभाग',
+  'Recorded permanently in the audit trail against your name. This action never modifies the underlying AI request - only the human review outcome.':
+    'तुमच्या नावाविरुद्ध लेखापरीक्षा नोंदीत कायमस्वरूपी नोंदवले जाते. ही कृती मूळ कृत्रिम बुद्धिमत्ता विनंती कधीही बदलत नाही — ती केवळ मानवी पुनरावलोकनाचा निष्कर्ष नोंदवते.',
+  'Recorded progress': 'नोंदवलेली प्रगती',
+  'Recorded. High-impact steps beyond this still require a named officer&apos;s approval through the relevant module — this platform has not, and cannot, complete them automatically.':
+    'नोंदवले. यापुढील उच्च-परिणाम पायऱ्यांसाठी संबंधित घटकातून नामनिर्देशित अधिकाऱ्याची मान्यता अजूनही आवश्यक आहे — या मंचाने त्या आपोआप पूर्ण केलेल्या नाहीत आणि तो त्या करूही शकत नाही.',
+  Records: 'नोंदी',
+  'Records a receipt collected against the revised demand.':
+    'सुधारित मागणीविरुद्ध वसूल झालेली जमा नोंदवते.',
+  'Records held': 'धारण केलेल्या नोंदी',
+  'Records that both source records have been retrieved and verification of the premises has been requested.':
+    'दोन्ही स्रोत नोंदी मिळवल्या असून जागेच्या पडताळणीची विनंती केली आहे, अशी नोंद करते.',
+  'Records that the candidate is not carried forward, and why. This is an equal outcome to a revision - the reason you record is the sole input to the published precision of this rule.':
+    'हे प्रकरण पुढे नेले जात नाही आणि का, याची नोंद करते. हा निष्कर्ष दुरुस्तीइतकाच महत्त्वाचा आहे — तुम्ही नोंदवलेले कारण हेच या नियमाच्या प्रकाशित अचूकतेसाठीचे एकमेव निविष्ट आहे.',
+  'Records that the occupier has contested the candidate and it has been referred for hearing.':
+    'भोगवटादाराने या प्रकरणावर आक्षेप घेतला असून ते सुनावणीसाठी पाठवले आहे, अशी नोंद करते.',
+  'Records that the two records describe different properties. No candidate is carried forward.':
+    'या दोन नोंदी वेगवेगळ्या मालमत्तांचे वर्णन करतात, अशी नोंद करते. कोणतेही प्रकरण पुढे नेले जात नाही.',
+  'Records that YOU revised the demand in the assessment register under the statutory process. This platform does not revise demands; it records that an authorised officer did.':
+    'वैधानिक प्रक्रियेनुसार आकारणी नोंदवहीतील मागणी तुम्ही सुधारली, अशी नोंद करते. हा मंच मागण्या सुधारत नाही; अधिकृत अधिकाऱ्याने त्या सुधारल्याची नोंद तो ठेवतो.',
+  'Recovery objectives declared': 'घोषित पुनर्प्राप्ती उद्दिष्टे',
+  'Recovery point and recovery time objectives by data scope. The last column states plainly whether the objective is operational in this environment or a design target.':
+    'माहिती व्याप्तीनुसार पुनर्प्राप्ती बिंदू व पुनर्प्राप्ती वेळ उद्दिष्टे. हे उद्दिष्ट या वातावरणात कार्यरत आहे की केवळ रचनात्मक लक्ष्य आहे, हे शेवटचा स्तंभ स्पष्टपणे सांगतो.',
+  'Recovery position': 'वसुली स्थिती',
+  Rectified: 'दुरुस्त',
+  'Recurring clusters associated with the infrastructure the corporation already holds a record of in that ward.':
+    'त्या प्रभागातील ज्या पायाभूत सुविधांची नोंद महानगरपालिकेकडे आधीच आहे, त्यांच्याशी जोडलेले पुनरावृत्त समूह.',
+  'Recurring complaint clusters': 'पुनरावृत्त तक्रार समूह',
+  'Recurring shortfall': 'पुनरावृत्त तूट',
+  Reduced: 'कमी',
+  Reference: 'संदर्भ',
+  'Reference centre': 'संदर्भ केंद्र',
+  Referred: 'पाठवले',
+  'Refused at the AI gateway': 'कृत्रिम बुद्धिमत्ता प्रवेशद्वारावर नाकारले',
+  'Register a new ingestion source for this session. It is added paused; enable it and run a sync once it is configured.':
+    'या सत्रासाठी नवा ग्रहण स्रोत नोंदवा. तो थांबवलेल्या स्थितीत समाविष्ट होतो; संरचना पूर्ण झाल्यावर तो सुरू करा आणि एकदा समक्रमण चालवा.',
+  'Registered in 30 days': '30 दिवसांत नोंदवलेले',
+  'Registered models': 'नोंदवलेली प्रारूपे',
+  'Registered prompts': 'नोंदवलेल्या सूचना',
+  'Registered sources': 'नोंदवलेले स्रोत',
+  'Registered vendors without the certificate of vending the Act entitles them to, by ward.':
+    'अधिनियमानुसार हक्क असूनही विक्री प्रमाणपत्र नसलेले नोंदणीकृत विक्रेते, प्रभागनिहाय.',
+  'Registration centres': 'नोंदणी केंद्रे',
+  'Rehousing schemes': 'पुनर्वसन योजना',
+  'Reject - {0}': 'नामंजूर करा — {0}',
+  Relationship: 'संबंध',
+  Relationships: 'परस्परसंबंध',
+  'Relative standing': 'तुलनात्मक स्थान',
+  'Released to date': 'आजपर्यंत वितरित',
+  Reliability: 'विश्वासार्हता',
+  Remove: 'काढून टाका',
+  'Remove "{0}"?': '"{0}" काढून टाकायचे?',
+  'Remove {0}': '{0} काढून टाका',
+  'Repeat rate': 'पुनरावृत्ती दर',
+  'Repeat reports': 'पुनरावृत्त तक्रारी',
+  'Repeated extensions': 'वारंवार मुदतवाढी',
+  'Replacement value at risk: {0}': 'जोखमीतील बदली मूल्य: {0}',
+  'Reported and assigned faults, measured against the restoration time the corporation commits to for each severity.':
+    'नोंदवलेले व नेमून दिलेले बिघाड, प्रत्येक तीव्रतेसाठी महानगरपालिका ज्या पूर्ववत करण्याच्या वेळेची हमी देते तिच्या तुलनेत मोजलेले.',
+  'Reporting station AQI for the ward, scaled 0–100 against the moderate-category upper bound for visual contrast.':
+    'प्रभागासाठी अहवाल देणाऱ्या केंद्राचा हवा गुणवत्ता निर्देशांक, दृश्य फरकासाठी मध्यम श्रेणीच्या वरच्या मर्यादेच्या तुलनेत 0–100 वर प्रमाणित.',
+  "Reports reflect the platform's current session state and regenerate on each view - they are not archived snapshots in this demonstration environment.":
+    'अहवाल मंचाच्या सध्याच्या सत्र स्थितीनुसार असतात आणि प्रत्येक वेळी पाहताना पुन्हा तयार होतात — या प्रात्यक्षिक वातावरणात ते जतन केलेली क्षणचित्रे नाहीत.',
+  'Request Analysis': 'विनंती विश्लेषण',
+  'Requests affected': 'बाधित विनंत्या',
+  'Requests by use case': 'वापरानुसार विनंत्या',
+  'Requests the AI gateway policy flagged for review or blocked outright before reaching a model, with the recorded policy note.':
+    'कृत्रिम बुद्धिमत्ता प्रवेशद्वार धोरणाने प्रारूपापर्यंत पोहोचण्यापूर्वीच पुनरावलोकनासाठी खुणांकित केलेल्या किंवा थेट अडवलेल्या विनंत्या, नोंदवलेल्या धोरण टिपेसह.',
+  'Required for production': 'प्रत्यक्ष वापरासाठी आवश्यक',
+  'Required for production deployment': 'प्रत्यक्ष वापरातील अंमलबजावणीसाठी आवश्यक',
+  'Requires a data-sharing agreement or security review before provisioning':
+    'तरतुदीपूर्वी माहिती-वाटप करार किंवा सुरक्षा पुनरावलोकन आवश्यक',
+  'Requires assessment': 'मूल्यमापन आवश्यक',
+  'Requires attention': 'लक्ष आवश्यक',
+  'Reserved acts': 'राखीव कृती',
+  Reservoir: 'जलाशय',
+  'Reservoir Status': 'जलाशय स्थिती',
+  'Reset all preferences': 'सर्व पसंती पूर्ववत करा',
+  'Reset session': 'सत्र पूर्ववत करा',
+  'Reset session ({0})': 'सत्र पूर्ववत करा ({0})',
+  'Reset the data source register?': 'माहिती स्रोत नोंदवही पूर्ववत करायची?',
+  'Reset to current position': 'सद्यस्थितीवर पूर्ववत करा',
+}
