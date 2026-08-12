@@ -1,0 +1,51 @@
+Civic architecture photographs used on the public portal landing page.
+
+These are the seats of the state government under whose Urban Development
+Department every municipal corporation in this roster sits. They are used as
+ILLUSTRATIVE CIVIC IMAGERY only: none of them is the headquarters of the
+corporation the deployment is currently rendered for, and the page never
+captions them as such.
+
+secretariat.jpg
+  Mantralaya - the Secretariat of the Government of Maharashtra, Mumbai
+  Provenance: reused from the Maha AI project-card set
+               (maha-ai-redesign/public/projects/mantralay.jpeg)
+  Licence:    not recorded upstream - confirm before any public deployment
+
+legislature.jpg
+  Vidhan Bhavan - the Maharashtra Legislature, Mumbai
+  Provenance: reused from the Maha AI project-card set
+               (maha-ai-redesign/public/projects/vidhanbhawan.jpeg)
+  Licence:    not recorded upstream - confirm before any public deployment
+
+assembly.jpg
+  Vidhan Bhavan - the Maharashtra Legislature, Mumbai (close elevation)
+  Provenance: reused from the Maha AI project-card set
+               (maha-ai-redesign/public/projects/mantralay2.jpeg)
+  Licence:    not recorded upstream - confirm before any public deployment
+
+Also on this deployment, outside this folder:
+
+/bmc-headquarters.jpg
+  Brihanmumbai Municipal Corporation headquarters, Mumbai - the central dome,
+  flanking turrets and the headquarters board. Carried as the platform brand
+  mark: the sidebar rail, both login marks, the portal masthead, and the
+  favicon / apple-touch-icon.
+  Author:  Sailko
+  Licence: CC BY 3.0  (Creative Commons Attribution 3.0 Unported)
+  Source:  https://commons.wikimedia.org/wiki/File:Municipal_Corporation_of_Greater_Mumbai_01.jpg
+  Derived: cropped to a 512x512 square from the 3240x4232 original
+           (crop box 372,619 -> 3007,3254), resampled and re-encoded.
+
+  ATTRIBUTION IS REQUIRED. CC BY 3.0 is an attribution licence, so any public
+  deployment must credit the author somewhere a visitor can reach - the Trust
+  Centre is the natural home for it. A credits file inside the repository is
+  not on its own a discharge of that obligation. There is no share-alike
+  clause, so the crop does not oblige anything about how this codebase itself
+  is licensed.
+
+  Superseded: /municipal-photo.jpg, a 144x144 crop of a dusk street-level
+  photograph by Suraj Digrase (CC0,
+  https://commons.wikimedia.org/wiki/File:BMC_Building_illuminated_in_May_2026.jpg).
+  Correctly licensed and genuinely the BMC headquarters, but too small and too
+  dark to read as a mark. Replaced for legibility, not for provenance.
