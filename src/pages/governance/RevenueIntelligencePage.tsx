@@ -6,6 +6,7 @@ import { queryKeys } from '@/app/queryClient'
 import { revenueService } from '@/services'
 import { useCurrentUser } from '@/stores/auth.store'
 import { useDrawerStore } from '@/stores/ui.store'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { allowed } from '@/security'
 import { ROUTES } from '@/config/navigation'
 import type { DataFreshness } from '@/types/common'
@@ -115,6 +116,12 @@ registerLayer(() => {
 })
 
 export function RevenueIntelligencePage(): React.JSX.Element {
+  // The shell's masthead carries the screen's name; the page states the wording.
+  usePageMasthead(
+    t('Revenue Intelligence'),
+    t('City revenue command centre across property tax, water charges, development charges, licence fees, advertisement, rentals, octroi compensation and other receipts. All collection and variance figures are year-to-date against a pro-rated phased target - the financial year is approximately 31% elapsed at this reporting date.'),
+  )
+
   const user = useCurrentUser()
   const openDrawer = useDrawerStore((s) => s.open)
   const [anomalyStatusFilter, setAnomalyStatusFilter] = useState<'all' | RevenueAnomaly['status']>('all')
@@ -404,8 +411,6 @@ export function RevenueIntelligencePage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('Governance & Finance')}
-        title={t('Revenue Intelligence')}
-        description={t('City revenue command centre across property tax, water charges, development charges, licence fees, advertisement, rentals, octroi compensation and other receipts. All collection and variance figures are year-to-date against a pro-rated phased target - the financial year is approximately 31% elapsed at this reporting date.')}
         breadcrumbs={[{ label: t('Governance & Finance') }, { label: t('Revenue Intelligence') }]}
         freshness={FRESHNESS}
         actions={
@@ -449,8 +454,13 @@ export function RevenueIntelligencePage(): React.JSX.Element {
             </MetricGrid>
           </Card>
 
-          <div className="grid grid-cols-1 gap-4 xl:grid-cols-5">
-            <Card flush className="xl:col-span-3">
+          {/* Two columns. The three registers an officer reads in order —
+              streams, wards, then the anomalies raised against both — hold the
+              wide column; the target, ranking, segment and forecast figures
+              drawn from those same rows read down beside them. */}
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+          <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
+            <Card flush>
               <CardHeader bordered title={t('Revenue by stream')} description={t('City-wide position for every revenue stream, sorted and searchable.')} />
               <DataTable
                 rows={cityRecords}
@@ -460,35 +470,8 @@ export function RevenueIntelligencePage(): React.JSX.Element {
                 searchPlaceholder="Search revenue streams"
               />
             </Card>
-            <Card className="xl:col-span-2">
-              <ChartFrame
-                title={t('Target vs realised - by stream')}
-                unit={t('₹ crore')}
-                timeframe="Phased year-to-date target vs collected"
-                description={t('Compares the phased (year-to-date) target, not the full annual target, against actual collection for each stream.')}
-                freshness={FRESHNESS}
-                height={280}
-              >
-                <CategoryBarChart
-                  data={cityRecords.map((r) => ({
-                    label: wardShortNameForStream(r.stream),
-                    'Phased target': Math.round(r.targetCrore * FY_ELAPSED_FRACTION * 10) / 10,
-                    Collected: r.collectedCrore,
-                  }))}
-                  categoryKey="label"
-                  layout="horizontal"
-                  series={[
-                    { key: 'Phased target', label: t('Phased target'), colour: '#8195ac' },
-                    { key: 'Collected', label: t('Collected'), colour: '#2f6feb' },
-                  ]}
-                  showLegend
-                />
-              </ChartFrame>
-            </Card>
-          </div>
 
-          <div className="grid grid-cols-1 gap-4 xl:grid-cols-5">
-            <Card flush className="xl:col-span-3">
+            <Card flush>
               <CardHeader
                 bordered
                 title={t('Ward revenue performance')}
@@ -508,73 +491,6 @@ export function RevenueIntelligencePage(): React.JSX.Element {
                 )}
               />
             </Card>
-            <Card className="xl:col-span-2">
-              <ChartFrame
-                title={t('Ranked collection efficiency - all wards')}
-                unit="%"
-                timeframe="FY 2026–27 to date"
-                description={t('Wards ranked from lowest to highest property-tax collection efficiency. Lowest performers are flagged for attention.')}
-                freshness={FRESHNESS}
-                height={420}
-              >
-                <RankedBarChart data={rankedWardData} unit="%" higherIsWorse={false} />
-              </ChartFrame>
-            </Card>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <Card>
-              <CardHeader title={t('Payer-segment breakdown')} description={t('Assessed value and collection by property use-class segment, city-wide.')} />
-              {segmentsQuery.isLoading ? (
-                <LoadingState variant="block" className="mt-4" />
-              ) : segmentsQuery.error ? (
-                <ErrorState detail={segmentsQuery.error.message} onRetry={() => segmentsQuery.refetch()} className="mt-4" />
-              ) : (
-                <div className="mt-4 space-y-3">
-                  <CompositionBar
-                    segments={segmentTotals.map((s, i) => ({
-                      id: s.id,
-                      label: s.label,
-                      value: s.collectedCrore,
-                      colour: ['#2f6feb', '#0ea5b7', '#f59e0b', '#10b981', '#8195ac'][i % 5] as string,
-                    }))}
-                  />
-                  <ul className="divide-y divide-ink-50">
-                    {segmentTotals.map((s) => (
-                      <li key={s.id} className="flex items-center justify-between py-1.5 text-xs">
-                        <span className="text-ink-600">{s.label}</span>
-                        <span className="flex items-center gap-2">
-                          <MiniBar value={s.efficiencyPct} width={44} />
-                          <span className="numeric w-14 text-right text-ink-500">{formatPercent(s.efficiencyPct)}</span>
-                          <span className="numeric w-20 text-right font-semibold text-ink-800">{formatCrore(s.collectedCrore)}</span>
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </Card>
-            <Card>
-              <ChartFrame
-                title={t('Forecast vs annual target - by stream')}
-                unit={t('₹ crore')}
-                timeframe="FY 2026–27 year-end forecast"
-                description={t('Forward-looking: the modelled year-end forecast against the full annual target for each stream.')}
-                freshness={FRESHNESS}
-                height={260}
-              >
-                <CategoryBarChart
-                  data={forecastVsTargetData}
-                  categoryKey="label"
-                  series={[
-                    { key: 'target', label: t('Annual target'), colour: '#8195ac' },
-                    { key: 'forecast', label: t('Forecast year-end'), colour: '#0ea5b7' },
-                  ]}
-                  showLegend
-                />
-              </ChartFrame>
-            </Card>
-          </div>
 
           <Card flush>
             <CardHeader
@@ -701,6 +617,101 @@ export function RevenueIntelligencePage(): React.JSX.Element {
               </div>
             ) : null}
           </Card>
+          </div>
+
+          <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
+            <Card>
+              <ChartFrame
+                title={t('Target vs realised - by stream')}
+                unit={t('₹ crore')}
+                timeframe="Phased year-to-date target vs collected"
+                description={t('Compares the phased (year-to-date) target, not the full annual target, against actual collection for each stream.')}
+                freshness={FRESHNESS}
+                height={280}
+              >
+                <CategoryBarChart
+                  data={cityRecords.map((r) => ({
+                    label: wardShortNameForStream(r.stream),
+                    'Phased target': Math.round(r.targetCrore * FY_ELAPSED_FRACTION * 10) / 10,
+                    Collected: r.collectedCrore,
+                  }))}
+                  categoryKey="label"
+                  layout="horizontal"
+                  series={[
+                    { key: 'Phased target', label: t('Phased target'), colour: '#8195ac' },
+                    { key: 'Collected', label: t('Collected'), colour: '#2f6feb' },
+                  ]}
+                  showLegend
+                />
+              </ChartFrame>
+            </Card>
+
+            <Card>
+              <ChartFrame
+                title={t('Ranked collection efficiency - all wards')}
+                unit="%"
+                timeframe="FY 2026–27 to date"
+                description={t('Wards ranked from lowest to highest property-tax collection efficiency. Lowest performers are flagged for attention.')}
+                freshness={FRESHNESS}
+                height={420}
+              >
+                <RankedBarChart data={rankedWardData} unit="%" higherIsWorse={false} />
+              </ChartFrame>
+            </Card>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-1">
+            <Card>
+              <CardHeader title={t('Payer-segment breakdown')} description={t('Assessed value and collection by property use-class segment, city-wide.')} />
+              {segmentsQuery.isLoading ? (
+                <LoadingState variant="block" className="mt-4" />
+              ) : segmentsQuery.error ? (
+                <ErrorState detail={segmentsQuery.error.message} onRetry={() => segmentsQuery.refetch()} className="mt-4" />
+              ) : (
+                <div className="mt-4 space-y-3">
+                  <CompositionBar
+                    segments={segmentTotals.map((s, i) => ({
+                      id: s.id,
+                      label: s.label,
+                      value: s.collectedCrore,
+                      colour: ['#2f6feb', '#0ea5b7', '#f59e0b', '#10b981', '#8195ac'][i % 5] as string,
+                    }))}
+                  />
+                  <ul className="divide-y divide-ink-50">
+                    {segmentTotals.map((s) => (
+                      <li key={s.id} className="flex items-center justify-between py-1.5 text-xs">
+                        <span className="text-ink-600">{s.label}</span>
+                        <span className="flex items-center gap-2">
+                          <MiniBar value={s.efficiencyPct} width={44} />
+                          <span className="numeric w-14 text-right text-ink-500">{formatPercent(s.efficiencyPct)}</span>
+                          <span className="numeric w-20 text-right font-semibold text-ink-800">{formatCrore(s.collectedCrore)}</span>
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </Card>
+            <Card>
+              <ChartFrame
+                title={t('Forecast vs annual target - by stream')}
+                unit={t('₹ crore')}
+                timeframe="FY 2026–27 year-end forecast"
+                description={t('Forward-looking: the modelled year-end forecast against the full annual target for each stream.')}
+                freshness={FRESHNESS}
+                height={260}
+              >
+                <CategoryBarChart
+                  data={forecastVsTargetData}
+                  categoryKey="label"
+                  series={[
+                    { key: 'target', label: t('Annual target'), colour: '#8195ac' },
+                    { key: 'forecast', label: t('Forecast year-end'), colour: '#0ea5b7' },
+                  ]}
+                  showLegend
+                />
+              </ChartFrame>
+            </Card>
+          </div>
 
           <Card tone="warn">
             <p className="flex items-start gap-2 text-xs leading-relaxed text-ink-600">
@@ -708,6 +719,8 @@ export function RevenueIntelligencePage(): React.JSX.Element {
               {t('Every record in the Anomalies section identifies a statistical pattern that requires assessment. Disposition labels - anomaly, unusual pattern, investigation candidate, reconciliation required - describe the pattern only. They are not, and must never be read as, a finding against any person, officer, contractor or organisation.')}
             </p>
           </Card>
+          </div>
+          </div>
         </>
       ) : null}
 

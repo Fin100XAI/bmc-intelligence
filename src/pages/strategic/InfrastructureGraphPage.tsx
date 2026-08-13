@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Boxes, Network, Search, Waypoints } from 'lucide-react'
-import { PageBody, PageHeader, SplitLayout } from '@/components/layout/PageHeader'
+import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { Badge, ClassificationBadge } from '@/components/ui/badges'
 import { Card, CardHeader, DefinitionList, DefinitionRow, Input } from '@/components/ui/primitives'
 import { DemonstrationNotice, EmptyState, ErrorState, LoadingState, PartialDataWarning } from '@/components/ui/states'
@@ -8,6 +8,7 @@ import { useServiceQuery } from '@/hooks'
 import { useDebounced } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { infrastructureGraphService, type ScopedInfrastructureChain } from '@/services'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { GRAPH_ENTITY_LABEL, type GraphEntityKind } from '@/types/governance'
 import { cn } from '@/utils/cn'
 import { isoFromAnchor } from '@/utils/deterministic'
@@ -67,6 +68,12 @@ const KIND_TONE: Partial<Record<GraphEntityKind, string>> = {
 }
 
 export function InfrastructureGraphPage(): React.JSX.Element {
+  // The shell's masthead states the screen's name; the page states the wording.
+  usePageMasthead(
+    t('City Infrastructure Graph'),
+    t('Trace one piece of infrastructure through everything the corporation holds about it - the ward it sits in, the department accountable, the contractor and project delivering it, the budget funding it, and the complaints and incidents attached. The accountability chain, laid out as a chain.'),
+  )
+
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [searchInput, setSearchInput] = useState('')
   const debouncedSearch = useDebounced(searchInput, 200)
@@ -112,49 +119,49 @@ export function InfrastructureGraphPage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('Strategic Intelligence')}
-        title={t('City Infrastructure Graph')}
-        description={t('Trace one piece of infrastructure through everything the corporation holds about it - the ward it sits in, the department accountable, the contractor and project delivering it, the budget funding it, and the complaints and incidents attached. The accountability chain, laid out as a chain.')}
         breadcrumbs={[{ label: t('Strategic Intelligence') }, { label: t('City Infrastructure Graph') }]}
         freshness={FRESHNESS}
       />
 
-      <DemonstrationNotice />
-
-      {/* The canonical chain ------------------------------------------- */}
-      <Card flush>
-        <CardHeader
-          className="px-4 pt-4"
-          icon={<Waypoints className="h-4 w-4" />}
-          eyebrow={t('Institutional methodology')}
-          title={t('The infrastructure accountability chain')}
-          description={t('The spine this graph is built to make traceable, from asset to attached incident.')}
-        />
-        <div className="scrollbar-slim flex items-center gap-1 overflow-x-auto px-4 pb-4">
-          {CANONICAL_CHAIN.map((step, i) => (
-            <div key={step.kind} className="flex shrink-0 items-center gap-1">
-              {i > 0 ? (
-                <span className="flex flex-col items-center px-0.5 text-ink-300">
-                  <span className="text-[0.5625rem] whitespace-nowrap text-ink-400">{step.relation}</span>
-                  <span aria-hidden>→</span>
-                </span>
-              ) : null}
-              <span
-                className={cn(
-                  'rounded-md px-2.5 py-1.5 text-xs font-medium whitespace-nowrap',
-                  KIND_TONE[step.kind] ?? 'bg-surface-sunken text-ink-700',
-                )}
-              >
-                {GRAPH_ENTITY_LABEL[step.kind]}
-              </span>
+      {/* ── Two columns ─────────────────────────────────────────────
+          The spine and the traced chain read down the wide column; the anchor
+          register that drives them stands beside, pinned, so an officer can
+          move from asset to asset without losing the chain's place. On a
+          narrow screen the register comes first, because nothing can be traced
+          until an anchor is chosen. */}
+      <div className="grid grid-cols-1 gap-3 xl:grid-cols-12">
+        <div className="order-2 flex min-w-0 flex-col gap-3 xl:order-1 xl:col-span-8">
+          {/* The canonical chain ------------------------------------------- */}
+          <Card flush>
+            <CardHeader
+              className="px-4 pt-4"
+              icon={<Waypoints className="h-4 w-4" />}
+              eyebrow={t('Institutional methodology')}
+              title={t('The infrastructure accountability chain')}
+              description={t('The spine this graph is built to make traceable, from asset to attached incident.')}
+            />
+            <div className="scrollbar-slim flex items-center gap-1 overflow-x-auto px-4 pb-4">
+              {CANONICAL_CHAIN.map((step, i) => (
+                <div key={step.kind} className="flex shrink-0 items-center gap-1">
+                  {i > 0 ? (
+                    <span className="flex flex-col items-center px-0.5 text-ink-300">
+                      <span className="text-[0.5625rem] whitespace-nowrap text-ink-400">{step.relation}</span>
+                      <span aria-hidden>→</span>
+                    </span>
+                  ) : null}
+                  <span
+                    className={cn(
+                      'rounded-[2px] px-2.5 py-1.5 text-xs font-medium whitespace-nowrap',
+                      KIND_TONE[step.kind] ?? 'bg-surface-sunken text-ink-700',
+                    )}
+                  >
+                    {GRAPH_ENTITY_LABEL[step.kind]}
+                  </span>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      </Card>
+          </Card>
 
-      <SplitLayout
-        asideWidth="md"
-        reverseOnMobile
-        main={
           <Card flush>
             <CardHeader
               bordered
@@ -192,7 +199,7 @@ export function InfrastructureGraphPage(): React.JSX.Element {
                 ) : null}
 
                 {/* Anchor -------------------------------------------- */}
-                <div className="rounded-lg border-2 border-govt-200 bg-govt-50/50 p-3">
+                <div className="rounded-[2px] border-2 border-govt-200 bg-govt-50/50 p-3">
                   <div className="flex items-center justify-between gap-2">
                     <span className={cn('rounded px-1.5 py-0.5 text-[0.625rem] font-semibold', KIND_TONE[chain.anchor.kind] ?? 'bg-ink-100 text-ink-700')}>
                       {GRAPH_ENTITY_LABEL[chain.anchor.kind]}
@@ -215,7 +222,7 @@ export function InfrastructureGraphPage(): React.JSX.Element {
                         {nodes.map((n) => (
                           <li
                             key={n.node.id}
-                            className="rounded-lg border border-ink-100 bg-surface p-2.5"
+                            className="rounded-[2px] border border-ink-100 bg-surface p-2.5"
                           >
                             <div className="flex items-center justify-between gap-2">
                               <span className={cn('rounded px-1.5 py-0.5 text-[0.625rem] font-semibold', KIND_TONE[n.node.kind] ?? 'bg-ink-100 text-ink-700')}>
@@ -248,9 +255,12 @@ export function InfrastructureGraphPage(): React.JSX.Element {
               </div>
             )}
           </Card>
-        }
-        aside={
-          <>
+        </div>
+
+        {/* The whole column pins, not one panel of it: a `sticky` element stays
+            in flow, so a panel below a pinned one would slide up underneath it. */}
+        <div className="order-1 xl:order-2 xl:col-span-4">
+          <div className="scrollbar-rail flex flex-col gap-3 xl:sticky xl:top-[3.75rem] xl:max-h-[calc(100vh-4.5rem)] xl:overflow-y-auto">
             <Card flush>
               <CardHeader className="px-4 pt-4" title={t('Infrastructure anchors')} description={t('Ranked by how much of the city fabric each connects to.')} />
               <div className="px-4 pb-2">
@@ -275,7 +285,7 @@ export function InfrastructureGraphPage(): React.JSX.Element {
                         type="button"
                         onClick={() => setSelectedId(a.node.id)}
                         className={cn(
-                          'w-full rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-ink-50/70',
+                          'w-full rounded-[2px] px-2.5 py-2 text-left transition-colors hover:bg-ink-50/70',
                           effectiveId === a.node.id && 'bg-govt-50/70',
                         )}
                       >
@@ -307,9 +317,11 @@ export function InfrastructureGraphPage(): React.JSX.Element {
                 </DefinitionList>
               </Card>
             ) : null}
-          </>
-        }
-      />
+
+            <DemonstrationNotice />
+          </div>
+        </div>
+      </div>
     </PageBody>
   )
 }

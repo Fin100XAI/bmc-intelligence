@@ -1,21 +1,37 @@
 import { type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { ChevronRight } from 'lucide-react'
-import { municipality } from '@/config/municipality.config'
 import type { DataFreshness } from '@/types/common'
 import { cn } from '@/utils/cn'
 import { FreshnessLine, ProvenanceBadge } from '@/components/ui/badges'
 import { t } from '@/i18n'
 
 /**
- * Standard page header used by every intelligence surface.
+ * Page furniture — the ruled strip that sits above a screen's content.
  *
- * Enforces the institutional requirement that a screen states what it is,
- * where it sits in the hierarchy, when it was generated and where its figures
- * came from - before any figure is displayed.
+ * This used to be the screen's identity banner: a tall tinted block carrying
+ * the page title and its standfirst. The shell now renders that identity once,
+ * above the top bar (`AppMasthead`), taking its wording from the route's own
+ * navigation entry or from whatever the page declares through
+ * `usePageMasthead`. A banner here as well meant every screen in the platform
+ * stated its own name twice, a few rows apart, which is the surest way to make
+ * a record look like a product.
+ *
+ * So what remains is only the part the masthead does NOT carry: where the
+ * screen sits in the hierarchy, what may be done on it, and what the figures'
+ * provenance is. One hairline-ruled strip, the height of a line of type.
+ *
+ * `title` and `description` stay in the props — every page passes them, and
+ * they remain the honest declaration of what the screen is — but they are the
+ * masthead's business to display, not this bar's.
  */
 export interface PageHeaderProps {
-  title: ReactNode
+  /**
+   * Optional, because the masthead is where a screen now states its name. A
+   * page that has declared its wording through `usePageMasthead` has nothing
+   * left for this bar to carry beyond its trail, actions and provenance.
+   */
+  title?: ReactNode
   /** Small uppercase eyebrow - usually the section, e.g. "City Intelligence". */
   eyebrow?: ReactNode
   description?: ReactNode
@@ -31,9 +47,7 @@ export interface PageHeaderProps {
 }
 
 export function PageHeader({
-  title,
   eyebrow,
-  description,
   breadcrumbs,
   actions,
   controls,
@@ -42,67 +56,64 @@ export function PageHeader({
   className,
   hideProvenance,
 }: PageHeaderProps): React.JSX.Element {
+  const trail = breadcrumbs ?? []
+  // The bar earns its rule only when it has something to rule off. A page that
+  // passes nothing but a title now renders no furniture at all, rather than an
+  // empty box holding a gap open above the first panel.
+  const hasBar = trail.length > 0 || Boolean(eyebrow) || Boolean(meta) || Boolean(actions) || Boolean(freshness)
+
+  if (!hasBar && !controls) return <></>
+
   return (
     <header className={cn('min-w-0', className)}>
-      {/* Identity banner - hierarchy, name and purpose of the screen. ---- */}
-      {/* The brand colour is handed to the stylesheet as the banner's BASE
-          layer rather than as its whole `background`. Setting `background`
-          inline replaced the shorthand outright, which threw away the two
-          radial gradients underneath it and left every page in the platform
-          headed by a flat rectangle. */}
-      <div
-        className="banner-surface relative overflow-hidden rounded-xl px-5 py-5 shadow-raised sm:px-6 sm:py-6"
-        style={{ '--banner-base': municipality.branding.panelColor } as React.CSSProperties}
-      >
-        {/* Faint grid texture, so the banner reads as an instrument panel
-            rather than a flat block of colour. */}
-        <span aria-hidden className="grid-backdrop pointer-events-none absolute inset-0 opacity-[0.35]" />
-        <div className="relative">
-        {breadcrumbs && breadcrumbs.length > 0 ? (
-          <nav aria-label={t('Breadcrumb')} className="mb-1.5 flex flex-wrap items-center gap-1 text-[0.6875rem] text-white/65">
-            {breadcrumbs.map((crumb, i) => (
-              <span key={`${crumb.label}-${i}`} className="inline-flex items-center gap-1">
-                {i > 0 ? <ChevronRight className="h-3 w-3 text-white/45" aria-hidden /> : null}
-                {crumb.to ? (
-                  <Link to={crumb.to} className="transition-colors hover:text-white">
-                    {crumb.label}
-                  </Link>
-                ) : (
-                  <span className={cn(i === breadcrumbs.length - 1 && 'text-white/85')}>{crumb.label}</span>
-                )}
-              </span>
-            ))}
-          </nav>
-        ) : null}
+      {hasBar ? (
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-[2px] border border-ink-200 bg-surface-sunken px-3 py-1.5">
+          {eyebrow ? (
+            <span className="shrink-0 text-[0.625rem] font-bold tracking-[0.1em] text-ink-500 uppercase">
+              {eyebrow}
+            </span>
+          ) : null}
+          {eyebrow && trail.length > 0 ? <span aria-hidden className="h-3 w-px shrink-0 bg-ink-200" /> : null}
 
-        <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
-          <div className="min-w-0 flex-1">
-            {eyebrow ? (
-              <div className="mb-1.5 text-[0.6875rem] font-bold tracking-[0.13em] text-intel-200 uppercase">
-                {eyebrow}
-              </div>
-            ) : null}
-            <h1 className="text-[1.625rem] leading-8 font-semibold tracking-[-0.02em] text-white">{title}</h1>
-            {description ? (
-              <p className="mt-1.5 max-w-4xl text-[0.875rem] leading-relaxed text-white/80">{description}</p>
-            ) : null}
-            {meta ? <div className="mt-2 flex flex-wrap items-center gap-1.5">{meta}</div> : null}
-          </div>
-          {actions ? <div className="flex shrink-0 flex-wrap items-center gap-1.5">{actions}</div> : null}
-          </div>
-        </div>
-      </div>
+          {trail.length > 0 ? (
+            <nav
+              aria-label={t('Breadcrumb')}
+              className="flex min-w-0 flex-wrap items-center gap-1 text-[0.6875rem] text-ink-500"
+            >
+              {trail.map((crumb, i) => (
+                <span key={`${crumb.label}-${i}`} className="inline-flex items-center gap-1">
+                  {i > 0 ? <ChevronRight className="h-3 w-3 text-ink-300" aria-hidden /> : null}
+                  {crumb.to ? (
+                    <Link to={crumb.to} className="transition-colors hover:text-govt-700 hover:underline">
+                      {crumb.label}
+                    </Link>
+                  ) : (
+                    <span className={cn(i === trail.length - 1 && 'font-semibold text-ink-700')}>{crumb.label}</span>
+                  )}
+                </span>
+              ))}
+            </nav>
+          ) : null}
 
-      {freshness ? (
-        <FreshnessLine freshness={freshness} className="mt-2.5" />
-      ) : !hideProvenance ? (
-        <div className="mt-2.5">
-          <ProvenanceBadge />
+          {/* Everything on the right of the rule is what the screen offers or
+              discloses, rather than what it is called. */}
+          <div className="ml-auto flex flex-wrap items-center gap-x-3 gap-y-1.5">
+            {meta ? <div className="flex flex-wrap items-center gap-1.5">{meta}</div> : null}
+            {freshness ? <FreshnessLine freshness={freshness} /> : !hideProvenance ? <ProvenanceBadge /> : null}
+            {actions ? <div className="flex flex-wrap items-center gap-1.5">{actions}</div> : null}
+          </div>
         </div>
       ) : null}
 
       {controls ? (
-        <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-ink-100 pt-3">{controls}</div>
+        <div
+          className={cn(
+            'flex flex-wrap items-center gap-2 rounded-[2px] border border-ink-200 bg-surface px-3 py-2',
+            hasBar && 'mt-2',
+          )}
+        >
+          {controls}
+        </div>
       ) : null}
     </header>
   )

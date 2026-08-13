@@ -21,8 +21,11 @@ export type ButtonSize = 'xs' | 'sm' | 'md'
 // moving part in the platform - card lift, drawer, tab marker, page entrance -
 // is on that one curve, and a button easing differently is the difference
 // between an interface that moves as one piece and one that moves in parts.
+// `rounded-[2px]` rather than `rounded-lg`: a control with an 8px radius sitting
+// inside a panel with a 2px one belongs to a different interface. The whole
+// platform is squared off, and the furniture has to be squared off with it.
 const BUTTON_BASE =
-  'inline-flex items-center justify-center gap-1.5 rounded-lg font-semibold whitespace-nowrap ' +
+  'inline-flex items-center justify-center gap-1.5 rounded-[2px] font-semibold whitespace-nowrap ' +
   'transition-all duration-150 ease-[var(--ease-calm)] active:translate-y-px disabled:cursor-not-allowed disabled:opacity-45 ' +
   'disabled:active:translate-y-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-govt-500'
 
@@ -146,23 +149,48 @@ export interface CardProps extends HTMLAttributes<HTMLDivElement> {
   tone?: 'default' | 'sunken' | 'critical' | 'warn' | 'positive' | 'info'
 }
 
+/**
+ * Tone fills, flattened.
+ *
+ * A gradient tile is the visual grammar of a consumer dashboard - a surface
+ * that wants to look like an object. A corporation's record is a ruled section
+ * on a printed page, so each tone is a single flat wash behind a hairline in
+ * the same family. The tone still says exactly what it said before; it just
+ * stops pretending to be lit from one corner.
+ */
 const CARD_TONES: Record<NonNullable<CardProps['tone']>, string> = {
-  default: 'bg-surface border-ink-100',
-  sunken: 'bg-surface-sunken border-ink-100',
-  critical: 'bg-gradient-to-br from-crit-50 to-surface border-crit-200/70',
-  warn: 'bg-gradient-to-br from-warn-50 to-surface border-warn-200/70',
-  positive: 'bg-gradient-to-br from-ok-50 to-surface border-ok-200/70',
-  info: 'bg-gradient-to-br from-govt-50 to-surface border-govt-200/70',
+  default: 'bg-surface border-ink-200',
+  sunken: 'bg-surface-sunken border-ink-200',
+  critical: 'bg-crit-50/60 border-crit-200',
+  warn: 'bg-warn-50/60 border-warn-200',
+  positive: 'bg-ok-50/60 border-ok-200',
+  info: 'bg-govt-50/60 border-govt-200',
 }
 
+/**
+ * The ruled panel every page is built from.
+ *
+ * `rounded-[2px]` rather than `rounded-none`: a true right angle reads as an
+ * unstyled box on screen, while two pixels reads as a printed rule. The
+ * difference is the whole effect.
+ *
+ * `data-card-padded` is the contract with `CardHeader`. A titled band that
+ * leaves a white gutter around it looks like a mistake, so in a padded card the
+ * header has to break back out to the card's edges - and it can only know to do
+ * that if the card says which of the two it is. The card also drops its own top
+ * padding when a band is its first child, so the band meets the top edge
+ * without the header needing a negative top margin that would misfire on a
+ * header nested deeper inside the card.
+ */
 export function Card({ flush, interactive, tone = 'default', className, children, ...rest }: CardProps): React.JSX.Element {
   return (
     <div
+      data-card-padded={flush ? undefined : ''}
       className={cn(
-        'rounded-xl border shadow-card',
+        'rounded-[2px] border shadow-xs',
         CARD_TONES[tone],
-        interactive && 'lift-on-hover cursor-pointer hover:border-govt-200',
-        !flush && 'p-4',
+        interactive && 'lift-on-hover cursor-pointer hover:border-govt-300',
+        !flush && 'p-4 has-[>[data-card-band]]:pt-0',
         className,
       )}
       {...rest}
@@ -184,6 +212,27 @@ export interface CardHeaderProps {
   bordered?: boolean
 }
 
+/**
+ * The titled navy band at the head of a panel.
+ *
+ * Two things carry the institutional reading. The band itself - a solid
+ * `govt-900` field the width of the panel, which is the single strongest signal
+ * that the surface belongs to an administration rather than to a product. And
+ * the title set in it: small, bold, tracked and upper-case, the way a heading
+ * is set on a departmental return rather than on a card in a feed.
+ *
+ * The title colour is stated on the `<h3>` itself, never inherited from the
+ * band. `src/styles/index.css` carries a global `h1…h6 { color: … }` rule, and
+ * a direct element rule beats an inherited value however specific the
+ * ancestor's class is - so a heading relying on `text-white` from the band
+ * renders in near-black ink on a navy field, which is all but invisible.
+ *
+ * The band has to meet the panel's edges in both of the shapes it is used in:
+ * flush cards, where it is already at the edge, and padded cards, where it has
+ * to break back out through the card's inset. `Card` marks itself
+ * `data-card-padded` and the direct-child selector below does the breaking out,
+ * so a header belonging to a nested card can never break out of the wrong one.
+ */
 export function CardHeader({
   title,
   eyebrow,
@@ -195,24 +244,32 @@ export function CardHeader({
 }: CardHeaderProps): React.JSX.Element {
   return (
     <div
+      data-card-band=""
       className={cn(
-        'flex items-start justify-between gap-3',
-        bordered && 'border-b border-ink-100 px-4 py-3',
+        'flex justify-between gap-3 bg-govt-900 px-3 py-2',
+        description ? 'items-start' : 'items-center',
+        // Breaks out of a padded card's inset so the band is edge to edge.
+        // The card's own `pt-0` handles the top, which keeps this correct for
+        // a header that sits inside a wrapper rather than directly on the card.
+        '[[data-card-padded]>&]:-mx-4 [[data-card-padded]>&]:mb-3',
+        bordered && 'border-b border-govt-950',
         className,
       )}
     >
       <div className="min-w-0 flex-1">
-        {eyebrow ? <div className="label-institutional mb-1">{eyebrow}</div> : null}
-        <div className="flex items-center gap-2">
-          {icon ? (
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-govt-50 text-govt-600 ring-1 ring-govt-100 ring-inset">
-              {icon}
-            </span>
-          ) : null}
-          <h3 className="truncate text-[0.9375rem] leading-5 font-semibold text-ink-900">{title}</h3>
+        {eyebrow ? (
+          <div className="mb-0.5 text-[0.5625rem] leading-none font-bold tracking-[0.12em] text-white/60 uppercase">
+            {eyebrow}
+          </div>
+        ) : null}
+        <div className="flex items-center gap-1.5">
+          {icon ? <span className="flex shrink-0 items-center text-white/70">{icon}</span> : null}
+          <h3 className="min-w-0 flex-1 truncate text-[0.6875rem] leading-4 font-bold tracking-[0.09em] text-white uppercase">
+            {title}
+          </h3>
         </div>
         {description ? (
-          <p className="mt-1 text-[0.8125rem] leading-[1.45] text-ink-500">{description}</p>
+          <p className="mt-1 max-w-5xl text-[0.6875rem] leading-snug text-white/70">{description}</p>
         ) : null}
       </div>
       {actions ? <div className="flex shrink-0 items-center gap-1.5">{actions}</div> : null}
@@ -220,7 +277,15 @@ export function CardHeader({
   )
 }
 
-/** Page-level section divider with an institutional eyebrow. */
+/**
+ * Page-level section divider with an institutional eyebrow.
+ *
+ * Sits on the light body rather than on a band, so the rule does the work the
+ * navy does elsewhere: a hairline drawn the full width beneath the heading,
+ * with the title set small, bold and tracked in the same register as every
+ * panel band on the page. The gradient accent bar it used to open with was the
+ * one product flourish left in this file.
+ */
 export function SectionHeader({
   title,
   description,
@@ -235,10 +300,10 @@ export function SectionHeader({
   className?: string
 }): React.JSX.Element {
   return (
-    <div className={cn('flex flex-wrap items-end justify-between gap-3', className)}>
+    <div className={cn('flex flex-wrap items-end justify-between gap-3 border-b border-ink-200 pb-2', className)}>
       <div className="min-w-0">
         {eyebrow ? <div className="label-institutional mb-1">{eyebrow}</div> : null}
-        <h2 className="accent-rule text-[1.0625rem] leading-6 font-semibold tracking-tight text-ink-900">{title}</h2>
+        <h2 className="text-[0.8125rem] leading-5 font-bold tracking-[0.09em] text-ink-900 uppercase">{title}</h2>
         {description ? (
           <p className="mt-1 max-w-3xl text-[0.8125rem] leading-relaxed text-ink-500">{description}</p>
         ) : null}
@@ -252,6 +317,13 @@ export function SectionHeader({
    Key–value presentation
    ========================================================================== */
 
+/**
+ * One line of a return: key left, figure right, hairline below.
+ *
+ * The value carries `tabular-nums` whether or not it is a number, because a
+ * column of these is read downward and a figure that shifts its digit widths
+ * from row to row cannot be compared against the row above it.
+ */
 export function DefinitionRow({
   label,
   children,
@@ -264,9 +336,16 @@ export function DefinitionRow({
   mono?: boolean
 }): React.JSX.Element {
   return (
-    <div className={cn('grid grid-cols-[minmax(7rem,38%)_1fr] gap-3 py-1.5', className)}>
-      <dt className="text-xs leading-5 font-medium text-ink-500">{label}</dt>
-      <dd className={cn('text-[0.8125rem] leading-5 text-ink-800', mono && 'font-mono text-xs')}>{children}</dd>
+    <div
+      className={cn(
+        'grid grid-cols-[minmax(7rem,38%)_1fr] gap-3 px-2 py-[0.3125rem] even:bg-ink-50/40',
+        className,
+      )}
+    >
+      <dt className="text-[0.6875rem] leading-5 font-semibold tracking-[0.02em] text-ink-500">{label}</dt>
+      <dd className={cn('numeric text-[0.8125rem] leading-5 text-ink-800 tabular-nums', mono && 'font-mono text-xs')}>
+        {children}
+      </dd>
     </div>
   )
 }
@@ -278,7 +357,9 @@ export function DefinitionList({
   children: ReactNode
   className?: string
 }): React.JSX.Element {
-  return <dl className={cn('divide-y divide-ink-50', className)}>{children}</dl>
+  return (
+    <dl className={cn('divide-y divide-ink-100 border-y border-ink-100', className)}>{children}</dl>
+  )
 }
 
 /* ==========================================================================
@@ -308,7 +389,7 @@ export function Label({
 }
 
 const FIELD_BASE =
-  'w-full rounded-lg border border-ink-200 bg-surface px-3 text-[0.8125rem] text-ink-800 shadow-xs ' +
+  'w-full rounded-[2px] border border-ink-200 bg-surface px-3 text-[0.8125rem] text-ink-800 shadow-xs ' +
   'placeholder:text-ink-300 transition-all focus:border-govt-400 focus:outline-none ' +
   'focus:ring-[3px] focus:ring-govt-500/15 disabled:cursor-not-allowed disabled:bg-ink-50 disabled:text-ink-400'
 
@@ -394,7 +475,7 @@ export function Checkbox({
         checked={checked}
         disabled={disabled}
         onChange={(e) => onChange(e.target.checked)}
-        className="h-3.5 w-3.5 rounded-[3px] border-ink-300 text-govt-600 focus:ring-2 focus:ring-govt-500/25"
+        className="h-3.5 w-3.5 rounded-[2px] border-ink-300 text-govt-600 focus:ring-2 focus:ring-govt-500/25"
       />
       <span className="min-w-0 truncate">{label}</span>
     </label>
@@ -468,7 +549,7 @@ export function SegmentedControl<T extends string>({
     <div
       role="tablist"
       aria-label={ariaLabel}
-      className={cn('inline-flex items-center gap-0.5 rounded-lg border border-ink-200 bg-ink-50 p-[3px] shadow-inner', className)}
+      className={cn('inline-flex items-center gap-0.5 rounded-[2px] border border-ink-200 bg-ink-50 p-[3px]', className)}
     >
       {options.map((option) => {
         const active = option.value === value
@@ -480,7 +561,7 @@ export function SegmentedControl<T extends string>({
             aria-selected={active}
             onClick={() => onChange(option.value)}
             className={cn(
-              'inline-flex items-center gap-1.5 rounded-md font-semibold transition-all duration-150',
+              'inline-flex items-center gap-1.5 rounded-[2px] font-semibold transition-all duration-150',
               size === 'xs' ? 'h-6 px-2.5 text-[0.6875rem]' : 'h-[1.875rem] px-3 text-xs',
               active
                 ? 'bg-surface text-govt-700 shadow-[0_1px_2px_0_rgb(11_18_32/0.1)] ring-1 ring-ink-200/70'
@@ -511,12 +592,14 @@ export function toneForScore(score: number, higherIsBetter = true): ScoreTone {
   return 'critical'
 }
 
+// Flat fills, not gradients. A bar on a return states a measured quantity, and
+// a fill that fades toward its end reads as a glow rather than as a reading.
 export const SCORE_TONE_BAR: Record<ScoreTone, string> = {
-  positive: 'bg-gradient-to-r from-ok-500 to-ok-300',
-  neutral: 'bg-gradient-to-r from-govt-600 to-govt-400',
-  warn: 'bg-gradient-to-r from-warn-600 to-warn-300',
-  risk: 'bg-gradient-to-r from-risk-600 to-risk-300',
-  critical: 'bg-gradient-to-r from-crit-600 to-crit-300',
+  positive: 'bg-ok-600',
+  neutral: 'bg-govt-700',
+  warn: 'bg-warn-600',
+  risk: 'bg-risk-600',
+  critical: 'bg-crit-600',
 }
 
 export const SCORE_TONE_TEXT: Record<ScoreTone, string> = {
@@ -560,7 +643,7 @@ export function ProgressBar({
       ) : null}
       <div
         className={cn(
-          'w-full overflow-hidden rounded-full bg-ink-100 shadow-inner',
+          'w-full overflow-hidden rounded-[2px] bg-ink-100',
           size === 'xs' ? 'h-1.5' : size === 'sm' ? 'h-2' : 'h-2.5',
         )}
         role="progressbar"
@@ -569,7 +652,7 @@ export function ProgressBar({
         aria-valuemax={100}
       >
         <div
-          className={cn('h-full rounded-full transition-[width] duration-500 ease-out', SCORE_TONE_BAR[resolved])}
+          className={cn('h-full rounded-[2px] transition-[width] duration-500 ease-out', SCORE_TONE_BAR[resolved])}
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -616,7 +699,10 @@ export function ScoreDial({
             fill="none"
             stroke={colour}
             strokeWidth={stroke}
-            strokeLinecap="round"
+            /* Square cap. A rounded cap is the dial equivalent of a rounded
+               corner - it also overstates the arc by half a stroke at each
+               end, which on a published index is a reading, not a flourish. */
+            strokeLinecap="butt"
             strokeDasharray={circumference}
             strokeDashoffset={offset}
             style={{ transition: 'stroke-dashoffset 700ms var(--ease-calm)' }}

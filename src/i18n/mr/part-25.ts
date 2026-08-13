@@ -284,7 +284,6 @@ export const MR_PART_25: Record<string, string> = {
   '{0} hectares maintained': '{0} हेक्टर देखभाल',
   '{0} hectares of ground · {1} rites in 30 days': '{0} हेक्टर भूमी · 30 दिवसांत {1} अंत्यविधी',
   '{0} high-priority defects': '{0} उच्च-प्राधान्य दोष',
-  '{0} high-severity also open': '{0} उच्च-तीव्रतेचेही प्रलंबित',
   '{0} in work of {1} trained in twelve months': 'बारा महिन्यांत प्रशिक्षित {1} पैकी {0} कामावर',
   '{0} indicative annual value': '{0} निर्देशात्मक वार्षिक मूल्य',
   '{0} kWh drawn': '{0} kWh वापर',
@@ -375,14 +374,12 @@ export const MR_PART_25: Record<string, string> = {
   'Between on-track and materially behind': 'मार्गावर असणे व लक्षणीय मागे असणे यांदरम्यान',
   'By severity, all statuses': 'तीव्रतेनुसार, सर्व स्थिती',
   'Cases currently under review': 'सध्या पुनरावलोकनाधीन प्रकरणे',
-  'Categories below SLA compliance threshold': 'सेवा-हमी अनुपालन मर्यादेखालील श्रेणी',
   'Children on the roll': 'पटावरील मुले',
   'Cohort mean {0} points per month': 'गटाची सरासरी दरमहा {0} गुण',
   'Collected revenue less recorded expenditure': 'वसूल महसूल वजा नोंदवलेला खर्च',
   'Completed the full lifecycle': 'संपूर्ण जीवनचक्र पूर्ण',
   'Composite across every domain - full breakdown on Executive Overview':
     'प्रत्येक क्षेत्रातील एकत्रित — संपूर्ण विश्लेषण कार्यकारी आढाव्यावर',
-  'Composite of six weighted domain indices': 'सहा भारित क्षेत्रीय निर्देशांकांचे एकत्रीकरण',
   'Composite score at or above 78': 'एकत्रित गुण 78 किंवा त्यावर',
   'Condition below {0}/100': '{0}/100 पेक्षा कमी स्थिती',
   'consequential actions recorded to the audit trail':
@@ -397,7 +394,6 @@ export const MR_PART_25: Record<string, string> = {
   'Dengue + malaria + chikungunya': 'डेंग्यू + मलेरिया + चिकुनगुनिया',
   'Detected, validated or active': 'आढळलेले, पडताळलेले किंवा सक्रिय',
   'Dispatched to other officers': 'इतर अधिकाऱ्यांकडे पाठवलेले',
-  'Draft or under review': 'मसुदा किंवा पुनरावलोकनाधीन',
   'Durable lessons on record': 'नोंदीवरील टिकाऊ धडे',
   'Emergency load index ≥ 80': 'आपत्कालीन भार निर्देशांक ≥ 80',
   'evidence references cited by intelligence in your scope':

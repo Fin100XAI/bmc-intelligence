@@ -18,6 +18,7 @@ import { activeCorporation, municipality } from '@/config/municipality.config'
 import { buildCityPosition } from '@/domains/executive/city-position'
 import { buildCrossDomainInsights } from '@/domains/cross-domain/correlations'
 import { DEMO_NOW, det, isoFromAnchor } from '@/utils/deterministic'
+import { narrate } from '@/ai/narrator'
 import { formatCompact, formatCrore, formatPercent, formatRelative } from '@/utils/format'
 import {
   evaluateGatewayPolicy,
@@ -618,11 +619,28 @@ export class MockMunicipalAIProvider implements AIProvider {
     // behind that check rather than beside it.
     const { understanding, composed } = runQuery(ctx.user, question)
 
+    /*
+     * Ask the platform's API for a model-written version of the prose.
+     *
+     * `narrate` returns null when no API is configured, when no model is
+     * configured behind it, or when the provider failed - and in every one of
+     * those cases the deterministic answer below is served unchanged, which is
+     * what this platform did before a model was wired in at all.
+     *
+     * Only `answer` and `keyFindings` are ever replaced. Evidence, citations,
+     * sources, confidence, recommended actions, visuals and the published
+     * interpretation all continue to come from the retrieval layer. The model
+     * cannot contribute an evidence identifier, and therefore cannot fabricate
+     * a chain of provenance that would look indistinguishable from a real one.
+     */
+    const generated = await narrate(question)
+    const useGenerated = generated?.narrative && !generated.degraded ? generated.narrative : null
+
     const response = this.baseResponse({
       requestId: composed.requestId,
       useCase: 'municipal-query',
-      answer: composed.answer,
-      keyFindings: composed.keyFindings,
+      answer: useGenerated?.answer ?? composed.answer,
+      keyFindings: useGenerated?.keyFindings ?? composed.keyFindings,
       evidence: composed.evidence,
       recommendedActions: composed.recommendedActions,
       risksAndLimitations: composed.risksAndLimitations,
@@ -639,6 +657,11 @@ export class MockMunicipalAIProvider implements AIProvider {
     // a misreading visible in a glance and gives a one-click correction path.
     return {
       ...response,
+      // Names whichever engine actually wrote the prose. An answer generated
+      // by a hosted model must not be attributed to the local provider on the
+      // governance surfaces that read this field — the AI request log, the
+      // model registry and the evidence trail all key off it.
+      modelId: useGenerated && generated ? `${generated.provider}:${generated.modelId}` : response.modelId,
       interpretation: {
         intentId: understanding.intent.id,
         intentLabel: understanding.intent.label,

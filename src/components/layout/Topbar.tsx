@@ -155,6 +155,10 @@ export function Topbar({ status }: { status: TopbarStatus }): React.JSX.Element 
         <Menu className="h-4 w-4" />
       </IconButton>
 
+      {/* No brand block here: `AppMasthead` sits directly above this bar and
+          carries the seal, the office and the corporation. Repeating them a
+          row apart would read as a duplication rather than as identity. */}
+
       {/* Global search / command palette trigger --------------------- */}
       <button
         type="button"
@@ -172,8 +176,17 @@ export function Topbar({ status }: { status: TopbarStatus }): React.JSX.Element 
 
       <div className="flex-1" />
 
-      {/* Interface language -------------------------------------------- */}
-      <LanguageSwitcher />
+      {/* Copilot shortcut --------------------------------------------- */}
+      <Tooltip side="bottom" content={t('Open the {0} Municipal Copilot', corporation.shortName)}>
+        <Link
+          to={ROUTES.copilot}
+          className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-intel-200 bg-gradient-to-b from-intel-50 to-intel-100/70 px-2.5 text-xs font-semibold text-intel-700 shadow-xs transition-all hover:border-intel-300 hover:shadow-sm"
+          aria-label={t('Open Copilot')}
+        >
+          <Sparkles className="h-3.5 w-3.5" />
+          <span className="hidden sm:inline">{t('Copilot')}</span>
+        </Link>
+      </Tooltip>
 
       {/* The corporation selector used to sit here. This build is a single
           Brihanmumbai deployment, so a control offering to re-deploy the
@@ -228,17 +241,8 @@ export function Topbar({ status }: { status: TopbarStatus }): React.JSX.Element 
         </Link>
       </Tooltip>
 
-      {/* Copilot shortcut --------------------------------------------- */}
-      <Tooltip side="bottom" content={t('Open the {0} Municipal Copilot', corporation.shortName)}>
-        <Link
-          to={ROUTES.copilot}
-          className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-intel-200 bg-gradient-to-b from-intel-50 to-intel-100/70 px-2.5 text-xs font-semibold text-intel-700 shadow-xs transition-all hover:border-intel-300 hover:shadow-sm"
-          aria-label={t('Open Copilot')}
-        >
-          <Sparkles className="h-3.5 w-3.5" />
-          <span className="hidden sm:inline">{t('Copilot')}</span>
-        </Link>
-      </Tooltip>
+      {/* Interface language -------------------------------------------- */}
+      <LanguageSwitcher />
 
       {/* Notifications ------------------------------------------------- */}
       <IconButton

@@ -10,6 +10,8 @@ import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { hyperlocalService } from '@/services'
 import { SIGNAL_WEIGHTS } from '@/domains/hyperlocal/signals'
+import { usePageMasthead } from '@/stores/masthead.store'
+import { useContextStore } from '@/stores/ui.store'
 import { WARDS } from '@/data/reference'
 import { isoFromAnchor } from '@/utils/deterministic'
 import { t } from '@/i18n'
@@ -42,9 +44,31 @@ const FRESHNESS = {
 }
 
 export function HyperlocalIntelligencePage(): React.JSX.Element {
-  const [wardId, setWardId] = useState<string>('')
+  /**
+   * The locality ranking answers to two ward controls: the one in the command
+   * bar, which narrows the whole interface, and the one this page renders for
+   * a quick local comparison. Holding the page control purely locally made the
+   * shared selection inert here - an operator could narrow the shell to Ward
+   * K/E and read the same city-wide locality ranking underneath it.
+   *
+   * `from` records which shared selection the local choice was made against,
+   * so the two compose without an effect and without either silently winning:
+   * a new selection in the command bar governs the page, and choosing on the
+   * page overrides it until the command bar moves again.
+   */
+  const contextWardId = useContextStore((s) => s.wardId)
+  const [localWard, setLocalWard] = useState<{ wardId: string; from: string | null }>({ wardId: '', from: null })
+
+  const wardId = localWard.from === contextWardId ? localWard.wardId : contextWardId ?? ''
+  const setWardId = (id: string): void => setLocalWard({ wardId: id, from: contextWardId })
+
   const [minTypes, setMinTypes] = useState<string>('')
   const [selectedId, setSelectedId] = useState<string | null>(null)
+
+  usePageMasthead(
+    t('Hyperlocal Intelligence'),
+    t('Where several different problems are stacking up in one locality at once. A ward that reads acceptable on average can contain a street where drainage, waste and road failure are happening together - that street is what this screen finds.'),
+  )
 
   const filters = useMemo(
     () => ({
@@ -85,8 +109,6 @@ export function HyperlocalIntelligencePage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('City Intelligence')}
-        title={t('Hyperlocal Intelligence')}
-        description={t('Where several different problems are stacking up in one locality at once. A ward that reads acceptable on average can contain a street where drainage, waste and road failure are happening together - that street is what this screen finds.')}
         breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Hyperlocal Intelligence') }]}
         freshness={FRESHNESS}
         controls={

@@ -26,6 +26,7 @@ import { Badge, ClassificationBadge, ConfidenceBadge, SeverityBadge } from '@/co
 import { ConfirmDialog, Modal } from '@/components/ui/overlays'
 import { DemonstrationNotice, EmptyState, ErrorState, LoadingState } from '@/components/ui/states'
 import { MetricCard } from '@/components/cards/MetricCard'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { useActivityLog, useServiceAction, useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { decisionService, healthService, incidentService, intelligenceService, projectService, revenueService } from '@/services'
@@ -33,6 +34,7 @@ import { buildCityPosition, buildCrossDomainInsights, type CrossDomainInsight } 
 import { useDrawerStore } from '@/stores/ui.store'
 import { useActiveCorporation } from '@/stores/corporation.store'
 import { useCurrentUser } from '@/stores/auth.store'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { allowed } from '@/security'
 import { ROUTES } from '@/config/navigation'
 import { departmentName, officerDesignation, officerDisplayName, wardName } from '@/data/reference'
@@ -120,6 +122,12 @@ export function CommissionerCockpitPage(): React.JSX.Element {
   const [noteDraft, setNoteDraft] = useState('')
   const [actionError, setActionError] = useState<string | null>(null)
   const [openInsight, setOpenInsight] = useState<CrossDomainInsight | null>(null)
+
+  // The shell renders the masthead; this page states what it should say.
+  usePageMasthead(
+    t('Commissioner Cockpit'),
+    t('Today\'s {0} in one scannable briefing, and the ranked queue of issues that need a Commissioner\'s decision. Every action below is written to the permanent audit trail and to the session log at the foot of this page.', corporation.city),
+  )
 
   const cityPosition = useMemo(() => buildCityPosition(), [])
   const insights = useMemo(() => buildCrossDomainInsights(), [])
@@ -259,8 +267,6 @@ export function CommissionerCockpitPage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('Command')}
-        title={t('Commissioner Cockpit')}
-        description={t('Today\'s {0} in one scannable briefing, and the ranked queue of issues that need a Commissioner\'s decision. Every action below is written to the permanent audit trail and to the session log at the foot of this page.', corporation.city)}
         breadcrumbs={[{ label: t('Command') }, { label: t('Commissioner Cockpit') }]}
       />
 
@@ -309,7 +315,7 @@ export function CommissionerCockpitPage(): React.JSX.Element {
               key={insight.id}
               type="button"
               onClick={() => setOpenInsight(insight)}
-              className="w-80 shrink-0 rounded-lg border border-ink-100 bg-surface p-3 text-left shadow-card transition-shadow hover:shadow-raised"
+              className="w-80 shrink-0 rounded-[2px] border border-ink-200 bg-surface p-3 text-left shadow-xs transition-colors hover:bg-govt-50/50"
             >
               <div className="flex items-center gap-1.5">
                 <SeverityBadge severity={insight.severity} />
@@ -323,182 +329,188 @@ export function CommissionerCockpitPage(): React.JSX.Element {
         </div>
       </Card>
 
-      {/* Today's <city> */}
-      <div>
-        <h2 className="mb-2 text-base font-semibold text-ink-900">{`Today's ${corporation.city}`}</h2>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          <BriefingTile icon={<AlertTriangle className="h-4 w-4" />} title={t('High-priority issues')} count={queue.length} tone={queue.length > 0 ? 'critical' : 'default'} to={ROUTES.intelligenceFeed}>
-            {queue.slice(0, 3).map((i) => (
-              <p key={i.id} className="flex items-center gap-1.5 truncate text-xs text-ink-600">
-                <SeverityBadge severity={i.severity} size="xs" /> <span className="truncate">{i.title}</span>
-              </p>
-            ))}
-            {queue.length === 0 ? <p className="text-xs text-ink-400">{t('No critical or high-severity items open.')}</p> : null}
-          </BriefingTile>
+      {/* ── Two columns ──────────────────────────────────────────────
+          The Commissioner's morning reading, in the order it is actually
+          done: the position across every domain in the wide column, and
+          beside it the two registers that are worked rather than read — the
+          ranked queue, and the record of what has already been done today. */}
+      <div className="grid grid-cols-1 gap-3 xl:grid-cols-12">
+        {/* Column 1 — today's position ----------------------------- */}
+        <div className="min-w-0 xl:col-span-8">
+          <GovPanel title={`Today's ${corporation.city}`} tone="primary" dense bodyClassName="p-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 2xl:grid-cols-3">
+              <BriefingTile icon={<AlertTriangle className="h-4 w-4" />} title={t('High-priority issues')} count={queue.length} tone={queue.length > 0 ? 'critical' : 'default'} to={ROUTES.intelligenceFeed}>
+                {queue.slice(0, 3).map((i) => (
+                  <p key={i.id} className="flex items-center gap-1.5 truncate text-xs text-ink-600">
+                    <SeverityBadge severity={i.severity} size="xs" /> <span className="truncate">{i.title}</span>
+                  </p>
+                ))}
+                {queue.length === 0 ? <p className="text-xs text-ink-400">{t('No critical or high-severity items open.')}</p> : null}
+              </BriefingTile>
 
-          <BriefingTile icon={<MapPinned className="h-4 w-4" />} title={t('High-risk wards')} count={cityPosition.wardPerformance.filter((w) => w.risk >= 60).length} tone="warn" to={ROUTES.wards}>
-            {cityPosition.wardPerformance.slice(0, 3).map((w) => (
-              <p key={w.wardId} className="flex items-center justify-between gap-2 text-xs text-ink-600">
-                <span className="truncate">{w.label}</span>
-                <span className="numeric font-semibold text-ink-800">{t('Risk {0}', w.risk)}</span>
-              </p>
-            ))}
-          </BriefingTile>
+              <BriefingTile icon={<MapPinned className="h-4 w-4" />} title={t('High-risk wards')} count={cityPosition.wardPerformance.filter((w) => w.risk >= 60).length} tone="warn" to={ROUTES.wards}>
+                {cityPosition.wardPerformance.slice(0, 3).map((w) => (
+                  <p key={w.wardId} className="flex items-center justify-between gap-2 text-xs text-ink-600">
+                    <span className="truncate">{w.label}</span>
+                    <span className="numeric font-semibold text-ink-800">{t('Risk {0}', w.risk)}</span>
+                  </p>
+                ))}
+              </BriefingTile>
 
-          <BriefingTile icon={<Droplets className="h-4 w-4" />} title={t('Critical infrastructure')} count={cityPosition.water.zonesAtRisk + cityPosition.monsoon.wardsBelowThreshold} tone="warn" to={ROUTES.water}>
-            <p className="text-xs text-ink-600">{t('Water zones at risk:')}{' '}<span className="font-semibold text-ink-800">{cityPosition.water.zonesAtRisk}</span></p>
-            <p className="text-xs text-ink-600">{t('Wards below monsoon readiness:')}{' '}<span className="font-semibold text-ink-800">{cityPosition.monsoon.wardsBelowThreshold}</span></p>
-            <p className="text-xs text-ink-600">{t('Chronic waterlogging locations:')}{' '}<span className="font-semibold text-ink-800">{cityPosition.monsoon.chronicLocations}</span></p>
-          </BriefingTile>
+              <BriefingTile icon={<Droplets className="h-4 w-4" />} title={t('Critical infrastructure')} count={cityPosition.water.zonesAtRisk + cityPosition.monsoon.wardsBelowThreshold} tone="warn" to={ROUTES.water}>
+                <p className="text-xs text-ink-600">{t('Water zones at risk:')}{' '}<span className="font-semibold text-ink-800">{cityPosition.water.zonesAtRisk}</span></p>
+                <p className="text-xs text-ink-600">{t('Wards below monsoon readiness:')}{' '}<span className="font-semibold text-ink-800">{cityPosition.monsoon.wardsBelowThreshold}</span></p>
+                <p className="text-xs text-ink-600">{t('Chronic waterlogging locations:')}{' '}<span className="font-semibold text-ink-800">{cityPosition.monsoon.chronicLocations}</span></p>
+              </BriefingTile>
 
-          <BriefingTile icon={<HardHat className="h-4 w-4" />} title={t('Significant project delays')} count={projectsAtRisk.length} tone={projectsAtRisk.length > 0 ? 'warn' : 'default'} to={ROUTES.projects}>
-            {projectsAtRisk.slice(0, 3).map((p) => (
-              <p key={p.id} className="flex items-center justify-between gap-2 text-xs text-ink-600">
-                <span className="truncate">{p.name}</span>
-                <span className="numeric font-semibold text-ink-800">{t('Risk {0}', p.riskScore)}</span>
-              </p>
-            ))}
-            {projectsAtRisk.length === 0 ? <p className="text-xs text-ink-400">{t('No projects above the risk threshold.')}</p> : null}
-          </BriefingTile>
+              <BriefingTile icon={<HardHat className="h-4 w-4" />} title={t('Significant project delays')} count={projectsAtRisk.length} tone={projectsAtRisk.length > 0 ? 'warn' : 'default'} to={ROUTES.projects}>
+                {projectsAtRisk.slice(0, 3).map((p) => (
+                  <p key={p.id} className="flex items-center justify-between gap-2 text-xs text-ink-600">
+                    <span className="truncate">{p.name}</span>
+                    <span className="numeric font-semibold text-ink-800">{t('Risk {0}', p.riskScore)}</span>
+                  </p>
+                ))}
+                {projectsAtRisk.length === 0 ? <p className="text-xs text-ink-400">{t('No projects above the risk threshold.')}</p> : null}
+              </BriefingTile>
 
-          <BriefingTile icon={<HeartPulse className="h-4 w-4" />} title={t('Health alerts')} count={healthSignals.length} tone={healthSignals.length > 0 ? 'warn' : 'default'} to={ROUTES.health}>
-            {healthSignals.slice(0, 3).map((h) => (
-              <p key={h.id} className="flex items-center justify-between gap-2 text-xs text-ink-600">
-                <span className="truncate">{wardName(h.wardId)} - {h.disease}</span>
-                <span className="numeric font-semibold text-ink-800">{h.outbreakSignal}/100</span>
-              </p>
-            ))}
-            {healthSignals.length === 0 ? <p className="text-xs text-ink-400">{t('No elevated outbreak signals.')}</p> : null}
-          </BriefingTile>
+              <BriefingTile icon={<HeartPulse className="h-4 w-4" />} title={t('Health alerts')} count={healthSignals.length} tone={healthSignals.length > 0 ? 'warn' : 'default'} to={ROUTES.health}>
+                {healthSignals.slice(0, 3).map((h) => (
+                  <p key={h.id} className="flex items-center justify-between gap-2 text-xs text-ink-600">
+                    <span className="truncate">{wardName(h.wardId)} - {h.disease}</span>
+                    <span className="numeric font-semibold text-ink-800">{h.outbreakSignal}/100</span>
+                  </p>
+                ))}
+                {healthSignals.length === 0 ? <p className="text-xs text-ink-400">{t('No elevated outbreak signals.')}</p> : null}
+              </BriefingTile>
 
-          <BriefingTile icon={<Flame className="h-4 w-4" />} title={t('Emergency events')} count={incidents.length} tone={incidents.length > 0 ? 'critical' : 'default'} to={ROUTES.situationRoom}>
-            {incidents.slice(0, 3).map((inc) => (
-              <p key={inc.id} className="flex items-center gap-1.5 truncate text-xs text-ink-600">
-                <SeverityBadge severity={inc.severity} size="xs" /> <span className="truncate">{inc.title}</span>
-              </p>
-            ))}
-            {incidents.length === 0 ? <p className="text-xs text-ink-400">{t('No active incidents.')}</p> : null}
-          </BriefingTile>
+              <BriefingTile icon={<Flame className="h-4 w-4" />} title={t('Emergency events')} count={incidents.length} tone={incidents.length > 0 ? 'critical' : 'default'} to={ROUTES.situationRoom}>
+                {incidents.slice(0, 3).map((inc) => (
+                  <p key={inc.id} className="flex items-center gap-1.5 truncate text-xs text-ink-600">
+                    <SeverityBadge severity={inc.severity} size="xs" /> <span className="truncate">{inc.title}</span>
+                  </p>
+                ))}
+                {incidents.length === 0 ? <p className="text-xs text-ink-400">{t('No active incidents.')}</p> : null}
+              </BriefingTile>
 
-          <BriefingTile icon={<Banknote className="h-4 w-4" />} title={t('Revenue / budget exceptions')} count={revenueAnomalies.length} tone={revenueAnomalies.length > 0 ? 'warn' : 'default'} to={ROUTES.revenue}>
-            <p className="text-xs text-ink-600">
-              {t('Collection efficiency:')}{' '}<span className="font-semibold text-ink-800">{formatPercent(cityPosition.revenue.efficiencyPct)}</span>
-            </p>
-            <p className="text-xs text-ink-600">
-              {t('Budget utilisation:')}{' '}<span className="font-semibold text-ink-800">{formatPercent(cityPosition.budget.utilisationPct)}</span>
-            </p>
-            {revenueAnomalies[0] ? (
-              <p className="truncate text-xs text-ink-600">{t('Top anomaly:')}{' '}<span className="font-semibold text-ink-800">{revenueAnomalies[0].title}</span></p>
-            ) : null}
-          </BriefingTile>
+              <BriefingTile icon={<Banknote className="h-4 w-4" />} title={t('Revenue / budget exceptions')} count={revenueAnomalies.length} tone={revenueAnomalies.length > 0 ? 'warn' : 'default'} to={ROUTES.revenue}>
+                <p className="text-xs text-ink-600">
+                  {t('Collection efficiency:')}{' '}<span className="font-semibold text-ink-800">{formatPercent(cityPosition.revenue.efficiencyPct)}</span>
+                </p>
+                <p className="text-xs text-ink-600">
+                  {t('Budget utilisation:')}{' '}<span className="font-semibold text-ink-800">{formatPercent(cityPosition.budget.utilisationPct)}</span>
+                </p>
+                {revenueAnomalies[0] ? (
+                  <p className="truncate text-xs text-ink-600">{t('Top anomaly:')}{' '}<span className="font-semibold text-ink-800">{revenueAnomalies[0].title}</span></p>
+                ) : null}
+              </BriefingTile>
 
-          <BriefingTile icon={<Users className="h-4 w-4" />} title={t('Citizen grievance escalation')} count={totalSlaBreached} tone={totalSlaBreached > 0 ? 'warn' : 'default'} to={ROUTES.wards}>
-            <p className="text-xs text-ink-600">
-              {t('Open complaints (city-wide):')}{' '}<span className="font-semibold text-ink-800">{formatCompact(totalOpenComplaints)}</span>
-            </p>
-            {grievanceWards.slice(0, 2).map((w) => (
-              <p key={w.wardId} className="flex items-center justify-between gap-2 text-xs text-ink-600">
-                <span className="truncate">{w.label}</span>
-                <span className="numeric font-semibold text-crit-600">{w.slaBreached} breached</span>
-              </p>
-            ))}
-          </BriefingTile>
+              <BriefingTile icon={<Users className="h-4 w-4" />} title={t('Citizen grievance escalation')} count={totalSlaBreached} tone={totalSlaBreached > 0 ? 'warn' : 'default'} to={ROUTES.wards}>
+                <p className="text-xs text-ink-600">
+                  {t('Open complaints (city-wide):')}{' '}<span className="font-semibold text-ink-800">{formatCompact(totalOpenComplaints)}</span>
+                </p>
+                {grievanceWards.slice(0, 2).map((w) => (
+                  <p key={w.wardId} className="flex items-center justify-between gap-2 text-xs text-ink-600">
+                    <span className="truncate">{w.label}</span>
+                    <span className="numeric font-semibold text-crit-600">{w.slaBreached} breached</span>
+                  </p>
+                ))}
+              </BriefingTile>
 
-          <BriefingTile icon={<CalendarClock className="h-4 w-4" />} title={t('Priority decisions')} count={cityPosition.priorityDecisions} tone={cityPosition.priorityDecisions > 0 ? 'warn' : 'default'} to={ROUTES.decisions}>
-            <p className="text-xs text-ink-600">{t('Draft or under review, awaiting a human decision.')}</p>
-            <p className="text-xs text-ink-600">
-              {t('Financial impact under decision:')}{' '}
-              <span className="font-semibold text-ink-800">
-                {formatCrore((decisionsQuery.data?.items ?? []).filter((d) => d.status !== 'closed' && d.status !== 'rejected').reduce((s, d) => s + d.financialImpactCrore, 0))}
-              </span>
-            </p>
-          </BriefingTile>
+              <BriefingTile icon={<CalendarClock className="h-4 w-4" />} title={t('Priority decisions')} count={cityPosition.priorityDecisions} tone={cityPosition.priorityDecisions > 0 ? 'warn' : 'default'} to={ROUTES.decisions}>
+                <p className="text-xs text-ink-600">{t('Draft or under review, awaiting a human decision.')}</p>
+                <p className="text-xs text-ink-600">
+                  {t('Financial impact under decision:')}{' '}
+                  <span className="font-semibold text-ink-800">
+                    {formatCrore((decisionsQuery.data?.items ?? []).filter((d) => d.status !== 'closed' && d.status !== 'rejected').reduce((s, d) => s + d.financialImpactCrore, 0))}
+                  </span>
+                </p>
+              </BriefingTile>
+            </div>
+          </GovPanel>
         </div>
-      </div>
 
-      {/* Priority Queue */}
-      <div>
-        <h2 className="mb-2 text-base font-semibold text-ink-900">{t('Commissioner Priority Queue')}</h2>
-        {actionError ? (
-          <Card tone="critical" className="mb-3 flex items-start justify-between gap-3">
-            <p className="text-[0.8125rem] text-crit-700">{actionError}</p>
-            <Button size="xs" variant="ghost" onClick={() => setActionError(null)}>
-              {t('Dismiss')}
-            </Button>
-          </Card>
-        ) : null}
+        {/* Column 2 — what is worked ------------------------------- */}
+        <div className="flex min-w-0 flex-col gap-3 xl:col-span-4">
+          {actionError ? (
+            <Card tone="critical" className="flex items-start justify-between gap-3">
+              <p className="text-[0.8125rem] text-crit-700">{actionError}</p>
+              <Button size="xs" variant="ghost" onClick={() => setActionError(null)}>
+                {t('Dismiss')}
+              </Button>
+            </Card>
+          ) : null}
 
-        {queue.length === 0 ? (
-          <EmptyState title={t('No priority items')} detail="No critical or high-severity intelligence items are currently open." />
-        ) : (
+          <GovPanel title={t('Commissioner Priority Queue')} tone="critical" dense>
+            {queue.length === 0 ? (
+              <EmptyState compact title={t('No priority items')} detail="No critical or high-severity intelligence items are currently open." />
+            ) : (
+              <div className="divide-y divide-ink-50">
+                {queue.map((item) => {
+                  const s = stateFor(item.id)
+                  const decision = item.decisionCaseId ? decisionById.get(item.decisionCaseId) : undefined
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => setSelectedId(item.id)}
+                      aria-haspopup="dialog"
+                      className="group flex w-full items-start gap-3 p-3.5 text-left transition-colors hover:bg-govt-50/50"
+                    >
+                      <SeverityBadge severity={item.severity} className="mt-0.5 shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-[0.8125rem] font-semibold text-ink-900">{item.title}</p>
+                        <p className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[0.6875rem] text-ink-400">
+                          <span>{item.wardIds.map((w) => wardName(w)).join(', ') || 'City-wide'}</span>
+                          <span>{departmentName(item.departmentId)}</span>
+                          <span>{officerDisplayName(item.ownerId)}</span>
+                          <span className="inline-flex items-center gap-1"><FileSearch className="h-3 w-3" />{item.evidenceIds.length}</span>
+                          <span>{formatRelative(item.createdAt)}</span>
+                        </p>
+                        {item.recommendedActions[0] ? (
+                          <p className="mt-1 truncate text-[0.6875rem] text-govt-700">→ {item.recommendedActions[0].title}</p>
+                        ) : null}
+                        <p className="mt-1 flex flex-wrap items-center gap-1.5">
+                          <Badge tone="muted">{decision ? `Decision: ${formatDecisionStatusLabel(decision.status)}` : 'No decision raised'}</Badge>
+                          {decision ? <Badge tone="muted" icon={<CalendarClock className="h-3 w-3" />}>{t('Due {0}', formatRelative(decision.dueDate))}</Badge> : null}
+                          {s.approved ? <Badge tone="positive">{t('Approved')}</Badge> : null}
+                          {s.deferred ? <Badge tone="warn">{t('Deferred')}</Badge> : null}
+                          {s.escalated ? <Badge tone="critical">{t('Escalated')}</Badge> : null}
+                        </p>
+                      </div>
+                      <span className="mt-0.5 hidden shrink-0 items-center gap-1 text-[0.6875rem] font-medium text-ink-300 transition-colors group-hover:text-govt-600 sm:inline-flex">
+                        {t('Open')}<ChevronRight className="h-4 w-4" />
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+          </GovPanel>
+
           <Card flush>
-            <div className="divide-y divide-ink-50">
-              {queue.map((item) => {
-                const s = stateFor(item.id)
-                const decision = item.decisionCaseId ? decisionById.get(item.decisionCaseId) : undefined
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => setSelectedId(item.id)}
-                    aria-haspopup="dialog"
-                    className="group flex w-full items-start gap-3 p-3.5 text-left transition-colors hover:bg-govt-50/50"
-                  >
-                    <SeverityBadge severity={item.severity} className="mt-0.5 shrink-0" />
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-[0.8125rem] font-semibold text-ink-900">{item.title}</p>
-                      <p className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[0.6875rem] text-ink-400">
-                        <span>{item.wardIds.map((w) => wardName(w)).join(', ') || 'City-wide'}</span>
-                        <span>{departmentName(item.departmentId)}</span>
-                        <span>{officerDisplayName(item.ownerId)}</span>
-                        <span className="inline-flex items-center gap-1"><FileSearch className="h-3 w-3" />{item.evidenceIds.length}</span>
-                        <span>{formatRelative(item.createdAt)}</span>
-                      </p>
-                      {item.recommendedActions[0] ? (
-                        <p className="mt-1 truncate text-[0.6875rem] text-govt-700">→ {item.recommendedActions[0].title}</p>
-                      ) : null}
-                      <p className="mt-1 flex flex-wrap items-center gap-1.5">
-                        <Badge tone="muted">{decision ? `Decision: ${formatDecisionStatusLabel(decision.status)}` : 'No decision raised'}</Badge>
-                        {decision ? <Badge tone="muted" icon={<CalendarClock className="h-3 w-3" />}>{t('Due {0}', formatRelative(decision.dueDate))}</Badge> : null}
-                        {s.approved ? <Badge tone="positive">{t('Approved')}</Badge> : null}
-                        {s.deferred ? <Badge tone="warn">{t('Deferred')}</Badge> : null}
-                        {s.escalated ? <Badge tone="critical">{t('Escalated')}</Badge> : null}
-                      </p>
-                    </div>
-                    <span className="mt-0.5 hidden shrink-0 items-center gap-1 text-[0.6875rem] font-medium text-ink-300 transition-colors group-hover:text-govt-600 sm:inline-flex">
-                      {t('Open')}<ChevronRight className="h-4 w-4" />
-                    </span>
-                  </button>
-                )
-              })}
+            <CardHeader bordered eyebrow={t('Accountability')} title={t('Session activity log')} description={t('What you have done in this session, with timestamps. Every entry here also produced a permanent audit record.')} icon={<History className="h-4 w-4" />} />
+            <div className="max-h-72 overflow-y-auto p-4">
+              {activity.entries.length === 0 ? (
+                <p className="text-xs text-ink-400">{t('No actions recorded yet in this session.')}</p>
+              ) : (
+                <ol className="space-y-2.5">
+                  {activity.entries.map((entry) => (
+                    <li key={entry.id} className="flex items-start gap-2.5 text-xs">
+                      <Clock className="mt-0.5 h-3 w-3 shrink-0 text-ink-300" />
+                      <div className="min-w-0">
+                        <p className="text-ink-700">
+                          <span className="font-semibold text-ink-900">{entry.action}</span> - {entry.detail}
+                        </p>
+                        <p className="mt-0.5 text-[0.6875rem] text-ink-400">{entry.actor} · {formatDateTime(entry.at)}</p>
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              )}
             </div>
           </Card>
-        )}
-      </div>
-
-      {/* Session activity log */}
-      <Card flush>
-        <CardHeader bordered eyebrow={t('Accountability')} title={t('Session activity log')} description={t('What you have done in this session, with timestamps. Every entry here also produced a permanent audit record.')} icon={<History className="h-4 w-4" />} />
-        <div className="max-h-72 overflow-y-auto p-4">
-          {activity.entries.length === 0 ? (
-            <p className="text-xs text-ink-400">{t('No actions recorded yet in this session.')}</p>
-          ) : (
-            <ol className="space-y-2.5">
-              {activity.entries.map((entry) => (
-                <li key={entry.id} className="flex items-start gap-2.5 text-xs">
-                  <Clock className="mt-0.5 h-3 w-3 shrink-0 text-ink-300" />
-                  <div className="min-w-0">
-                    <p className="text-ink-700">
-                      <span className="font-semibold text-ink-900">{entry.action}</span> - {entry.detail}
-                    </p>
-                    <p className="mt-0.5 text-[0.6875rem] text-ink-400">{entry.actor} · {formatDateTime(entry.at)}</p>
-                  </div>
-                </li>
-              ))}
-            </ol>
-          )}
         </div>
-      </Card>
+      </div>
 
       {/* Priority item detail — opens as a medium pop-up when a row is clicked. */}
       <Modal
@@ -520,7 +532,7 @@ export function CommissionerCockpitPage(): React.JSX.Element {
 
             <p className="text-xs leading-relaxed text-ink-600">{selectedItem.explanation}</p>
 
-            <dl className="grid grid-cols-1 gap-1.5 rounded-lg bg-surface-sunken p-3 text-xs sm:grid-cols-2">
+            <dl className="grid grid-cols-1 gap-1.5 rounded-[2px] bg-surface-sunken p-3 text-xs sm:grid-cols-2">
               <div className="flex justify-between gap-2 sm:flex-col sm:justify-start sm:gap-0.5"><dt className="text-ink-400">{t('Wards')}</dt><dd className="text-right text-ink-700 sm:text-left">{selectedItem.wardIds.map((w) => wardName(w)).join(', ') || 'City-wide'}</dd></div>
               <div className="flex justify-between gap-2 sm:flex-col sm:justify-start sm:gap-0.5"><dt className="text-ink-400">{t('Department')}</dt><dd className="text-right text-ink-700 sm:text-left">{departmentName(selectedItem.departmentId)}</dd></div>
               <div className="flex justify-between gap-2 sm:flex-col sm:justify-start sm:gap-0.5"><dt className="text-ink-400">{t('Responsible officer')}</dt><dd className="text-right text-ink-700 sm:text-left">{officerDisplayName(selectedItem.ownerId)}</dd></div>

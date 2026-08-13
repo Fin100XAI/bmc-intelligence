@@ -24,6 +24,7 @@ import { ChartFrame, CategoryBarChart, RankedBarChart, CHART_COLOURS } from '@/c
 import { CityMap } from '@/components/map/CityMap'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { waterService } from '@/services'
 import { useContextStore, useDrawerStore } from '@/stores/ui.store'
 import { wardName } from '@/data/reference'
@@ -104,6 +105,11 @@ function ReservoirTank({ fillPct }: { fillPct: number }): React.JSX.Element {
    ========================================================================== */
 
 export function WaterIntelligencePage(): React.JSX.Element {
+  usePageMasthead(
+    t('Water Intelligence'),
+    t('City-wide supply and demand position, reservoir storage, zone-level service quality and a drilldown from the city, through ward and zone, to individual water assets.'),
+  )
+
   /**
    * The drilldown answers to two things: the ward selected across the platform
    * in the command bar, and the ward or zone the operator drills into on this
@@ -150,18 +156,27 @@ export function WaterIntelligencePage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('City Intelligence')}
-        title={t('Water Intelligence')}
-        description={t('City-wide supply and demand position, reservoir storage, zone-level service quality and a drilldown from the city, through ward and zone, to individual water assets.')}
         breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Water Intelligence') }]}
         freshness={freshness}
       />
 
       <CityPositionSection />
-      <ReservoirSection />
-      <ZoneSection onSelectWard={selectWard} onSelectZone={selectZone} activeZoneId={drillZoneId} />
-      <AnomalySection />
-      <DrilldownSection wardId={drillWardId} zoneId={drillZoneId} onReset={resetDrill} />
-      <WaterChartsSection />
+
+      {/* Two columns, read downward. The zone register, the drilldown it feeds
+          and the zone charts are the working surface and carry the width; the
+          reservoir position and the anomalies currently open read beside. */}
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
+          <ZoneSection onSelectWard={selectWard} onSelectZone={selectZone} activeZoneId={drillZoneId} />
+          <DrilldownSection wardId={drillWardId} zoneId={drillZoneId} onReset={resetDrill} />
+          <WaterChartsSection />
+        </div>
+
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
+          <ReservoirSection />
+          <AnomalySection />
+        </div>
+      </div>
 
       <DemonstrationNotice />
     </PageBody>
@@ -271,12 +286,12 @@ function ReservoirSection(): React.JSX.Element {
   return (
     <Card>
       <CardHeader icon={<Database className="h-4 w-4" />} title={t('Reservoir Status')} description={t('Combined lake system storage - the position leadership asks for first.')} />
-      <MetricGrid columns={3} className="mt-3">
+      <MetricGrid columns={2} className="mt-3">
         <MetricCard label={t('Combined fill')} value={formatPercent(overallFillPct)} tone={overallFillPct < 40 ? 'critical' : overallFillPct < 60 ? 'warn' : 'default'} />
         <MetricCard label={t('Useful storage')} value={formatNumber(totalCurrent)} unit={t('of {0} ML', formatNumber(totalUseful))} />
         <MetricCard label={t('Days of supply (avg)')} value={formatNumber(avgDaysOfSupply, 0)} unit="days" />
       </MetricGrid>
-      <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-2">
         {reservoirs.map((r) => (
           <div key={r.id} className="flex items-center gap-3 rounded-lg border border-ink-100 p-3">
             <ReservoirTank fillPct={r.fillPct} />

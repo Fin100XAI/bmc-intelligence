@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Navigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import {
   ArrowRight,
   Building2,
@@ -38,8 +38,7 @@ import {
 } from 'lucide-react'
 import { corporationName } from '@/config/corporations'
 import { municipality } from '@/config/municipality.config'
-import { ROUTES } from '@/config/navigation'
-import { useIsAuthenticated } from '@/stores/auth.store'
+import { NAV_SECTIONS, ROUTES } from '@/config/navigation'
 import { useActiveCorporation } from '@/stores/corporation.store'
 import { useApplyLocale } from '@/stores/locale.store'
 import { LanguageSwitcher } from '@/components/layout/LanguageSwitcher'
@@ -140,223 +139,67 @@ interface PortalLink {
  * how the visitor reads this page rather than ways off it, and sending them to
  * sign-in would leave the portal unusable.
  */
+/**
+ * Where a portal tile or menu link actually goes.
+ *
+ * This used to mint `/login/direct?next=…`, because the portal was public and
+ * every destination had to bounce an anonymous visitor through sign-in. The
+ * portal now sits behind the session, so the principal is already established
+ * by the time any of these links is on screen and the destination is reached
+ * directly. The permission engine still governs what opens: `RequirePermission`
+ * re-evaluates on arrival, so a link to a module this role may not read is
+ * refused there exactly as it was before.
+ */
 function signInFor(to: string): string {
-  return `${ROUTES.loginDirect}?next=${encodeURIComponent(to)}`
+  return to
 }
 
 interface PortalMenu {
   id: string
   label: string
-  groups: Array<{ heading: string; links: PortalLink[] }>
+  /**
+   * Columns of the drop panel. `heading` is optional: a menu derived from a
+   * single navigation section has nothing to say above its own links that the
+   * tab has not already said, and repeating the tab's label inside its own
+   * panel reads as a stutter.
+   */
+  groups: Array<{ heading?: string; links: PortalLink[] }>
 }
 
 function build$PORTAL_MENUS(): PortalMenu[] {
-  // The portal's navigation is THIS PLATFORM'S information architecture, not a
-  // citizen portal's. A municipal corporation segments its front page by
-  // audience - residents, businesses, tourists - because a citizen arrives
-  // knowing which of those they are. Someone arriving here is asking a
-  // different question: what does this platform decide, and on what evidence.
-  // So the menus are the decision surfaces themselves, grouped the way the
-  // command rail behind sign-in groups them, and every label is the one that
-  // surface actually carries. A visitor who signs in should recognise the rail
-  // as the same structure they just browsed.
+  // The portal's menu IS the platform's navigation, derived from it rather
+  // than restated beside it.
   //
-  // Inlined rather than hoisted to a constant: the catalogue extractor reads
-  // literal arguments to t(), so a hoisted message is invisible to it and the
-  // audit reports it as an orphaned entry it can no longer find on screen.
-  const unit = municipality.terminology.primaryUnitSingular
-  return [
-    {
-      id: 'command',
-      label: t('Command Centre'),
-      groups: [
-        {
-          heading: t('Where a decision starts'),
-          links: [
-            { label: t('Executive Overview'), to: ROUTES.executive },
-            { label: t('Commissioner Cockpit'), to: ROUTES.cockpit },
-            { label: t('City Intelligence Index'), to: ROUTES.cityIndex },
-            { label: t('Situation Room'), to: ROUTES.situationRoom },
-          ],
-        },
-        {
-          heading: t('How it is carried'),
-          links: [
-            { label: t('Intelligence Feed'), to: ROUTES.intelligenceFeed },
-            { label: t('Decision Centre'), to: ROUTES.decisions },
-            { label: t('Alerts & Escalations'), to: ROUTES.alerts },
-            { label: t('Report Workspace'), to: ROUTES.reports },
-          ],
-        },
-      ],
-    },
-    {
-      id: 'wards',
-      label: t('Wards & Localities'),
-      groups: [
-        {
-          heading: t('{0} intelligence', unit),
-          links: [
-            { label: t('Ward Intelligence'), to: ROUTES.wards },
-            { label: t('Hyperlocal Intelligence'), to: ROUTES.hyperlocal },
-            { label: t('Ward League Table'), to: ROUTES.wardLeague },
-            { label: t('Ward Equity & Allocation'), to: ROUTES.wardEquity },
-          ],
-        },
-        {
-          heading: t('Held to account'),
-          links: [
-            { label: t('Ward Trajectory'), to: ROUTES.wardTrajectory },
-            { label: t('Ward Commitments'), to: ROUTES.wardCommitments },
-            { label: t('Like-for-Like Performance'), to: ROUTES.wardPerformance },
-          ],
-        },
-      ],
-    },
-    {
-      id: 'operations',
-      label: t('City Operations'),
-      groups: [
-        {
-          heading: t('Water & Sanitation'),
-          links: [
-            { label: t('Water Intelligence'), to: ROUTES.water },
-            { label: t('Sewerage Intelligence'), to: ROUTES.sewerage },
-            { label: t('Storm Water Intelligence'), to: ROUTES.stormwater },
-            { label: t('Solid Waste Intelligence'), to: ROUTES.waste },
-          ],
-        },
-        {
-          heading: t('Roads & the public realm'),
-          links: [
-            { label: t('Roads Intelligence'), to: ROUTES.roads },
-            { label: t('Traffic & Mobility'), to: ROUTES.traffic },
-            { label: t('Street Lighting'), to: ROUTES.streetLighting },
-            { label: t('Environment Intelligence'), to: ROUTES.environment },
-          ],
-        },
-      ],
-    },
-    {
-      id: 'citizen',
-      label: t('Service Delivery'),
-      groups: [
-        {
-          heading: t('Service delivery'),
-          links: [
-            { label: t('Citizen Service Intelligence'), to: ROUTES.citizenServices },
-            { label: t('Births & Deaths Registration'), to: ROUTES.registration },
-            { label: t('Trade Licensing'), to: ROUTES.licensing },
-            { label: t('Markets & Slaughterhouses'), to: ROUTES.markets },
-          ],
-        },
-        {
-          heading: t('Health & social development'),
-          links: [
-            { label: t('Public Health'), to: ROUTES.health },
-            { label: t('Hospital Intelligence'), to: ROUTES.hospitals },
-            { label: t('Education Intelligence'), to: ROUTES.education },
-            { label: t('Housing & Social Welfare'), to: ROUTES.welfare },
-          ],
-        },
-      ],
-    },
-    {
-      id: 'risk',
-      label: t('Risk & Response'),
-      groups: [
-        {
-          heading: t('Preparedness'),
-          links: [
-            { label: t('Disaster Intelligence'), to: ROUTES.disaster },
-            { label: t('Fire & Emergency'), to: ROUTES.emergency },
-            { label: t('Monsoon Intelligence'), to: ROUTES.monsoon },
-          ],
-        },
-        {
-          heading: t('Standing risk'),
-          links: [
-            { label: t('Urban Resilience'), to: ROUTES.resilience },
-            { label: t('Scenario Planning'), to: ROUTES.scenarios },
-            { label: t('Coastal Intelligence'), to: ROUTES.coastal },
-          ],
-        },
-      ],
-    },
-    {
-      id: 'finance',
-      label: t('Revenue & Finance'),
-      groups: [
-        {
-          heading: t('What comes in'),
-          links: [
-            { label: t('Property Tax Intelligence'), to: ROUTES.property },
-            { label: t('Revenue Intelligence'), to: ROUTES.revenue },
-            { label: t('Revenue Reconciliation'), to: ROUTES.reconciliation },
-            { label: t('Recovery Worklist'), to: ROUTES.recoveryWorklist },
-          ],
-        },
-        {
-          heading: t('What goes out'),
-          links: [
-            { label: t('Budget Intelligence'), to: ROUTES.budget },
-            { label: t('Procurement Intelligence'), to: ROUTES.procurement },
-            { label: t('Project Delivery'), to: ROUTES.projects },
-            { label: t('Contractor Performance'), to: ROUTES.contractors },
-          ],
-        },
-      ],
-    },
-    {
-      id: 'strategy',
-      label: t('Strategy'),
-      groups: [
-        {
-          heading: t('Planning the city'),
-          links: [
-            { label: t('Planning & Development Control'), to: ROUTES.planning },
-            { label: t('Building Permission'), to: ROUTES.buildings },
-            { label: t('Urban Digital Twin'), to: ROUTES.digitalTwin },
-            { label: t('Knowledge Graph'), to: ROUTES.knowledgeGraph },
-          ],
-        },
-        {
-          heading: t('The institution'),
-          links: [
-            { label: t('Council Resolutions'), to: ROUTES.councilResolutions },
-            { label: t('Workforce Intelligence'), to: ROUTES.workforce },
-            { label: t('Institutional Memory'), to: ROUTES.institutionalMemory },
-            { label: t('State Benchmarking'), to: ROUTES.benchmarking },
-          ],
-        },
-      ],
-    },
-    {
-      id: 'ai-trust',
-      label: t('AI & Trust'),
-      groups: [
-        {
-          heading: t('Decision support'),
-          links: [
-            { label: t('Municipal Copilot'), to: ROUTES.copilot },
-            { label: t('AI Centre'), to: ROUTES.aiCentre },
-            { label: t('AI Agents'), to: ROUTES.aiAgents },
-            { label: t('AI Recommendations'), to: ROUTES.aiRecommendations },
-          ],
-        },
-        {
-          heading: t('Answerable for it'),
-          links: [
-            { label: t('Trust Centre'), to: ROUTES.trustCentre },
-            { label: t('AI Governance'), to: ROUTES.aiGovernance },
-            { label: t('Access & Roles'), to: ROUTES.accessGovernance },
-            { label: t('Security Posture'), to: ROUTES.security },
-          ],
-        },
-      ],
-    },
-  ]
+  // It used to be eight hand-written tabs that collapsed the platform's
+  // sixteen sections — so the front page advertised a structure the console
+  // behind it did not have, and every route added to the rail was missing here
+  // until someone remembered to add it twice. Reading `NAV_SECTIONS` means the
+  // two cannot drift: a section added to the navigation appears on the portal
+  // the same day, under the same name, pointing at the same route.
+  //
+  // Every label and description here is already a translated `t()` string in
+  // the navigation config, so deriving them introduces no new message the
+  // catalogue has to carry.
+  return NAV_SECTIONS.map((section) => {
+    const links: PortalLink[] = section.items.map((item) => ({
+      label: item.label,
+      to: item.to,
+      note: item.description,
+    }))
+
+    // Spread across up to three columns so the drop panel uses the grid it
+    // already lays out, instead of running one long column down the page.
+    // Sections carrying four or fewer destinations stay in a single column.
+    const columns = Math.min(3, Math.max(1, Math.ceil(links.length / 4)))
+    const perColumn = Math.ceil(links.length / columns)
+    const groups = Array.from({ length: columns }, (_, index) => ({
+      links: links.slice(index * perColumn, (index + 1) * perColumn),
+    })).filter((group) => group.links.length > 0)
+
+    return { id: section.id, label: section.label, groups }
+  })
 }
+
 let PORTAL_MENUS: PortalMenu[] = build$PORTAL_MENUS()
 
 function build$QUICK_LINKS(): PortalTile[] {
@@ -883,7 +726,7 @@ function PortalLinkGrid({ tiles }: { tiles: PortalTile[] }): React.JSX.Element {
             >
               <tile.icon className="h-5 w-5" />
             </span>
-            <span className="text-[0.8125rem] leading-snug font-semibold text-ink-800">{tile.label}</span>
+            <span className="min-w-0 text-[0.8125rem] leading-snug font-semibold break-words text-ink-800">{tile.label}</span>
             {tile.isNew ? (
               <span className="ml-auto shrink-0 rounded-sm bg-crit-500 px-1.5 py-0.5 text-[0.5625rem] font-bold tracking-[0.08em] text-white uppercase">
                 {t('New')}
@@ -944,9 +787,13 @@ registerLayer(() => {
    ========================================================================== */
 
 export function PortalLandingPage(): React.JSX.Element {
-  const isAuthenticated = useIsAuthenticated()
+  const navigate = useNavigate()
   const corporation = useActiveCorporation()
   const locale = useApplyLocale()
+
+  const menuRailRef = useRef<HTMLUListElement>(null)
+  const [canSlideLeft, setCanSlideLeft] = useState(false)
+  const [canSlideRight, setCanSlideRight] = useState(false)
 
   const [openMenu, setOpenMenu] = useState<string | null>(null)
   const [query, setQuery] = useState('')
@@ -1115,10 +962,65 @@ export function PortalLandingPage(): React.JSX.Element {
     return [...byLabel.values()].slice(0, 8)
   }, [query])
 
-  if (isAuthenticated) return <Navigate to="/" replace />
+  /*
+   * Anywhere on the page that is not itself a control opens the console.
+   *
+   * The redirect that used to stand here — bounce an authenticated visitor
+   * straight to `/` — was correct while the portal was public and a signed-in
+   * officer had no business on it. The portal is now the page sign-in lands on,
+   * so that guard would have bounced every officer off it immediately.
+   *
+   * The guard below is what makes "click anywhere" safe: a click that landed on
+   * a link, a button, an input or anything inside one is that control's click,
+   * not the page's. Without it, opening a menu or typing in the search box
+   * would navigate away instead — the page would be unusable rather than
+   * convenient. `closest` walks up from the actual target, so a click on the
+   * icon inside a button still counts as the button's.
+   */
+  /*
+   * The sliding section rail.
+   *
+   * `scrollWidth > clientWidth` is the only honest test for "there is more this
+   * way" — it accounts for the actual rendered width of the sections, which
+   * varies with the language (a Marathi label is not the width of its English
+   * one) and with the viewport. Deciding from a hard-coded section count would
+   * be wrong in Marathi and wrong on every width but one.
+   *
+   * The one-pixel tolerance is not superstition: sub-pixel layout means a rail
+   * scrolled fully right commonly lands at 811.4 of 812, and without it the
+   * right arrow stays lit forever pointing at nothing.
+   */
+  const syncSlideAffordances = (): void => {
+    const rail = menuRailRef.current
+    if (!rail) return
+    setCanSlideLeft(rail.scrollLeft > 1)
+    setCanSlideRight(rail.scrollLeft + rail.clientWidth < rail.scrollWidth - 1)
+  }
+
+  /** Slides by most of a viewport, keeping a sliver of context across the jump. */
+  const slideMenus = (direction: 1 | -1): void => {
+    const rail = menuRailRef.current
+    if (!rail) return
+    rail.scrollBy({ left: direction * rail.clientWidth * 0.8, behavior: 'smooth' })
+  }
+
+  // Re-measured on mount, on resize and on a language switch — each changes the
+  // rendered width of the rail, and a stale measurement leaves an arrow either
+  // missing when it is needed or lit when it does nothing.
+  useEffect(() => {
+    syncSlideAffordances()
+    window.addEventListener('resize', syncSlideAffordances)
+    return () => window.removeEventListener('resize', syncSlideAffordances)
+  }, [locale])
+
+  const enterConsole = (event: React.MouseEvent<HTMLDivElement>): void => {
+    const target = event.target as HTMLElement | null
+    if (target?.closest('a, button, input, select, textarea, label, [role="button"], [role="link"]')) return
+    navigate('/')
+  }
 
   return (
-    <div key={locale} className="min-h-screen bg-canvas">
+    <div key={locale} className="min-h-screen bg-canvas" onClick={enterConsole}>
       <a
         href="#portal-main"
         className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:bg-govt-700 focus:px-3 focus:py-2 focus:text-xs focus:font-semibold focus:text-white"
@@ -1179,16 +1081,26 @@ export function PortalLandingPage(): React.JSX.Element {
       {/* ============================================================ */}
       {/* Live update line                                             */}
       {/* ============================================================ */}
-      {/* Laid on the reference portal's pale blue (#f2f7fc) rather than on
-          white, which is how mcgm.gov.in separates its notice scroller from
-          the masthead below it. */}
-      <div className="border-b border-portal-100 bg-portal-50">
+      {/* Pinned to the top of the viewport, and carried on the corporation's
+          deep portal blue rather than the pale tint it used to sit on.
+
+          Sticky because a live notice line that scrolls away stops being live
+          the moment a visitor reads past it - the whole reason it moves is to
+          stay in view. `z-30` puts it above the page's own content and below
+          the sign-in dialog, so an open dialog is never underlapped by a
+          moving strip.
+
+          Dark because the label had to read white, and white on the previous
+          #f2f7fc was invisible. Inverting the strip keeps the contrast well
+          clear of the WCAG AA floor in both directions rather than trading one
+          unreadable combination for another. */}
+      <div className="sticky top-0 z-30 border-b border-portal-900 bg-portal-800 shadow-sm">
         <div className="mx-auto flex max-w-[80rem] items-center gap-2.5 px-4 py-1.5">
-          <span className="flex shrink-0 items-center gap-1.5 rounded-sm bg-crit-50 px-1.5 py-0.5 text-[0.625rem] font-bold tracking-[0.08em] text-crit-700 uppercase ring-1 ring-crit-200 ring-inset">
-            <span aria-hidden className="animate-pulse-soft h-1.5 w-1.5 rounded-full bg-crit-500" />
+          <span className="flex shrink-0 items-center gap-1.5 rounded-sm bg-crit-500 px-1.5 py-0.5 text-[0.625rem] font-bold tracking-[0.08em] text-white uppercase ring-1 ring-crit-300 ring-inset">
+            <span aria-hidden className="animate-pulse-soft h-1.5 w-1.5 rounded-full bg-white" />
             {t('Live')}
           </span>
-          <span className="hidden shrink-0 text-[0.6875rem] font-semibold text-ink-600 sm:inline">
+          <span className="hidden shrink-0 text-[0.6875rem] font-semibold text-white sm:inline">
             {t('Latest updates')}
           </span>
 
@@ -1214,11 +1126,11 @@ export function PortalLandingPage(): React.JSX.Element {
                       <a
                         href={signInFor(item.to)}
                         tabIndex={isLoopCopy ? -1 : undefined}
-                        className="px-3 py-0.5 text-[0.75rem] whitespace-nowrap text-ink-700 hover:text-portal-700 hover:underline"
+                        className="px-3 py-0.5 text-[0.75rem] whitespace-nowrap text-white/90 hover:text-white hover:underline"
                       >
                         {item.label}
                       </a>
-                      <span aria-hidden className="h-1 w-1 shrink-0 rounded-full bg-ink-300" />
+                      <span aria-hidden className="h-1 w-1 shrink-0 rounded-full bg-white/40" />
                     </li>
                   ))}
                 </ul>
@@ -1234,7 +1146,7 @@ export function PortalLandingPage(): React.JSX.Element {
             aria-pressed={feedPaused}
             aria-label={feedPaused ? t('Resume the update line') : t('Pause the update line')}
             title={feedPaused ? t('Resume the update line') : t('Pause the update line')}
-            className="shrink-0 rounded p-1 text-ink-500 transition-colors hover:bg-ink-100 hover:text-ink-800"
+            className="shrink-0 rounded p-1 text-white/70 transition-colors hover:bg-white/15 hover:text-white"
           >
             {feedPaused ? <Play className="h-3.5 w-3.5" aria-hidden /> : <Pause className="h-3.5 w-3.5" aria-hidden />}
           </button>
@@ -1244,11 +1156,21 @@ export function PortalLandingPage(): React.JSX.Element {
       {/* ============================================================ */}
       {/* Masthead                                                     */}
       {/* ============================================================ */}
-      {/* The masthead is modelled on mcgm.gov.in's: a white band carrying the
-          seal at civic scale, the institutional line beneath it, and a gold
-          rule closing the band off from the navigation. The corporation's own
-          portal earns its authority from weight and a hairline of gold rather
-          than from colour, and this band does the same. */}
+      {/* A WHITE masthead between two blue bands, following mcgm.gov.in: blue
+          utility strip above, white masthead here, blue navigation below,
+          closed by the gold rule that separates the whole header from the hero.
+
+          Carried on white, the masthead earns its authority from weight and a
+          hairline of gold rather than from colour — which is what lets the
+          corporation's identity read as a letterhead instead of as one more
+          coloured bar. It was briefly set on blue, which merged it into the
+          chrome above and below it and gave the top of the page four
+          consecutive bands of the same colour before any content appeared.
+
+          The elements that carried weight on blue are re-weighted back: the
+          seal keeps its gold ring, the deployment label is a light inset with
+          a gold stub rather than a translucent one, and the helpline stays a
+          solid red chip so it remains the urgent thing on the band. */}
       <header className="border-b-[3px] border-gold-500 bg-surface">
         <div className="mx-auto flex max-w-[80rem] flex-col gap-4 px-4 py-5 md:flex-row md:items-center md:justify-between">
           {/* The masthead leads with the PLATFORM, not with the corporation.
@@ -1266,17 +1188,17 @@ export function PortalLandingPage(): React.JSX.Element {
               className="h-16 w-16 shrink-0 rounded-md object-cover ring-2 ring-gold-500/70"
             />
             <div className="min-w-0">
-              <p className="truncate text-[1.3125rem] leading-tight font-bold tracking-[-0.01em] text-portal-950">
+              <p className="truncate text-[1.3125rem] leading-tight font-bold tracking-[-0.01em] text-ink-900">
                 {municipality.branding.productFamily}
               </p>
-              <p className="mt-0.5 truncate text-[0.875rem] leading-tight font-medium text-portal-700">
+              <p className="mt-0.5 truncate text-[0.875rem] leading-tight font-medium text-ink-600">
                 {t('Government of {0} · Urban Development Department', municipality.state)}
               </p>
               {/* The deployment line is what the reference portal would print
                   as its office identifier: set off by a gold stub, not by a
                   status dot, so it reads as an institutional label rather than
                   as telemetry about a running system. */}
-              <p className="mt-1.5 flex min-w-0 items-center gap-2 border-l-[3px] border-gold-400 bg-gold-50 py-0.5 pr-2 pl-2 text-[0.75rem] font-medium text-ink-700">
+              <p className="mt-1.5 flex min-w-0 items-center gap-2 border-l-[3px] border-gold-400 bg-ink-50 py-0.5 pr-2 pl-2 text-[0.75rem] font-medium text-ink-700">
                 <span className="truncate">{t('Deployment: {0}', corporationName(corporation))}</span>
               </p>
             </div>
@@ -1285,7 +1207,7 @@ export function PortalLandingPage(): React.JSX.Element {
           <div className="flex flex-col items-stretch gap-2 md:items-end">
             <a
               href={`tel:1916`}
-              className="inline-flex items-center gap-2 self-start rounded-md bg-crit-50 px-2.5 py-1 text-[0.75rem] font-semibold text-crit-700 ring-1 ring-crit-200 ring-inset md:self-auto"
+              className="inline-flex items-center gap-2 self-start rounded-md bg-crit-500 px-2.5 py-1 text-[0.75rem] font-semibold text-white ring-1 ring-crit-300 ring-inset md:self-auto"
             >
               <Phone className="h-3.5 w-3.5" aria-hidden />
               {t('24×7 helpline 1916')}
@@ -1330,13 +1252,35 @@ export function PortalLandingPage(): React.JSX.Element {
           band. It sits directly on top of the photographic hero, and the two
           are one block of chrome that has to read as one. */}
       <div ref={navRef} className="relative z-20 bg-portal-700">
-        <nav aria-label={t('Portal navigation')} className="mx-auto max-w-[80rem] px-2">
+        <nav aria-label={t('Portal navigation')} className="relative mx-auto flex max-w-[80rem] items-stretch px-2">
           {/* One line, always. A tab bar that wraps reads as two bars, and the
               menu that drops to the second row looks like an afterthought
-              rather than a peer of the others. Below the width where all eight
-              fit, the bar scrolls sideways instead - which is what a tab bar
-              on a government portal does on a handset. */}
-          <ul className="scrollbar-rail flex flex-nowrap overflow-x-auto">
+              rather than a peer of the others. Below the width where every
+              section fits, the bar slides sideways instead — which is what a
+              tab bar on a government portal does on a handset.
+
+              The arrows exist because sideways scroll is otherwise invisible on
+              a desktop with no touch and no horizontal wheel: the row simply
+              looks truncated, and the sections past the edge are not so much
+              hidden as unknown. Each is hidden the moment its direction is
+              exhausted, so a lit arrow always means there is more that way. */}
+          <button
+            type="button"
+            aria-label={t('Scroll sections left')}
+            onClick={() => slideMenus(-1)}
+            className={cn(
+              'z-10 -mr-2 shrink-0 self-stretch bg-gradient-to-r from-portal-700 via-portal-700 to-transparent pr-4 pl-1 text-white/70 transition-colors hover:text-white',
+              !canSlideLeft && 'pointer-events-none opacity-0',
+            )}
+          >
+            <ChevronLeft className="h-4 w-4" aria-hidden />
+          </button>
+
+          <ul
+            ref={menuRailRef}
+            onScroll={syncSlideAffordances}
+            className="scrollbar-none flex min-w-0 flex-1 flex-nowrap overflow-x-auto scroll-smooth"
+          >
             {PORTAL_MENUS.map((menu) => (
               <li key={menu.id} className="shrink-0">
                 <button
@@ -1361,14 +1305,33 @@ export function PortalLandingPage(): React.JSX.Element {
               </li>
             ))}
           </ul>
+
+          <button
+            type="button"
+            aria-label={t('Scroll sections right')}
+            onClick={() => slideMenus(1)}
+            className={cn(
+              'z-10 -ml-2 shrink-0 self-stretch bg-gradient-to-l from-portal-700 via-portal-700 to-transparent pr-1 pl-4 text-white/70 transition-colors hover:text-white',
+              !canSlideRight && 'pointer-events-none opacity-0',
+            )}
+          >
+            <ChevronRight className="h-4 w-4" aria-hidden />
+          </button>
         </nav>
 
         {openMenu ? (
           <div className="absolute inset-x-0 top-full border-b border-ink-200 bg-surface shadow-drawer">
             <div className="mx-auto grid max-w-[80rem] grid-cols-1 gap-x-8 gap-y-5 px-4 py-5 sm:grid-cols-2 lg:grid-cols-3">
-              {PORTAL_MENUS.find((m) => m.id === openMenu)?.groups.map((group) => (
-                <div key={group.heading}>
-                  <p className="text-[0.6875rem] font-bold tracking-[0.08em] text-ink-400 uppercase">{group.heading}</p>
+              {PORTAL_MENUS.find((m) => m.id === openMenu)?.groups.map((group, index) => (
+                /* Keyed by position: the columns of one section's destinations
+                   carry no headings to key on, and their order is the order the
+                   navigation states. */
+                <div key={index}>
+                  {group.heading ? (
+                    <p className="text-[0.6875rem] font-bold tracking-[0.08em] text-ink-400 uppercase">
+                      {group.heading}
+                    </p>
+                  ) : null}
                   <ul className="mt-2 flex flex-col gap-1.5">
                     {group.links.map((link) => (
                       <li key={link.label}>
@@ -1608,14 +1571,21 @@ export function PortalLandingPage(): React.JSX.Element {
               ))}
             </dl>
 
-            {/* `loginDirect`, not `login`: this page IS `/login`, and pointing
-                the door at itself would be a loop. */}
+            {/* The way into the console. It used to read "Officer sign-in" and
+                point at the sign-in screen, which sat after this page; sign-in
+                now comes first, so by the time this is on screen the principal
+                is established and the door leads inward.
+
+                Kept as a real control rather than relying on the click-anywhere
+                behaviour on the page root: that is a convenience for a mouse,
+                and it is unreachable by keyboard or screen reader. This is the
+                affordance that actually names the action. */}
             <a
-              href={ROUTES.loginDirect}
+              href="/"
               className="interactive-surface inline-flex w-fit items-center gap-2 rounded-md bg-govt-700 px-4 py-2.5 text-[0.8125rem] font-semibold text-white hover:bg-govt-800"
             >
               <LogIn className="h-4 w-4" aria-hidden />
-              {t('Officer sign-in')}
+              {t('Enter the console')}
               <ArrowRight className="h-4 w-4" aria-hidden />
             </a>
           </div>

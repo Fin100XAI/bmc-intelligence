@@ -20,6 +20,7 @@ import { queryKeys } from '@/app/queryClient'
 import { aiService } from '@/services'
 import { allowed, HUMAN_CONFIRMATION_REQUIRED } from '@/security'
 import { useCurrentUser } from '@/stores/auth.store'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { ROUTES } from '@/config/navigation'
 import { userDisplayName } from '@/auth/demo-users'
 import { formatDate, formatPercent, formatRelative } from '@/utils/format'
@@ -87,6 +88,12 @@ export function AIGovernancePage(): React.JSX.Element {
   const currentUser = useCurrentUser()
   const [tab, setTab] = useState<TabId>('risk')
 
+  // The shell's masthead carries the screen's name; the page states the wording.
+  usePageMasthead(
+    t('AI Governance'),
+    t('Every AI capability in this platform is registered, risk-assessed and subject to named human oversight. AI analyses, recommends, forecasts, summarises, detects, prioritises, simulates and explains - it never decides.'),
+  )
+
   const modelsQuery = useServiceQuery(queryKeys.ai('models'), (user) => aiService.models(user))
   const promptsQuery = useServiceQuery(queryKeys.ai('prompts'), (user) => aiService.prompts(user))
   const riskQuery = useServiceQuery(queryKeys.ai('risk-register'), (user) => aiService.riskRegister(user))
@@ -136,8 +143,6 @@ export function AIGovernancePage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('Trust Centre - Flagship')}
-        title={t('AI Governance')}
-        description={t('Every AI capability in this platform is registered, risk-assessed and subject to named human oversight. AI analyses, recommends, forecasts, summarises, detects, prioritises, simulates and explains - it never decides.')}
         breadcrumbs={[{ label: t('Trust Centre'), to: '/trust' }, { label: t('AI Governance') }]}
       />
 
@@ -287,7 +292,12 @@ export function AIGovernancePage(): React.JSX.Element {
       ) : null}
 
       {tab === 'risk' ? (
-        <>
+        /* Two columns. The register is the record and holds the wide column;
+           the nine-cell matrix is a summary of the same rows and reads beside
+           it, where a cell count can be checked against the entries that
+           produced it. */
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+          <div className="flex min-w-0 flex-col gap-4 xl:order-2 xl:col-span-4">
           <Card>
             <CardHeader icon={<Gauge className="h-4 w-4" />} title={t('Likelihood / impact matrix')} description={t('Count of registered risks at each combination. Darker cells carry higher inherent severity.')} />
             <div className="mt-3 overflow-x-auto">
@@ -339,7 +349,9 @@ export function AIGovernancePage(): React.JSX.Element {
               </table>
             </div>
           </Card>
+          </div>
 
+          <div className="flex min-w-0 flex-col gap-4 xl:order-1 xl:col-span-8">
           <Card>
             <CardHeader title={t('AI risk register')} description={t('Every declared risk with its controls, owner and review schedule.')} />
             <div className="mt-3">
@@ -380,7 +392,8 @@ export function AIGovernancePage(): React.JSX.Element {
               ))}
             </div>
           </Card>
-        </>
+          </div>
+        </div>
       ) : null}
 
       {tab === 'oversight' ? (

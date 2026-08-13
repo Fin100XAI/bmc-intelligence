@@ -8,6 +8,7 @@ import { DemonstrationNotice, EmptyState, ErrorState, LoadingState } from '@/com
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { adminService } from '@/services'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { RESOURCE_LABEL, getRole, type ResourceType } from '@/security'
 import { userDisplayName } from '@/auth/demo-users'
 import { formatDate } from '@/utils/format'
@@ -34,6 +35,12 @@ const STATUS_TONE: Record<AccessPolicy['status'], 'positive' | 'neutral' | 'warn
 export function PoliciesPage(): React.JSX.Element {
   const policiesQuery = useServiceQuery(queryKeys.admin('policies'), (user) => adminService.policies(user))
   const [selectedId, setSelectedId] = useState<string | null>(null)
+
+  // The shell renders the masthead; this page states what it should say.
+  usePageMasthead(
+    t('Policies'),
+    t('The attribute-based access control policies layered over the role catalogue - the conditions, in addition to a role grant, under which a request is allowed or explicitly refused.'),
+  )
 
   if (policiesQuery.isLoading) return <LoadingState variant="table" />
   if (policiesQuery.error) {
@@ -123,8 +130,6 @@ export function PoliciesPage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('Administration')}
-        title={t('Policies')}
-        description={t('The attribute-based access control policies layered over the role catalogue - the conditions, in addition to a role grant, under which a request is allowed or explicitly refused.')}
         breadcrumbs={[{ label: t('Administration') }, { label: t('Policies') }]}
       />
 

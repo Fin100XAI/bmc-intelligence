@@ -29,6 +29,7 @@ import {
 } from '@/services'
 import { buildCityPosition } from '@/domains'
 import { useCurrentUser } from '@/stores/auth.store'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { allowed } from '@/security'
 import { municipality } from '@/config/municipality.config'
 import { departmentName, wardName } from '@/data/reference'
@@ -558,13 +559,17 @@ export function ReportsPage(): React.JSX.Element {
   const canPrint = allowed(user, 'report', 'export')
   const activeReport = REPORTS.find((r) => r.id === selected) ?? REPORTS[0]
 
+  // The shell renders the masthead; this page states what it should say.
+  usePageMasthead(
+    t('Report Workspace'),
+    t('Institutional reports rendered as print-ready documents - masthead, provenance statement and figures drawn directly from the live service layer.'),
+  )
+
   return (
     <PageBody>
       <PageHeader
         className="print-hidden"
         eyebrow={t('Command')}
-        title={t('Report Workspace')}
-        description={t('Institutional reports rendered as print-ready documents - masthead, provenance statement and figures drawn directly from the live service layer.')}
         breadcrumbs={[{ label: t('Command') }, { label: t('Report Workspace') }]}
         actions={
           <Button
@@ -600,7 +605,7 @@ export function ReportsPage(): React.JSX.Element {
       </Card>
 
       <div className="print-hidden flex items-center gap-1.5 text-xs text-ink-400">
-        <CalendarClock className="h-3.5 w-3.5" />
+        <CalendarClock className="h-3.5 w-3.5 shrink-0" />
         {t('Reports reflect the platform\'s current session state and regenerate on each view - they are not archived snapshots in this demonstration environment.')}
       </div>
 

@@ -27,6 +27,7 @@ import { useFilterStore } from '@/stores/ui.store'
 import { useDrawerStore } from '@/stores/ui.store'
 import type { FilterState } from '@/stores/ui.store'
 import { useCurrentUser } from '@/stores/auth.store'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { allowed } from '@/security'
 import { departmentName, officerDesignation, officerDisplayName, wardName } from '@/data/reference'
 import { DEMO_NOW } from '@/utils/deterministic'
@@ -120,6 +121,12 @@ export function AlertsPage(): React.JSX.Element {
   const [assignNote, setAssignNote] = useState('')
   const [raised, setRaised] = useState<Record<string, RaisedRecord>>({})
   const [actionError, setActionError] = useState<string | null>(null)
+
+  // The shell renders the masthead; this page states what it should say.
+  usePageMasthead(
+    t('Alerts & Escalations'),
+    t('Every operational alert the platform has raised, with SLA position, ownership and the escalation actions your role holds authority for. Acknowledging, assigning, escalating or closing an alert is recorded permanently against your name.'),
+  )
 
   // Honour `?severity=` as a one-time initial filter, applied once on mount.
   useEffect(() => {
@@ -470,8 +477,6 @@ export function AlertsPage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('Command')}
-        title={t('Alerts & Escalations')}
-        description={t('Every operational alert the platform has raised, with SLA position, ownership and the escalation actions your role holds authority for. Acknowledging, assigning, escalating or closing an alert is recorded permanently against your name.')}
         breadcrumbs={[{ label: t('Command') }, { label: t('Alerts & Escalations') }]}
         actions={
           <SegmentedControl
@@ -534,7 +539,7 @@ export function AlertsPage(): React.JSX.Element {
       {selectedKeys.length > 0 ? (
         <Card tone="info" className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-[0.8125rem] font-medium text-govt-800">{t('{0} alert(s) selected', selectedKeys.length)}</p>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Button size="xs" variant="outline" disabled={!canEdit} onClick={bulkAcknowledge} icon={<CheckCircle2 className="h-3 w-3" />}>
               {t('Acknowledge selected')}
             </Button>

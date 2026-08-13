@@ -28,6 +28,7 @@ import { decisionService, intelligenceService, type DecisionCreateInput } from '
 import { useDrawerStore, useFilterStore } from '@/stores/ui.store'
 import type { FilterState } from '@/stores/ui.store'
 import { useCurrentUser } from '@/stores/auth.store'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { allowed } from '@/security'
 import { departmentName, wardName } from '@/data/reference'
 import { DEMO_NOW } from '@/utils/deterministic'
@@ -125,6 +126,12 @@ export function DecisionCentrePage(): React.JSX.Element {
 
   const caseIdParam = searchParams.get('case')
   const fromIntelligenceId = searchParams.get('from')
+
+  // The shell renders the masthead; this page states what it should say.
+  usePageMasthead(
+    t('Decision Centre'),
+    t('Every decision case from problem statement to measured outcome. Platform analysis is advisory; the human decision, its rationale and its accountable officer are what the record retains.'),
+  )
 
   useEffect(() => {
     if (caseIdParam) openDrawer({ kind: 'decision', id: caseIdParam })
@@ -267,12 +274,13 @@ export function DecisionCentrePage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('Command')}
-        title={t('Decision Centre')}
-        description={t('Every decision case from problem statement to measured outcome. Platform analysis is advisory; the human decision, its rationale and its accountable officer are what the record retains.')}
         breadcrumbs={[{ label: t('Command') }, { label: t('Decision Centre') }]}
         controls={<FilterBar show={['date', 'ward', 'department', 'severity', 'search']} searchPlaceholder="Search decision cases" />}
       />
 
+      {/* The procedure the whole page is about, stated once across the full
+          width. It reads left to right by nature — a stage rail forced into a
+          column would have to be scrolled to be understood at all. */}
       <Card>
         <CardHeader eyebrow={t('How a decision case moves')} title={t('Intelligence to accountable outcome')} icon={<Workflow className="h-4 w-4" />} />
         <div className="scrollbar-slim mt-3 flex items-center gap-1 overflow-x-auto pb-1">
@@ -287,42 +295,54 @@ export function DecisionCentrePage(): React.JSX.Element {
         </div>
       </Card>
 
-      <MetricGrid columns={4}>
-        <MetricCard label={t('Cases under decision')} value={summary.activeCount} icon={<ClipboardList className="h-3.5 w-3.5" />} support={t('Not yet closed or rejected')} />
-        <MetricCard label={t('Financial impact under decision')} value={formatCrore(summary.financialImpact)} icon={<Landmark className="h-3.5 w-3.5" />} />
-        <MetricCard label={t('Overdue')} value={summary.overdueCount} tone={summary.overdueCount > 0 ? 'critical' : 'default'} icon={<CalendarClock className="h-3.5 w-3.5" />} support={t('Past the recorded due date')} />
-        <MetricCard label={t('Average time in review')} value={summary.avgReviewDays.toFixed(1)} unit="days" icon={<Activity className="h-3.5 w-3.5" />} support={t('Cases currently under review')} />
-      </MetricGrid>
+      {/* ── Two columns ──────────────────────────────────────────────
+          The board of cases is what the officer works in, so it takes the
+          wide column. The standing figures and the outcome distribution are
+          what the board is measured against, and read down the narrow one. */}
+      <div className="grid grid-cols-1 gap-3 xl:grid-cols-12">
+        {/* Column 1 — the cases themselves ------------------------- */}
+        <div className="flex min-w-0 flex-col gap-3 xl:col-span-9">
+          <ActiveFilterChips />
 
-      {effectivenessSegments.length > 0 ? (
-        <Card>
-          <CardHeader
-            eyebrow={t('Outcome evaluation')}
-            title={t('Outcome effectiveness distribution')}
-            description={t('{0} case(s) with a recorded outcome.', summary.withOutcomeCount)}
-            icon={<Trophy className="h-4 w-4" />}
-          />
-          <CompositionBar segments={effectivenessSegments} className="mt-3" />
-        </Card>
-      ) : null}
+          <Tabs items={tabItems} value={activeTab} onChange={(id) => setActiveTab(id as DecisionStatus)} ariaLabel="Decision workflow stage" />
 
-      <ActiveFilterChips />
-
-      <Tabs items={tabItems} value={activeTab} onChange={(id) => setActiveTab(id as DecisionStatus)} ariaLabel="Decision workflow stage" />
-
-      {board.length === 0 ? (
-        <EmptyState
-          title={t('No cases in "{0}"', DECISION_STATUS_LABEL[activeTab])}
-          detail="Select a different workflow stage, or raise a decision case from an intelligence item's 'Create decision from this section' action."
-          icon={<ClipboardCheck className="h-4 w-4" />}
-        />
-      ) : (
-        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 xl:grid-cols-3">
-          {board.map((c) => (
-            <DecisionCard key={c.id} decision={c} onClick={() => openDrawer({ kind: 'decision', id: c.id })} />
-          ))}
+          {board.length === 0 ? (
+            <EmptyState
+              title={t('No cases in "{0}"', DECISION_STATUS_LABEL[activeTab])}
+              detail="Select a different workflow stage, or raise a decision case from an intelligence item's 'Create decision from this section' action."
+              icon={<ClipboardCheck className="h-4 w-4" />}
+            />
+          ) : (
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 2xl:grid-cols-3">
+              {board.map((c) => (
+                <DecisionCard key={c.id} decision={c} onClick={() => openDrawer({ kind: 'decision', id: c.id })} />
+              ))}
+            </div>
+          )}
         </div>
-      )}
+
+        {/* Column 2 — what the board adds up to --------------------- */}
+        <div className="flex min-w-0 flex-col gap-3 xl:col-span-3">
+          <MetricGrid columns={2} className="xl:grid-cols-1">
+            <MetricCard label={t('Cases under decision')} value={summary.activeCount} icon={<ClipboardList className="h-3.5 w-3.5" />} support={t('Not yet closed or rejected')} />
+            <MetricCard label={t('Financial impact under decision')} value={formatCrore(summary.financialImpact)} icon={<Landmark className="h-3.5 w-3.5" />} />
+            <MetricCard label={t('Overdue')} value={summary.overdueCount} tone={summary.overdueCount > 0 ? 'critical' : 'default'} icon={<CalendarClock className="h-3.5 w-3.5" />} support={t('Past the recorded due date')} />
+            <MetricCard label={t('Average time in review')} value={summary.avgReviewDays.toFixed(1)} unit="days" icon={<Activity className="h-3.5 w-3.5" />} support={t('Cases currently under review')} />
+          </MetricGrid>
+
+          {effectivenessSegments.length > 0 ? (
+            <Card>
+              <CardHeader
+                eyebrow={t('Outcome evaluation')}
+                title={t('Outcome effectiveness distribution')}
+                description={t('{0} case(s) with a recorded outcome.', summary.withOutcomeCount)}
+                icon={<Trophy className="h-4 w-4" />}
+              />
+              <CompositionBar segments={effectivenessSegments} className="mt-3" />
+            </Card>
+          ) : null}
+        </div>
+      </div>
 
       <Modal
         open={Boolean(fromIntelligenceId)}

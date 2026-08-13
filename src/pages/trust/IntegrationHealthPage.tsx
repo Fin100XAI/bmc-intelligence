@@ -20,6 +20,7 @@ import { DonutChart } from '@/components/charts/charts'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { connectorService } from '@/services'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { departmentName, officerDisplayName } from '@/data/reference'
 import { formatRelative } from '@/utils/format'
 import { DOMAIN_LABEL } from '@/types/common'
@@ -123,6 +124,12 @@ registerLayer(() => {
 })
 
 export function IntegrationHealthPage(): React.JSX.Element {
+  // The shell's masthead carries the screen's name; the page states the wording.
+  usePageMasthead(
+    t('Integration Health'),
+    t('The state of every connector this deployment is capable of provisioning, and what that state actually means. No connector is connected to any live departmental system in this environment.'),
+  )
+
   const connectorsQuery = useServiceQuery(queryKeys.connectors(), (u) => connectorService.list(u))
   const healthQuery = useServiceQuery(['trust-integration-health', 'health'], (u) => connectorService.health(u))
 
@@ -271,8 +278,6 @@ export function IntegrationHealthPage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('Trust Centre')}
-        title={t('Integration Health')}
-        description={t('The state of every connector this deployment is capable of provisioning, and what that state actually means. No connector is connected to any live departmental system in this environment.')}
         breadcrumbs={[{ label: t('Trust Centre'), to: '/trust' }, { label: t('Integration Health') }]}
         actions={
           <div className="flex flex-wrap items-center gap-2">
@@ -288,7 +293,7 @@ export function IntegrationHealthPage(): React.JSX.Element {
       <Card tone="warn">
         <div className="flex items-start gap-2.5">
           <Info className="mt-0.5 h-4 w-4 shrink-0 text-warn-700" />
-          <div>
+          <div className="min-w-0">
             <p className="text-[0.8125rem] font-semibold text-warn-700">{t('No connector is live')}</p>
             <p className="mt-1 text-xs leading-relaxed text-ink-700">
               {t('This deployment does not exchange data with any departmental system. Every connector below is either a deterministic demonstration simulation, an adapter built and tested but not yet provisioned against a live endpoint, awaiting a security review, or not yet started. The state vocabulary is deliberate and precise - the word &quot;live&quot; is never used to describe a connector in this environment.')}
@@ -319,7 +324,11 @@ export function IntegrationHealthPage(): React.JSX.Element {
         </Card>
       </MetricGrid>
 
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
+      {/* Two columns. What the register says and what is blocked read down the
+          wide column, in that order; the distribution and the state vocabulary
+          those two are written in sit beside them as reference. */}
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
         <Card flush>
           <CardHeader
             className="px-4 pt-4"
@@ -394,6 +403,39 @@ export function IntegrationHealthPage(): React.JSX.Element {
           </div>
         </Card>
 
+        <Card tone="critical">
+          <CardHeader
+            icon={<AlertOctagon className="h-4 w-4" />}
+            title={t('Requires a data-sharing agreement or security review before provisioning')}
+            description={t('These connectors cannot proceed to adapter development, or beyond it, without the named institutional step being completed first.')}
+          />
+          {needsAgreementOrReview.length === 0 ? (
+            <EmptyState compact title={t('No connector currently requires this step')} />
+          ) : (
+            <ul className="mt-2 space-y-2">
+              {needsAgreementOrReview.map((c) => (
+                <li key={c.id} className="flex flex-wrap items-start justify-between gap-3 rounded-md bg-surface px-3 py-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[0.8125rem] font-medium text-ink-800">{c.name}</p>
+                    <p className="mt-0.5 text-[0.6875rem] text-ink-500">
+                      {departmentName(c.ownerDepartmentId)} · {c.targetSystem}
+                    </p>
+                    <p className="mt-1 text-[0.6875rem] leading-relaxed text-ink-600">{NEXT_STEP[c.health]}</p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <StateBadge state={c.health as OperationalState} />
+                    <Button size="xs" variant="outline" onClick={() => setDetailId(c.id)}>
+                      {t('Open')}
+                    </Button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+        </div>
+
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
         <Card>
           <ChartFrame title={t('Connectors by state')} unit="connectors" timeframe="Current" height={200}>
             <DonutChart data={donutData} centreValue={String(health.total)} centreLabel="total" />
@@ -418,49 +460,19 @@ export function IntegrationHealthPage(): React.JSX.Element {
             {t('Select a state to filter the register to it.')}
           </p>
         </Card>
-      </div>
 
-      <Card>
-        <CardHeader title={t('What each state means')} description={t('The precise, exhaustive definition of every connector state this platform ever reports.')} />
-        <DefinitionList className="mt-2">
-          {(Object.keys(STATE_EXPLANATION) as ConnectorHealth[]).map((k) => (
-            <DefinitionRow key={k} label={HEALTH_LABEL[k]}>
-              {STATE_EXPLANATION[k]}
-            </DefinitionRow>
-          ))}
-        </DefinitionList>
-      </Card>
-
-      <Card tone="critical">
-        <CardHeader
-          icon={<AlertOctagon className="h-4 w-4" />}
-          title={t('Requires a data-sharing agreement or security review before provisioning')}
-          description={t('These connectors cannot proceed to adapter development, or beyond it, without the named institutional step being completed first.')}
-        />
-        {needsAgreementOrReview.length === 0 ? (
-          <EmptyState compact title={t('No connector currently requires this step')} />
-        ) : (
-          <ul className="mt-2 space-y-2">
-            {needsAgreementOrReview.map((c) => (
-              <li key={c.id} className="flex flex-wrap items-start justify-between gap-3 rounded-md bg-surface px-3 py-2">
-                <div className="min-w-0 flex-1">
-                  <p className="text-[0.8125rem] font-medium text-ink-800">{c.name}</p>
-                  <p className="mt-0.5 text-[0.6875rem] text-ink-500">
-                    {departmentName(c.ownerDepartmentId)} · {c.targetSystem}
-                  </p>
-                  <p className="mt-1 text-[0.6875rem] leading-relaxed text-ink-600">{NEXT_STEP[c.health]}</p>
-                </div>
-                <div className="flex shrink-0 items-center gap-2">
-                  <StateBadge state={c.health as OperationalState} />
-                  <Button size="xs" variant="outline" onClick={() => setDetailId(c.id)}>
-                    {t('Open')}
-                  </Button>
-                </div>
-              </li>
+        <Card>
+          <CardHeader title={t('What each state means')} description={t('The precise, exhaustive definition of every connector state this platform ever reports.')} />
+          <DefinitionList className="mt-2">
+            {(Object.keys(STATE_EXPLANATION) as ConnectorHealth[]).map((k) => (
+              <DefinitionRow key={k} label={HEALTH_LABEL[k]}>
+                {STATE_EXPLANATION[k]}
+              </DefinitionRow>
             ))}
-          </ul>
-        )}
-      </Card>
+          </DefinitionList>
+        </Card>
+        </div>
+      </div>
 
       {/* Connector detail -------------------------------------------------- */}
       <Drawer

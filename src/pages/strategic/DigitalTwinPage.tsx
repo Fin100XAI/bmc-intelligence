@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { Layers, MapPinned, Network } from 'lucide-react'
-import { PageBody, PageHeader, SplitLayout } from '@/components/layout/PageHeader'
+import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { healthService, incidentService, monsoonService, projectService, roadsService, wardService, waterService } from '@/services'
 import { useDrawerStore, type DrawerKind } from '@/stores/ui.store'
 import { useActiveCorporation } from '@/stores/corporation.store'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { isoFromAnchor } from '@/utils/deterministic'
 import { formatCompact, formatRelative } from '@/utils/format'
 import {
@@ -76,6 +77,13 @@ interface SelectedEntity {
 export function DigitalTwinPage(): React.JSX.Element {
   const openDrawer = useDrawerStore((s) => s.open)
   const corporation = useActiveCorporation()
+
+  // The shell's masthead states the screen's name; the page states the wording.
+  usePageMasthead(
+    t('{0} Urban Digital Twin', corporation.city),
+    t('A layered 2D spatial representation of municipal entity classes across the city - explicitly not a photorealistic or surveyed 3D model. Geometry is illustrative; every figure attached to an entity is drawn from the same service layer the rest of the platform reads.'),
+  )
+
   const [enabled, setEnabled] = useState<Record<LayerId, boolean>>({
     infrastructure: false,
     water: false,
@@ -354,8 +362,6 @@ export function DigitalTwinPage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('Strategic Urban Intelligence')}
-        title={t('{0} Urban Digital Twin', corporation.city)}
-        description={t('A layered 2D spatial representation of municipal entity classes across the city - explicitly not a photorealistic or surveyed 3D model. Geometry is illustrative; every figure attached to an entity is drawn from the same service layer the rest of the platform reads.')}
         breadcrumbs={[{ label: t('Strategic Urban Intelligence') }, { label: t('{0} Urban Digital Twin', corporation.city) }]}
         freshness={FRESHNESS}
       />
@@ -367,73 +373,79 @@ export function DigitalTwinPage(): React.JSX.Element {
         wards.length === 0 ? (
           <EmptyState title={t('No ward records available')} detail="No ward records are visible within your authorised scope." />
         ) : (
-          <SplitLayout
-            asideWidth="md"
-            main={
-              <div className="space-y-4">
-                <Card flush>
-                  <CardHeader className="px-4 pt-4 pb-3" icon={<Layers className="h-4 w-4" />} title={t('Layer control')} description={t('Independent toggles - combine any number of entity-class layers on the map at once.')} />
-                  <div className="grid grid-cols-2 gap-1.5 px-4 pb-4 sm:grid-cols-3 lg:grid-cols-9">
-                    {LAYER_ORDER.map((id) => (
-                      <label
-                        key={id}
-                        title={LAYER_META[id].description}
-                        className={
-                          'flex cursor-pointer flex-col gap-1 rounded-md border p-2 transition-colors ' +
-                          (enabled[id] ? 'border-govt-300 bg-govt-50/60' : 'border-ink-100 bg-surface-sunken hover:bg-ink-50')
+          /* ── Two columns ───────────────────────────────────────────
+             The layer control sits directly above the map it governs, down the
+             wide column. The inventory of what is currently drawn, and the
+             entity an officer has selected on it, stand pinned beside them so a
+             marker's record stays on screen while the map is panned. */
+          <div className="grid grid-cols-1 gap-3 xl:grid-cols-12">
+            <div className="flex min-w-0 flex-col gap-3 xl:col-span-8">
+              <Card flush>
+                <CardHeader className="px-4 pt-4 pb-3" icon={<Layers className="h-4 w-4" />} title={t('Layer control')} description={t('Independent toggles - combine any number of entity-class layers on the map at once.')} />
+                <div className="grid grid-cols-2 gap-1.5 px-4 pb-4 sm:grid-cols-3 lg:grid-cols-5">
+                  {LAYER_ORDER.map((id) => (
+                    <label
+                      key={id}
+                      title={LAYER_META[id].description}
+                      className={
+                        'flex cursor-pointer flex-col gap-1 rounded-[2px] border p-2 transition-colors ' +
+                        (enabled[id] ? 'border-govt-300 bg-govt-50/60' : 'border-ink-100 bg-surface-sunken hover:bg-ink-50')
+                      }
+                    >
+                      <Checkbox
+                        checked={enabled[id]}
+                        onChange={() => toggleLayer(id)}
+                        label={
+                          <span className="inline-flex items-center gap-1">
+                            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: LAYER_META[id].colour }} aria-hidden />
+                            {LAYER_META[id].label}
+                          </span>
                         }
-                      >
-                        <Checkbox
-                          checked={enabled[id]}
-                          onChange={() => toggleLayer(id)}
-                          label={
-                            <span className="inline-flex items-center gap-1">
-                              <span className="h-2 w-2 rounded-full" style={{ backgroundColor: LAYER_META[id].colour }} aria-hidden />
-                              {LAYER_META[id].label}
-                            </span>
-                          }
-                        />
-                        <span className="numeric pl-4 text-[0.6875rem] text-ink-500">{counts[id]}</span>
-                      </label>
-                    ))}
-                  </div>
-                </Card>
+                      />
+                      <span className="numeric pl-4 text-[0.6875rem] text-ink-500">{counts[id]}</span>
+                    </label>
+                  ))}
+                </div>
+              </Card>
 
-                <Card>
-                  <CardHeader title={t('City map')} description={t('A ward choropleth selector is available from the layer control on the map itself; entity markers reflect the toggles above.')} />
-                  <div className="mt-3">
-                    <CityMap
-                      layers={[
-                        { id: 'risk', label: t('Ward Risk'), valueFor: (id) => wards.find((w) => w.id === id)?.riskScore, higherIsWorse: true, unit: '/100', description: t('Composite ward risk index.') },
-                        { id: 'health', label: t('Ward Health'), valueFor: (id) => wards.find((w) => w.id === id)?.healthScore, higherIsWorse: false, unit: '/100', description: t('Composite ward operational health index.') },
-                        {
-                          id: 'density',
-                          label: t('Population Density'),
-                          valueFor: (id) => {
-                            const w = wards.find((w2) => w2.id === id)
-                            return w ? Math.min(100, (w.population / w.areaSqKm / 60_000) * 100) : undefined
-                          },
-                          higherIsWorse: true,
-                          unit: ' (scaled)',
-                          description: t('Population density scaled to a 0–100 shading band.'),
+              <Card>
+                <CardHeader title={t('City map')} description={t('A ward choropleth selector is available from the layer control on the map itself; entity markers reflect the toggles above.')} />
+                <div className="mt-3">
+                  <CityMap
+                    layers={[
+                      { id: 'risk', label: t('Ward Risk'), valueFor: (id) => wards.find((w) => w.id === id)?.riskScore, higherIsWorse: true, unit: '/100', description: t('Composite ward risk index.') },
+                      { id: 'health', label: t('Ward Health'), valueFor: (id) => wards.find((w) => w.id === id)?.healthScore, higherIsWorse: false, unit: '/100', description: t('Composite ward operational health index.') },
+                      {
+                        id: 'density',
+                        label: t('Population Density'),
+                        valueFor: (id) => {
+                          const w = wards.find((w2) => w2.id === id)
+                          return w ? Math.min(100, (w.population / w.areaSqKm / 60_000) * 100) : undefined
                         },
-                        { id: 'monsoon', label: t('Monsoon Readiness'), valueFor: (id) => readinessByWard.get(id), higherIsWorse: false, unit: '/100', description: t('Ward monsoon readiness score.') },
-                      ]}
-                      selectedWardId={selectedWardId}
-                      onWardSelect={(id) => {
-                        setSelectedWardId(id === selectedWardId ? null : id)
-                        openDrawer({ kind: 'ward', id })
-                      }}
-                      markers={markers}
-                      paths={paths}
-                      height={460}
-                    />
-                  </div>
-                </Card>
-              </div>
-            }
-            aside={
-              <>
+                        higherIsWorse: true,
+                        unit: ' (scaled)',
+                        description: t('Population density scaled to a 0–100 shading band.'),
+                      },
+                      { id: 'monsoon', label: t('Monsoon Readiness'), valueFor: (id) => readinessByWard.get(id), higherIsWorse: false, unit: '/100', description: t('Ward monsoon readiness score.') },
+                    ]}
+                    selectedWardId={selectedWardId}
+                    onWardSelect={(id) => {
+                      setSelectedWardId(id === selectedWardId ? null : id)
+                      openDrawer({ kind: 'ward', id })
+                    }}
+                    markers={markers}
+                    paths={paths}
+                    height={460}
+                  />
+                </div>
+              </Card>
+            </div>
+
+            {/* The whole column pins, not one panel of it: a `sticky` element
+                stays in flow, so a panel below a pinned one would slide up
+                underneath it. */}
+            <div className="xl:col-span-4">
+              <div className="scrollbar-rail flex flex-col gap-3 xl:sticky xl:top-[3.75rem] xl:max-h-[calc(100vh-4.5rem)] xl:overflow-y-auto">
                 <Card>
                   <CardHeader icon={<Network className="h-4 w-4" />} title={t('Entity inventory')} description={t('Counts currently represented on the map, by class.')} />
                   <ul className="mt-2 space-y-1.5">
@@ -475,9 +487,9 @@ export function DigitalTwinPage(): React.JSX.Element {
                     <EmptyState compact title={t('Nothing selected')} detail="Click a marker or ward on the map." />
                   )}
                 </Card>
-              </>
-            }
-          />
+              </div>
+            </div>
+          </div>
         )
       ) : null}
 

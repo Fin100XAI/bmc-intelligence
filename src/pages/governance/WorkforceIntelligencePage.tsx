@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { AlertTriangle, Boxes, Info } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { useServiceQuery } from '@/hooks'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { queryKeys } from '@/app/queryClient'
 import { wardService, workforceService } from '@/services'
 import { ROUTES } from '@/config/navigation'
@@ -74,6 +75,12 @@ interface DeptWorkforceRow {
 }
 
 export function WorkforceIntelligencePage(): React.JSX.Element {
+  // The shell's masthead carries the screen's name; the page states the wording.
+  usePageMasthead(
+    t('Workforce Intelligence'),
+    t('Sanctioned and deployed strength, vacancy and workload pressure by department and cadre, with an explicit view of where high vacancy co-occurs with service-response deterioration.'),
+  )
+
   const unitsQuery = useServiceQuery(queryKeys.admin('workforce'), (user) => workforceService.units(user))
   const units = useMemo(() => unitsQuery.data ?? [], [unitsQuery.data])
 
@@ -191,8 +198,6 @@ export function WorkforceIntelligencePage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('Governance & Finance')}
-        title={t('Workforce Intelligence')}
-        description={t('Sanctioned and deployed strength, vacancy and workload pressure by department and cadre, with an explicit view of where high vacancy co-occurs with service-response deterioration.')}
         breadcrumbs={[{ label: t('Governance & Finance') }, { label: t('Workforce Intelligence') }]}
         freshness={FRESHNESS}
         actions={
@@ -210,7 +215,11 @@ export function WorkforceIntelligencePage(): React.JSX.Element {
       ) : null}
 
       {!unitsQuery.isLoading && !unitsQuery.error && units.length > 0 ? (
-        <>
+        /* Two columns. The establishment as recorded — summary, register, then
+           the correlation it raises — reads down the wide column; the two
+           distributions drawn from that same register stand beside it. */
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+          <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
           <Card>
             <CardHeader title={t('Establishment summary')} />
             <MetricGrid columns={5} className="mt-4">
@@ -227,19 +236,6 @@ export function WorkforceIntelligencePage(): React.JSX.Element {
             <DataTable rows={units} columns={columns} rowKey={(r) => r.id} pageSize={12} stickyHeader maxHeight="30rem" searchPlaceholder="Search department or cadre" />
           </Card>
 
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <Card>
-              <ChartFrame title={t('Vacancy ranking - by department')} unit="%" timeframe="Current establishment" description={t('Departments ranked by vacancy against sanctioned strength, highest first.')} freshness={FRESHNESS} height={Math.max(220, vacancyRanking.length * 20)}>
-                <RankedBarChart data={vacancyRanking} unit="%" higherIsWorse />
-              </ChartFrame>
-            </Card>
-            <Card>
-              <ChartFrame title={t('Workload distribution')} unit="cadres" timeframe="Current establishment" description={t('Count of department–cadre records in each workload-index band.')} freshness={FRESHNESS} height={240}>
-                <CategoryBarChart data={workloadDistribution} categoryKey="label" series={[{ key: 'cadres', label: t('Cadres'), colour: '#f59e0b' }]} />
-              </ChartFrame>
-            </Card>
-          </div>
-
           <Card tone="warn">
             <CardHeader
               icon={<AlertTriangle className="h-4 w-4" />}
@@ -253,7 +249,7 @@ export function WorkforceIntelligencePage(): React.JSX.Element {
             ) : correlationRows.length === 0 ? (
               <p className="mt-3 text-xs text-ink-400">{t('No department currently has both a workforce record and a mapped service-health category.')}</p>
             ) : (
-              <div className="scrollbar-slim mt-3 max-h-72 overflow-y-auto">
+              <div className="scrollbar-slim mt-3 max-h-72 overflow-auto">
                 <table className="w-full min-w-[28rem] border-collapse text-left text-xs">
                   <thead>
                     <tr className="border-b border-ink-100 text-ink-400">
@@ -287,7 +283,21 @@ export function WorkforceIntelligencePage(): React.JSX.Element {
               {SLA_CONCERN_THRESHOLD}{t('%. Meeting both thresholds identifies a pattern for institutional review; it does not establish that vacancy caused the service-response position, which may share other contributing factors.')}
             </p>
           </Card>
-        </>
+          </div>
+
+          <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
+            <Card>
+              <ChartFrame title={t('Vacancy ranking - by department')} unit="%" timeframe="Current establishment" description={t('Departments ranked by vacancy against sanctioned strength, highest first.')} freshness={FRESHNESS} height={Math.max(220, vacancyRanking.length * 20)}>
+                <RankedBarChart data={vacancyRanking} unit="%" higherIsWorse />
+              </ChartFrame>
+            </Card>
+            <Card>
+              <ChartFrame title={t('Workload distribution')} unit="cadres" timeframe="Current establishment" description={t('Count of department–cadre records in each workload-index band.')} freshness={FRESHNESS} height={240}>
+                <CategoryBarChart data={workloadDistribution} categoryKey="label" series={[{ key: 'cadres', label: t('Cadres'), colour: '#f59e0b' }]} />
+              </ChartFrame>
+            </Card>
+          </div>
+        </div>
       ) : null}
 
       <DemonstrationNotice />

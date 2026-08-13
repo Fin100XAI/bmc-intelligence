@@ -132,15 +132,28 @@ function guarded(element: React.JSX.Element): React.JSX.Element {
 
 export const router = createBrowserRouter([
   {
+    // Sign-in is now the front door. The portal front page moved behind it —
+    // see `ROUTES.portal` below and the note on that constant.
     path: ROUTES.login,
-    element: <PortalLandingPage />,
+    element: <LoginPage />,
   },
   {
-    // The direct sign-in screen, unchanged. Kept routed rather than left as an
-    // unreferenced file: an entry point nobody can reach is not preserved, it
-    // is abandoned.
+    // Retained so that `?next=`-carrying links minted before this change, and
+    // any bookmark an officer kept, still land on the sign-in screen rather
+    // than on a 404.
     path: ROUTES.loginDirect,
     element: <LoginPage />,
+  },
+  {
+    // The portal front page, behind the session. `RequireAuth` rather than the
+    // full `AppShell`: this page carries its own masthead and navigation and
+    // would otherwise render a portal inside the console's chrome.
+    path: ROUTES.portal,
+    element: (
+      <RequireAuth>
+        <PortalLandingPage />
+      </RequireAuth>
+    ),
   },
   {
     path: '/',

@@ -8,6 +8,7 @@ import { DataTable, type Column } from '@/components/ui/DataTable'
 import { DemonstrationNotice, EmptyState, ErrorState, LoadingState } from '@/components/ui/states'
 import { governanceService, securityService, type DatasetFilters } from '@/services'
 import { useServiceQuery } from '@/hooks'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { getRole } from '@/security'
 import { departmentName, officerDisplayName } from '@/data/reference'
 import { formatCompact, formatDate, formatRelative } from '@/utils/format'
@@ -56,6 +57,12 @@ const SHARING_TONE: Record<Dataset['sharingStatus'], 'neutral' | 'info' | 'intel
 }
 
 export function PrivacyGovernancePage(): React.JSX.Element {
+  // The shell's masthead carries the screen's name; the page states the wording.
+  usePageMasthead(
+    t('Privacy & Data Governance'),
+    t('The full dataset register this platform governs - purpose, classification, retention, sensitivity, allowed roles, sharing status and the minimisation measures applied to each. No regulatory certification, accreditation or formal privacy attestation is claimed anywhere in this environment.'),
+  )
+
   const [domainFilter, setDomainFilter] = useState<IntelligenceDomain | ''>('')
   const [classificationFilter, setClassificationFilter] = useState<DataClassification | ''>('')
   const [personalDataFilter, setPersonalDataFilter] = useState<'' | 'yes' | 'no'>('')
@@ -175,8 +182,6 @@ export function PrivacyGovernancePage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('Trust Centre')}
-        title={t('Privacy & Data Governance')}
-        description={t('The full dataset register this platform governs - purpose, classification, retention, sensitivity, allowed roles, sharing status and the minimisation measures applied to each. No regulatory certification, accreditation or formal privacy attestation is claimed anywhere in this environment.')}
         breadcrumbs={[{ label: t('Trust Centre'), to: '/trust' }, { label: t('Privacy & Data Governance') }]}
       />
 
@@ -353,6 +358,12 @@ export function PrivacyGovernancePage(): React.JSX.Element {
         )}
       </Card>
 
+      {/* Two columns below the register. The personal-data schedule is the
+          record an officer works through; the four standing doctrines the
+          register is held under — purpose, minimisation, retention, access —
+          read down beside it rather than as four more rows to scroll past. */}
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
       <Card>
         <CardHeader
           icon={<Eye className="h-4 w-4" />}
@@ -400,8 +411,10 @@ export function PrivacyGovernancePage(): React.JSX.Element {
           </div>
         )}
       </Card>
+        </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
         <Card>
           <CardHeader icon={<FileText className="h-4 w-4" />} title={t('Purpose limitation')} />
           <p className="mt-2 text-[0.8125rem] leading-relaxed text-ink-700">
@@ -455,6 +468,8 @@ export function PrivacyGovernancePage(): React.JSX.Element {
           <span className="font-semibold text-ink-800">{t('Auditability.')}</span>{' '}{t('Opening any evidence record tied to a governed dataset is itself a recorded audit event, attributed to the requesting officer, session and timestamp - see Evidence &amp; Audit for the live trail. No regulatory certification, data protection accreditation or formal privacy attestation is claimed for this environment.')}
         </p>
       </Card>
+        </div>
+      </div>
 
       <DemonstrationNotice />
     </PageBody>

@@ -15,6 +15,7 @@ import {
 import { DemonstrationNotice, EmptyState, ErrorState, LoadingState } from '@/components/ui/states'
 import { useServiceQuery } from '@/hooks'
 import { platformService } from '@/services'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { cn } from '@/utils/cn'
 import { t } from '@/i18n'
 import { registerLayer } from '@/data/runtime'
@@ -159,6 +160,12 @@ function matchesFilters(item: ImplementedItem, category: ReadinessCategory | '',
 }
 
 export function PlatformReadinessPage(): React.JSX.Element {
+  // The shell's masthead carries the screen's name; the page states the wording.
+  usePageMasthead(
+    t('Platform Readiness'),
+    t('An honest account of what this deployment implements today and what stands between it and production operation. This page exists so that credibility is earned through transparency rather than assumed.'),
+  )
+
   const summaryQuery = useServiceQuery(['trust-platform-readiness', 'summary'], (u) => platformService.summary(u))
 
   const [side, setSide] = useState<'both' | 'implemented' | 'required'>('both')
@@ -216,8 +223,6 @@ export function PlatformReadinessPage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('Trust Centre')}
-        title={t('Platform Readiness')}
-        description={t('An honest account of what this deployment implements today and what stands between it and production operation. This page exists so that credibility is earned through transparency rather than assumed.')}
         breadcrumbs={[{ label: t('Trust Centre'), to: '/trust' }, { label: t('Platform Readiness') }]}
         controls={
           <div className="flex w-full flex-wrap items-center gap-2">
@@ -305,7 +310,11 @@ export function PlatformReadinessPage(): React.JSX.Element {
         </Card>
       </MetricGrid>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      {/* Two columns. The two lists this page exists to state read down the
+          wide column; the analysis of the gap between them — by category, by
+          who holds it — reads beside them as the register's own commentary. */}
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+        <div className="flex min-w-0 flex-col gap-4 xl:order-2 xl:col-span-4">
         <Card>
           <CardHeader
             title={t('Where the gap sits')}
@@ -361,8 +370,18 @@ export function PlatformReadinessPage(): React.JSX.Element {
             {t('{0} of {1} outstanding workstreams sit with platform engineering. The rest are signed agreements, completed reviews, a hosting decision and an independent assessment — none of which is shortened by writing more code, and all of which have to be true before a single live feed is provisioned.', engineeringHeld, PRODUCTION_REQUIREMENTS.length)}
           </p>
         </Card>
-      </div>
 
+        <Card tone="info">
+          <div className="flex items-start gap-2.5">
+            <Target className="mt-0.5 h-4 w-4 shrink-0 text-govt-700" />
+            <p className="text-xs leading-relaxed text-ink-700">
+              {t('Neither list is exhaustive of every engineering detail, and completing the right-hand column is a multi-department, multi-quarter undertaking, not a release. The indicative scale on each workstream is a band rather than an estimate: a precise figure would be false when the critical path runs through signed agreements and completed reviews rather than through code. This page will be revised as work against each item begins and completes - no item moves from &quot;Required&quot; to &quot;Implemented&quot; here without the underlying capability actually existing.')}
+            </p>
+          </div>
+        </Card>
+        </div>
+
+        <div className="min-w-0 xl:order-1 xl:col-span-8">
       <div className={cn('grid gap-4', side === 'both' && 'lg:grid-cols-2')}>
         {side !== 'required' ? (
           <Card tone="sunken">
@@ -438,15 +457,8 @@ export function PlatformReadinessPage(): React.JSX.Element {
           </Card>
         ) : null}
       </div>
-
-      <Card tone="info">
-        <div className="flex items-start gap-2.5">
-          <Target className="mt-0.5 h-4 w-4 shrink-0 text-govt-700" />
-          <p className="text-xs leading-relaxed text-ink-700">
-            {t('Neither list is exhaustive of every engineering detail, and completing the right-hand column is a multi-department, multi-quarter undertaking, not a release. The indicative scale on each workstream is a band rather than an estimate: a precise figure would be false when the critical path runs through signed agreements and completed reviews rather than through code. This page will be revised as work against each item begins and completes - no item moves from &quot;Required&quot; to &quot;Implemented&quot; here without the underlying capability actually existing.')}
-          </p>
         </div>
-      </Card>
+      </div>
 
       <DemonstrationNotice />
     </PageBody>

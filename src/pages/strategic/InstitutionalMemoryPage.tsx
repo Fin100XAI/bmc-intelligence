@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Archive, BookOpen, Lightbulb, Link2, Search } from 'lucide-react'
-import { PageBody, PageHeader, SplitLayout } from '@/components/layout/PageHeader'
+import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { Badge, SeverityBadge } from '@/components/ui/badges'
 import { Card, CardHeader, Input, MetricGrid, Select } from '@/components/ui/primitives'
 import { DemonstrationNotice, EmptyState, ErrorState, LoadingState } from '@/components/ui/states'
@@ -8,6 +8,7 @@ import { MetricCard } from '@/components/cards/MetricCard'
 import { useServiceQuery, useDebounced } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { knowledgeService } from '@/services'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { MEMORY_KIND_LABEL, type MemoryKind } from '@/types/knowledge'
 import { departmentName } from '@/data/reference'
 import { DOMAIN_LABEL } from '@/types/common'
@@ -49,6 +50,12 @@ const KIND_TONE: Record<MemoryKind, string> = {
 }
 
 export function InstitutionalMemoryPage(): React.JSX.Element {
+  // The shell's masthead states the screen's name; the page states the wording.
+  usePageMasthead(
+    t('Municipal Institutional Memory'),
+    t('What the corporation has decided, faced and learned, kept as a durable record. When a situation recurs, an officer can read what was done last time and what it taught — continuity of institutional knowledge, not its rediscovery.'),
+  )
+
   const [kind, setKind] = useState<string>('')
   const [searchInput, setSearchInput] = useState('')
   const search = useDebounced(searchInput, 200)
@@ -91,8 +98,6 @@ export function InstitutionalMemoryPage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('Strategic Intelligence')}
-        title={t('Municipal Institutional Memory')}
-        description={t('What the corporation has decided, faced and learned, kept as a durable record. When a situation recurs, an officer can read what was done last time and what it taught — continuity of institutional knowledge, not its rediscovery.')}
         breadcrumbs={[{ label: t('Strategic Intelligence') }, { label: t('Institutional Memory') }]}
         freshness={FRESHNESS}
         controls={
@@ -114,35 +119,37 @@ export function InstitutionalMemoryPage(): React.JSX.Element {
         }
       />
 
-      <DemonstrationNotice />
+      {/* ── Two columns ─────────────────────────────────────────────
+          The holdings, then the register itself, read down the wide column;
+          the record an officer has opened and the comparable cases it points
+          to stand pinned beside them, so a match can be read against the list
+          it came from. */}
+      <div className="grid grid-cols-1 gap-3 xl:grid-cols-12">
+        <div className="flex min-w-0 flex-col gap-3 xl:col-span-8">
+          <MetricGrid columns={4}>
+            <MetricCard label={t('Records held')} value={summary?.total ?? 0} support={t('Across every record kind')} icon={<Archive className="h-4 w-4" />} />
+            <MetricCard
+              label={t('Lessons learned')}
+              value={summary?.byKind.find((k) => k.kind === 'lesson')?.count ?? 0}
+              support={t('Durable lessons on record')}
+              icon={<Lightbulb className="h-4 w-4" />}
+            />
+            <MetricCard
+              label={t('Decisions & interventions')}
+              value={
+                (summary?.byKind.find((k) => k.kind === 'decision')?.count ?? 0) +
+                (summary?.byKind.find((k) => k.kind === 'intervention')?.count ?? 0)
+              }
+              support={t('With recorded outcomes')}
+              icon={<BookOpen className="h-4 w-4" />}
+            />
+            <MetricCard
+              label={t('SOPs')}
+              value={summary?.byKind.find((k) => k.kind === 'sop')?.count ?? 0}
+              support={t('Standard operating procedures')}
+            />
+          </MetricGrid>
 
-      <MetricGrid columns={4}>
-        <MetricCard label={t('Records held')} value={summary?.total ?? 0} support={t('Across every record kind')} icon={<Archive className="h-4 w-4" />} />
-        <MetricCard
-          label={t('Lessons learned')}
-          value={summary?.byKind.find((k) => k.kind === 'lesson')?.count ?? 0}
-          support={t('Durable lessons on record')}
-          icon={<Lightbulb className="h-4 w-4" />}
-        />
-        <MetricCard
-          label={t('Decisions & interventions')}
-          value={
-            (summary?.byKind.find((k) => k.kind === 'decision')?.count ?? 0) +
-            (summary?.byKind.find((k) => k.kind === 'intervention')?.count ?? 0)
-          }
-          support={t('With recorded outcomes')}
-          icon={<BookOpen className="h-4 w-4" />}
-        />
-        <MetricCard
-          label={t('SOPs')}
-          value={summary?.byKind.find((k) => k.kind === 'sop')?.count ?? 0}
-          support={t('Standard operating procedures')}
-        />
-      </MetricGrid>
-
-      <SplitLayout
-        asideWidth="lg"
-        main={
           <Card flush>
             <CardHeader bordered title={t('The record')} description={t('Ranked by significance, most significant first.')} />
             {records.length === 0 ? (
@@ -181,78 +188,85 @@ export function InstitutionalMemoryPage(): React.JSX.Element {
               </ul>
             )}
           </Card>
-        }
-        aside={
-          selected ? (
-            <>
-              <Card>
-                <CardHeader
-                  title={selected.title}
-                  description={`${MEMORY_KIND_LABEL[selected.kind]} · ${DOMAIN_LABEL[selected.domain]} · ${departmentName(selected.departmentId)}`}
-                  actions={<SeverityBadge severity={selected.significance} />}
-                />
-                <div className="mt-3 space-y-3">
-                  <div>
-                    <p className="label-institutional mb-1">{t('Situation')}</p>
-                    <p className="text-xs leading-relaxed text-ink-600">{selected.summary}</p>
-                  </div>
-                  <div>
-                    <p className="label-institutional mb-1">{t('What was done')}</p>
-                    <p className="text-xs leading-relaxed text-ink-600">{selected.outcome}</p>
-                  </div>
-                  <div className="rounded-lg border border-ok-100 bg-ok-50/40 p-2.5">
-                    <p className="label-institutional mb-1 flex items-center gap-1 text-ok-700">
-                      <Lightbulb className="h-3 w-3" />{' '}{t('Lesson carried forward')}
-                    </p>
-                    <p className="text-xs leading-relaxed text-ink-700">{selected.lesson}</p>
-                  </div>
-                </div>
-                <div className="mt-3 flex flex-wrap gap-1">
-                  {selected.tags.map((tag) => (
-                    <Badge key={tag} tone="muted" size="sm">
-                      {tag}
-                    </Badge>
-                  ))}
-                </div>
-              </Card>
+        </div>
 
-              <Card>
-                <CardHeader
-                  icon={<Link2 className="h-4 w-4" />}
-                  title={t('Similar past records')}
-                  description={t('What the corporation did in comparable situations — with the basis for each match.')}
-                />
-                {similarQuery.isLoading ? (
-                  <LoadingState variant="inline" className="mt-2" />
-                ) : similar.length === 0 ? (
-                  <p className="mt-2 text-xs text-ink-500">{t('No comparable record found in your scope.')}</p>
-                ) : (
-                  <ul className="mt-3 space-y-2.5">
-                    {similar.map((s) => (
-                      <li key={s.record.id}>
-                        <button
-                          type="button"
-                          onClick={() => setSelectedId(s.record.id)}
-                          className="w-full rounded-lg border border-ink-100 p-2.5 text-left transition-colors hover:bg-ink-50/70"
-                        >
-                          <div className="flex items-start justify-between gap-2">
-                            <p className="min-w-0 text-[0.8125rem] font-medium text-ink-800">{s.record.title}</p>
-                            <Badge tone="intel" size="sm">
-                              {Math.round(s.relevance * 100)}%
-                            </Badge>
-                          </div>
-                          <p className="mt-1 text-[0.6875rem] leading-relaxed text-ink-500">{s.record.outcome}</p>
-                          <p className="mt-1 text-[0.625rem] text-ink-400">{t('Matched on {0}', s.basis.join(' · '))}</p>
-                        </button>
-                      </li>
+        {/* The whole column pins, not one panel of it: a `sticky` element stays
+            in flow, so a panel below a pinned one would slide up underneath it. */}
+        <div className="xl:col-span-4">
+          <div className="scrollbar-rail flex flex-col gap-3 xl:sticky xl:top-[3.75rem] xl:max-h-[calc(100vh-4.5rem)] xl:overflow-y-auto">
+            {selected ? (
+              <>
+                <Card>
+                  <CardHeader
+                    title={selected.title}
+                    description={`${MEMORY_KIND_LABEL[selected.kind]} · ${DOMAIN_LABEL[selected.domain]} · ${departmentName(selected.departmentId)}`}
+                    actions={<SeverityBadge severity={selected.significance} />}
+                  />
+                  <div className="mt-3 space-y-3">
+                    <div>
+                      <p className="label-institutional mb-1">{t('Situation')}</p>
+                      <p className="text-xs leading-relaxed text-ink-600">{selected.summary}</p>
+                    </div>
+                    <div>
+                      <p className="label-institutional mb-1">{t('What was done')}</p>
+                      <p className="text-xs leading-relaxed text-ink-600">{selected.outcome}</p>
+                    </div>
+                    <div className="rounded-[2px] border border-ok-100 bg-ok-50/40 p-2.5">
+                      <p className="label-institutional mb-1 flex items-center gap-1 text-ok-700">
+                        <Lightbulb className="h-3 w-3" />{' '}{t('Lesson carried forward')}
+                      </p>
+                      <p className="text-xs leading-relaxed text-ink-700">{selected.lesson}</p>
+                    </div>
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-1">
+                    {selected.tags.map((tag) => (
+                      <Badge key={tag} tone="muted" size="sm">
+                        {tag}
+                      </Badge>
                     ))}
-                  </ul>
-                )}
-              </Card>
-            </>
-          ) : null
-        }
-      />
+                  </div>
+                </Card>
+
+                <Card>
+                  <CardHeader
+                    icon={<Link2 className="h-4 w-4" />}
+                    title={t('Similar past records')}
+                    description={t('What the corporation did in comparable situations — with the basis for each match.')}
+                  />
+                  {similarQuery.isLoading ? (
+                    <LoadingState variant="inline" className="mt-2" />
+                  ) : similar.length === 0 ? (
+                    <p className="mt-2 text-xs text-ink-500">{t('No comparable record found in your scope.')}</p>
+                  ) : (
+                    <ul className="mt-3 space-y-2.5">
+                      {similar.map((s) => (
+                        <li key={s.record.id}>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedId(s.record.id)}
+                            className="w-full rounded-[2px] border border-ink-100 p-2.5 text-left transition-colors hover:bg-ink-50/70"
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <p className="min-w-0 text-[0.8125rem] font-medium text-ink-800">{s.record.title}</p>
+                              <Badge tone="intel" size="sm">
+                                {Math.round(s.relevance * 100)}%
+                              </Badge>
+                            </div>
+                            <p className="mt-1 text-[0.6875rem] leading-relaxed text-ink-500">{s.record.outcome}</p>
+                            <p className="mt-1 text-[0.625rem] text-ink-400">{t('Matched on {0}', s.basis.join(' · '))}</p>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </Card>
+              </>
+            ) : null}
+
+            <DemonstrationNotice />
+          </div>
+        </div>
+      </div>
     </PageBody>
   )
 }

@@ -25,6 +25,7 @@ import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { monsoonService } from '@/services'
 import { useFilterStore } from '@/stores/ui.store'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { ROUTES } from '@/config/navigation'
 import { wardName, wardShortName } from '@/data/reference'
 import type {
@@ -128,6 +129,11 @@ const FRESHNESS: DataFreshness = {
 }
 
 export function StormWaterIntelligencePage(): React.JSX.Element {
+  usePageMasthead(
+    t('Storm Water Intelligence'),
+    t('Nallahs, closed drains and culverts across the storm water drainage network, read against pre-monsoon desilting targets and published blockage-risk drivers, together with the pumping station readiness that governs discharge during high-intensity rainfall.'),
+  )
+
   const filters = useFilterStore((s) => s.filters)
   const [selectedDrainId, setSelectedDrainId] = useState<string | null>(null)
 
@@ -152,7 +158,7 @@ export function StormWaterIntelligencePage(): React.JSX.Element {
   ) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('City Intelligence')} title={t('Storm Water Intelligence')} breadcrumbs={breadcrumbs} />
+        <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={breadcrumbs} />
         <LoadingState variant="metrics" />
         <LoadingState variant="table" rows={8} />
       </PageBody>
@@ -164,7 +170,7 @@ export function StormWaterIntelligencePage(): React.JSX.Element {
   if (anyError) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('City Intelligence')} title={t('Storm Water Intelligence')} breadcrumbs={breadcrumbs} />
+        <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={breadcrumbs} />
         <ErrorState
           detail={anyError.message}
           onRetry={() => {
@@ -192,7 +198,7 @@ export function StormWaterIntelligencePage(): React.JSX.Element {
   if (drains.length === 0 && pumps.length === 0) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('City Intelligence')} title={t('Storm Water Intelligence')} breadcrumbs={breadcrumbs} />
+        <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={breadcrumbs} />
         <EmptyState title={t('No storm water network data available')} detail="No drain or pumping station records were returned for the current scope." />
         <DemonstrationNotice />
       </PageBody>
@@ -559,8 +565,6 @@ export function StormWaterIntelligencePage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('City Intelligence')}
-        title={t('Storm Water Intelligence')}
-        description={t('Nallahs, closed drains and culverts across the storm water drainage network, read against pre-monsoon desilting targets and published blockage-risk drivers, together with the pumping station readiness that governs discharge during high-intensity rainfall.')}
         breadcrumbs={breadcrumbs}
         freshness={FRESHNESS}
         actions={
@@ -570,16 +574,6 @@ export function StormWaterIntelligencePage(): React.JSX.Element {
         }
         controls={<FilterBar show={['ward', 'search']} searchPlaceholder="Search drain, reach or ward" />}
       />
-
-      <Card tone={belowThreshold.length > 0 || pumpsBelowReadiness.length > 0 ? 'warn' : 'positive'} className="flex items-start gap-3">
-        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warn-700" aria-hidden />
-        <div className="min-w-0">
-          <p className="text-[0.8125rem] font-semibold text-ink-900">{t('Pre-monsoon readiness implication')}</p>
-          <p className="mt-1 text-xs leading-relaxed text-ink-600">
-            {t('{0} of {1} drainage reaches remain below the {2}% desilting operational threshold against the {3}% pre-monsoon target, and {4} of {5} pumping stations report readiness below the {6}% operational threshold. Effective discharge capacity at these reaches is constrained accordingly whenever rainfall intensity rises - this is a statement of current network condition, not a forecast of any specific rainfall event.', belowThreshold.length, filteredDrains.length, DESILTING_OPERATIONAL_THRESHOLD, PRE_MONSOON_DESILTING_TARGET, pumpsBelowReadiness.length, scopedPumps.length, PUMP_READINESS_THRESHOLD)}
-          </p>
-        </div>
-      </Card>
 
       <MetricGrid columns={5}>
         <MetricCard label={t('Network length')} value={formatNumber(totalLengthKm, 0)} unit="km" icon={<Waves className="h-4 w-4" />} support={t('{0} mapped reaches', filteredDrains.length)} />
@@ -595,297 +589,317 @@ export function StormWaterIntelligencePage(): React.JSX.Element {
         <MetricCard label={t('Pumps below readiness')} value={pumpsBelowReadiness.length} support={t('of {0}, below {1}% threshold', scopedPumps.length, PUMP_READINESS_THRESHOLD)} tone={pumpsBelowReadiness.length > 0 ? 'critical' : 'default'} icon={<Gauge className="h-4 w-4" />} />
       </MetricGrid>
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_22rem]">
-        <Card flush>
-          <CardHeader className="px-4 pt-4 pb-3" title={t('Storm water drain register')} description={t('Sortable, searchable by reach or ward. Select a reach to inspect its published risk drivers.')} />
-          {filteredDrains.length === 0 ? (
-            <EmptyState className="m-4" title={t('No reaches match the current filters')} detail="Adjust the ward or search term above." />
-          ) : (
-            <DataTable
-              rows={filteredDrains}
-              columns={drainColumns}
-              rowKey={(r) => r.id}
-              pageSize={10}
-              searchable={false}
-              onRowClick={(r) => setSelectedDrainId(r.id === selectedDrainId ? null : r.id)}
-              activeRowKey={selectedDrainId ?? undefined}
-              initialSort={{ columnId: 'blockage', direction: 'desc' }}
-              ariaLabel="Storm water drain register"
-            />
-          )}
-        </Card>
+      {/* Two columns, read downward. The registers the department is held to
+          — reaches, the works programme behind them, the dewatering fleet and
+          pumping station readiness — carry the width. The readiness
+          implication, the drivers behind the selected reach, the network map
+          and ward desilting progress read down the column beside. */}
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
+          <Card flush>
+            <CardHeader className="px-4 pt-4 pb-3" title={t('Storm water drain register')} description={t('Sortable, searchable by reach or ward. Select a reach to inspect its published risk drivers.')} />
+            {filteredDrains.length === 0 ? (
+              <EmptyState className="m-4" title={t('No reaches match the current filters')} detail="Adjust the ward or search term above." />
+            ) : (
+              <DataTable
+                rows={filteredDrains}
+                columns={drainColumns}
+                rowKey={(r) => r.id}
+                pageSize={10}
+                searchable={false}
+                onRowClick={(r) => setSelectedDrainId(r.id === selectedDrainId ? null : r.id)}
+                activeRowKey={selectedDrainId ?? undefined}
+                initialSort={{ columnId: 'blockage', direction: 'desc' }}
+                ariaLabel="Storm water drain register"
+              />
+            )}
+          </Card>
 
-        <Card className="min-w-0">
-          <CardHeader title={t('Risk driver breakdown')} description={t('Published, weighted contribution to the selected reach\'s blockage-risk score.')} />
-          {selectedDrain ? (
-            <div className="mt-3">
-              <p className="text-[0.8125rem] font-semibold text-ink-900">{selectedDrain.name}</p>
-              <p className="mt-0.5 text-xs text-ink-500">
-                {wardName(selectedDrain.wardId)} · {DRAIN_TYPE_LABEL[selectedDrain.type]}
-              </p>
-              <div className="mt-3">
-                <ContributionBars items={selectedDrain.riskDrivers} />
+        {/* ------------------------------------------------------------------
+            The pre-monsoon works programme.
+            The register above answers how much desilting is done. This answers
+            the second question, which is the one an audit asks: who was to do
+            it, and can the corporation show that what was recorded as done was
+            actually done. Completion and corroboration are carried separately
+            because they are separately true.
+           ------------------------------------------------------------------ */}
+        {programme && programme.ordersTotal > 0 ? (
+          <>
+            <Card
+              tone={programme.verifiedSharePct < VERIFICATION_EXPECTATION_PCT || programme.disputedOrders > 0 ? 'warn' : 'positive'}
+              className="flex items-start gap-3"
+            >
+              <ScanSearch className="mt-0.5 h-4 w-4 shrink-0 text-warn-700" aria-hidden />
+              <div className="min-w-0">
+                <p className="text-[0.8125rem] font-semibold text-ink-900">
+                  {t('{0} works programme - accountability position', programme.cycleLabel)}
+                </p>
+                <p className="mt-1 text-xs leading-relaxed text-ink-600">
+                  {programme.daysToDeadline < 0
+                    ? t(
+                        'The cycle closed {0} day(s) ago on {1}. {2}% of the sanctioned quantum is recorded as removed across {3} reach(es), and {4}% of what was recorded can be corroborated by something other than the contractor’s own record. That leaves ₹{5} lakh of recorded work uncorroborated, and {6} order(s) contested.',
+                        Math.abs(programme.daysToDeadline),
+                        formatDate(programme.deadlineAt),
+                        formatNumber(programme.completionPct, 0),
+                        programme.ordersTotal,
+                        formatNumber(programme.verifiedSharePct, 0),
+                        formatNumber(programme.unverifiedValueLakh, 1),
+                        programme.disputedOrders,
+                      )
+                    : t(
+                        '{0} day(s) remain to the {1} deadline. {2}% of the sanctioned quantum is recorded as removed across {3} reach(es), and {4}% of what was recorded can be corroborated by something other than the contractor’s own record. ₹{5} lakh of recorded work is uncorroborated, and {6} order(s) are contested.',
+                        programme.daysToDeadline,
+                        formatDate(programme.deadlineAt),
+                        formatNumber(programme.completionPct, 0),
+                        programme.ordersTotal,
+                        formatNumber(programme.verifiedSharePct, 0),
+                        formatNumber(programme.unverifiedValueLakh, 1),
+                        programme.disputedOrders,
+                      )}
+                </p>
+                <p className="mt-1.5 text-[0.6875rem] leading-relaxed text-ink-500">
+                  {t(
+                    'Corroboration is a measurement, not a decision. Nothing here closes an order or releases a payment - a named officer does that, on the evidence shown.',
+                  )}
+                </p>
               </div>
-            </div>
-          ) : (
-            <EmptyState compact className="mt-3" title={t('No reach selected')} detail="Select a row in the drain register to inspect its risk drivers." />
-          )}
-        </Card>
-      </div>
+            </Card>
 
-      <Card>
-        <CardHeader title={t('Network map')} description={t('Drain-risk and pumping-station-readiness layers, with pumping station markers. Switch layers with the control above the map.')} />
-        <div className="mt-3">
-          <CityMap
-            layers={[
-              {
-                id: 'drain-risk',
-                label: t('Drain Blockage Risk'),
-                valueFor: (wardId) => average(drainRiskByWard.get(wardId)),
-                higherIsWorse: true,
-                unit: '/100 blockage risk',
-                description: t('Average blockage-risk score of drains mapped in the ward.'),
-              },
-              {
-                id: 'pump-readiness',
-                label: t('Pumping Station Readiness'),
-                valueFor: (wardId) => average(pumpReadinessByWard.get(wardId)),
-                higherIsWorse: false,
-                unit: '/100 readiness index',
-                description: t('Average readiness index of pumping stations located in the ward.'),
-              },
-            ]}
-            markers={pumpMarkers}
-            height={400}
-          />
-        </div>
-      </Card>
+            <MetricGrid columns={5}>
+              <MetricCard
+                label={t('Sanctioned quantum')}
+                value={formatNumber(programme.sanctionedQuantumMt)}
+                unit="MT"
+                support={t('Across {0} reach(es) in the programme', programme.ordersTotal)}
+              />
+              <MetricCard
+                label={t('Recorded removed')}
+                value={formatNumber(programme.removedQuantumMt)}
+                unit="MT"
+                support={t('{0}% of sanctioned', formatNumber(programme.completionPct, 0))}
+                progress={{ value: programme.completionPct, max: 100 }}
+                tone={programme.completionPct < PRE_MONSOON_DESILTING_TARGET ? 'warn' : 'positive'}
+              />
+              <MetricCard
+                label={t('Corroborated')}
+                value={formatPercent(programme.verifiedSharePct, 0)}
+                support={t('{0} MT of what was recorded', formatNumber(programme.verifiedQuantumMt))}
+                tone={programme.verifiedSharePct < VERIFICATION_EXPECTATION_PCT ? 'critical' : 'positive'}
+                progress={{ value: programme.verifiedSharePct, max: 100 }}
+                icon={<ScanSearch className="h-4 w-4" />}
+              />
+              <MetricCard
+                label={t('Value uncorroborated')}
+                value={formatNumber(programme.unverifiedValueLakh, 1)}
+                unit={t('₹ lakh')}
+                support={t('of ₹{0} lakh recorded', formatNumber(programme.valueLakh, 1))}
+                tone={programme.unverifiedValueLakh > 0 ? 'warn' : 'positive'}
+              />
+              <MetricCard
+                label={t('Contested orders')}
+                value={programme.disputedOrders}
+                support={t('{0} order(s) below the 100% target', programme.ordersBelowTarget)}
+                tone={programme.disputedOrders > 0 ? 'critical' : 'default'}
+              />
+            </MetricGrid>
 
-      <Card>
-        <ChartFrame
-          title={t('Desilting progress by ward')}
-          unit={t('% completion')}
-          timeframe="Current pre-monsoon cycle"
-          description={t('Every ward ranked from lowest to highest desilting completion against the 100% pre-monsoon target.')}
-          height={Math.max(340, desiltingByWard.length * 15)}
-          footnote={t('{0} reach(es) across {1} ward(s) remain below the {2}% operational threshold used departmentally to trigger priority attention.', belowThreshold.length, new Set(belowThreshold.map((d) => d.wardId)).size, DESILTING_OPERATIONAL_THRESHOLD)}
-        >
-          <CategoryBarChart
-            data={desiltingByWard}
-            categoryKey="label"
-            layout="horizontal"
-            series={[{ key: 'value', label: t('Desilting %'), colour: CHART_COLOURS.primary }]}
-            referenceValue={PRE_MONSOON_DESILTING_TARGET}
-            referenceLabel="100% target"
-          />
-        </ChartFrame>
-      </Card>
-
-      {/* ------------------------------------------------------------------
-          The pre-monsoon works programme.
-          The register above answers how much desilting is done. This answers
-          the second question, which is the one an audit asks: who was to do
-          it, and can the corporation show that what was recorded as done was
-          actually done. Completion and corroboration are carried separately
-          because they are separately true.
-         ------------------------------------------------------------------ */}
-      {programme && programme.ordersTotal > 0 ? (
-        <>
-          <Card
-            tone={programme.verifiedSharePct < VERIFICATION_EXPECTATION_PCT || programme.disputedOrders > 0 ? 'warn' : 'positive'}
-            className="flex items-start gap-3"
-          >
-            <ScanSearch className="mt-0.5 h-4 w-4 shrink-0 text-warn-700" aria-hidden />
-            <div className="min-w-0">
-              <p className="text-[0.8125rem] font-semibold text-ink-900">
-                {t('{0} works programme - accountability position', programme.cycleLabel)}
-              </p>
-              <p className="mt-1 text-xs leading-relaxed text-ink-600">
-                {programme.daysToDeadline < 0
-                  ? t(
-                      'The cycle closed {0} day(s) ago on {1}. {2}% of the sanctioned quantum is recorded as removed across {3} reach(es), and {4}% of what was recorded can be corroborated by something other than the contractor’s own record. That leaves ₹{5} lakh of recorded work uncorroborated, and {6} order(s) contested.',
-                      Math.abs(programme.daysToDeadline),
-                      formatDate(programme.deadlineAt),
-                      formatNumber(programme.completionPct, 0),
-                      programme.ordersTotal,
-                      formatNumber(programme.verifiedSharePct, 0),
-                      formatNumber(programme.unverifiedValueLakh, 1),
-                      programme.disputedOrders,
-                    )
-                  : t(
-                      '{0} day(s) remain to the {1} deadline. {2}% of the sanctioned quantum is recorded as removed across {3} reach(es), and {4}% of what was recorded can be corroborated by something other than the contractor’s own record. ₹{5} lakh of recorded work is uncorroborated, and {6} order(s) are contested.',
-                      programme.daysToDeadline,
-                      formatDate(programme.deadlineAt),
-                      formatNumber(programme.completionPct, 0),
-                      programme.ordersTotal,
-                      formatNumber(programme.verifiedSharePct, 0),
-                      formatNumber(programme.unverifiedValueLakh, 1),
-                      programme.disputedOrders,
-                    )}
-              </p>
-              <p className="mt-1.5 text-[0.6875rem] leading-relaxed text-ink-500">
-                {t(
-                  'Corroboration is a measurement, not a decision. Nothing here closes an order or releases a payment - a named officer does that, on the evidence shown.',
-                )}
-              </p>
-            </div>
-          </Card>
-
-          <MetricGrid columns={5}>
-            <MetricCard
-              label={t('Sanctioned quantum')}
-              value={formatNumber(programme.sanctionedQuantumMt)}
-              unit="MT"
-              support={t('Across {0} reach(es) in the programme', programme.ordersTotal)}
-            />
-            <MetricCard
-              label={t('Recorded removed')}
-              value={formatNumber(programme.removedQuantumMt)}
-              unit="MT"
-              support={t('{0}% of sanctioned', formatNumber(programme.completionPct, 0))}
-              progress={{ value: programme.completionPct, max: 100 }}
-              tone={programme.completionPct < PRE_MONSOON_DESILTING_TARGET ? 'warn' : 'positive'}
-            />
-            <MetricCard
-              label={t('Corroborated')}
-              value={formatPercent(programme.verifiedSharePct, 0)}
-              support={t('{0} MT of what was recorded', formatNumber(programme.verifiedQuantumMt))}
-              tone={programme.verifiedSharePct < VERIFICATION_EXPECTATION_PCT ? 'critical' : 'positive'}
-              progress={{ value: programme.verifiedSharePct, max: 100 }}
-              icon={<ScanSearch className="h-4 w-4" />}
-            />
-            <MetricCard
-              label={t('Value uncorroborated')}
-              value={formatNumber(programme.unverifiedValueLakh, 1)}
-              unit={t('₹ lakh')}
-              support={t('of ₹{0} lakh recorded', formatNumber(programme.valueLakh, 1))}
-              tone={programme.unverifiedValueLakh > 0 ? 'warn' : 'positive'}
-            />
-            <MetricCard
-              label={t('Contested orders')}
-              value={programme.disputedOrders}
-              support={t('{0} order(s) below the 100% target', programme.ordersBelowTarget)}
-              tone={programme.disputedOrders > 0 ? 'critical' : 'default'}
-            />
-          </MetricGrid>
-
-          <Card flush>
-            <CardHeader
-              className="px-4 pt-4 pb-3"
-              title={t('Contractor position on the works programme')}
-              description={t('Every contractor holding a reach this cycle, heaviest uncorroborated value first. This is the same delivery record Contractor Intelligence reads.')}
-            />
-            <DataTable
-              rows={programme.byContractor}
-              columns={contractorColumns}
-              rowKey={(r) => r.contractorId}
-              pageSize={8}
-              searchPlaceholder="Search contractor"
-              initialSort={{ columnId: 'unverified-value', direction: 'desc' }}
-              ariaLabel="Contractor position on the desilting works programme"
-            />
-          </Card>
-
-          <Card flush>
-            <CardHeader
-              className="px-4 pt-4 pb-3"
-              title={t('Desilting work order register')}
-              description={t('One order per reach in the programme, with the quantum recorded against it and how that record was checked.')}
-            />
-            {filteredOrders.length === 0 ? (
-              <EmptyState className="m-4" title={t('No work orders match the current filters')} detail="Adjust the ward or search term above." />
-            ) : (
+            <Card flush>
+              <CardHeader
+                className="px-4 pt-4 pb-3"
+                title={t('Contractor position on the works programme')}
+                description={t('Every contractor holding a reach this cycle, heaviest uncorroborated value first. This is the same delivery record Contractor Intelligence reads.')}
+              />
               <DataTable
-                rows={filteredOrders}
-                columns={orderColumns}
-                rowKey={(r) => r.id}
-                pageSize={10}
-                searchPlaceholder="Search order, reach or contractor"
+                rows={programme.byContractor}
+                columns={contractorColumns}
+                rowKey={(r) => r.contractorId}
+                pageSize={8}
+                searchPlaceholder="Search contractor"
                 initialSort={{ columnId: 'unverified-value', direction: 'desc' }}
-                ariaLabel="Desilting work order register"
+                ariaLabel="Contractor position on the desilting works programme"
               />
-            )}
-          </Card>
-        </>
-      ) : null}
+            </Card>
 
-      {/* ------------------------------------------------------------------
-          The dewatering fleet, set by set.
-          The station register below answers how many pumps a location has and
-          how many work. This answers which one is down - which is what the
-          control room needs when a subway floods.
-         ------------------------------------------------------------------ */}
-      {fleet && fleet.unitsTotal > 0 ? (
-        <>
-          <MetricGrid columns={5}>
-            <MetricCard
-              label={t('Dewatering sets')}
-              value={fleet.unitsTotal}
-              support={t('{0} running, {1} on standby', fleet.running, fleet.standby)}
-              icon={<Gauge className="h-4 w-4" />}
-            />
-            <MetricCard
-              label={t('Fleet availability')}
-              value={formatPercent(fleet.availabilityPct, 0)}
-              support={t('{0} in fault, {1} under maintenance', fleet.fault, fleet.maintenance)}
-              tone={fleet.availabilityPct < 85 ? 'warn' : 'positive'}
-              progress={{ value: fleet.availabilityPct, max: 100 }}
-            />
-            <MetricCard
-              label={t('Available discharge')}
-              value={formatNumber(fleet.availableCapacityLps)}
-              unit={t('l/s')}
-              support={t('of {0} l/s installed', formatNumber(fleet.installedCapacityLps))}
-            />
-            <MetricCard
-              label={t('Sets reporting telemetry')}
-              value={formatPercent(fleet.telemetrySharePct, 0)}
-              support={t('{0} of {1} sets report their own state', fleet.telemetryUnits, fleet.unitsTotal)}
-              tone={fleet.telemetrySharePct < 50 ? 'warn' : 'positive'}
-            />
-            <MetricCard
-              label={t('Stations with no working set')}
-              value={fleet.stationsWithNoWorkingUnit}
-              support={t('Every set at these locations is unavailable')}
-              tone={fleet.stationsWithNoWorkingUnit > 0 ? 'critical' : 'default'}
-            />
-          </MetricGrid>
+            <Card flush>
+              <CardHeader
+                className="px-4 pt-4 pb-3"
+                title={t('Desilting work order register')}
+                description={t('One order per reach in the programme, with the quantum recorded against it and how that record was checked.')}
+              />
+              {filteredOrders.length === 0 ? (
+                <EmptyState className="m-4" title={t('No work orders match the current filters')} detail="Adjust the ward or search term above." />
+              ) : (
+                <DataTable
+                  rows={filteredOrders}
+                  columns={orderColumns}
+                  rowKey={(r) => r.id}
+                  pageSize={10}
+                  searchPlaceholder="Search order, reach or contractor"
+                  initialSort={{ columnId: 'unverified-value', direction: 'desc' }}
+                  ariaLabel="Desilting work order register"
+                />
+              )}
+            </Card>
+          </>
+        ) : null}
 
-          <Card flush>
-            <CardHeader
-              className="px-4 pt-4 pb-3"
-              title={t('Dewatering set register')}
-              description={t('Every set in the fleet with its current state, duty over the last 30 days and whether it reports that state itself or is logged by hand at the site.')}
-            />
-            {filteredUnits.length === 0 ? (
-              <EmptyState className="m-4" title={t('No dewatering sets match the current filters')} detail="Adjust the ward or search term above." />
+        {/* ------------------------------------------------------------------
+            The dewatering fleet, set by set.
+            The station register below answers how many pumps a location has and
+            how many work. This answers which one is down - which is what the
+            control room needs when a subway floods.
+           ------------------------------------------------------------------ */}
+        {fleet && fleet.unitsTotal > 0 ? (
+          <>
+            <MetricGrid columns={5}>
+              <MetricCard
+                label={t('Dewatering sets')}
+                value={fleet.unitsTotal}
+                support={t('{0} running, {1} on standby', fleet.running, fleet.standby)}
+                icon={<Gauge className="h-4 w-4" />}
+              />
+              <MetricCard
+                label={t('Fleet availability')}
+                value={formatPercent(fleet.availabilityPct, 0)}
+                support={t('{0} in fault, {1} under maintenance', fleet.fault, fleet.maintenance)}
+                tone={fleet.availabilityPct < 85 ? 'warn' : 'positive'}
+                progress={{ value: fleet.availabilityPct, max: 100 }}
+              />
+              <MetricCard
+                label={t('Available discharge')}
+                value={formatNumber(fleet.availableCapacityLps)}
+                unit={t('l/s')}
+                support={t('of {0} l/s installed', formatNumber(fleet.installedCapacityLps))}
+              />
+              <MetricCard
+                label={t('Sets reporting telemetry')}
+                value={formatPercent(fleet.telemetrySharePct, 0)}
+                support={t('{0} of {1} sets report their own state', fleet.telemetryUnits, fleet.unitsTotal)}
+                tone={fleet.telemetrySharePct < 50 ? 'warn' : 'positive'}
+              />
+              <MetricCard
+                label={t('Stations with no working set')}
+                value={fleet.stationsWithNoWorkingUnit}
+                support={t('Every set at these locations is unavailable')}
+                tone={fleet.stationsWithNoWorkingUnit > 0 ? 'critical' : 'default'}
+              />
+            </MetricGrid>
+
+            <Card flush>
+              <CardHeader
+                className="px-4 pt-4 pb-3"
+                title={t('Dewatering set register')}
+                description={t('Every set in the fleet with its current state, duty over the last 30 days and whether it reports that state itself or is logged by hand at the site.')}
+              />
+              {filteredUnits.length === 0 ? (
+                <EmptyState className="m-4" title={t('No dewatering sets match the current filters')} detail="Adjust the ward or search term above." />
+              ) : (
+                <DataTable
+                  rows={filteredUnits}
+                  columns={unitColumns}
+                  rowKey={(r) => r.id}
+                  pageSize={10}
+                  searchPlaceholder="Search set, station or ward"
+                  initialSort={{ columnId: 'status', direction: 'asc' }}
+                  ariaLabel="Dewatering set register"
+                />
+              )}
+            </Card>
+          </>
+        ) : null}
+
+        <Card flush>
+          <CardHeader className="px-4 pt-4 pb-3" title={t('Pumping station readiness register')} description={t('Pump availability, standby power and duty cycle over the last 30 days.')} />
+          <DataTable
+            rows={pumps}
+            columns={pumpColumns}
+            rowKey={(r) => r.id}
+            pageSize={10}
+            searchPlaceholder="Search pumping station or ward"
+            initialSort={{ columnId: 'readiness', direction: 'asc' }}
+            ariaLabel="Pumping station readiness register"
+          />
+        </Card>
+        </div>
+
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
+        <Card tone={belowThreshold.length > 0 || pumpsBelowReadiness.length > 0 ? 'warn' : 'positive'} className="flex items-start gap-3">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warn-700" aria-hidden />
+          <div className="min-w-0">
+            <p className="text-[0.8125rem] font-semibold text-ink-900">{t('Pre-monsoon readiness implication')}</p>
+            <p className="mt-1 text-xs leading-relaxed text-ink-600">
+              {t('{0} of {1} drainage reaches remain below the {2}% desilting operational threshold against the {3}% pre-monsoon target, and {4} of {5} pumping stations report readiness below the {6}% operational threshold. Effective discharge capacity at these reaches is constrained accordingly whenever rainfall intensity rises - this is a statement of current network condition, not a forecast of any specific rainfall event.', belowThreshold.length, filteredDrains.length, DESILTING_OPERATIONAL_THRESHOLD, PRE_MONSOON_DESILTING_TARGET, pumpsBelowReadiness.length, scopedPumps.length, PUMP_READINESS_THRESHOLD)}
+            </p>
+          </div>
+        </Card>
+
+          <Card className="min-w-0">
+            <CardHeader title={t('Risk driver breakdown')} description={t('Published, weighted contribution to the selected reach\'s blockage-risk score.')} />
+            {selectedDrain ? (
+              <div className="mt-3">
+                <p className="text-[0.8125rem] font-semibold text-ink-900">{selectedDrain.name}</p>
+                <p className="mt-0.5 text-xs text-ink-500">
+                  {wardName(selectedDrain.wardId)} · {DRAIN_TYPE_LABEL[selectedDrain.type]}
+                </p>
+                <div className="mt-3">
+                  <ContributionBars items={selectedDrain.riskDrivers} />
+                </div>
+              </div>
             ) : (
-              <DataTable
-                rows={filteredUnits}
-                columns={unitColumns}
-                rowKey={(r) => r.id}
-                pageSize={10}
-                searchPlaceholder="Search set, station or ward"
-                initialSort={{ columnId: 'status', direction: 'asc' }}
-                ariaLabel="Dewatering set register"
-              />
+              <EmptyState compact className="mt-3" title={t('No reach selected')} detail="Select a row in the drain register to inspect its risk drivers." />
             )}
           </Card>
-        </>
-      ) : null}
 
-      <Card flush>
-        <CardHeader className="px-4 pt-4 pb-3" title={t('Pumping station readiness register')} description={t('Pump availability, standby power and duty cycle over the last 30 days.')} />
-        <DataTable
-          rows={pumps}
-          columns={pumpColumns}
-          rowKey={(r) => r.id}
-          pageSize={10}
-          searchPlaceholder="Search pumping station or ward"
-          initialSort={{ columnId: 'readiness', direction: 'asc' }}
-          ariaLabel="Pumping station readiness register"
-        />
-      </Card>
+
+        <Card>
+          <CardHeader title={t('Network map')} description={t('Drain-risk and pumping-station-readiness layers, with pumping station markers. Switch layers with the control above the map.')} />
+          <div className="mt-3">
+            <CityMap
+              layers={[
+                {
+                  id: 'drain-risk',
+                  label: t('Drain Blockage Risk'),
+                  valueFor: (wardId) => average(drainRiskByWard.get(wardId)),
+                  higherIsWorse: true,
+                  unit: '/100 blockage risk',
+                  description: t('Average blockage-risk score of drains mapped in the ward.'),
+                },
+                {
+                  id: 'pump-readiness',
+                  label: t('Pumping Station Readiness'),
+                  valueFor: (wardId) => average(pumpReadinessByWard.get(wardId)),
+                  higherIsWorse: false,
+                  unit: '/100 readiness index',
+                  description: t('Average readiness index of pumping stations located in the ward.'),
+                },
+              ]}
+              markers={pumpMarkers}
+              height={400}
+            />
+          </div>
+        </Card>
+
+        <Card>
+          <ChartFrame
+            title={t('Desilting progress by ward')}
+            unit={t('% completion')}
+            timeframe="Current pre-monsoon cycle"
+            description={t('Every ward ranked from lowest to highest desilting completion against the 100% pre-monsoon target.')}
+            height={Math.max(340, desiltingByWard.length * 15)}
+            footnote={t('{0} reach(es) across {1} ward(s) remain below the {2}% operational threshold used departmentally to trigger priority attention.', belowThreshold.length, new Set(belowThreshold.map((d) => d.wardId)).size, DESILTING_OPERATIONAL_THRESHOLD)}
+          >
+            <CategoryBarChart
+              data={desiltingByWard}
+              categoryKey="label"
+              layout="horizontal"
+              series={[{ key: 'value', label: t('Desilting %'), colour: CHART_COLOURS.primary }]}
+              referenceValue={PRE_MONSOON_DESILTING_TARGET}
+              referenceLabel="100% target"
+            />
+          </ChartFrame>
+        </Card>
+        </div>
+      </div>
 
       <DemonstrationNotice />
     </PageBody>

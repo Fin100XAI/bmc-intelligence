@@ -4,6 +4,7 @@ import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { aiService } from '@/services'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { officerDisplayName } from '@/data/reference'
 import { isoFromAnchor } from '@/utils/deterministic'
 import { formatRelative, truncate } from '@/utils/format'
@@ -67,6 +68,12 @@ const STATUS_TONE: Record<AIModel['status'], 'positive' | 'warn' | 'critical' | 
 }
 
 export function ModelRegistryPage(): React.JSX.Element {
+  // The shell's masthead states the screen's name; the page states the wording.
+  usePageMasthead(
+    t('AI Model Registry'),
+    t('Every model recognised by the governed AI layer, with approved and restricted use, risk classification, evaluation status and ownership. A model entering this registry does not thereby gain any authority to act - the platform\'s provider abstraction only ever analyses, recommends and explains.'),
+  )
+
   const modelsQuery = useServiceQuery(queryKeys.ai('models'), (u) => aiService.models(u))
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [riskFilter, setRiskFilter] = useState<'all' | AIModel['riskClass']>('all')
@@ -151,186 +158,199 @@ export function ModelRegistryPage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('AI & Automation')}
-        title={t('AI Model Registry')}
-        description={t('Every model recognised by the governed AI layer, with approved and restricted use, risk classification, evaluation status and ownership. A model entering this registry does not thereby gain any authority to act - the platform\'s provider abstraction only ever analyses, recommends and explains.')}
         breadcrumbs={[{ label: t('AI & Automation') }, { label: t('AI Model Registry') }]}
         freshness={FRESHNESS}
       />
 
-      <Card tone="info">
-        <p className="flex items-start gap-2 text-xs leading-relaxed text-ink-700">
-          <ShieldAlert className="mt-0.5 h-3.5 w-3.5 shrink-0 text-govt-600" />
-          {t('Every model in this registry is a demonstration simulation. In this environment, no request ever reaches an external model endpoint - every AI response is produced by the local deterministic provider described in AI Governance. Provider, deployment and version fields describe what a governed production deployment would record, not a live connection.')}
-        </p>
-      </Card>
-
       {modelsQuery.isLoading ? <LoadingState variant="metrics" /> : null}
       {modelsQuery.error ? <ErrorState detail={modelsQuery.error.message} onRetry={() => modelsQuery.refetch()} /> : null}
 
-      {!modelsQuery.isLoading && !modelsQuery.error ? (
-        models.length === 0 ? (
-          <EmptyState title={t('No models registered')} detail="No AI model records are visible within your authorised scope." />
-        ) : (
-          <>
-            <MetricGrid columns={4}>
-              <MetricCard label={t('Registered models')} value={models.length} icon={<Brain className="h-4 w-4" />} />
-              <MetricCard label={t('Active')} value={models.filter((m) => m.status === 'active').length} tone="positive" />
-              <MetricCard
-                label={t('Evaluation not passed')}
-                value={models.filter((m) => m.evaluationStatus !== 'passed').length}
-                tone={models.some((m) => m.evaluationStatus === 'failed') ? 'critical' : 'warn'}
-              />
-              <MetricCard
-                label={t('Re-evaluation due')}
-                value={models.filter((m) => m.evaluationStatus === 're-evaluation-due').length}
-                tone="warn"
-              />
-            </MetricGrid>
+      {/* ── Two columns ─────────────────────────────────────────────
+          The register and the entry an officer has opened read down the wide
+          column. The standing counts, the models needing governance attention
+          and the standing declaration that nothing here is a live endpoint
+          sit beside them. */}
+      <div className="grid grid-cols-1 gap-3 xl:grid-cols-12">
+        <div className="flex min-w-0 flex-col gap-3 xl:col-span-8">
+          {!modelsQuery.isLoading && !modelsQuery.error ? (
+            models.length === 0 ? (
+              <EmptyState title={t('No models registered')} detail="No AI model records are visible within your authorised scope." />
+            ) : (
+              <>
+                <Card flush>
+                  <CardHeader
+                    bordered
+                    title={t('Model register')}
+                    description={t('Sortable and searchable. Select a row to view approved and restricted use in full below.')}
+                    actions={
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Select
+                          aria-label={t('Filter by risk class')}
+                          value={riskFilter}
+                          onChange={(e) => setRiskFilter(e.target.value as typeof riskFilter)}
+                          className="w-auto min-w-[9rem]"
+                          options={[
+                            { value: 'all', label: t('All risk classes') },
+                            { value: 'limited', label: t('Limited risk') },
+                            { value: 'moderate', label: t('Moderate risk') },
+                            { value: 'high', label: t('High risk') },
+                          ]}
+                        />
+                        <Select
+                          aria-label={t('Filter by evaluation status')}
+                          value={evalFilter}
+                          onChange={(e) => setEvalFilter(e.target.value as typeof evalFilter)}
+                          className="w-auto min-w-[10rem]"
+                          options={[
+                            { value: 'all', label: t('All evaluation states') },
+                            { value: 'passed', label: t('Passed') },
+                            { value: 'in-progress', label: t('In progress') },
+                            { value: 'not-started', label: t('Not started') },
+                            { value: 'failed', label: t('Failed') },
+                            { value: 're-evaluation-due', label: t('Re-evaluation due') },
+                          ]}
+                        />
+                        <Select
+                          aria-label={t('Filter by status')}
+                          value={statusFilter}
+                          onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
+                          className="w-auto min-w-[9rem]"
+                          options={[
+                            { value: 'all', label: t('All statuses') },
+                            { value: 'active', label: t('Active') },
+                            { value: 'restricted', label: t('Restricted') },
+                            { value: 'retired', label: t('Retired') },
+                            { value: 'pending-approval', label: t('Pending approval') },
+                          ]}
+                        />
+                      </div>
+                    }
+                  />
+                  <DataTable
+                    rows={filtered}
+                    columns={columns}
+                    rowKey={(row) => row.id}
+                    pageSize={8}
+                    stickyHeader
+                    maxHeight="24rem"
+                    searchPlaceholder="Search models"
+                    onRowClick={(row) => setSelectedId(row.id)}
+                    activeRowKey={selected?.id}
+                    emptyTitle={t('No models match these filters')}
+                    emptyDetail="Adjust the risk, evaluation or status filters above."
+                  />
+                </Card>
 
-            {flagged.length > 0 ? (
-              <Card tone="warn">
-                <CardHeader
-                  icon={<AlertTriangle className="h-4 w-4" />}
-                  title={t('Models requiring governance attention')}
-                  description={t('Evaluation has not passed, or a re-evaluation is due. Use of these models for a live governed deployment would require resolving this before wider approval.')}
-                />
-                <ul className="mt-3 space-y-1.5">
-                  {flagged.map((m) => (
-                    <li key={m.id} className="flex flex-wrap items-center gap-2 text-xs text-ink-700">
-                      <Badge tone={EVAL_TONE[m.evaluationStatus]}>{m.evaluationStatus.replace(/-/g, ' ')}</Badge>
-                      <span className="font-medium">{m.name}</span>
-                      <span className="text-ink-400">- {m.notes}</span>
-                    </li>
-                  ))}
-                </ul>
-              </Card>
-            ) : null}
-
-            <Card flush>
-              <CardHeader
-                bordered
-                title={t('Model register')}
-                description={t('Sortable and searchable. Select a row to view approved and restricted use in full below.')}
-                actions={
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Select
-                      aria-label={t('Filter by risk class')}
-                      value={riskFilter}
-                      onChange={(e) => setRiskFilter(e.target.value as typeof riskFilter)}
-                      className="w-auto min-w-[9rem]"
-                      options={[
-                        { value: 'all', label: t('All risk classes') },
-                        { value: 'limited', label: t('Limited risk') },
-                        { value: 'moderate', label: t('Moderate risk') },
-                        { value: 'high', label: t('High risk') },
-                      ]}
+                {selected ? (
+                  <Card>
+                    <CardHeader
+                      icon={<Brain className="h-4 w-4" />}
+                      eyebrow={t('{0} · {1} · v{2}', selected.provider, selected.deployment, selected.version)}
+                      title={selected.name}
+                      description={selected.notes}
+                      actions={
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <Badge tone={RISK_TONE[selected.riskClass]}>{selected.riskClass} risk</Badge>
+                          <Badge tone={EVAL_TONE[selected.evaluationStatus]}>{selected.evaluationStatus.replace(/-/g, ' ')}</Badge>
+                          <Badge tone={STATUS_TONE[selected.status]} dot>{selected.status.replace(/-/g, ' ')}</Badge>
+                        </div>
+                      }
                     />
-                    <Select
-                      aria-label={t('Filter by evaluation status')}
-                      value={evalFilter}
-                      onChange={(e) => setEvalFilter(e.target.value as typeof evalFilter)}
-                      className="w-auto min-w-[10rem]"
-                      options={[
-                        { value: 'all', label: t('All evaluation states') },
-                        { value: 'passed', label: t('Passed') },
-                        { value: 'in-progress', label: t('In progress') },
-                        { value: 'not-started', label: t('Not started') },
-                        { value: 'failed', label: t('Failed') },
-                        { value: 're-evaluation-due', label: t('Re-evaluation due') },
-                      ]}
-                    />
-                    <Select
-                      aria-label={t('Filter by status')}
-                      value={statusFilter}
-                      onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
-                      className="w-auto min-w-[9rem]"
-                      options={[
-                        { value: 'all', label: t('All statuses') },
-                        { value: 'active', label: t('Active') },
-                        { value: 'restricted', label: t('Restricted') },
-                        { value: 'retired', label: t('Retired') },
-                        { value: 'pending-approval', label: t('Pending approval') },
-                      ]}
-                    />
-                  </div>
-                }
-              />
-              <DataTable
-                rows={filtered}
-                columns={columns}
-                rowKey={(row) => row.id}
-                pageSize={8}
-                stickyHeader
-                maxHeight="24rem"
-                searchPlaceholder="Search models"
-                onRowClick={(row) => setSelectedId(row.id)}
-                activeRowKey={selected?.id}
-                emptyTitle={t('No models match these filters')}
-                emptyDetail="Adjust the risk, evaluation or status filters above."
-              />
-            </Card>
-
-            {selected ? (
-              <Card>
-                <CardHeader
-                  icon={<Brain className="h-4 w-4" />}
-                  eyebrow={t('{0} · {1} · v{2}', selected.provider, selected.deployment, selected.version)}
-                  title={selected.name}
-                  description={selected.notes}
-                  actions={
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <Badge tone={RISK_TONE[selected.riskClass]}>{selected.riskClass} risk</Badge>
-                      <Badge tone={EVAL_TONE[selected.evaluationStatus]}>{selected.evaluationStatus.replace(/-/g, ' ')}</Badge>
-                      <Badge tone={STATUS_TONE[selected.status]} dot>{selected.status.replace(/-/g, ' ')}</Badge>
+                    <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+                      <div>
+                        <Label>{t('Approved use')}</Label>
+                        {selected.approvedUse.length === 0 ? (
+                          <p className="text-xs text-ink-400">{t('No approved use case is currently declared for this model.')}</p>
+                        ) : (
+                          <ul className="space-y-1.5">
+                            {selected.approvedUse.map((use) => (
+                              <li key={use} className="flex items-start gap-1.5 text-xs leading-relaxed text-ink-700">
+                                <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-ok-600" />
+                                {use}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                      <div>
+                        <Label>{t('Restricted use')}</Label>
+                        {selected.restrictedUse.length === 0 ? (
+                          <p className="text-xs text-ink-400">{t('No restricted use is separately declared for this model.')}</p>
+                        ) : (
+                          <ul className="space-y-1.5">
+                            {selected.restrictedUse.map((use) => (
+                              <li key={use} className="flex items-start gap-1.5 text-xs leading-relaxed text-ink-700">
+                                <ShieldAlert className="mt-0.5 h-3.5 w-3.5 shrink-0 text-crit-600" />
+                                {use}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
                     </div>
-                  }
-                />
-                <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div>
-                    <Label>{t('Approved use')}</Label>
-                    {selected.approvedUse.length === 0 ? (
-                      <p className="text-xs text-ink-400">{t('No approved use case is currently declared for this model.')}</p>
-                    ) : (
-                      <ul className="space-y-1.5">
-                        {selected.approvedUse.map((use) => (
-                          <li key={use} className="flex items-start gap-1.5 text-xs leading-relaxed text-ink-700">
-                            <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-ok-600" />
-                            {use}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                  <div>
-                    <Label>{t('Restricted use')}</Label>
-                    {selected.restrictedUse.length === 0 ? (
-                      <p className="text-xs text-ink-400">{t('No restricted use is separately declared for this model.')}</p>
-                    ) : (
-                      <ul className="space-y-1.5">
-                        {selected.restrictedUse.map((use) => (
-                          <li key={use} className="flex items-start gap-1.5 text-xs leading-relaxed text-ink-700">
-                            <ShieldAlert className="mt-0.5 h-3.5 w-3.5 shrink-0 text-crit-600" />
-                            {use}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                </div>
-                <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-1.5 border-t border-ink-100 pt-3 text-xs text-ink-500">
-                  <span className="inline-flex items-center gap-1">
-                    <ChevronRight className="h-3 w-3" />{' '}{t('Owner:')}{' '}{officerDisplayName(selected.ownerId)}
-                  </span>
-                  <span>{t('Last evaluated {0}', formatRelative(selected.lastEvaluatedAt))}</span>
-                  <span>{t('Environment: {0}', selected.environment)}</span>
-                </div>
-              </Card>
-            ) : null}
-          </>
-        )
-      ) : null}
+                    <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-1.5 border-t border-ink-100 pt-3 text-xs text-ink-500">
+                      <span className="inline-flex items-center gap-1">
+                        <ChevronRight className="h-3 w-3" />{' '}{t('Owner:')}{' '}{officerDisplayName(selected.ownerId)}
+                      </span>
+                      <span>{t('Last evaluated {0}', formatRelative(selected.lastEvaluatedAt))}</span>
+                      <span>{t('Environment: {0}', selected.environment)}</span>
+                    </div>
+                  </Card>
+                ) : null}
+              </>
+            )
+          ) : null}
+        </div>
 
-      <DemonstrationNotice />
+        <div className="flex min-w-0 flex-col gap-3 xl:col-span-4">
+          {!modelsQuery.isLoading && !modelsQuery.error && models.length > 0 ? (
+            <>
+              <MetricGrid columns={2}>
+                <MetricCard label={t('Registered models')} value={models.length} icon={<Brain className="h-4 w-4" />} />
+                <MetricCard label={t('Active')} value={models.filter((m) => m.status === 'active').length} tone="positive" />
+                <MetricCard
+                  label={t('Evaluation not passed')}
+                  value={models.filter((m) => m.evaluationStatus !== 'passed').length}
+                  tone={models.some((m) => m.evaluationStatus === 'failed') ? 'critical' : 'warn'}
+                />
+                <MetricCard
+                  label={t('Re-evaluation due')}
+                  value={models.filter((m) => m.evaluationStatus === 're-evaluation-due').length}
+                  tone="warn"
+                />
+              </MetricGrid>
+
+              {flagged.length > 0 ? (
+                <Card tone="warn">
+                  <CardHeader
+                    icon={<AlertTriangle className="h-4 w-4" />}
+                    title={t('Models requiring governance attention')}
+                    description={t('Evaluation has not passed, or a re-evaluation is due. Use of these models for a live governed deployment would require resolving this before wider approval.')}
+                  />
+                  <ul className="mt-3 space-y-1.5">
+                    {flagged.map((m) => (
+                      <li key={m.id} className="flex flex-wrap items-center gap-2 text-xs text-ink-700">
+                        <Badge tone={EVAL_TONE[m.evaluationStatus]}>{m.evaluationStatus.replace(/-/g, ' ')}</Badge>
+                        <span className="font-medium">{m.name}</span>
+                        <span className="text-ink-400">- {m.notes}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </Card>
+              ) : null}
+            </>
+          ) : null}
+
+          <Card tone="info">
+            <p className="flex items-start gap-2 text-xs leading-relaxed text-ink-700">
+              <ShieldAlert className="mt-0.5 h-3.5 w-3.5 shrink-0 text-govt-600" />
+              {t('Every model in this registry is a demonstration simulation. In this environment, no request ever reaches an external model endpoint - every AI response is produced by the local deterministic provider described in AI Governance. Provider, deployment and version fields describe what a governed production deployment would record, not a live connection.')}
+            </p>
+          </Card>
+
+          <DemonstrationNotice />
+        </div>
+      </div>
     </PageBody>
   )
 }

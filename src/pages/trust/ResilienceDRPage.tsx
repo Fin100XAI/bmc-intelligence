@@ -17,6 +17,7 @@ import { DemonstrationNotice, EmptyState, ErrorState, LoadingState } from '@/com
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { drService } from '@/services'
+import { usePageMasthead } from '@/stores/masthead.store'
 import {
   POSTURE_MATURITY_LABEL,
   type BackupPosture,
@@ -93,6 +94,12 @@ const DRILL_FINDINGS = [
 ]
 
 export function ResilienceDRPage(): React.JSX.Element {
+  // The shell's masthead carries the screen's name; the page states the wording.
+  usePageMasthead(
+    t('Resilience & Disaster Recovery'),
+    t('The platform\'s continuity posture — backup, failover and resilience testing. Every item is labelled as target architecture, the production design, or demonstration status, what this environment provides. This page makes no claim of production disaster recovery.'),
+  )
+
   const query = useServiceQuery(queryKeys.dr(), (u) => drService.posture(u))
 
   const [maturityFilter, setMaturityFilter] = useState<PostureMaturity | ''>('')
@@ -225,8 +232,6 @@ export function ResilienceDRPage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('Trust Centre')}
-        title={t('Resilience & Disaster Recovery')}
-        description={t('The platform\'s continuity posture — backup, failover and resilience testing. Every item is labelled as target architecture, the production design, or demonstration status, what this environment provides. This page makes no claim of production disaster recovery.')}
         breadcrumbs={[{ label: t('Trust Centre') }, { label: t('Resilience & DR') }]}
         freshness={FRESHNESS}
         actions={
@@ -296,6 +301,11 @@ export function ResilienceDRPage(): React.JSX.Element {
         </Card>
       </MetricGrid>
 
+      {/* Two columns. What the platform is designed to recover — objectives
+          first, then the tiers that carry them — reads down the wide column;
+          whether any of it has actually been exercised stands beside it. */}
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-7">
       <Card flush>
         <CardHeader
           className="px-4 pt-4"
@@ -327,7 +337,9 @@ export function ResilienceDRPage(): React.JSX.Element {
           )}
         </div>
       </Card>
+        </div>
 
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-5">
       <Card flush>
         <CardHeader
           className="px-4 pt-4"
@@ -393,6 +405,8 @@ export function ResilienceDRPage(): React.JSX.Element {
           </div>
         ) : null}
       </Card>
+        </div>
+      </div>
 
       <ConfirmDialog
         open={drillTarget !== null}

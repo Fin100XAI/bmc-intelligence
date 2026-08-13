@@ -17,6 +17,7 @@ import { DemonstrationNotice, EmptyState, ErrorState, LoadingState, PartialDataW
 import { MetricCard } from '@/components/cards/MetricCard'
 import { ContributionBars, MiniBar } from '@/components/charts'
 import { useServiceQuery } from '@/hooks'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { queryKeys } from '@/app/queryClient'
 import { contractorService } from '@/services'
 import type { ContractorProfile } from '@/domains/contractors/performance'
@@ -49,6 +50,12 @@ const FRESHNESS = {
 }
 
 export function ContractorIntelligencePage(): React.JSX.Element {
+  // The shell's masthead carries the screen's name; the page states the wording.
+  usePageMasthead(
+    t('Contractor Intelligence'),
+    t('How the corporation\'s suppliers are delivering, computed from the contract and project record through published weights. A risk indicator describes delivery exposure requiring management attention - it is never an assertion of misconduct.'),
+  )
+
   const portfolioQuery = useServiceQuery(queryKeys.contractors('portfolio'), (u) => contractorService.portfolio(u))
   const profilesQuery = useServiceQuery(queryKeys.contractors('profiles'), (u) => contractorService.profiles(u))
   const bandsQuery = useServiceQuery(queryKeys.contractors('bands'), (u) => contractorService.bands(u))
@@ -165,8 +172,6 @@ export function ContractorIntelligencePage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('Governance & Finance')}
-        title={t('Contractor Intelligence')}
-        description={t('How the corporation\'s suppliers are delivering, computed from the contract and project record through published weights. A risk indicator describes delivery exposure requiring management attention - it is never an assertion of misconduct.')}
         breadcrumbs={[{ label: t('Governance & Finance') }, { label: t('Contractor Intelligence') }]}
         freshness={FRESHNESS}
         controls={

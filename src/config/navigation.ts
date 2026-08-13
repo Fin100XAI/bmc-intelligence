@@ -103,6 +103,16 @@ export const ROUTES = {
   // retiring a working screen to a file nobody routes to is how it rots.
   login: '/login',
   loginDirect: '/login/direct',
+  /**
+   * The corporation's portal front page, reached AFTER sign-in.
+   *
+   * It used to be `/login` itself — a public front page whose every module tile
+   * bounced an anonymous visitor to the sign-in screen. It now sits behind the
+   * session: an officer signs in, arrives here, and enters the console from
+   * whichever surface they came for. The tiles no longer gate anything, because
+   * by the time they are on screen the principal is already established.
+   */
+  portal: '/portal',
 
   // Command
   executive: '/command/executive',

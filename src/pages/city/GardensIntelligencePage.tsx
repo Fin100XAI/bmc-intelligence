@@ -21,6 +21,7 @@ import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { gardensService } from '@/services'
 import { useFilterStore } from '@/stores/ui.store'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { wardName, wardShortName } from '@/data/reference'
 import {
   OPEN_SPACE_KIND_LABEL,
@@ -65,6 +66,11 @@ const CONDITION_THRESHOLD = 55
 export function GardensIntelligencePage(): React.JSX.Element {
   const filters = useFilterStore((s) => s.filters)
 
+  usePageMasthead(
+    t('Gardens & Open Space'),
+    t('Gardens, playgrounds and recreation grounds, open space per resident, and the Tree Authority\'s position on felling permissions against the compensatory planting that conditioned them.'),
+  )
+
   const spacesQuery = useServiceQuery(queryKeys.gardens('open-spaces'), (u) => gardensService.openSpaces(u))
   const treesQuery = useServiceQuery(queryKeys.gardens('trees'), (u) => gardensService.treePositions(u))
 
@@ -87,7 +93,7 @@ export function GardensIntelligencePage(): React.JSX.Element {
   if (spacesQuery.isLoading || treesQuery.isLoading) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('City Intelligence')} title={t('Gardens & Open Space')} breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Gardens & Open Space') }]} />
+        <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Gardens & Open Space') }]} />
         <LoadingState variant="metrics" />
         <LoadingState variant="table" rows={8} />
       </PageBody>
@@ -96,7 +102,7 @@ export function GardensIntelligencePage(): React.JSX.Element {
   if (spacesQuery.error || treesQuery.error) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('City Intelligence')} title={t('Gardens & Open Space')} breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Gardens & Open Space') }]} />
+        <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Gardens & Open Space') }]} />
         <ErrorState
           detail={(spacesQuery.error ?? treesQuery.error)?.message}
           onRetry={() => { void spacesQuery.refetch(); void treesQuery.refetch() }}
@@ -225,8 +231,6 @@ export function GardensIntelligencePage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('City Intelligence')}
-        title={t('Gardens & Open Space')}
-        description={t('Gardens, playgrounds and recreation grounds, open space per resident, and the Tree Authority\'s position on felling permissions against the compensatory planting that conditioned them.')}
         breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Gardens & Open Space') }]}
         freshness={freshness}
       />
@@ -259,94 +263,103 @@ export function GardensIntelligencePage(): React.JSX.Element {
         />
       </MetricGrid>
 
-      <Card tone={plantingPct < 70 ? 'warn' : 'default'} className="flex items-start gap-3">
-        <Sprout className="mt-0.5 h-4 w-4 shrink-0 text-govt-600" aria-hidden />
-        <div className="min-w-0">
-          <p className="text-[0.8125rem] font-semibold text-ink-900">
-            {t('{0} felling permissions granted · {1} of {2} compensatory trees planted', formatNumber(granted), formatNumber(completed), formatNumber(required))}
-          </p>
-          <p className="mt-1 text-xs leading-relaxed text-ink-600">
-            {t('{0} {1} applications are pending decision.', plantingShortfall > 0
-              ? `${formatNumber(plantingShortfall)} trees remain unplanted against permissions already granted. A permission is conditional on the planting that was required for it, so this shortfall is an outstanding obligation of the Tree Authority rather than a target it has yet to reach.`
-              : 'Compensatory planting is complete against every permission granted in the last twelve months.', formatNumber(pendingFelling))}
-          </p>
+      {/* Two columns. The two registers — what the corporation maintains and
+          what the Tree Authority has granted against — carry the width, with
+          the planting comparison directly beneath them. The outstanding
+          obligation, the provision ranking and the estate's composition read
+          down the column beside. */}
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
+          <Card flush>
+            <CardHeader
+              bordered
+              icon={<Trees className="h-4 w-4" />}
+              title={t('Open space register')}
+              description={t('Every garden, playground and recreation ground within your authorised ward scope.')}
+            />
+            {filtered.length === 0 ? (
+              <EmptyState title={t('No open spaces match the current filters')} detail="Clear a filter to widen the register." />
+            ) : (
+              <DataTable rows={filtered} columns={spaceColumns} rowKey={(r) => r.id} pageSize={15} />
+            )}
+          </Card>
+
+          <Card flush>
+            <CardHeader
+              bordered
+              icon={<Scissors className="h-4 w-4" />}
+              title={t('Tree Authority position by ward')}
+              description={t('Canopy, felling permissions and compensatory planting. Permissions and planting are never shown apart.')}
+            />
+            {trees.length === 0 ? (
+              <EmptyState title={t('No ward positions in scope')} />
+            ) : (
+              <DataTable rows={trees} columns={treeColumns} rowKey={(r) => r.wardId} pageSize={12} />
+            )}
+          </Card>
+
+          <Card flush className="flex flex-col">
+            <CardHeader
+              bordered
+              title={t('Compensatory planting shortfall by ward')}
+              description={t('Trees required against permissions granted, and trees actually planted. Read together, never apart.')}
+            />
+            <div className="px-4 pb-4" style={{ height: 220 }}>
+              <CategoryBarChart
+                data={plantingByWard}
+                showLegend
+                series={[
+                  { key: 'required', label: t('Required'), colour: CHART_COLOURS.neutral },
+                  { key: 'completed', label: t('Planted'), colour: CHART_COLOURS.positive },
+                ]}
+              />
+            </div>
+          </Card>
         </div>
-      </Card>
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Card className="flex flex-col">
-          <p className="label-institutional mb-2">{t('Open space by kind')}</p>
-          <div style={{ height: 200 }}>
-            <DonutChart
-              data={byKind.map((k) => ({ label: OPEN_SPACE_KIND_LABEL[k.kind], value: k.count, colour: KIND_COLOUR[k.kind] }))}
-              centreValue={String(filtered.length)}
-              centreLabel="spaces"
-            />
-          </div>
-        </Card>
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
+          <Card tone={plantingPct < 70 ? 'warn' : 'default'} className="flex items-start gap-3">
+            <Sprout className="mt-0.5 h-4 w-4 shrink-0 text-govt-600" aria-hidden />
+            <div className="min-w-0">
+              <p className="text-[0.8125rem] font-semibold text-ink-900">
+                {t('{0} felling permissions granted · {1} of {2} compensatory trees planted', formatNumber(granted), formatNumber(completed), formatNumber(required))}
+              </p>
+              <p className="mt-1 text-xs leading-relaxed text-ink-600">
+                {t('{0} {1} applications are pending decision.', plantingShortfall > 0
+                  ? `${formatNumber(plantingShortfall)} trees remain unplanted against permissions already granted. A permission is conditional on the planting that was required for it, so this shortfall is an outstanding obligation of the Tree Authority rather than a target it has yet to reach.`
+                  : 'Compensatory planting is complete against every permission granted in the last twelve months.', formatNumber(pendingFelling))}
+              </p>
+            </div>
+          </Card>
 
-        <Card flush className="flex flex-col lg:col-span-2">
-          <CardHeader
-            bordered
-            title={t('Compensatory planting shortfall by ward')}
-            description={t('Trees required against permissions granted, and trees actually planted. Read together, never apart.')}
-          />
-          <div className="px-4 pb-4" style={{ height: 220 }}>
-            <CategoryBarChart
-              data={plantingByWard}
-              showLegend
-              series={[
-                { key: 'required', label: t('Required'), colour: CHART_COLOURS.neutral },
-                { key: 'completed', label: t('Planted'), colour: CHART_COLOURS.positive },
-              ]}
+          <Card flush>
+            <CardHeader
+              bordered
+              icon={<MapPinned className="h-4 w-4" />}
+              title={t('Wards with least open space per resident')}
+              description={t('Hectares of maintained open space per thousand residents - the figure a development plan is judged against.')}
             />
-          </div>
-        </Card>
+            <div className="px-4 pb-4" style={{ height: Math.max(210, leastOpenSpace.length * 26) }}>
+              <RankedBarChart
+                data={leastOpenSpace.map((treeWardPosition) => ({ label: wardShortName(treeWardPosition.wardId), value: Math.round(treeWardPosition.openSpacePerThousandHa * 1000) / 1000 }))}
+                unit=" ha"
+                higherIsWorse={false}
+              />
+            </div>
+          </Card>
+
+          <Card className="flex flex-col">
+            <p className="label-institutional mb-2">{t('Open space by kind')}</p>
+            <div style={{ height: 200 }}>
+              <DonutChart
+                data={byKind.map((k) => ({ label: OPEN_SPACE_KIND_LABEL[k.kind], value: k.count, colour: KIND_COLOUR[k.kind] }))}
+                centreValue={String(filtered.length)}
+                centreLabel="spaces"
+              />
+            </div>
+          </Card>
+        </div>
       </div>
-
-      <Card flush>
-        <CardHeader
-          bordered
-          icon={<MapPinned className="h-4 w-4" />}
-          title={t('Wards with least open space per resident')}
-          description={t('Hectares of maintained open space per thousand residents - the figure a development plan is judged against.')}
-        />
-        <div className="px-4 pb-4" style={{ height: Math.max(210, leastOpenSpace.length * 26) }}>
-          <RankedBarChart
-            data={leastOpenSpace.map((treeWardPosition) => ({ label: wardShortName(treeWardPosition.wardId), value: Math.round(treeWardPosition.openSpacePerThousandHa * 1000) / 1000 }))}
-            unit=" ha"
-            higherIsWorse={false}
-          />
-        </div>
-      </Card>
-
-      <Card flush>
-        <CardHeader
-          bordered
-          icon={<Scissors className="h-4 w-4" />}
-          title={t('Tree Authority position by ward')}
-          description={t('Canopy, felling permissions and compensatory planting. Permissions and planting are never shown apart.')}
-        />
-        {trees.length === 0 ? (
-          <EmptyState title={t('No ward positions in scope')} />
-        ) : (
-          <DataTable rows={trees} columns={treeColumns} rowKey={(r) => r.wardId} pageSize={12} />
-        )}
-      </Card>
-
-      <Card flush>
-        <CardHeader
-          bordered
-          icon={<Trees className="h-4 w-4" />}
-          title={t('Open space register')}
-          description={t('Every garden, playground and recreation ground within your authorised ward scope.')}
-        />
-        {filtered.length === 0 ? (
-          <EmptyState title={t('No open spaces match the current filters')} detail="Clear a filter to widen the register." />
-        ) : (
-          <DataTable rows={filtered} columns={spaceColumns} rowKey={(r) => r.id} pageSize={15} />
-        )}
-      </Card>
     </PageBody>
   )
 }

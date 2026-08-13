@@ -155,8 +155,6 @@ export const MR_PART_11: Record<string, string> = {
   'Evidence records reachable': 'उपलब्ध पुरावा नोंदी',
   'Evidence-backed': 'पुराव्यावर आधारित',
   'Evidence-backed share': 'पुराव्यावर आधारित वाटा',
-  'Evidence-backed synthesis across every domain. The platform never decides - every section names the officer accountable for acting on it.':
-    'प्रत्येक क्षेत्रातील पुराव्यावर आधारित संकलन. मंच कधीही निर्णय घेत नाही - प्रत्येक विभाग त्यावर कृती करण्यास जबाबदार असलेल्या अधिकाऱ्याचे नाव नमूद करतो.',
   'Exceeding limits': 'मर्यादा ओलांडत आहेत',
   'Exceeds limit': 'मर्यादा ओलांडते',
   'Executive band': 'कार्यकारी पट्टा',
@@ -307,7 +305,6 @@ export const MR_PART_11: Record<string, string> = {
   'Give the source a name of at least 3 characters.': 'स्रोतास किमान 3 अक्षरांचे नाव द्या.',
   'Go to Executive Overview': 'कार्यकारी आढाव्याकडे जा',
   'Good': 'चांगले',
-  'Governed AI layer - advisory only': 'नियंत्रित कृत्रिम बुद्धिमत्ता स्तर - केवळ सल्लागार',
   'Governed by role': 'भूमिकेनुसार नियंत्रित',
   'Government acts this agent is categorically barred from performing, regardless of confidence.':
     'विश्वासार्हता कितीही असली तरी हा प्रतिनिधी ज्या शासकीय कृत्यांपासून पूर्णपणे प्रतिबंधित आहे ती.',
@@ -320,7 +317,6 @@ export const MR_PART_11: Record<string, string> = {
   'Head': 'प्रमुख',
   'Headroom': 'शिल्लक वाव',
   'Health & Environment': 'आरोग्य व पर्यावरण',
-  'Health score /100': 'आरोग्य गुण /100',
   "Health score by month over the last {0} months, against the {1}-point intervention threshold. The rightmost month is each ward's live figure, unchanged from Ward Intelligence.":
     'गेल्या {0} महिन्यांतील महिनानिहाय आरोग्य गुण, {1}-गुणांच्या हस्तक्षेप मर्यादेच्या तुलनेत. सर्वात उजवीकडचा महिना हा प्रत्येक प्रभागाचा प्रत्यक्ष आकडा असून तो प्रभाग बुद्धिमत्तेवरील आकड्याइतकाच आहे.',
   'Hectares of maintained open space per thousand residents - the figure a development plan is judged against.':
@@ -460,7 +456,6 @@ export const MR_PART_11: Record<string, string> = {
   'Infrastructure condition': 'पायाभूत सुविधा स्थिती',
   'Infrastructure failures, utility incidents and road disruption.':
     'पायाभूत सुविधांतील बिघाड, सुविधा घटना आणि रस्ते वाहतुकीतील अडथळा.',
-  'Infrastructure risk': 'पायाभूत सुविधा जोखीम',
   'Ingestion incidents': 'ग्रहण घटना',
   'Ingestion register': 'ग्रहण नोंदवही',
   'Input, activity, output and outcome for every programme this platform can assemble end to end from its own operational records - the citizen-facing effect a programme was meant to produce, not merely the work completed on the way to it.':

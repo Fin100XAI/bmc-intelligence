@@ -4,7 +4,8 @@ import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { revenueService } from '@/services'
-import { useDrawerStore } from '@/stores/ui.store'
+import { useContextStore, useDrawerStore } from '@/stores/ui.store'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { ROUTES } from '@/config/navigation'
 import type { DataFreshness } from '@/types/common'
 import type { PropertySegment } from '@/types/finance'
@@ -126,9 +127,36 @@ function aggregateByWard(rows: PropertySegment[]): WardAggregate[] {
 }
 
 export function PropertyIntelligencePage(): React.JSX.Element {
+  // The shell's masthead carries the screen's name; the page states the wording.
+  usePageMasthead(
+    t('Property Intelligence'),
+    t('The property assessment base by ward and use-class segment - assessed units, assessed value, collection position and the reassessment backlog. This is the base register from which property tax realisation in Revenue Intelligence is drawn.'),
+  )
+
   const openDrawer = useDrawerStore((s) => s.open)
   const [segmentFilter, setSegmentFilter] = useState<'all' | SegmentKey>('all')
-  const [selectedWardId, setSelectedWardId] = useState<string | null>(null)
+
+  /**
+   * The ward in effect answers to two things: the selection made across the
+   * platform in the command bar, and the row or map ward the operator focuses
+   * on this page. The focus was held purely locally, so the shared selection
+   * reached the breadcrumb and nothing else - an operator could narrow the
+   * whole interface to one ward and read the full 24-ward assessment register
+   * underneath.
+   *
+   * `from` records which shared selection the local focus was taken against,
+   * so the two compose without an effect and without either silently winning:
+   * a new selection in the command bar governs the page, and focusing a ward
+   * here overrides it until the command bar moves again.
+   */
+  const contextWardId = useContextStore((s) => s.wardId)
+  const [wardFocus, setWardFocus] = useState<{ wardId: string | null; from: string | null }>({ wardId: null, from: null })
+  const focusIsCurrent = wardFocus.from === contextWardId
+  const selectedWardId = focusIsCurrent ? wardFocus.wardId : contextWardId
+
+  function focusWard(id: string | null): void {
+    setWardFocus({ wardId: id, from: contextWardId })
+  }
 
   const segmentsQuery = useServiceQuery(queryKeys.revenue('property-segments'), (user) =>
     revenueService.propertySegments(user),
@@ -141,14 +169,25 @@ export function PropertyIntelligencePage(): React.JSX.Element {
     [allSegments, segmentFilter],
   )
 
-  const wardAggregates = useMemo(() => aggregateByWard(filteredSegments), [filteredSegments])
+  /**
+   * The ward scope narrows every figure the operator reads. The map keeps the
+   * unnarrowed cross so the city stays legible with the selected ward on it -
+   * a single shaded ward on an otherwise blank map is not a spatial view.
+   */
+  const scopedSegments = useMemo(
+    () => (selectedWardId ? filteredSegments.filter((s) => s.wardId === selectedWardId) : filteredSegments),
+    [filteredSegments, selectedWardId],
+  )
+
+  const cityWardAggregates = useMemo(() => aggregateByWard(filteredSegments), [filteredSegments])
+  const wardAggregates = useMemo(() => aggregateByWard(scopedSegments), [scopedSegments])
 
   const cityTotals = useMemo(() => {
-    const assessedUnits = filteredSegments.reduce((s, r) => s + r.assessedUnits, 0)
-    const assessedValueCrore = filteredSegments.reduce((s, r) => s + r.assessedValueCrore, 0)
-    const collectedCrore = filteredSegments.reduce((s, r) => s + r.collectedCrore, 0)
-    const arrearsCrore = filteredSegments.reduce((s, r) => s + r.arrearsCrore, 0)
-    const reassessmentDue = filteredSegments.reduce((s, r) => s + r.reassessmentDue, 0)
+    const assessedUnits = scopedSegments.reduce((s, r) => s + r.assessedUnits, 0)
+    const assessedValueCrore = scopedSegments.reduce((s, r) => s + r.assessedValueCrore, 0)
+    const collectedCrore = scopedSegments.reduce((s, r) => s + r.collectedCrore, 0)
+    const arrearsCrore = scopedSegments.reduce((s, r) => s + r.arrearsCrore, 0)
+    const reassessmentDue = scopedSegments.reduce((s, r) => s + r.reassessmentDue, 0)
     return {
       assessedUnits,
       assessedValueCrore,
@@ -157,9 +196,12 @@ export function PropertyIntelligencePage(): React.JSX.Element {
       reassessmentDue,
       efficiencyPct: assessedValueCrore > 0 ? Math.round((collectedCrore / assessedValueCrore) * 1000) / 10 : 0,
     }
-  }, [filteredSegments])
+  }, [scopedSegments])
 
-  const compositionSource = selectedWardId ? allSegments.filter((s) => s.wardId === selectedWardId) : allSegments
+  const compositionSource = useMemo(
+    () => (selectedWardId ? allSegments.filter((s) => s.wardId === selectedWardId) : allSegments),
+    [allSegments, selectedWardId],
+  )
   const compositionData = useMemo(
     () =>
       SEGMENT_META.map((meta, i) => ({
@@ -175,9 +217,9 @@ export function PropertyIntelligencePage(): React.JSX.Element {
     () =>
       EFFICIENCY_BANDS.map((band) => ({
         label: band.label,
-        records: filteredSegments.filter((s) => band.test(s.collectionEfficiencyPct)).length,
+        records: scopedSegments.filter((s) => band.test(s.collectionEfficiencyPct)).length,
       })),
-    [filteredSegments],
+    [scopedSegments],
   )
 
   const backlogData = useMemo(
@@ -190,11 +232,11 @@ export function PropertyIntelligencePage(): React.JSX.Element {
   )
 
   const efficiencyByWard = useMemo(
-    () => new Map(wardAggregates.map((w) => [w.wardId, w.collectionEfficiencyPct])),
-    [wardAggregates],
+    () => new Map(cityWardAggregates.map((w) => [w.wardId, w.collectionEfficiencyPct])),
+    [cityWardAggregates],
   )
 
-  const tableRows = selectedWardId ? wardAggregates.filter((w) => w.wardId === selectedWardId) : wardAggregates
+  const tableRows = wardAggregates
 
   const wardColumns: Array<Column<WardAggregate>> = [
     {
@@ -266,8 +308,6 @@ export function PropertyIntelligencePage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('Governance & Finance')}
-        title={t('Property Intelligence')}
-        description={t('The property assessment base by ward and use-class segment - assessed units, assessed value, collection position and the reassessment backlog. This is the base register from which property tax realisation in Revenue Intelligence is drawn.')}
         breadcrumbs={[{ label: t('Governance & Finance') }, { label: t('Property Intelligence') }]}
         freshness={FRESHNESS}
         actions={
@@ -278,14 +318,16 @@ export function PropertyIntelligencePage(): React.JSX.Element {
         controls={
           <>
             <span className="label-institutional">{t('Segment')}</span>
-            <SegmentedControl
-              value={segmentFilter}
-              onChange={setSegmentFilter}
-              ariaLabel="Filter by property segment"
-              options={[{ value: 'all', label: t('All segments') }, ...SEGMENT_META.map((s) => ({ value: s.value, label: s.label }))]}
-            />
+            <div className="scrollbar-slim max-w-full min-w-0 overflow-x-auto">
+              <SegmentedControl
+                value={segmentFilter}
+                onChange={setSegmentFilter}
+                ariaLabel="Filter by property segment"
+                options={[{ value: 'all', label: t('All segments') }, ...SEGMENT_META.map((s) => ({ value: s.value, label: s.label }))]}
+              />
+            </div>
             {selectedWardId ? (
-              <Button size="xs" variant="ghost" onClick={() => setSelectedWardId(null)} icon={<RefreshCw className="h-3 w-3" />}>
+              <Button size="xs" variant="ghost" onClick={() => focusWard(null)} icon={<RefreshCw className="h-3 w-3" />}>
                 {t('Clear ward focus ({0})', wardShortName(selectedWardId))}
               </Button>
             ) : null}
@@ -309,7 +351,7 @@ export function PropertyIntelligencePage(): React.JSX.Element {
         <>
           <Card>
             <CardHeader
-              eyebrow={`${municipalityFinancialYearLabel()} · ${segmentFilter === 'all' ? 'All segments' : SEGMENT_META.find((s) => s.value === segmentFilter)?.label}`}
+              eyebrow={`${municipalityFinancialYearLabel()} · ${segmentFilter === 'all' ? 'All segments' : SEGMENT_META.find((s) => s.value === segmentFilter)?.label} · ${selectedWardId ? wardName(selectedWardId) : 'All wards'}`}
               title={t('City assessment position')}
               description={t('Assessed base and collection performance across the scope selected above.')}
             />
@@ -344,8 +386,12 @@ export function PropertyIntelligencePage(): React.JSX.Element {
             </MetricGrid>
           </Card>
 
-          <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-            <Card className="xl:col-span-2" flush>
+          {/* Two columns. The ward register and the map of the same figures
+              read down the wide column; the composition, the two
+              distributions and the reading note stand beside them. */}
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+            <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
+            <Card flush>
               <CardHeader
                 bordered
                 title={t('Ward assessment register')}
@@ -358,7 +404,7 @@ export function PropertyIntelligencePage(): React.JSX.Element {
                 pageSize={10}
                 stickyHeader
                 maxHeight="26rem"
-                onRowClick={(row) => setSelectedWardId(row.wardId)}
+                onRowClick={(row) => focusWard(row.wardId)}
                 activeRowKey={selectedWardId ?? undefined}
                 searchPlaceholder="Search wards"
                 rowActions={(row) => (
@@ -374,6 +420,33 @@ export function PropertyIntelligencePage(): React.JSX.Element {
               />
             </Card>
 
+            <Card flush>
+              <CardHeader
+                bordered
+                title={t('Assessment efficiency - spatial view')}
+                description={t('Illustrative ward map shaded by collection efficiency for the segment scope selected above. Click a ward to focus the register above.')}
+              />
+              <div className="p-4">
+                <CityMap
+                  layers={[
+                    {
+                      id: 'assessment-efficiency',
+                      label: t('Assessment Efficiency'),
+                      valueFor: (wardId) => efficiencyByWard.get(wardId),
+                      higherIsWorse: false,
+                      unit: '%',
+                      description: t('Collection efficiency against assessed value, for the segment scope selected above.'),
+                    },
+                  ]}
+                  selectedWardId={selectedWardId}
+                  onWardSelect={focusWard}
+                  height={420}
+                />
+              </div>
+            </Card>
+            </div>
+
+            <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
             <Card>
               <CardHeader
                 title={t('Segment composition')}
@@ -394,9 +467,7 @@ export function PropertyIntelligencePage(): React.JSX.Element {
                 ))}
               </ul>
             </Card>
-          </div>
 
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <Card>
               <ChartFrame
                 title={t('Collection efficiency distribution')}
@@ -425,41 +496,17 @@ export function PropertyIntelligencePage(): React.JSX.Element {
                 <RankedBarChart data={backlogData} unit="due" higherIsWorse />
               </ChartFrame>
             </Card>
-          </div>
 
-          <Card flush>
-            <CardHeader
-              bordered
-              title={t('Assessment efficiency - spatial view')}
-              description={t('Illustrative ward map shaded by collection efficiency for the segment scope selected above. Click a ward to focus the register above.')}
-            />
-            <div className="p-4">
-              <CityMap
-                layers={[
-                  {
-                    id: 'assessment-efficiency',
-                    label: t('Assessment Efficiency'),
-                    valueFor: (wardId) => efficiencyByWard.get(wardId),
-                    higherIsWorse: false,
-                    unit: '%',
-                    description: t('Collection efficiency against assessed value, for the segment scope selected above.'),
-                  },
-                ]}
-                selectedWardId={selectedWardId}
-                onWardSelect={setSelectedWardId}
-                height={420}
-              />
+            <Card tone="info">
+              <p className="text-xs leading-relaxed text-ink-600">
+                <Badge tone="info" className="mr-1.5">
+                  {t('Reading note')}
+                </Badge>
+                {t('Collection efficiency is measured against assessed value for the current financial year to date, not against the full outstanding demand including prior-year arrears. A ward showing high arrears alongside high in-year efficiency is collecting well against current demand while carrying a legacy balance that requires separate recovery action.')}
+              </p>
+            </Card>
             </div>
-          </Card>
-
-          <Card tone="info">
-            <p className="text-xs leading-relaxed text-ink-600">
-              <Badge tone="info" className="mr-1.5">
-                {t('Reading note')}
-              </Badge>
-              {t('Collection efficiency is measured against assessed value for the current financial year to date, not against the full outstanding demand including prior-year arrears. A ward showing high arrears alongside high in-year efficiency is collecting well against current demand while carrying a legacy balance that requires separate recovery action.')}
-            </p>
-          </Card>
+          </div>
         </>
       ) : null}
 

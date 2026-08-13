@@ -1,28 +1,15 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import {
-  AlertTriangle,
-  Banknote,
-  ClipboardCheck,
-  Copy,
-  Droplets,
-  FileSearch,
-  Printer,
-  RefreshCw,
-  Route,
-  Save,
-  ShieldAlert,
-  Sparkles,
-} from 'lucide-react'
-import { PageBody, PageHeader, SplitLayout } from '@/components/layout/PageHeader'
-import { Button, Card, CardHeader, MetricGrid, ProgressBar } from '@/components/ui/primitives'
+import { Copy, FileSearch, Printer, RefreshCw, Save, Sparkles } from 'lucide-react'
+import { PageBody } from '@/components/layout/PageHeader'
+import { Button, ProgressBar } from '@/components/ui/primitives'
 import { Badge, ConfidenceBadge, SeverityBadge, StateBadge } from '@/components/ui/badges'
 import { DemonstrationNotice, EmptyState, ErrorState, LoadingState } from '@/components/ui/states'
 import { DataTable, type Column } from '@/components/ui/DataTable'
-import { MetricCard } from '@/components/cards/MetricCard'
-import { IntelligenceCard } from '@/components/cards/domain-cards'
-import { ChartFrame, CompositionBar, MiniBar, TrendChart } from '@/components/charts'
+import { TrendChart } from '@/components/charts'
 import { CityMap } from '@/components/map/CityMap'
+import { GovPanel, GovRow, GovStat, GovStripCell } from '@/components/gov/GovPanel'
+import { LiveFeed, buildFeed } from '@/components/gov/LiveFeed'
 import { useServiceAction, useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { monsoonService, projectService, roadsService, wardService, aiService } from '@/services'
@@ -31,8 +18,10 @@ import { getAIProvider, type ExecutiveBrief, type ExecutiveBriefSection } from '
 import { useDrawerStore } from '@/stores/ui.store'
 import { useActiveCorporation } from '@/stores/corporation.store'
 import { useCurrentUser } from '@/stores/auth.store'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { ROUTES } from '@/config/navigation'
 import { wardName } from '@/data/reference'
+import { DEMO_NOW } from '@/utils/deterministic'
 import { formatCrore, formatDateTime, formatPercent } from '@/utils/format'
 import type { AIResponse } from '@/types/ai'
 import { DOMAIN_LABEL } from '@/types/common'
@@ -40,13 +29,28 @@ import { COMPLAINT_CATEGORY_LABEL, type ComplaintCategory } from '@/types/operat
 import { t } from '@/i18n'
 
 /**
- * Executive Overview - "<city> Operational Intelligence".
+ * Executive Overview — the corporation's own record of its position.
  *
- * The city-level position: one composite health score with its weighted
- * components published, the ward risk map, the operational trend, and the
- * emerging risks that require executive attention - closing with an
- * AI-generated executive brief that is always evidence-backed and always
- * advisory.
+ * Presented as an administrative return rather than as a dashboard. The
+ * distinction drives every layout decision here:
+ *
+ *  - **Columns, read downward.** A tile mosaic asks the reader to scan for the
+ *    number they want. A departmental return puts figures in a column so they
+ *    can be read in order and compared against the one above. The three
+ *    columns are the city's condition, what has just happened, and what the
+ *    administration is carrying — which is how a commissioner's morning
+ *    briefing is actually structured.
+ *
+ *  - **Ruled panels, not floating cards.** Square corners, hairline borders,
+ *    a titled navy band on each block. Shadowed rounded tiles read as product
+ *    widgets; ruled sections read as a record of a public body.
+ *
+ *  - **A live updates column.** Every administration publishes one. It answers
+ *    "has anything happened?" without navigating, and it is the surface an
+ *    officer glances at between tasks.
+ *
+ * The AI brief keeps its place at the foot, unchanged in substance: advisory,
+ * evidence-backed, and never the thing that decides.
  */
 
 function mapDefined<T>(items: T[] | undefined): T[] {
@@ -67,6 +71,15 @@ export function ExecutiveOverviewPage(): React.JSX.Element {
   const [copyConfirmed, setCopyConfirmed] = useState(false)
 
   const cityPosition = useMemo(() => buildCityPosition(), [])
+  const feed = useMemo(() => buildFeed(user, DEMO_NOW), [user])
+
+  // The shell renders the masthead; this page states what it should say.
+  usePageMasthead(
+    t('{0} Operational Intelligence', corporation.city),
+    t(
+      'The city-level operational position across every domain — composite health, ward risk, emerging signals and financial and infrastructure standing.',
+    ),
+  )
 
   const wardsQuery = useServiceQuery(queryKeys.wards(), (u) => wardService.list(u))
   const readinessQuery = useServiceQuery(queryKeys.monsoon('exec-readiness'), (u) => monsoonService.readiness(u))
@@ -90,7 +103,10 @@ export function ExecutiveOverviewPage(): React.JSX.Element {
       .sort((a, b) => a.avgSla - b.avgSla)
   })
 
-  const doSaveBrief = useServiceAction((u, title: string, response: AIResponse) => aiService.saveBrief(u, 'executive-brief', title, response), [])
+  const doSaveBrief = useServiceAction(
+    (u, title: string, response: AIResponse) => aiService.saveBrief(u, 'executive-brief', title, response),
+    [],
+  )
 
   async function generateBrief(): Promise<void> {
     if (!user) return
@@ -124,7 +140,11 @@ export function ExecutiveOverviewPage(): React.JSX.Element {
       keyFindings: b.sections.flatMap((s) => s.bullets),
       evidence: [],
       confidence: b.confidence,
-      confidenceRationale: t('Derived from {0} evidence reference(s) across {1} section(s).', b.sections.reduce((n, s) => n + s.evidenceIds.length, 0), b.sections.length),
+      confidenceRationale: t(
+        'Derived from {0} evidence reference(s) across {1} section(s).',
+        b.sections.reduce((n, s) => n + s.evidenceIds.length, 0),
+        b.sections.length,
+      ),
       recommendedActions: [],
       risksAndLimitations: b.limitations,
       sources: [],
@@ -168,316 +188,486 @@ export function ExecutiveOverviewPage(): React.JSX.Element {
   }
 
   const wardById = useMemo(() => new Map(mapDefined(wardsQuery.data).map((w) => [w.id, w])), [wardsQuery.data])
-  const readinessByWard = useMemo(() => new Map(mapDefined(readinessQuery.data).map((r) => [r.wardId, r.readinessScore])), [readinessQuery.data])
-  const maxComplaints = useMemo(() => Math.max(...cityPosition.wardPerformance.map((w) => w.openComplaints), 1), [cityPosition])
+  const readinessByWard = useMemo(
+    () => new Map(mapDefined(readinessQuery.data).map((r) => [r.wardId, r.readinessScore])),
+    [readinessQuery.data],
+  )
+  const maxComplaints = useMemo(
+    () => Math.max(...cityPosition.wardPerformance.map((w) => w.openComplaints), 1),
+    [cityPosition],
+  )
 
   const projects = mapDefined(projectsQuery.data?.items)
-  const projectStatusComposition = useMemo(() => {
-    const colours: Record<string, string> = {
-      planned: '#8195ac',
-      tendered: '#8195ac',
-      awarded: '#2f6feb',
-      'in-progress': '#2f6feb',
-      delayed: '#e5484d',
-      'on-hold': '#f59e0b',
-      completed: '#10b981',
-      closed: '#10b981',
-    }
-    const counts = new Map<string, number>()
-    for (const p of projects) counts.set(p.status, (counts.get(p.status) ?? 0) + 1)
-    return Array.from(counts.entries())
-      .map(([status, value]) => ({ id: status, label: status.replace(/-/g, ' '), value, colour: colours[status] ?? '#8195ac' }))
-      .filter((c) => c.value > 0)
-  }, [projects])
-  const topAtRiskProjects = useMemo(() => [...projects].sort((a, b) => b.riskScore - a.riskScore).slice(0, 4), [projects])
+  const topAtRiskProjects = useMemo(() => [...projects].sort((a, b) => b.riskScore - a.riskScore).slice(0, 5), [projects])
 
   const wardColumns: Array<Column<(typeof cityPosition.wardPerformance)[number]>> = [
     { id: 'ward', header: t('Ward'), cell: (r) => r.label, sortValue: (r) => r.label },
     { id: 'health', header: t('Health'), cell: (r) => r.health, sortValue: (r) => r.health, align: 'right' },
     { id: 'risk', header: t('Risk'), cell: (r) => r.risk, sortValue: (r) => r.risk, align: 'right' },
-    { id: 'complaints', header: t('Open complaints'), cell: (r) => r.openComplaints, sortValue: (r) => r.openComplaints, align: 'right', hideBelow: 'md' },
-    { id: 'breached', header: t('SLA breached'), cell: (r) => r.slaBreached, sortValue: (r) => r.slaBreached, align: 'right', hideBelow: 'lg' },
+    {
+      id: 'complaints',
+      header: t('Open'),
+      cell: (r) => r.openComplaints,
+      sortValue: (r) => r.openComplaints,
+      align: 'right',
+      hideBelow: 'md',
+    },
+    {
+      id: 'breached',
+      header: t('Breached'),
+      cell: (r) => r.slaBreached,
+      sortValue: (r) => r.slaBreached,
+      align: 'right',
+      hideBelow: 'lg',
+    },
     { id: 'state', header: t('State'), cell: (r) => <StateBadge state={r.state} /> },
   ]
 
+  const healthTone =
+    cityPosition.healthScore >= 78
+      ? 'positive'
+      : cityPosition.healthScore >= 60
+        ? 'default'
+        : cityPosition.healthScore >= 45
+          ? 'warn'
+          : 'critical'
+
   return (
     <PageBody>
-      <PageHeader
-        eyebrow={t('City Intelligence')}
-        title={t('{0} Operational Intelligence', corporation.city)}
-        description={t('The city-level operational position across every domain - composite health, ward risk, emerging signals and financial and infrastructure standing - closing with an evidence-backed executive brief that a named officer can act on.')}
-        breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Executive Overview') }]}
-      />
-
-      {/* Row 1 - headline metrics */}
-      <MetricGrid columns={4}>
-        <MetricCard
-          label={t('City health score')}
-          value={cityPosition.healthScore}
-          unit="/100"
-          size="lg"
-          tone={cityPosition.healthScore >= 78 ? 'positive' : cityPosition.healthScore >= 60 ? 'default' : cityPosition.healthScore >= 45 ? 'warn' : 'critical'}
-          support={t('Composite of six weighted domain indices')}
-          explanation={
-            <div className="space-y-1">
-              <p className="font-semibold">{t('Weighted components')}</p>
-              {cityPosition.healthComponents.map((c) => (
-                <p key={c.id}>
-                  {c.label}: {(c.weight * 100).toFixed(0)}% × {c.score.toFixed(0)} = {c.contribution.toFixed(1)}
-                </p>
-              ))}
-            </div>
-          }
+      {/* ── Status strip ───────────────────────────────────────────────
+          The identity band now sits above the top bar, rendered once by the
+          shell. What stays on the page is the part that is this page's data
+          rather than the corporation's letterhead: the six figures a
+          commissioner reads first. */}
+      <div className="flex flex-wrap items-stretch divide-x divide-ink-100 overflow-hidden rounded-[2px] border border-ink-200 bg-surface-sunken shadow-xs">
+        <GovStripCell
+          label={t('City health index')}
+          value={`${cityPosition.healthScore}/100`}
+          tone={healthTone === 'positive' ? 'positive' : healthTone === 'default' ? 'default' : healthTone}
         />
-        <MetricCard
+        <GovStripCell
           label={t('Critical alerts')}
           value={cityPosition.criticalAlerts}
-          size="lg"
           tone={cityPosition.criticalAlerts > 0 ? 'critical' : 'default'}
-          support={t('{0} high-severity also open', cityPosition.highAlerts)}
-          to={`${ROUTES.alerts}?severity=critical`}
-          icon={<AlertTriangle className="h-3.5 w-3.5" />}
         />
-        <MetricCard
+        <GovStripCell
+          label={t('Active incidents')}
+          value={cityPosition.activeIncidents}
+          tone={cityPosition.activeIncidents > 0 ? 'critical' : 'default'}
+        />
+        <GovStripCell
           label={t('Priority decisions')}
           value={cityPosition.priorityDecisions}
-          size="lg"
           tone={cityPosition.priorityDecisions > 0 ? 'warn' : 'default'}
-          support={t('Draft or under review')}
-          to={ROUTES.decisions}
-          icon={<ClipboardCheck className="h-3.5 w-3.5" />}
         />
-        <MetricCard
+        <GovStripCell
           label={t('Services at risk')}
           value={cityPosition.servicesAtRisk}
-          size="lg"
           tone={cityPosition.servicesAtRisk > 0 ? 'warn' : 'default'}
-          support={t('Categories below SLA compliance threshold')}
-          to={ROUTES.wards}
-          icon={<ShieldAlert className="h-3.5 w-3.5" />}
         />
-      </MetricGrid>
+        <GovStripCell label={t('Citizens affected')} value={cityPosition.citizensAffected.toLocaleString('en-IN')} />
+      </div>
 
-      {/* Row 2 - risk map, trend, emerging risks */}
-      <SplitLayout
-        asideWidth="md"
-        main={
-          <Card flush className="h-full">
-            <CardHeader bordered title={t('City risk map')} description={t('Ward-level composite indicators. Click a ward to open its profile.')} />
-            <div className="p-3">
-              <CityMap
-                layers={[
-                  { id: 'risk', label: t('Ward Risk'), valueFor: (id) => wardById.get(id)?.riskScore, higherIsWorse: true, unit: '/100', description: t('Composite ward risk index.') },
-                  { id: 'health', label: t('Operational Health'), valueFor: (id) => wardById.get(id)?.healthScore, higherIsWorse: false, unit: '/100', description: t('Composite ward operational health index.') },
-                  {
-                    id: 'complaints',
-                    label: t('Complaint Load'),
-                    valueFor: (id) => {
-                      const row = cityPosition.wardPerformance.find((w) => w.wardId === id)
-                      return row ? (row.openComplaints / maxComplaints) * 100 : undefined
-                    },
-                    higherIsWorse: true,
-                    unit: ' (relative)',
-                    description: t('Open complaints, scaled relative to the highest ward.'),
-                  },
-                  {
-                    id: 'flood',
-                    label: t('Flood Risk'),
-                    valueFor: (id) => { const r = readinessByWard.get(id); return r === undefined ? undefined : 100 - r },
-                    higherIsWorse: true,
-                    unit: '/100',
-                    description: t('Inverse of monsoon readiness score.'),
-                  },
-                ]}
-                onWardSelect={(wardId) => openDrawer({ kind: 'ward', id: wardId })}
-                height={440}
-              />
-            </div>
-          </Card>
-        }
-        aside={
-          <>
-            <Card>
-              <ChartFrame title={t('City operational trend')} unit={t('Health score /100')} timeframe="Last 30 days" height={180}>
-                <TrendChart points={cityPosition.operationalTrend} unit="/100" seriesLabel="City health" comparisonLabel="Target" referenceValue={75} referenceLabel="Target" />
-              </ChartFrame>
-            </Card>
-            <Card flush>
-              <CardHeader bordered title={t('Top emerging risks')} description={t('{0} highest-severity open items', cityPosition.topRisks.length)} />
-              <div className="max-h-[420px] space-y-2 overflow-y-auto p-3">
-                {cityPosition.topRisks.length === 0 ? (
-                  <EmptyState compact title={t('No open risks')} />
-                ) : (
-                  cityPosition.topRisks.map((item) => (
-                    <IntelligenceCard key={item.id} item={item} compact onClick={() => openDrawer({ kind: 'intelligence', id: item.id })} />
-                  ))
-                )}
+      {/* ── Three columns ──────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 gap-3 xl:grid-cols-12">
+        {/* Column 1 — the city's condition ------------------------- */}
+        <div className="flex flex-col gap-3 xl:col-span-5">
+          <GovPanel title={t('City health index')} subtitle={t('Weighted composite')} tone="primary" dense>
+            <div className="flex items-stretch border-b border-ink-100">
+              <div className="w-[8.5rem] shrink-0 border-r border-ink-100 px-3 py-3 text-center">
+                <p
+                  className={`numeric text-[2.75rem] leading-none font-bold tabular-nums ${
+                    healthTone === 'critical'
+                      ? 'text-crit-600'
+                      : healthTone === 'warn'
+                        ? 'text-warn-700'
+                        : healthTone === 'positive'
+                          ? 'text-google-green-700'
+                          : 'text-govt-900'
+                  }`}
+                >
+                  {cityPosition.healthScore}
+                </p>
+                <p className="mt-0.5 text-[0.6875rem] text-ink-400">{t('of 100')}</p>
+                <div className="mt-2 flex justify-center">
+                  <StateBadge state={cityPosition.state} />
+                </div>
               </div>
-            </Card>
-          </>
-        }
-      />
+              {/* The weighting is published, not summarised. A composite whose
+                  arithmetic is hidden is an opinion; one whose components,
+                  weights and contributions are on the page is a measurement an
+                  officer can challenge. */}
+              <div className="scrollbar-slim min-w-0 flex-1 overflow-x-auto">
+                <table className="w-full text-[0.6875rem]">
+                  <thead>
+                    <tr className="border-b border-ink-100 bg-surface-sunken text-left">
+                      <th className="px-2.5 py-1 font-bold tracking-wide text-ink-500 uppercase">{t('Component')}</th>
+                      <th className="px-2 py-1 text-right font-bold tracking-wide text-ink-500 uppercase">{t('Wt')}</th>
+                      <th className="px-2 py-1 text-right font-bold tracking-wide text-ink-500 uppercase">{t('Score')}</th>
+                      <th className="px-2.5 py-1 text-right font-bold tracking-wide text-ink-500 uppercase">{t('Contrib.')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {cityPosition.healthComponents.map((c) => (
+                      <tr key={c.id} className="border-b border-ink-100 last:border-b-0 even:bg-ink-50/40">
+                        <td className="truncate px-2.5 py-[0.3125rem] text-ink-700">{c.label}</td>
+                        <td className="numeric px-2 py-[0.3125rem] text-right text-ink-500 tabular-nums">
+                          {(c.weight * 100).toFixed(0)}%
+                        </td>
+                        <td className="numeric px-2 py-[0.3125rem] text-right text-ink-700 tabular-nums">
+                          {c.score.toFixed(0)}
+                        </td>
+                        <td className="numeric px-2.5 py-[0.3125rem] text-right font-semibold text-ink-900 tabular-nums">
+                          {c.contribution.toFixed(1)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div className="px-3 py-2">
+              <p className="mb-1 text-[0.5625rem] font-bold tracking-[0.09em] text-ink-500 uppercase">
+                {t('Thirty-day trend against the 75/100 target')}
+              </p>
+              {/* Sized by the container — `TrendChart` fills its parent
+                  through a responsive container and takes no height prop. */}
+              <div className="h-[130px]">
+                <TrendChart
+                  points={cityPosition.operationalTrend}
+                  unit="/100"
+                  seriesLabel={t('City health')}
+                  comparisonLabel={t('Target')}
+                  referenceValue={75}
+                  referenceLabel={t('Target')}
+                />
+              </div>
+            </div>
+          </GovPanel>
 
-      {/* Row 3 - ward performance, project health, citizen services */}
-      <div className="grid grid-cols-1 gap-3 xl:grid-cols-3">
-        <Card flush className="xl:col-span-1">
-          <CardHeader bordered title={t('Ward performance')} description={t('Ranked by composite risk. Click a row to open the ward profile.')} />
-          <DataTable
-            rows={cityPosition.wardPerformance}
-            columns={wardColumns}
-            rowKey={(r) => r.wardId}
-            searchable
-            searchPlaceholder="Search wards"
+          <GovPanel
+            title={t('Ward performance register')}
+            subtitle={t('{0} wards', cityPosition.wardPerformance.length)}
             dense
-            maxHeight="420px"
-            stickyHeader
-            initialSort={{ columnId: 'risk', direction: 'desc' }}
-            onRowClick={(r) => openDrawer({ kind: 'ward', id: r.wardId })}
-            ariaLabel="Ward performance"
-          />
-        </Card>
+          >
+            <DataTable
+              rows={cityPosition.wardPerformance}
+              columns={wardColumns}
+              rowKey={(r) => r.wardId}
+              searchable
+              searchPlaceholder={t('Search wards')}
+              dense
+              maxHeight="360px"
+              stickyHeader
+              initialSort={{ columnId: 'risk', direction: 'desc' }}
+              onRowClick={(r) => openDrawer({ kind: 'ward', id: r.wardId })}
+              ariaLabel={t('Ward performance')}
+            />
+          </GovPanel>
 
-        <Card>
-          <CardHeader title={t('Project health')} description={t('Status composition and the highest-risk capital works.')} />
-          {projectsQuery.isLoading ? (
-            <LoadingState variant="inline" />
-          ) : projectsQuery.error ? (
-            <ErrorState detail={projectsQuery.error.message} onRetry={() => projectsQuery.refetch()} />
-          ) : (
-            <>
-              {projectStatusComposition.length > 0 ? <CompositionBar segments={projectStatusComposition} className="mt-2" /> : null}
-              <div className="mt-3 space-y-1.5">
+          <GovPanel title={t('Ward risk map')} subtitle={t('Select a ward to open its profile')} dense>
+            <CityMap
+              layers={[
+                {
+                  id: 'risk',
+                  label: t('Ward Risk'),
+                  valueFor: (id) => wardById.get(id)?.riskScore,
+                  higherIsWorse: true,
+                  unit: '/100',
+                  description: t('Composite ward risk index.'),
+                },
+                {
+                  id: 'health',
+                  label: t('Operational Health'),
+                  valueFor: (id) => wardById.get(id)?.healthScore,
+                  higherIsWorse: false,
+                  unit: '/100',
+                  description: t('Composite ward operational health index.'),
+                },
+                {
+                  id: 'complaints',
+                  label: t('Complaint Load'),
+                  valueFor: (id) => {
+                    const row = cityPosition.wardPerformance.find((w) => w.wardId === id)
+                    return row ? (row.openComplaints / maxComplaints) * 100 : undefined
+                  },
+                  higherIsWorse: true,
+                  unit: ' (relative)',
+                  description: t('Open complaints, scaled relative to the highest ward.'),
+                },
+                {
+                  id: 'flood',
+                  label: t('Flood Risk'),
+                  valueFor: (id) => {
+                    const r = readinessByWard.get(id)
+                    return r === undefined ? undefined : 100 - r
+                  },
+                  higherIsWorse: true,
+                  unit: '/100',
+                  description: t('Inverse of monsoon readiness score.'),
+                },
+              ]}
+              onWardSelect={(wardId) => openDrawer({ kind: 'ward', id: wardId })}
+              height={380}
+            />
+          </GovPanel>
+        </div>
+
+        {/* Column 2 — what has just happened ------------------------ */}
+        <div className="xl:col-span-4">
+          {/*
+           * The WHOLE column pins, not the feed alone.
+           *
+           * A `position: sticky` element stays in normal flow — its box keeps
+           * its place and only its painting is offset. Siblings do not reflow
+           * around it, so a panel below a pinned one scrolls straight up
+           * underneath it. Pinning just the feed therefore fixed where it came
+           * to rest and did nothing about what slid beneath it.
+           *
+           * Sticking the column as a single block means the two panels move
+           * together and can never cross. `max-h` plus `overflow-y-auto` is the
+           * safety net for short viewports: on a normal screen the block fits
+           * and only the feed scrolls, and on a small one the block itself
+           * becomes scrollable rather than running off the bottom with its
+           * lower half unreachable.
+           */}
+          <div className="scrollbar-rail flex flex-col gap-3 xl:sticky xl:top-[3.75rem] xl:z-10 xl:max-h-[calc(100vh-4.5rem)] xl:overflow-y-auto">
+          <GovPanel
+            title={t('Latest updates')}
+            subtitle={t('{0} live', feed.length)}
+            tone="primary"
+            dense
+            /* Pinning is handled by the column wrapper above — see the note
+               there on why sticking this panel alone could not work. The
+               `3.75rem` offset it uses clears the shell's `sticky top-0` top
+               bar, which is 3.5rem tall and shares this scrollport. */
+          >
+            <LiveFeed
+              entries={feed}
+              now={DEMO_NOW}
+              /* Bounded against the viewport rather than fixed, so the pinned
+                 column fits on a short laptop as well as a large monitor. The
+                 cap is generous — this is the column an officer glances at
+                 most, and a feed showing three entries is not worth the space
+                 it occupies. The column's own scrollbar is the fallback when
+                 the pair genuinely cannot fit. */
+              height="min(30rem, calc(100vh - 20rem))"
+              onSelect={(entry) => {
+                const [kind, id] = entry.id.split(':')
+                if (kind === 'intel') openDrawer({ kind: 'intelligence', id: id ?? '' })
+                else if (kind === 'incident') openDrawer({ kind: 'incident', id: id ?? '' })
+                else if (kind === 'alert') navigate(ROUTES.alerts)
+                else if (entry.route) navigate(entry.route)
+              }}
+            />
+          </GovPanel>
+
+          <GovPanel
+            title={t('Matters requiring attention')}
+            subtitle={t('{0} open', cityPosition.topRisks.length)}
+            tone="critical"
+            dense
+          >
+            {cityPosition.topRisks.length === 0 ? (
+              <p className="px-3 py-6 text-center text-[0.75rem] text-ink-400">{t('No open risks.')}</p>
+            ) : (
+              <ul className="divide-y divide-ink-100">
+                {cityPosition.topRisks.map((item) => (
+                  <li key={item.id}>
+                    <button
+                      type="button"
+                      onClick={() => openDrawer({ kind: 'intelligence', id: item.id })}
+                      className="flex w-full flex-col gap-1 px-3 py-2 text-left transition-colors hover:bg-govt-50/60"
+                    >
+                      <span className="flex flex-wrap items-center gap-1.5">
+                        <SeverityBadge severity={item.severity} />
+                        <span className="text-[0.5625rem] font-semibold tracking-wide text-ink-500 uppercase">
+                          {DOMAIN_LABEL[item.domain]}
+                        </span>
+                      </span>
+                      <span className="text-[0.75rem] leading-snug font-semibold text-ink-800">{item.title}</span>
+                      <span className="line-clamp-2 text-[0.6875rem] leading-snug text-ink-500">{item.description}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            </GovPanel>
+          </div>
+        </div>
+
+        {/* Column 3 — what the administration is carrying ----------- */}
+        <div className="flex flex-col gap-3 xl:col-span-3">
+          <GovPanel title={t('Revenue & finance')} dense>
+            <GovStat
+              label={t('Revenue realisation')}
+              value={formatPercent(cityPosition.revenue.efficiencyPct)}
+              reading={t('{0} collected of {1} target', formatCrore(cityPosition.revenue.collectedCrore), formatCrore(cityPosition.revenue.targetCrore))}
+              tone={cityPosition.revenue.efficiencyPct >= 80 ? 'positive' : cityPosition.revenue.efficiencyPct >= 60 ? 'warn' : 'critical'}
+            />
+            <div className="px-3 py-2">
+              <ProgressBar value={cityPosition.revenue.efficiencyPct} showValue />
+            </div>
+            <GovRow label={t('Arrears outstanding')} value={formatCrore(cityPosition.revenue.arrearsCrore)} tone="warn" />
+            <GovRow
+              label={t('Budget utilisation')}
+              value={formatPercent(cityPosition.budget.utilisationPct)}
+              note={t('{0} of {1} revised', formatCrore(cityPosition.budget.actualCrore), formatCrore(cityPosition.budget.revisedCrore))}
+            />
+          </GovPanel>
+
+          <GovPanel title={t('Capital works')} subtitle={t('{0} live', cityPosition.projects.total)} dense>
+            <GovRow label={t('Sanctioned value')} value={formatCrore(cityPosition.projects.sanctionedCrore)} />
+            <GovRow label={t('At risk')} value={cityPosition.projects.atRisk} tone={cityPosition.projects.atRisk > 0 ? 'warn' : 'default'} />
+            <GovRow label={t('Delayed')} value={cityPosition.projects.delayed} tone={cityPosition.projects.delayed > 0 ? 'critical' : 'default'} />
+            {projectsQuery.isLoading ? (
+              <LoadingState variant="inline" />
+            ) : projectsQuery.error ? (
+              <ErrorState detail={projectsQuery.error.message} onRetry={() => projectsQuery.refetch()} />
+            ) : (
+              <>
+                <p className="border-b border-ink-100 bg-surface-sunken px-3 py-1 text-[0.5625rem] font-bold tracking-[0.09em] text-ink-500 uppercase">
+                  {t('Highest-risk works')}
+                </p>
                 {topAtRiskProjects.map((p) => (
                   <button
                     key={p.id}
                     type="button"
                     onClick={() => openDrawer({ kind: 'project', id: p.id })}
-                    className="flex w-full items-center justify-between gap-2 rounded-md px-1.5 py-1 text-left text-xs transition-colors hover:bg-ink-50"
+                    className="flex w-full items-center justify-between gap-2 border-b border-ink-100 px-3 py-[0.4375rem] text-left transition-colors last:border-b-0 hover:bg-govt-50/60"
                   >
-                    <span className="min-w-0 truncate text-ink-700">{p.name}</span>
-                    <Badge tone={p.riskScore >= 70 ? 'critical' : p.riskScore >= 55 ? 'risk' : 'warn'} className="shrink-0">{t('Risk {0}', p.riskScore)}</Badge>
+                    <span className="min-w-0 truncate text-[0.6875rem] text-ink-700">{p.name}</span>
+                    <Badge tone={p.riskScore >= 70 ? 'critical' : p.riskScore >= 55 ? 'risk' : 'warn'} className="shrink-0">
+                      {p.riskScore}
+                    </Badge>
                   </button>
                 ))}
-                {topAtRiskProjects.length === 0 ? <p className="text-xs text-ink-400">{t('No projects above the risk threshold.')}</p> : null}
-              </div>
-            </>
-          )}
-        </Card>
+                {topAtRiskProjects.length === 0 ? (
+                  <p className="px-3 py-3 text-[0.6875rem] text-ink-400">{t('No projects above the risk threshold.')}</p>
+                ) : null}
+              </>
+            )}
+          </GovPanel>
 
-        <Card>
-          <CardHeader title={t('Citizen services')} description={t('SLA compliance by category, lowest first.')} />
-          {serviceHealthQuery.isLoading ? (
-            <LoadingState variant="inline" />
-          ) : serviceHealthQuery.error ? (
-            <ErrorState detail={serviceHealthQuery.error.message} onRetry={() => serviceHealthQuery.refetch()} />
-          ) : (
-            <div className="mt-2 space-y-2">
-              {mapDefined(serviceHealthQuery.data).map((row) => (
-                <div key={row.category} className="flex items-center justify-between gap-2 text-xs">
-                  <span className="min-w-0 truncate text-ink-600">{COMPLAINT_CATEGORY_LABEL[row.category]}</span>
-                  <span className="flex shrink-0 items-center gap-1.5">
-                    <MiniBar value={row.avgSla} width={44} />
-                    <span className="numeric font-semibold text-ink-800">{formatPercent(row.avgSla)}</span>
-                  </span>
-                </div>
-              ))}
-              {mapDefined(serviceHealthQuery.data).length === 0 ? <EmptyState compact title={t('No service data')} /> : null}
-            </div>
-          )}
-        </Card>
+          <GovPanel title={t('Service delivery')} subtitle={t('SLA, lowest first')} dense>
+            {serviceHealthQuery.isLoading ? (
+              <LoadingState variant="inline" />
+            ) : serviceHealthQuery.error ? (
+              <ErrorState detail={serviceHealthQuery.error.message} onRetry={() => serviceHealthQuery.refetch()} />
+            ) : mapDefined(serviceHealthQuery.data).length === 0 ? (
+              <EmptyState compact title={t('No service data')} />
+            ) : (
+              mapDefined(serviceHealthQuery.data)
+                .slice(0, 8)
+                .map((row) => (
+                  <GovRow
+                    key={row.category}
+                    label={COMPLAINT_CATEGORY_LABEL[row.category]}
+                    note={t('{0} open', row.open)}
+                    value={formatPercent(row.avgSla)}
+                    tone={row.avgSla >= 85 ? 'positive' : row.avgSla >= 70 ? 'warn' : 'critical'}
+                  />
+                ))
+            )}
+          </GovPanel>
+
+          <GovPanel title={t('Infrastructure standing')} dense>
+            <GovRow
+              label={t('Water supply')}
+              note={t('{0} zone(s) at risk', cityPosition.water.zonesAtRisk)}
+              value={t('{0}/{1} MLD', cityPosition.water.supplyMld.toFixed(0), cityPosition.water.demandMld.toFixed(0))}
+              tone={cityPosition.water.zonesAtRisk > 0 ? 'warn' : 'default'}
+            />
+            <GovRow
+              label={t('Monsoon readiness')}
+              note={t('{0} chronic waterlogging location(s)', cityPosition.monsoon.chronicLocations)}
+              value={`${cityPosition.monsoon.readinessScore}/100`}
+              tone={cityPosition.monsoon.readinessScore >= 75 ? 'positive' : cityPosition.monsoon.readinessScore >= 55 ? 'warn' : 'critical'}
+            />
+            <GovRow
+              label={t('Emergency response')}
+              note={t('{0} station(s) below standard', cityPosition.emergency.stationsBelowStandard)}
+              value={t('{0} min', cityPosition.emergency.avgResponseMinutes.toFixed(0))}
+            />
+            <GovRow
+              label={t('Waste collection coverage')}
+              note={t('{0} hotspot(s)', cityPosition.waste.hotspots)}
+              value={formatPercent(cityPosition.waste.coveragePct)}
+              tone={cityPosition.waste.coveragePct >= 90 ? 'positive' : 'warn'}
+            />
+            <p className="border-b border-ink-100 bg-surface-sunken px-3 py-1 text-[0.5625rem] font-bold tracking-[0.09em] text-ink-500 uppercase">
+              {t('Priority road defects')}
+            </p>
+            {defectsQuery.isLoading ? (
+              <LoadingState variant="inline" />
+            ) : mapDefined(defectsQuery.data).length === 0 ? (
+              <p className="px-3 py-3 text-[0.6875rem] text-ink-400">{t('No high-priority defects recorded.')}</p>
+            ) : (
+              mapDefined(defectsQuery.data).map((d) => (
+                <GovRow
+                  key={d.id}
+                  label={`${wardName(d.wardId)} — ${d.type.replace(/-/g, ' ')}`}
+                  value={`${d.priorityScore}/100`}
+                  tone={d.priorityScore >= 70 ? 'critical' : 'warn'}
+                />
+              ))
+            )}
+          </GovPanel>
+        </div>
       </div>
 
-      {/* Row 4 - financial position, infrastructure risk */}
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-        <Card>
-          <CardHeader icon={<Banknote className="h-4 w-4" />} title={t('Financial position')} description={t('Revenue realisation and capital utilisation against the phased plan.')} />
-          <div className="mt-3 space-y-3">
-            <div>
-              <div className="mb-1 flex items-baseline justify-between text-xs">
-                <span className="text-ink-500">{t('Revenue collected vs target')}</span>
-                <span className="numeric font-semibold text-ink-800">{formatCrore(cityPosition.revenue.collectedCrore)} of {formatCrore(cityPosition.revenue.targetCrore)}</span>
-              </div>
-              <ProgressBar value={cityPosition.revenue.efficiencyPct} showValue />
-            </div>
-            <div>
-              <div className="mb-1 flex items-baseline justify-between text-xs">
-                <span className="text-ink-500">{t('Budget utilisation')}</span>
-                <span className="numeric font-semibold text-ink-800">{formatCrore(cityPosition.budget.actualCrore)} of {formatCrore(cityPosition.budget.revisedCrore)}</span>
-              </div>
-              <ProgressBar value={cityPosition.budget.utilisationPct} showValue />
-            </div>
-            <p className="text-xs text-ink-500">{t('Arrears outstanding:')}{' '}<span className="font-semibold text-ink-800">{formatCrore(cityPosition.revenue.arrearsCrore)}</span></p>
-          </div>
-        </Card>
-
-        <Card>
-          <CardHeader icon={<Droplets className="h-4 w-4" />} title={t('Infrastructure risk')} description={t('Water, drainage and roads - the physical service condition of the city.')} />
-          <div className="mt-3 space-y-3 text-xs">
-            <div>
-              <p className="label-institutional mb-1">{t('Water')}</p>
-              <p className="text-ink-600">{t('Supply')}{' '}{cityPosition.water.supplyMld.toFixed(0)}{' '}{t('MLD against')}{' '}{cityPosition.water.demandMld.toFixed(0)}{' '}{t('MLD demand ·')}{' '}<span className="font-semibold text-ink-800">{t('{0} zone(s) at risk', cityPosition.water.zonesAtRisk)}</span></p>
-            </div>
-            <div>
-              <p className="label-institutional mb-1">{t('Drainage &amp; monsoon')}</p>
-              <p className="text-ink-600">{t('Mean readiness {0}/100 · {1} chronic waterlogging location(s)', cityPosition.monsoon.readinessScore, cityPosition.monsoon.chronicLocations)}</p>
-            </div>
-            <div>
-              <p className="label-institutional mb-1 flex items-center gap-1"><Route className="h-3 w-3" />{t('Roads - top priority defects')}</p>
-              {defectsQuery.isLoading ? (
-                <LoadingState variant="inline" />
-              ) : mapDefined(defectsQuery.data).length === 0 ? (
-                <p className="text-ink-400">{t('No high-priority defects recorded.')}</p>
-              ) : (
-                <div className="space-y-1">
-                  {mapDefined(defectsQuery.data).map((d) => (
-                    <p key={d.id} className="flex items-center justify-between text-ink-600">
-                      <span>{wardName(d.wardId)} - {d.type.replace('-', ' ')}</span>
-                      <span className="numeric font-semibold text-ink-800">{d.priorityScore}/100</span>
-                    </p>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </Card>
-      </div>
-
-      {/* Executive brief */}
-      <Card flush>
-        <CardHeader
-          bordered
-          icon={<Sparkles className="h-4 w-4" />}
-          eyebrow={t('Governed AI layer - advisory only')}
-          title={t('Executive brief')}
-          description={t('Evidence-backed synthesis across every domain. The platform never decides - every section names the officer accountable for acting on it.')}
-          actions={
-            <Button variant="primary" size="sm" disabled={briefStatus === 'loading'} icon={<RefreshCw className={briefStatus === 'loading' ? 'h-3.5 w-3.5 animate-spin' : 'h-3.5 w-3.5'} />} onClick={() => void generateBrief()}>
-              {briefStatus === 'ready' ? 'Regenerate brief' : 'Generate Executive Brief'}
-            </Button>
-          }
-        />
-        <div className="p-4">
+      {/* ── Executive brief ────────────────────────────────────────── */}
+      <GovPanel
+        title={t('Executive brief')}
+        subtitle={t('Governed AI layer — advisory only')}
+        tone="primary"
+        dense
+        actions={
+          <Button
+            variant="outline"
+            size="xs"
+            disabled={briefStatus === 'loading'}
+            icon={<RefreshCw className={briefStatus === 'loading' ? 'h-3 w-3 animate-spin' : 'h-3 w-3'} />}
+            onClick={() => void generateBrief()}
+          >
+            {briefStatus === 'ready' ? t('Regenerate') : t('Generate')}
+          </Button>
+        }
+      >
+        <div className="p-3">
           {briefStatus === 'idle' ? (
-            <EmptyState title={t('No brief generated yet')} detail="Generate an executive brief to synthesise the city's current position, with evidence and confidence stated for every finding." icon={<Sparkles className="h-4 w-4" />} />
+            <EmptyState
+              title={t('No brief generated yet')}
+              detail={t(
+                "Generate an executive brief to synthesise the city's current position, with evidence and confidence stated for every finding.",
+              )}
+              icon={<Sparkles className="h-4 w-4" />}
+            />
           ) : briefStatus === 'loading' ? (
             <LoadingState variant="block" rows={4} label={t('Generating executive brief')} />
           ) : briefStatus === 'error' ? (
-            <ErrorState title={t('The executive brief could not be generated')} detail={briefError ?? undefined} onRetry={() => void generateBrief()} />
+            <ErrorState
+              title={t('The executive brief could not be generated')}
+              detail={briefError ?? undefined}
+              onRetry={() => void generateBrief()}
+            />
           ) : brief ? (
-            <div className="space-y-4">
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-ink-100 bg-surface-sunken p-3">
-                <div className="flex flex-wrap items-center gap-1.5 text-xs text-ink-500">
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-[2px] border border-ink-200 bg-surface-sunken p-2.5">
+                <div className="flex flex-wrap items-center gap-1.5 text-[0.6875rem] text-ink-500">
                   <ConfidenceBadge confidence={brief.confidence} />
                   <Badge tone="muted">{brief.scopeLabel}</Badge>
                   <Badge tone="muted">{brief.dataFreshnessLabel}</Badge>
-                  <span>{t('Generated {0} · Model {1} · For {2}', formatDateTime(brief.generatedAt), brief.modelId, brief.generatedForRole)}</span>
+                  <span>
+                    {t('Generated {0} · Model {1} · For {2}', formatDateTime(brief.generatedAt), brief.modelId, brief.generatedForRole)}
+                  </span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <Button size="xs" variant="outline" icon={<Copy className="h-3 w-3" />} onClick={handleCopyBrief}>
-                    {copyConfirmed ? 'Copied' : 'Copy'}
+                    {copyConfirmed ? t('Copied') : t('Copy')}
                   </Button>
                   <Button size="xs" variant="outline" icon={<Save className="h-3 w-3" />} disabled={briefSaved} onClick={handleSaveBrief}>
-                    {briefSaved ? 'Saved' : 'Save'}
+                    {briefSaved ? t('Saved') : t('Save')}
                   </Button>
                   <Button size="xs" variant="outline" icon={<Printer className="h-3 w-3" />} onClick={() => window.print()}>
                     {t('Print')}
@@ -485,34 +675,43 @@ export function ExecutiveOverviewPage(): React.JSX.Element {
                 </div>
               </div>
 
-              {brief.sections.map((section) => (
-                <div key={section.id} className="rounded-lg border border-ink-100 p-3.5">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <SeverityBadge severity={section.severity} />
-                      {section.domains.map((d) => (
-                        <Badge key={d} tone="muted">{DOMAIN_LABEL[d]}</Badge>
-                      ))}
-                      <Badge tone="info" icon={<FileSearch className="h-3 w-3" />}>{section.evidenceIds.length} evidence</Badge>
+              {/* The brief's own sections read as columns too, on wide screens:
+                  a synthesis is easier to check against the record beside it
+                  than stacked below it. */}
+              <div className="grid grid-cols-1 gap-2.5 lg:grid-cols-2">
+                {brief.sections.map((section) => (
+                  <div key={section.id} className="rounded-[2px] border border-ink-200 p-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <SeverityBadge severity={section.severity} />
+                        {section.domains.map((d) => (
+                          <Badge key={d} tone="muted">
+                            {DOMAIN_LABEL[d]}
+                          </Badge>
+                        ))}
+                        <Badge tone="info" icon={<FileSearch className="h-3 w-3" />}>
+                          {section.evidenceIds.length}
+                        </Badge>
+                      </div>
+                      <Button size="xs" variant="ghost" onClick={() => handleCreateDecisionFromSection(section)}>
+                        {t('Create decision')}
+                      </Button>
                     </div>
-                    <Button size="xs" variant="ghost" onClick={() => handleCreateDecisionFromSection(section)}>
-                      {t('Create decision from this section')}
-                    </Button>
+                    <h3 className="mt-2 text-[0.8125rem] font-semibold text-ink-900">{section.heading}</h3>
+                    <p className="mt-1 text-[0.6875rem] leading-relaxed text-ink-600">{section.body}</p>
+                    {section.bullets.length > 0 ? (
+                      <ul className="mt-2 list-disc space-y-0.5 pl-4 text-[0.6875rem] text-ink-600">
+                        {section.bullets.map((b, i) => (
+                          <li key={i}>{b}</li>
+                        ))}
+                      </ul>
+                    ) : null}
                   </div>
-                  <h3 className="mt-2 text-[0.8125rem] font-semibold text-ink-900">{section.heading}</h3>
-                  <p className="mt-1 text-xs leading-relaxed text-ink-600">{section.body}</p>
-                  {section.bullets.length > 0 ? (
-                    <ul className="mt-2 list-disc space-y-0.5 pl-4 text-xs text-ink-600">
-                      {section.bullets.map((b, i) => (
-                        <li key={i}>{b}</li>
-                      ))}
-                    </ul>
-                  ) : null}
-                </div>
-              ))}
+                ))}
+              </div>
 
               {brief.limitations.length > 0 ? (
-                <div className="rounded-md border border-warn-200 bg-warn-50/50 p-3 text-xs text-warn-700">
+                <div className="rounded-[2px] border border-warn-200 bg-warn-50/50 p-2.5 text-[0.6875rem] text-warn-700">
                   <p className="mb-1 font-semibold">{t('Risks and limitations')}</p>
                   <ul className="list-disc space-y-0.5 pl-4">
                     {brief.limitations.map((l, i) => (
@@ -521,11 +720,11 @@ export function ExecutiveOverviewPage(): React.JSX.Element {
                   </ul>
                 </div>
               ) : null}
-              {briefError ? <p className="text-xs text-crit-600">{briefError}</p> : null}
+              {briefError ? <p className="text-[0.6875rem] text-crit-600">{briefError}</p> : null}
             </div>
           ) : null}
         </div>
-      </Card>
+      </GovPanel>
 
       <DemonstrationNotice />
     </PageBody>

@@ -19,6 +19,7 @@ import {
 import { allowed } from '@/security'
 import { useCurrentUser } from '@/stores/auth.store'
 import { useDrawerStore } from '@/stores/ui.store'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { wardName } from '@/data/reference'
 import { formatDateTime, formatRelative } from '@/utils/format'
 import { CLASSIFICATION_LABEL, type DataClassification } from '@/types/common'
@@ -79,6 +80,12 @@ export function EvidenceAuditPage(): React.JSX.Element {
   const currentUser = useCurrentUser()
   const openDrawer = useDrawerStore((s) => s.open)
   const [tab, setTab] = useState<'evidence' | 'audit'>('evidence')
+
+  // The shell's masthead carries the screen's name; the page states the wording.
+  usePageMasthead(
+    t('Evidence & Audit'),
+    t('The evidence corpus this platform holds, browsable in full and filterable by kind, classification and ward, and the immutable-style record of every consequential action taken against it.'),
+  )
 
   // ---------------------------------------------------------------- Evidence
   const [evidenceSearch, setEvidenceSearch] = useState('')
@@ -174,8 +181,6 @@ export function EvidenceAuditPage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('Trust Centre')}
-        title={t('Evidence & Audit')}
-        description={t('The evidence corpus this platform holds, browsable in full and filterable by kind, classification and ward, and the immutable-style record of every consequential action taken against it.')}
         breadcrumbs={[{ label: t('Trust Centre'), to: '/trust' }, { label: t('Evidence & Audit') }]}
         controls={
           <Tabs
@@ -198,7 +203,7 @@ export function EvidenceAuditPage(): React.JSX.Element {
         />
         <div className="mt-3 flex flex-col gap-2 overflow-x-auto sm:flex-row sm:items-stretch">
           {PROVENANCE_RAIL.map((stage, i) => (
-            <div key={stage.label} className="flex flex-1 items-center gap-2">
+            <div key={stage.label} className="flex min-w-[8rem] flex-1 items-center gap-2">
               <div className="min-w-0 flex-1 rounded-md border border-ink-100 bg-surface-sunken px-2.5 py-2" title={stage.detail}>
                 <p className="text-[0.6875rem] font-semibold text-ink-800">{stage.label}</p>
                 <p className="mt-0.5 hidden text-[0.625rem] leading-snug text-ink-500 lg:block">{stage.detail}</p>
@@ -316,6 +321,12 @@ export function EvidenceAuditPage(): React.JSX.Element {
                 </Card>
               </MetricGrid>
 
+              {/* Two columns. The register and the filters that scope it read
+                  down the wide column; the chronological narrative of the same
+                  events sits beside it, where it can be checked against the
+                  rows rather than scrolled past them. */}
+              <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+                <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
               <Card>
                 <CardHeader
                   title={t('Filters')}
@@ -350,6 +361,24 @@ export function EvidenceAuditPage(): React.JSX.Element {
                 ) : null}
               </Card>
 
+              <Card flush>
+                <CardHeader className="p-4" title={t('Full audit register')} />
+                <div className="px-4 pb-4">
+                  <DataTable
+                    rows={filteredAudit}
+                    columns={auditColumns}
+                    rowKey={(e) => e.id}
+                    searchable
+                    searchPlaceholder="Search resource or reason"
+                    pageSize={15}
+                    initialSort={{ columnId: 'timestamp', direction: 'desc' }}
+                    rowAccent={(e) => <span className={cn('block h-full w-full rounded-full', e.outcome === 'denied' ? 'bg-crit-500' : 'bg-transparent')} />}
+                  />
+                </div>
+              </Card>
+                </div>
+
+                <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
               <Card>
                 <CardHeader title={t('Recent activity')} description={t('The most recent audit events, newest first.')} />
                 <ol className="mt-3 space-y-0">
@@ -375,22 +404,8 @@ export function EvidenceAuditPage(): React.JSX.Element {
                 </ol>
                 {filteredAudit.length === 0 ? <EmptyState compact title={t('No audit events match the current filters')} /> : null}
               </Card>
-
-              <Card flush>
-                <CardHeader className="p-4" title={t('Full audit register')} />
-                <div className="px-4 pb-4">
-                  <DataTable
-                    rows={filteredAudit}
-                    columns={auditColumns}
-                    rowKey={(e) => e.id}
-                    searchable
-                    searchPlaceholder="Search resource or reason"
-                    pageSize={15}
-                    initialSort={{ columnId: 'timestamp', direction: 'desc' }}
-                    rowAccent={(e) => <span className={cn('block h-full w-full rounded-full', e.outcome === 'denied' ? 'bg-crit-500' : 'bg-transparent')} />}
-                  />
                 </div>
-              </Card>
+              </div>
             </>
           )}
         </>

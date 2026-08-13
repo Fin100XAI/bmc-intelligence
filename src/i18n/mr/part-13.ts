@@ -233,7 +233,6 @@ export const MR_PART_13: Record<string, string> = {
   'Project a metric forward under stated assumptions, with confidence always attached.':
     'नमूद गृहितकांनुसार मापदंडाचा पुढील प्रक्षेप काढणे, नेहमी विश्वासार्हतेसह.',
   'Project expenditure linkage': 'प्रकल्प खर्चाची जोडणी',
-  'Project health': 'प्रकल्प स्थिती',
   'Project infrastructure adequacy under a stated change to population, capital investment, transport demand and extreme rainfall frequency. This recomputes the table, map and rankings above.':
     'लोकसंख्या, भांडवली गुंतवणूक, वाहतूक मागणी व अतिवृष्टीच्या वारंवारतेतील नमूद बदलानुसार पायाभूत सुविधा पर्याप्ततेचा प्रक्षेप काढा. यामुळे वरील कोष्टक, नकाशा व क्रमवारी पुन्हा मोजली जाते.',
   'Project portfolio': 'प्रकल्प संच',
@@ -329,8 +328,6 @@ export const MR_PART_13: Record<string, string> = {
     'वर कोणताही प्रभाग निवडलेला असला तरी, तुमच्या अधिकृत व्याप्तीतील प्रत्येक प्रभागावर लावलेली क्रमवारी.',
   'Ranked by composite risk index, highest first.':
     'एकत्रित जोखीम निर्देशांकानुसार क्रमवारी, सर्वाधिक प्रथम.',
-  'Ranked by composite risk. Click a row to open the ward profile.':
-    'एकत्रित जोखमीनुसार क्रमवारी. प्रभाग माहिती उघडण्यासाठी ओळीवर टिचकी मारा.',
   "Ranked by congestion index, highest first. The gap between free-flow and peak-hour speed is the corridor's congestion.":
     'वाहतूक कोंडी निर्देशांकानुसार क्रमवारी, सर्वाधिक प्रथम. मोकळ्या वाहतुकीतील वेग आणि गर्दीच्या वेळेतील वेग यांतील तफावत म्हणजेच त्या मार्गिकेवरील वाहतूक कोंडी.',
   'Ranked by how many distinct problems are stacking, weighted by the published signal weights.':

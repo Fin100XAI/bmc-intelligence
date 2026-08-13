@@ -26,6 +26,7 @@ import { queryKeys } from '@/app/queryClient'
 import { healthService } from '@/services/health.service'
 import { useFilterStore } from '@/stores/ui.store'
 import { useActiveCorporation } from '@/stores/corporation.store'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { WARDS, WARD_BY_ID, wardName } from '@/data/reference'
 import type { Hospital } from '@/types/city-domains'
 import { formatCompact, formatPercent } from '@/utils/format'
@@ -70,12 +71,17 @@ export function HospitalIntelligencePage(): React.JSX.Element {
   const [typeFilter, setTypeFilter] = useState<'all' | Hospital['type']>('all')
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
+  usePageMasthead(
+    t('Hospital Intelligence'),
+    t('Capacity, occupancy, critical care headroom, staffing, equipment serviceability and accessibility across every major, peripheral, speciality, maternity and dispensary facility. No patient record of any kind is modelled or displayed.'),
+  )
+
   const hospitalsQuery = useServiceQuery(queryKeys.health('hospitals-all'), (u) => healthService.hospitals(u))
 
   if (hospitalsQuery.isLoading) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('City Intelligence')} title={t('Hospital Intelligence')} breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Hospital Intelligence') }]} />
+        <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Hospital Intelligence') }]} />
         <LoadingState variant="metrics" />
         <LoadingState variant="table" rows={8} />
       </PageBody>
@@ -84,7 +90,7 @@ export function HospitalIntelligencePage(): React.JSX.Element {
   if (hospitalsQuery.error) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('City Intelligence')} title={t('Hospital Intelligence')} breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Hospital Intelligence') }]} />
+        <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Hospital Intelligence') }]} />
         <ErrorState detail={hospitalsQuery.error.message} onRetry={() => hospitalsQuery.refetch()} />
       </PageBody>
     )
@@ -94,7 +100,7 @@ export function HospitalIntelligencePage(): React.JSX.Element {
   if (hospitals.length === 0) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('City Intelligence')} title={t('Hospital Intelligence')} breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Hospital Intelligence') }]} />
+        <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Hospital Intelligence') }]} />
         <EmptyState title={t('No facilities available')} detail="No hospital records were returned for the current scope." />
         <DemonstrationNotice />
       </PageBody>
@@ -222,8 +228,6 @@ export function HospitalIntelligencePage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('City Intelligence')}
-        title={t('Hospital Intelligence')}
-        description={t('Capacity, occupancy, critical care headroom, staffing, equipment serviceability and accessibility across every major, peripheral, speciality, maternity and dispensary facility. No patient record of any kind is modelled or displayed.')}
         breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Hospital Intelligence') }]}
       />
 
@@ -235,34 +239,11 @@ export function HospitalIntelligencePage(): React.JSX.Element {
         <MetricCard label={t('Critical care headroom')} value={headroom} unit={t('ICU beds')} support={t('{0} of ICU capacity', formatPercent(headroomPct))} tone={headroomPct < 10 ? 'critical' : headroomPct < 20 ? 'warn' : 'positive'} icon={<HeartPulse className="h-4 w-4" />} />
       </MetricGrid>
 
-      {surging.length > 0 ? (
-        <Card tone="warn">
-          <CardHeader
-            title={t('Facilities above the surge threshold')}
-            description={t('Flagged at {0}% bed occupancy or an emergency load index of {1} or higher.', SURGE_OCCUPANCY_THRESHOLD, SURGE_LOAD_INDEX_THRESHOLD)}
-          />
-          <ul className="mt-2 divide-y divide-warn-200/60">
-            {surging.slice(0, 8).map((h) => (
-              <li key={h.id}>
-                <button
-                  type="button"
-                  onClick={() => setSelectedId(h.id)}
-                  className="flex w-full flex-wrap items-center justify-between gap-2 py-2 text-left transition-colors hover:bg-warn-100/40"
-                >
-                  <span className="min-w-0 truncate text-xs font-medium text-ink-800">
-                    {h.name} <span className="font-normal text-ink-500">· {wardName(h.wardId)}</span>
-                  </span>
-                  <span className="flex shrink-0 items-center gap-1.5">
-                    <Badge tone="warn">{formatPercent(h.occupancyPct)} occupied</Badge>
-                    <Badge tone={toneForScore(h.emergencyLoadIndex, false)}>{t('Load {0}', h.emergencyLoadIndex)}</Badge>
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </Card>
-      ) : null}
-
+      {/* Two columns, read downward. The facility register, the facility an
+          officer has opened and the flood-exposure comparison carry the width;
+          the surge exceptions and the coverage map stand beside them. */}
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
       <Card flush>
         <CardHeader className="px-4 pt-4 pb-3" icon={<Activity className="h-4 w-4" />} title={t('Facility register')} description={t('Sortable, filterable by type and ward. Select a row to inspect service availability.')} />
         <div className="flex flex-wrap items-center gap-2 px-4 pb-3">
@@ -369,32 +350,64 @@ export function HospitalIntelligencePage(): React.JSX.Element {
           {t('Wards are flagged flood-prone based on structural, low-lying exposure - the same flag monsoon intelligence uses. The lower accessibility figures observed at facilities within these wards reflect a modelled')}{' '}<span className="font-medium text-ink-600">exposure</span>{' '}{t('- the ward&apos;s susceptibility to access disruption during flooding - and are not a prediction of when or whether any specific facility will become inaccessible.')}
         </p>
       </Card>
-
-      <Card>
-        <CardHeader title={t('Facility map and ward coverage')} description={t('Marker positions are illustrative, placed within each facility\'s ward. The coverage layer shows functional beds per 10,000 ward residents.')} />
-        <div className="mt-3">
-          <CityMap
-            layers={[
-              {
-                id: 'bed-coverage',
-                label: t('Bed Coverage'),
-                valueFor: (wardId) => {
-                  const ward = WARDS.find((w) => w.id === wardId)
-                  if (!ward || ward.population === 0) return undefined
-                  const beds = bedsByWard.get(wardId) ?? 0
-                  const perTenK = (beds / ward.population) * 10_000
-                  return Math.min(100, Math.round((perTenK / 40) * 100))
-                },
-                higherIsWorse: false,
-                unit: ' (scaled; ~40 beds/10k pop. = 100)',
-                description: t('Functional hospital beds per 10,000 ward residents, scaled 0–100 for map shading. Higher is better coverage.'),
-              },
-            ]}
-            markers={markers}
-            height={400}
-          />
         </div>
-      </Card>
+
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
+          {surging.length > 0 ? (
+            <Card tone="warn">
+              <CardHeader
+                title={t('Facilities above the surge threshold')}
+                description={t('Flagged at {0}% bed occupancy or an emergency load index of {1} or higher.', SURGE_OCCUPANCY_THRESHOLD, SURGE_LOAD_INDEX_THRESHOLD)}
+              />
+              <ul className="mt-2 divide-y divide-warn-200/60">
+                {surging.slice(0, 8).map((h) => (
+                  <li key={h.id}>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedId(h.id)}
+                      className="flex w-full flex-wrap items-center justify-between gap-2 py-2 text-left transition-colors hover:bg-warn-100/40"
+                    >
+                      <span className="min-w-0 truncate text-xs font-medium text-ink-800">
+                        {h.name} <span className="font-normal text-ink-500">· {wardName(h.wardId)}</span>
+                      </span>
+                      <span className="flex shrink-0 items-center gap-1.5">
+                        <Badge tone="warn">{formatPercent(h.occupancyPct)} occupied</Badge>
+                        <Badge tone={toneForScore(h.emergencyLoadIndex, false)}>{t('Load {0}', h.emergencyLoadIndex)}</Badge>
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          ) : null}
+
+          <Card>
+            <CardHeader title={t('Facility map and ward coverage')} description={t('Marker positions are illustrative, placed within each facility\'s ward. The coverage layer shows functional beds per 10,000 ward residents.')} />
+            <div className="mt-3">
+              <CityMap
+                layers={[
+                  {
+                    id: 'bed-coverage',
+                    label: t('Bed Coverage'),
+                    valueFor: (wardId) => {
+                      const ward = WARDS.find((w) => w.id === wardId)
+                      if (!ward || ward.population === 0) return undefined
+                      const beds = bedsByWard.get(wardId) ?? 0
+                      const perTenK = (beds / ward.population) * 10_000
+                      return Math.min(100, Math.round((perTenK / 40) * 100))
+                    },
+                    higherIsWorse: false,
+                    unit: ' (scaled; ~40 beds/10k pop. = 100)',
+                    description: t('Functional hospital beds per 10,000 ward residents, scaled 0–100 for map shading. Higher is better coverage.'),
+                  },
+                ]}
+                markers={markers}
+                height={400}
+              />
+            </div>
+          </Card>
+        </div>
+      </div>
 
       <DemonstrationNotice />
     </PageBody>

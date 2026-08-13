@@ -1,8 +1,9 @@
-import { DEMO_USERS, FEATURED_DEMO_PROFILES, USER_BY_ID } from '@/auth/demo-users'
+import { DEMO_ACCESS_PASSPHRASE, DEMO_USERS, FEATURED_DEMO_PROFILES, USER_BY_ID } from '@/auth/demo-users'
 import { onAfterRebuild } from '@/data/runtime'
 import type { Session, User } from '@/types/organisation'
 import { DEMO_NOW, isoFromAnchor } from '@/utils/deterministic'
 import { DEMO_SOURCE_IP_PLACEHOLDER, ServiceError, deepClone, recordAudit, simulateLatency } from './client'
+import { isApiEnabled, request } from './http'
 
 /**
  * src/services/auth.service.ts
@@ -148,9 +149,59 @@ export function listLiveSessions(): Session[] {
   return Array.from(SESSIONS.values())
 }
 
+/**
+ * Establishes the SERVER's notion of who is acting.
+ *
+ * Everything else in this module models a session inside one browser tab. This
+ * function is different in kind: it asks the API to issue a signed, httpOnly
+ * session cookie, and until it has, every call to a persisted collection —
+ * actions, complaints, wards, the audit trail — is refused as unauthenticated.
+ *
+ * The passphrase is verified on the SERVER (`DEMO_PASSPHRASE` in the API's
+ * environment) and is never what grants access here; a caller that skips this
+ * step simply has no cookie, and the server disagrees with anything the
+ * browser claims about itself.
+ *
+ * A no-op when no API is configured, so the demonstration build is unaffected.
+ */
+async function establishServerSession(
+  userId: string,
+  passphrase: string = DEMO_ACCESS_PASSPHRASE,
+): Promise<void> {
+  if (!isApiEnabled()) return
+  await request<{ user: User; session: Session }>('/api/auth/sign-in', {
+    method: 'POST',
+    body: { userId, passphrase },
+  })
+}
+
+/** Clears the server-side session cookie. A no-op without an API. */
+async function endServerSession(): Promise<void> {
+  if (!isApiEnabled()) return
+  // A sign-out that fails must not strand the operator on a screen they have
+  // already left; the local session is cleared regardless by the caller.
+  await request<void>('/api/auth/sign-out', { method: 'POST' }).catch(() => undefined)
+}
+
+/**
+ * Whoever the cookie currently resolves to, or `null`.
+ *
+ * Called on boot so a reload restores the session without a second sign-in —
+ * and, because the answer comes from the server, a session that expired while
+ * the tab was closed resolves to signed-out rather than to a stale local value.
+ */
+async function serverPrincipal(): Promise<User | null> {
+  if (!isApiEnabled()) return null
+  const { user } = await request<{ user: User | null }>('/api/auth/session').catch(() => ({ user: null }))
+  return user
+}
+
 export const authService = {
   listDemoProfiles,
   signIn,
   signOut,
   getSession,
+  establishServerSession,
+  endServerSession,
+  serverPrincipal,
 }

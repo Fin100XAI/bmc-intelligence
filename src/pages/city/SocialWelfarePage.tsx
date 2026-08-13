@@ -21,6 +21,7 @@ import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { welfareService } from '@/services'
 import { useFilterStore } from '@/stores/ui.store'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { wardName, wardShortName } from '@/data/reference'
 import {
   ACCESSIBILITY_FACILITY_KIND_LABEL,
@@ -100,6 +101,11 @@ function ComplianceChecks({ audit }: { audit: AccessibilityAudit }): React.JSX.E
 }
 
 export function SocialWelfarePage(): React.JSX.Element {
+  usePageMasthead(
+    t('Social Welfare & Accessibility'),
+    t('The corporation\'s duty to weaker sections of society and to persons with disabilities - who is entitled, who is enrolled, who was actually paid, and whether the corporation\'s own buildings can be entered by the residents they serve.'),
+  )
+
   const filters = useFilterStore((s) => s.filters)
 
   const schemesQuery = useServiceQuery(queryKeys.welfare('schemes'), (u) => welfareService.schemes(u))
@@ -140,7 +146,6 @@ export function SocialWelfarePage(): React.JSX.Element {
       <PageBody>
         <PageHeader
           eyebrow={t('City Intelligence')}
-          title={t('Social Welfare & Accessibility')}
           breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Social Welfare & Accessibility') }]}
         />
         <LoadingState variant="metrics" />
@@ -154,7 +159,6 @@ export function SocialWelfarePage(): React.JSX.Element {
       <PageBody>
         <PageHeader
           eyebrow={t('City Intelligence')}
-          title={t('Social Welfare & Accessibility')}
           breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Social Welfare & Accessibility') }]}
         />
         <ErrorState
@@ -394,26 +398,11 @@ export function SocialWelfarePage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('City Intelligence')}
-        title={t('Social Welfare & Accessibility')}
-        description={t('The corporation\'s duty to weaker sections of society and to persons with disabilities - who is entitled, who is enrolled, who was actually paid, and whether the corporation\'s own buildings can be entered by the residents they serve.')}
         breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Social Welfare & Accessibility') }]}
         freshness={freshness}
       />
 
       <DemonstrationNotice />
-
-      <Card tone="info" className="flex items-start gap-3">
-        <HeartHandshake className="mt-0.5 h-4 w-4 shrink-0 text-govt-600" aria-hidden />
-        <div className="min-w-0">
-          <p className="text-[0.8125rem] font-semibold text-govt-800">{t('The coverage gap is the finding, not the enrolment')}</p>
-          <p className="mt-1 text-xs leading-relaxed text-ink-600">
-            {t('A scheme reaching eighty per cent of the residents entitled to it is reported as a success and is failing the other twenty per cent silently - and those residents are, by definition, the ones least able to complain about it. Every figure below is stated against the eligible population for that reason. Timeliness counts the same way: a pension paid late is a pension that did not arrive when the rent was due.')}
-          </p>
-          <p className="mt-1.5 text-xs leading-relaxed text-ink-600">
-            {t('No resident appears anywhere behind this page. The unit of record is the scheme and the facility - there is no name, no age, no disability, no bank account and no entitlement determination held here, and there will not be one.')}
-          </p>
-        </div>
-      </Card>
 
       <FilterBar show={['ward', 'search']} searchPlaceholder="Search schemes and facilities" />
 
@@ -454,91 +443,114 @@ export function SocialWelfarePage(): React.JSX.Element {
         />
       </MetricGrid>
 
-      <div className="grid gap-4 lg:grid-cols-[1.3fr_1fr]">
-        <Card className="flex flex-col">
-          <p className="label-institutional mb-2">{t('Monthly disbursement and new enrolments')}</p>
-          <div style={{ height: 220 }}>
-            <CategoryBarChart
-              data={trend as unknown as Array<Record<string, string | number>>}
-              categoryKey="month"
-              showLegend
-              series={[
-                { key: 'disbursed', label: t('Disbursed (₹ lakh)'), colour: CHART_COLOURS.primary },
-                { key: 'newEnrolments', label: t('New enrolments'), colour: CHART_COLOURS.intel },
-              ]}
+      {/* Two columns. The two registers the department answers for — the
+          schemes stated against the eligible population, and the accessibility
+          audits — carry the width, with the disbursement series beneath them.
+          Why the gap is the finding, and where the delay is worst, read down
+          the column beside. */}
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
+        <Card flush>
+            <CardHeader
+              bordered
+              icon={<HeartHandshake className="h-4 w-4" />}
+            title={t('Welfare schemes')}
+            description={t('Central, state and corporation schemes administered by the welfare department, each stated against the residents entitled to it.')}
+            actions={
+              widestGap ? (
+                <Badge tone="warn" size="sm">
+                  {t('Widest gap: {0}', widestGap.name.slice(0, 34))}
+                </Badge>
+              ) : undefined
+            }
+          />
+          {filteredSchemes.length === 0 ? (
+            <EmptyState
+              title={t('No welfare schemes match the current search')}
+              detail="Clear the search term to restore the full register of schemes."
             />
-          </div>
-          <p className="mt-2 text-[0.6875rem] leading-relaxed text-ink-500">
-            {t('Money disbursed and residents newly brought onto the rolls are read together deliberately. Disbursement can rise on arrears released to people already enrolled, which moves the financial figure without reaching a single new household - new enrolments are the only line that closes the coverage gap.')}
-          </p>
+          ) : (
+            <DataTable rows={filteredSchemes} columns={schemeColumns} rowKey={(s) => s.id} pageSize={12} />
+          )}
         </Card>
 
-        <Card flush className="flex flex-col">
+        <Card flush>
           <CardHeader
             bordered
-            title={t('Longest disbursement delay')}
-            description={t('Where the entitlement is settled but the money has not yet arrived.')}
+            icon={<Accessibility className="h-4 w-4" />}
+            title={t('Accessibility audits')}
+            description={t('Municipal facilities audited against the harmonised guidelines notified under the Rights of Persons with Disabilities Act, 2016, within your authorised ward scope.')}
+            actions={
+              noRamp > 0 ? (
+                <Badge tone="critical" size="sm">
+                  {t('{0} without a compliant ramp', formatNumber(noRamp))}
+                </Badge>
+              ) : undefined
+            }
           />
-          <div className="px-4 pb-4" style={{ height: Math.max(210, slowest.length * 26) }}>
-            {slowest.length === 0 ? (
-              <EmptyState title={t('No schemes match the current search')} detail="Clear the search to restore the register." compact />
-            ) : (
-              <RankedBarChart
-                data={slowest.map((s) => ({ label: s.name.slice(0, 24), value: s.meanDisbursementDelayDays }))}
-                unit=" d"
+          {filteredAudits.length === 0 ? (
+            <EmptyState
+              title={t('No audited facilities match the current filters')}
+              detail="Clear a filter to widen the register. A facility with no audit against it is not a facility that is compliant - it is one nobody has looked at."
+            />
+          ) : (
+            <DataTable rows={filteredAudits} columns={auditColumns} rowKey={(a) => a.id} pageSize={12} />
+          )}
+        </Card>
+
+          <Card className="flex flex-col">
+            <p className="label-institutional mb-2">{t('Monthly disbursement and new enrolments')}</p>
+            <div style={{ height: 220 }}>
+              <CategoryBarChart
+                data={trend as unknown as Array<Record<string, string | number>>}
+                categoryKey="month"
+                showLegend
+                series={[
+                  { key: 'disbursed', label: t('Disbursed (₹ lakh)'), colour: CHART_COLOURS.primary },
+                  { key: 'newEnrolments', label: t('New enrolments'), colour: CHART_COLOURS.intel },
+                ]}
               />
-            )}
+            </div>
+            <p className="mt-2 text-[0.6875rem] leading-relaxed text-ink-500">
+              {t('Money disbursed and residents newly brought onto the rolls are read together deliberately. Disbursement can rise on arrears released to people already enrolled, which moves the financial figure without reaching a single new household - new enrolments are the only line that closes the coverage gap.')}
+            </p>
+          </Card>
+        </div>
+
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
+        <Card tone="info" className="flex items-start gap-3">
+          <HeartHandshake className="mt-0.5 h-4 w-4 shrink-0 text-govt-600" aria-hidden />
+          <div className="min-w-0">
+            <p className="text-[0.8125rem] font-semibold text-govt-800">{t('The coverage gap is the finding, not the enrolment')}</p>
+            <p className="mt-1 text-xs leading-relaxed text-ink-600">
+              {t('A scheme reaching eighty per cent of the residents entitled to it is reported as a success and is failing the other twenty per cent silently - and those residents are, by definition, the ones least able to complain about it. Every figure below is stated against the eligible population for that reason. Timeliness counts the same way: a pension paid late is a pension that did not arrive when the rent was due.')}
+            </p>
+            <p className="mt-1.5 text-xs leading-relaxed text-ink-600">
+              {t('No resident appears anywhere behind this page. The unit of record is the scheme and the facility - there is no name, no age, no disability, no bank account and no entitlement determination held here, and there will not be one.')}
+            </p>
           </div>
         </Card>
+
+          <Card flush className="flex flex-col">
+            <CardHeader
+              bordered
+              title={t('Longest disbursement delay')}
+              description={t('Where the entitlement is settled but the money has not yet arrived.')}
+            />
+            <div className="px-4 pb-4" style={{ height: Math.max(210, slowest.length * 26) }}>
+              {slowest.length === 0 ? (
+                <EmptyState title={t('No schemes match the current search')} detail="Clear the search to restore the register." compact />
+              ) : (
+                <RankedBarChart
+                  data={slowest.map((s) => ({ label: s.name.slice(0, 24), value: s.meanDisbursementDelayDays }))}
+                  unit=" d"
+                />
+              )}
+            </div>
+          </Card>
+
+        </div>
       </div>
-
-      <Card flush>
-        <CardHeader
-          bordered
-          icon={<HeartHandshake className="h-4 w-4" />}
-          title={t('Welfare schemes')}
-          description={t('Central, state and corporation schemes administered by the welfare department, each stated against the residents entitled to it.')}
-          actions={
-            widestGap ? (
-              <Badge tone="warn" size="sm">
-                {t('Widest gap: {0}', widestGap.name.slice(0, 34))}
-              </Badge>
-            ) : undefined
-          }
-        />
-        {filteredSchemes.length === 0 ? (
-          <EmptyState
-            title={t('No welfare schemes match the current search')}
-            detail="Clear the search term to restore the full register of schemes."
-          />
-        ) : (
-          <DataTable rows={filteredSchemes} columns={schemeColumns} rowKey={(s) => s.id} pageSize={12} />
-        )}
-      </Card>
-
-      <Card flush>
-        <CardHeader
-          bordered
-          icon={<Accessibility className="h-4 w-4" />}
-          title={t('Accessibility audits')}
-          description={t('Municipal facilities audited against the harmonised guidelines notified under the Rights of Persons with Disabilities Act, 2016, within your authorised ward scope.')}
-          actions={
-            noRamp > 0 ? (
-              <Badge tone="critical" size="sm">
-                {t('{0} without a compliant ramp', formatNumber(noRamp))}
-              </Badge>
-            ) : undefined
-          }
-        />
-        {filteredAudits.length === 0 ? (
-          <EmptyState
-            title={t('No audited facilities match the current filters')}
-            detail="Clear a filter to widen the register. A facility with no audit against it is not a facility that is compliant - it is one nobody has looked at."
-          />
-        ) : (
-          <DataTable rows={filteredAudits} columns={auditColumns} rowKey={(a) => a.id} pageSize={12} />
-        )}
-      </Card>
     </PageBody>
   )
 }

@@ -31,6 +31,7 @@ import {
   type WardCommitment,
 } from '@/domains/wards/commitments'
 import { wardShortName } from '@/data/reference'
+import { usePageMasthead } from '@/stores/masthead.store'
 import type { DataFreshness } from '@/types/common'
 import { DEMO_NOW } from '@/utils/deterministic'
 import { formatCrore, formatDate, formatRelative } from '@/utils/format'
@@ -91,6 +92,11 @@ registerLayer(() => {
 })
 
 export function WardCommitmentsPage(): React.JSX.Element {
+  usePageMasthead(
+    t('Ward Commitments Ledger'),
+    t('Everything the corporation has committed to a named ward - resolutions the house has carried, capital works sanctioned, decision cases taken and the ward\'s own capital allocation - held as one record with one standing, so the question a corporator actually asks can be answered from a single screen.'),
+  )
+
   const [scope, setScope] = useState<string>(CITY_SCOPE)
   const [kindFilter, setKindFilter] = useState<CommitmentKind | ''>('')
   const [standingFilter, setStandingFilter] = useState<CommitmentStanding | ''>('')
@@ -125,7 +131,7 @@ export function WardCommitmentsPage(): React.JSX.Element {
   if (ledgerQuery.isLoading) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('Wards & Localities')} title={t('Ward Commitments Ledger')} breadcrumbs={BREADCRUMBS} />
+        <PageHeader eyebrow={t('Wards & Localities')} breadcrumbs={BREADCRUMBS} />
         <LoadingState variant="metrics" />
         <LoadingState variant="table" rows={8} />
       </PageBody>
@@ -135,7 +141,7 @@ export function WardCommitmentsPage(): React.JSX.Element {
   if (ledgerQuery.error || !ledger) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('Wards & Localities')} title={t('Ward Commitments Ledger')} breadcrumbs={BREADCRUMBS} />
+        <PageHeader eyebrow={t('Wards & Localities')} breadcrumbs={BREADCRUMBS} />
         <ErrorState
           detail={ledgerQuery.error?.message ?? 'The commitment ledger could not be assembled for this principal.'}
           onRetry={() => {
@@ -256,8 +262,6 @@ export function WardCommitmentsPage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('Wards & Localities')}
-        title={t('Ward Commitments Ledger')}
-        description={t('Everything the corporation has committed to a named ward - resolutions the house has carried, capital works sanctioned, decision cases taken and the ward\'s own capital allocation - held as one record with one standing, so the question a corporator actually asks can be answered from a single screen.')}
         breadcrumbs={BREADCRUMBS}
         freshness={freshness}
         controls={
@@ -358,144 +362,153 @@ export function WardCommitmentsPage(): React.JSX.Element {
             {t('The money figures cover resolutions, capital works and decision cases. The ward capital allocation line is deliberately left out of them: it is an aggregate over the very works listed individually beside it, and adding it would count the same rupee twice. It stays in the ledger below because a ward holding a sanctioned allocation against which nothing has been drawn is precisely the position a corporator is entitled to see.')}
           </p>
 
-          <div className="grid items-start gap-4 lg:grid-cols-[1.4fr_1fr]">
-            <Card flush className="flex flex-col">
-              <CardHeader
-                bordered
-                icon={<ClipboardList className="h-4 w-4" />}
-                title={rankMetric === 'unactioned' ? 'Wards by unactioned commitments' : 'Wards by value undelivered'}
-                description={t('Ranked across every ward within your authorised scope, whichever ward is selected above.')}
+          {/* Two columns. The ledger itself — every commitment naming this
+              scope, longest-standing failure first — carries the width. The
+              ward ranking and what became of each commitment read beside it,
+              which is the order a corporator asks the question in. */}
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+            <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
+            <Card flush>
+                <CardHeader
+                  bordered
+                  icon={<Gavel className="h-4 w-4" />}
+                  title={t('Commitment ledger')}
+                description={t('Every commitment naming this scope, longest-standing failure first. Each row states the register it came from and the basis on which its standing was derived.')}
                 actions={
-                  <SegmentedControl<RankMetric>
-                    value={rankMetric}
-                    onChange={setRankMetric}
-                    ariaLabel="Rank wards by"
-                    options={[
-                      { value: 'unactioned', label: t('Unactioned') },
-                      { value: 'outstanding', label: t('Value undelivered') },
-                    ]}
-                  />
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Select
+                      value={kindFilter}
+                      onChange={(e) => setKindFilter(e.target.value as CommitmentKind | '')}
+                      options={[
+                        { value: '', label: t('All registers') },
+                        ...(Object.keys(COMMITMENT_KIND_LABEL) as CommitmentKind[]).map((k) => ({
+                          value: k,
+                          label: COMMITMENT_KIND_LABEL[k],
+                        })),
+                      ]}
+                      className="w-auto"
+                      aria-label={t('Filter by register')}
+                    />
+                    <Select
+                      value={standingFilter}
+                      onChange={(e) => setStandingFilter(e.target.value as CommitmentStanding | '')}
+                      options={[
+                        { value: '', label: t('All standings') },
+                        ...STANDINGS.map((s) => ({ value: s, label: COMMITMENT_STANDING_LABEL[s] })),
+                      ]}
+                      className="w-auto"
+                      aria-label={t('Filter by standing')}
+                    />
+                  </div>
                 }
               />
-              {ranked.length === 0 ? (
+              {filtered.length === 0 ? (
                 <EmptyState
-                  title={rankMetric === 'unactioned' ? 'No ward carries an unactioned commitment' : 'Nothing committed stands undelivered'}
-                  detail="Every commitment naming a ward within your authorised scope has either been delivered or is running within its expected period."
+                  title={t('No commitments match the current filters')}
+                  detail="Clear a filter to widen the ledger."
                 />
               ) : (
-                <div className="px-4 py-4" style={{ height: Math.max(220, ranked.length * 27) }}>
-                  <RankedBarChart
-                    data={ranked.map((w) => ({
-                      label: wardShortName(w.wardId),
-                      value: rankMetric === 'unactioned' ? w.unactioned : w.valueOutstandingCrore,
-                    }))}
-                    unit={rankMetric === 'unactioned' ? '' : ' Cr'}
-                  />
-                </div>
+                <DataTable
+                  rows={filtered}
+                  columns={columns}
+                  rowKey={(c) => c.id}
+                  pageSize={15}
+                  searchable
+                  searchPlaceholder="Search reference, subject or basis"
+                  exportName={`Ward commitments - ${summary.wardLabel}`}
+                  exportFilters={{
+                    Ward: summary.wardLabel,
+                    Register: kindFilter ? COMMITMENT_KIND_LABEL[kindFilter] : 'All registers',
+                    Standing: standingFilter ? COMMITMENT_STANDING_LABEL[standingFilter] : 'All standings',
+                  }}
+                  ariaLabel="Ward commitments ledger"
+                />
               )}
             </Card>
+            </div>
 
-            <Card flush className="flex flex-col">
-              <CardHeader
-                bordered
-                icon={<Scale className="h-4 w-4" />}
-                title={t('What became of them')}
-                description={t('Every commitment on this reading, by standing. {0}.', summary.wardLabel)}
-              />
-              <ul className="divide-y divide-ink-100">
-                {STANDINGS.map((standing) => {
-                  const count =
-                    standing === 'delivered'
-                      ? summary.delivered
-                      : standing === 'in-progress'
-                        ? summary.inProgress
-                        : standing === 'overdue'
-                          ? summary.overdue
-                          : summary.unactioned
-                  const share = summary.made > 0 ? Math.round((count / summary.made) * 100) : 0
-                  return (
-                    <li key={standing} className="flex items-center gap-2.5 px-4 py-2.5">
-                      <Badge tone={STANDING_TONE[standing]} size="sm">
-                        {COMMITMENT_STANDING_LABEL[standing]}
-                      </Badge>
-                      <span className="min-w-0 flex-1 truncate text-[0.6875rem] text-ink-500">
-                        {standing === 'unactioned'
-                          ? 'Nothing has started at all'
+            <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
+              <Card flush className="flex min-w-0 flex-col">
+                <CardHeader
+                  bordered
+                  icon={<ClipboardList className="h-4 w-4" />}
+                  title={rankMetric === 'unactioned' ? 'Wards by unactioned commitments' : 'Wards by value undelivered'}
+                  description={t('Ranked across every ward within your authorised scope, whichever ward is selected above.')}
+                  actions={
+                    <SegmentedControl<RankMetric>
+                      value={rankMetric}
+                      onChange={setRankMetric}
+                      ariaLabel="Rank wards by"
+                      options={[
+                        { value: 'unactioned', label: t('Unactioned') },
+                        { value: 'outstanding', label: t('Value undelivered') },
+                      ]}
+                    />
+                  }
+                />
+                {ranked.length === 0 ? (
+                  <EmptyState
+                    title={rankMetric === 'unactioned' ? 'No ward carries an unactioned commitment' : 'Nothing committed stands undelivered'}
+                    detail="Every commitment naming a ward within your authorised scope has either been delivered or is running within its expected period."
+                  />
+                ) : (
+                  <div className="px-4 py-4" style={{ height: Math.max(220, ranked.length * 27) }}>
+                    <RankedBarChart
+                      data={ranked.map((w) => ({
+                        label: wardShortName(w.wardId),
+                        value: rankMetric === 'unactioned' ? w.unactioned : w.valueOutstandingCrore,
+                      }))}
+                      unit={rankMetric === 'unactioned' ? '' : ' Cr'}
+                    />
+                  </div>
+                )}
+              </Card>
+
+              <Card flush className="flex min-w-0 flex-col">
+                <CardHeader
+                  bordered
+                  icon={<Scale className="h-4 w-4" />}
+                  title={t('What became of them')}
+                  description={t('Every commitment on this reading, by standing. {0}.', summary.wardLabel)}
+                />
+                <ul className="divide-y divide-ink-100">
+                  {STANDINGS.map((standing) => {
+                    const count =
+                      standing === 'delivered'
+                        ? summary.delivered
+                        : standing === 'in-progress'
+                          ? summary.inProgress
                           : standing === 'overdue'
-                            ? 'Started and past its expected date'
-                            : standing === 'in-progress'
-                              ? 'Under way and within its period'
-                              : 'Recorded as done'}
-                      </span>
-                      <span className="numeric text-xs font-semibold text-ink-900">{count}</span>
-                      <span className="numeric w-9 shrink-0 text-right text-[0.6875rem] text-ink-400">{share}%</span>
-                    </li>
-                  )
-                })}
-              </ul>
-              <p className="border-t border-ink-100 px-4 py-3 text-[0.6875rem] leading-relaxed text-ink-500">
-                {t('A resolution carries no commencement signal of its own, so it can only stand as delivered, within its administrative window, or unactioned. Capital works and decision cases carry a start and a due date, and are the only registers here that can be shown as overdue.')}
-              </p>
-            </Card>
-          </div>
+                            ? summary.overdue
+                            : summary.unactioned
+                    const share = summary.made > 0 ? Math.round((count / summary.made) * 100) : 0
+                    return (
+                      <li key={standing} className="flex items-center gap-2.5 px-4 py-2.5">
+                        <Badge tone={STANDING_TONE[standing]} size="sm">
+                          {COMMITMENT_STANDING_LABEL[standing]}
+                        </Badge>
+                        <span className="min-w-0 flex-1 truncate text-[0.6875rem] text-ink-500">
+                          {standing === 'unactioned'
+                            ? 'Nothing has started at all'
+                            : standing === 'overdue'
+                              ? 'Started and past its expected date'
+                              : standing === 'in-progress'
+                                ? 'Under way and within its period'
+                                : 'Recorded as done'}
+                        </span>
+                        <span className="numeric text-xs font-semibold text-ink-900">{count}</span>
+                        <span className="numeric w-9 shrink-0 text-right text-[0.6875rem] text-ink-400">{share}%</span>
+                      </li>
+                    )
+                  })}
+                </ul>
+                <p className="border-t border-ink-100 px-4 py-3 text-[0.6875rem] leading-relaxed text-ink-500">
+                  {t('A resolution carries no commencement signal of its own, so it can only stand as delivered, within its administrative window, or unactioned. Capital works and decision cases carry a start and a due date, and are the only registers here that can be shown as overdue.')}
+                </p>
+              </Card>
 
-          <Card flush>
-            <CardHeader
-              bordered
-              icon={<Gavel className="h-4 w-4" />}
-              title={t('Commitment ledger')}
-              description={t('Every commitment naming this scope, longest-standing failure first. Each row states the register it came from and the basis on which its standing was derived.')}
-              actions={
-                <div className="flex flex-wrap items-center gap-2">
-                  <Select
-                    value={kindFilter}
-                    onChange={(e) => setKindFilter(e.target.value as CommitmentKind | '')}
-                    options={[
-                      { value: '', label: t('All registers') },
-                      ...(Object.keys(COMMITMENT_KIND_LABEL) as CommitmentKind[]).map((k) => ({
-                        value: k,
-                        label: COMMITMENT_KIND_LABEL[k],
-                      })),
-                    ]}
-                    className="w-auto"
-                    aria-label={t('Filter by register')}
-                  />
-                  <Select
-                    value={standingFilter}
-                    onChange={(e) => setStandingFilter(e.target.value as CommitmentStanding | '')}
-                    options={[
-                      { value: '', label: t('All standings') },
-                      ...STANDINGS.map((s) => ({ value: s, label: COMMITMENT_STANDING_LABEL[s] })),
-                    ]}
-                    className="w-auto"
-                    aria-label={t('Filter by standing')}
-                  />
-                </div>
-              }
-            />
-            {filtered.length === 0 ? (
-              <EmptyState
-                title={t('No commitments match the current filters')}
-                detail="Clear a filter to widen the ledger."
-              />
-            ) : (
-              <DataTable
-                rows={filtered}
-                columns={columns}
-                rowKey={(c) => c.id}
-                pageSize={15}
-                searchable
-                searchPlaceholder="Search reference, subject or basis"
-                exportName={`Ward commitments - ${summary.wardLabel}`}
-                exportFilters={{
-                  Ward: summary.wardLabel,
-                  Register: kindFilter ? COMMITMENT_KIND_LABEL[kindFilter] : 'All registers',
-                  Standing: standingFilter ? COMMITMENT_STANDING_LABEL[standingFilter] : 'All standings',
-                }}
-                ariaLabel="Ward commitments ledger"
-              />
-            )}
-          </Card>
+            </div>
+          </div>
         </>
       )}
     </PageBody>

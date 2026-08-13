@@ -5,6 +5,7 @@ import { useServiceAction, useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { financeService, projectService } from '@/services'
 import { useCurrentUser } from '@/stores/auth.store'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { allowed } from '@/security'
 import { ROUTES } from '@/config/navigation'
 import type { OperationalState } from '@/types/common'
@@ -94,6 +95,12 @@ function round1(v: number): number {
 }
 
 export function BudgetIntelligencePage(): React.JSX.Element {
+  // The shell's masthead carries the screen's name; the page states the wording.
+  usePageMasthead(
+    t('Budget Intelligence'),
+    t('Municipal budget utilisation, department and ward variance against the phased plan, and a scenario engine for allocation, collection and contingency stress-testing. All expenditure figures are year-to-date; the financial year is approximately 31% elapsed at this reporting date.'),
+  )
+
   const user = useCurrentUser()
   const [selectedDepartmentId, setSelectedDepartmentId] = useState<string | null>(null)
 
@@ -347,8 +354,6 @@ export function BudgetIntelligencePage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('Governance & Finance')}
-        title={t('Budget Intelligence')}
-        description={t('Municipal budget utilisation, department and ward variance against the phased plan, and a scenario engine for allocation, collection and contingency stress-testing. All expenditure figures are year-to-date; the financial year is approximately 31% elapsed at this reporting date.')}
         breadcrumbs={[{ label: t('Governance & Finance') }, { label: t('Budget Intelligence') }]}
         freshness={FRESHNESS}
         actions={
@@ -392,6 +397,13 @@ export function BudgetIntelligencePage(): React.JSX.Element {
             </MetricGrid>
           </Card>
 
+          {/* Two columns. The registers an officer works down — departments,
+              their heads, the wards behind them, then the works and the
+              scenario run against all of it — hold the wide column; the
+              departments materially off plan and the year's control-stage
+              progression stand beside them as the exception and the trend. */}
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+          <div className="flex min-w-0 flex-col gap-4 xl:order-2 xl:col-span-4">
           {(behindPlan.length > 0 || aheadOfPlan.length > 0) && (
             <Card tone="warn">
               <CardHeader
@@ -399,7 +411,7 @@ export function BudgetIntelligencePage(): React.JSX.Element {
                 title={t('Departments materially off the phased plan')}
                 description={t('Departments whose year-to-date position diverges from the phased plan by more than 25 percentage points, with the institutional consequence stated.')}
               />
-              <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+              <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-1">
                 {behindPlan.map((d) => (
                   <div key={d.departmentId} className="flex items-start gap-2 rounded-md border border-crit-200 bg-crit-50/50 p-2.5">
                     <TrendingDown className="mt-0.5 h-3.5 w-3.5 shrink-0 text-crit-600" />
@@ -422,6 +434,21 @@ export function BudgetIntelligencePage(): React.JSX.Element {
             </Card>
           )}
 
+          <Card>
+            <ChartFrame
+              title={t('Financial position progression')}
+              unit={t('₹ crore')}
+              timeframe="FY 2026–27 - control stages, not a calendar series"
+              description={t('Progression across the financial control stages for the current year: approved, revised, committed, actual to date and the modelled year-end forecast.')}
+              freshness={FRESHNESS}
+              height={260}
+            >
+              <TrendChart points={progressionPoints} unit={t('₹ Cr')} variant="area" seriesLabel="₹ Crore" />
+            </ChartFrame>
+          </Card>
+          </div>
+
+          <div className="flex min-w-0 flex-col gap-4 xl:order-1 xl:col-span-8">
           <Card flush>
             <CardHeader
               bordered
@@ -545,7 +572,6 @@ export function BudgetIntelligencePage(): React.JSX.Element {
             ) : null}
           </Card>
 
-          <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
             <Card flush>
               <CardHeader bordered title={t('Ward variance')} description={t('Capital allocation and spend by ward, from the finance service ward variance view.')} />
               <DataTable
@@ -592,20 +618,6 @@ export function BudgetIntelligencePage(): React.JSX.Element {
                 searchPlaceholder="Search wards"
               />
             </Card>
-
-            <Card>
-              <ChartFrame
-                title={t('Financial position progression')}
-                unit={t('₹ crore')}
-                timeframe="FY 2026–27 - control stages, not a calendar series"
-                description={t('Progression across the financial control stages for the current year: approved, revised, committed, actual to date and the modelled year-end forecast.')}
-                freshness={FRESHNESS}
-                height={260}
-              >
-                <TrendChart points={progressionPoints} unit={t('₹ Cr')} variant="area" seriesLabel="₹ Crore" />
-              </ChartFrame>
-            </Card>
-          </div>
 
           <Card flush>
             <CardHeader
@@ -739,7 +751,7 @@ export function BudgetIntelligencePage(): React.JSX.Element {
                   <p className="mb-2 text-[0.6875rem] leading-relaxed text-ink-400">
                     {t('Departmental figures apply the same scenario formula used city-wide, with the contingency reserve distributed in proportion to each department\'s share of revised allocation. This is an illustrative allocation, not a resource-allocation decision.')}
                   </p>
-                  <div className="scrollbar-slim max-h-64 overflow-y-auto">
+                  <div className="scrollbar-slim max-h-64 overflow-auto">
                     <table className="w-full min-w-[32rem] border-collapse text-left text-xs">
                       <thead className="sticky top-0 bg-surface">
                         <tr className="border-b border-ink-100 text-ink-400">
@@ -783,6 +795,8 @@ export function BudgetIntelligencePage(): React.JSX.Element {
               </div>
             ) : null}
           </Card>
+          </div>
+          </div>
         </>
       ) : null}
 

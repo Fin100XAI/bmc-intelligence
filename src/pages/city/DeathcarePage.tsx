@@ -21,6 +21,7 @@ import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { deathcareService } from '@/services'
 import { useFilterStore } from '@/stores/ui.store'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { wardName, wardShortName } from '@/data/reference'
 import {
   BURIAL_GROUND_COMMUNITY_LABEL,
@@ -69,6 +70,11 @@ const PLANNING_HORIZON_YEARS = 10
 export function DeathcarePage(): React.JSX.Element {
   const filters = useFilterStore((s) => s.filters)
 
+  usePageMasthead(
+    t('Cemeteries & Crematoria'),
+    t('The corporation\'s burial grounds, cemeteries and crematoria - the ground each has left, the years that ground represents at the current rate, and the hours a family waits at the gate.'),
+  )
+
   const facilitiesQuery = useServiceQuery(queryKeys.deathcare('facilities'), (u) => deathcareService.facilities(u))
   const trendQuery = useServiceQuery(queryKeys.deathcare('trend'), (u) => deathcareService.trend(u))
 
@@ -93,7 +99,6 @@ export function DeathcarePage(): React.JSX.Element {
       <PageBody>
         <PageHeader
           eyebrow={t('City Intelligence')}
-          title={t('Cemeteries & Crematoria')}
           breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Cemeteries & Crematoria') }]}
         />
         <LoadingState variant="metrics" />
@@ -106,7 +111,6 @@ export function DeathcarePage(): React.JSX.Element {
       <PageBody>
         <PageHeader
           eyebrow={t('City Intelligence')}
-          title={t('Cemeteries & Crematoria')}
           breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Cemeteries & Crematoria') }]}
         />
         <ErrorState
@@ -278,23 +282,11 @@ export function DeathcarePage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('City Intelligence')}
-        title={t('Cemeteries & Crematoria')}
-        description={t('The corporation\'s burial grounds, cemeteries and crematoria - the ground each has left, the years that ground represents at the current rate, and the hours a family waits at the gate.')}
         breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Cemeteries & Crematoria') }]}
         freshness={freshness}
       />
 
       <DemonstrationNotice />
-
-      <Card tone="info" className="flex items-start gap-3">
-        <Landmark className="mt-0.5 h-4 w-4 shrink-0 text-govt-600" aria-hidden />
-        <div className="min-w-0">
-          <p className="text-[0.8125rem] font-semibold text-govt-800">{t('Land for the dead is finite and cannot be replaced')}</p>
-          <p className="mt-1 text-xs leading-relaxed text-ink-600">
-            {t('Every interment consumes ground that is not returned. A ground that fills does not refill, so a facility reaching capacity is a crisis that arrives without warning and cannot be answered quickly - acquiring land for a burial ground needs a willing seller, a consenting neighbourhood and a community that accepts the site, and the lead time is measured in years. The years-remaining column is therefore a planning instruction, not a statistic. This page holds facilities and capacity only: no interment record, no name and no plot allotment appears anywhere behind it, because the register of the dead belongs to the Registrar and to each ground&apos;s own managing committee.')}
-          </p>
-        </div>
-      </Card>
 
       <FilterBar show={['ward', 'search']} searchPlaceholder="Search burial grounds and crematoria" />
 
@@ -331,61 +323,78 @@ export function DeathcarePage(): React.JSX.Element {
         />
       </MetricGrid>
 
-      <div className="grid gap-4 lg:grid-cols-[1.3fr_1fr]">
-        <Card className="flex flex-col">
-          <p className="label-institutional mb-2">{t('Monthly cremations and burials')}</p>
-          <div style={{ height: 220 }}>
-            <CategoryBarChart
-              data={trend as unknown as Array<Record<string, string | number>>}
-              categoryKey="month"
-              showLegend
-              series={[
-                { key: 'cremations', label: t('Cremations'), colour: CHART_COLOURS.primary },
-                { key: 'burials', label: t('Burials'), colour: CHART_COLOURS.neutral },
-              ]}
+      {/* Two columns. The estate register — ground left, years left, the wait
+          at the gate — carries the width. The standing warning about finite
+          land and the ranking of which sites run out first read beside it. */}
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
+          <Card flush>
+            <CardHeader
+              bordered
+              icon={<Landmark className="h-4 w-4" />}
+              title={t('Burial grounds, cemeteries and crematoria')}
+              description={t('Every facility within your authorised ward scope, with the ground it has left and the wait a family meets at its gate.')}
             />
-          </div>
-          <p className="mt-2 text-[0.6875rem] leading-relaxed text-ink-500">
-            {t('Volumes rise through the pre-monsoon heat and the monsoon months, so a facility that copes comfortably in March can queue in July. Capacity has to be planned against the peak a family arrives in, not against the annual mean.')}
-          </p>
-        </Card>
-
-        <Card flush className="flex flex-col">
-          <CardHeader
-            bordered
-            title={t('Shortest planning horizon')}
-            description={t('Years of use left at the current rate. A replacement site takes years to acquire, so anything here is already a decision due.')}
-          />
-          <div className="px-4 pb-4" style={{ height: Math.max(210, shortestHorizon.length * 26) }}>
-            {shortestHorizon.length === 0 ? (
-              <EmptyState compact title={t('No facilities in scope')} detail="Clear a filter to widen the estate." />
-            ) : (
-              <RankedBarChart
-                data={shortestHorizon.map((f) => ({ label: f.name.slice(0, 22), value: f.estimatedYearsRemaining }))}
-                unit=" yrs"
-                higherIsWorse={false}
+            {filtered.length === 0 ? (
+              <EmptyState
+                title={t('No facilities match the current filters')}
+                detail="Clear a filter to widen the estate."
               />
+            ) : (
+              <DataTable rows={filtered} columns={columns} rowKey={(f) => f.id} pageSize={12} />
             )}
-          </div>
-        </Card>
-      </div>
+          </Card>
 
-      <Card flush>
-        <CardHeader
-          bordered
-          icon={<Landmark className="h-4 w-4" />}
-          title={t('Burial grounds, cemeteries and crematoria')}
-          description={t('Every facility within your authorised ward scope, with the ground it has left and the wait a family meets at its gate.')}
-        />
-        {filtered.length === 0 ? (
-          <EmptyState
-            title={t('No facilities match the current filters')}
-            detail="Clear a filter to widen the estate."
-          />
-        ) : (
-          <DataTable rows={filtered} columns={columns} rowKey={(f) => f.id} pageSize={12} />
-        )}
-      </Card>
+          <Card className="flex min-w-0 flex-col">
+            <p className="label-institutional mb-2">{t('Monthly cremations and burials')}</p>
+            <div style={{ height: 220 }}>
+              <CategoryBarChart
+                data={trend as unknown as Array<Record<string, string | number>>}
+                categoryKey="month"
+                showLegend
+                series={[
+                  { key: 'cremations', label: t('Cremations'), colour: CHART_COLOURS.primary },
+                  { key: 'burials', label: t('Burials'), colour: CHART_COLOURS.neutral },
+                ]}
+              />
+            </div>
+            <p className="mt-2 text-[0.6875rem] leading-relaxed text-ink-500">
+              {t('Volumes rise through the pre-monsoon heat and the monsoon months, so a facility that copes comfortably in March can queue in July. Capacity has to be planned against the peak a family arrives in, not against the annual mean.')}
+            </p>
+          </Card>
+        </div>
+
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
+          <Card tone="info" className="flex items-start gap-3">
+            <Landmark className="mt-0.5 h-4 w-4 shrink-0 text-govt-600" aria-hidden />
+            <div className="min-w-0">
+              <p className="text-[0.8125rem] font-semibold text-govt-800">{t('Land for the dead is finite and cannot be replaced')}</p>
+              <p className="mt-1 text-xs leading-relaxed text-ink-600">
+                {t('Every interment consumes ground that is not returned. A ground that fills does not refill, so a facility reaching capacity is a crisis that arrives without warning and cannot be answered quickly - acquiring land for a burial ground needs a willing seller, a consenting neighbourhood and a community that accepts the site, and the lead time is measured in years. The years-remaining column is therefore a planning instruction, not a statistic. This page holds facilities and capacity only: no interment record, no name and no plot allotment appears anywhere behind it, because the register of the dead belongs to the Registrar and to each ground&apos;s own managing committee.')}
+              </p>
+            </div>
+          </Card>
+
+          <Card flush className="flex min-w-0 flex-col">
+            <CardHeader
+              bordered
+              title={t('Shortest planning horizon')}
+              description={t('Years of use left at the current rate. A replacement site takes years to acquire, so anything here is already a decision due.')}
+            />
+            <div className="px-4 pb-4" style={{ height: Math.max(210, shortestHorizon.length * 26) }}>
+              {shortestHorizon.length === 0 ? (
+                <EmptyState compact title={t('No facilities in scope')} detail="Clear a filter to widen the estate." />
+              ) : (
+                <RankedBarChart
+                  data={shortestHorizon.map((f) => ({ label: f.name.slice(0, 22), value: f.estimatedYearsRemaining }))}
+                  unit=" yrs"
+                  higherIsWorse={false}
+                />
+              )}
+            </div>
+          </Card>
+        </div>
+      </div>
     </PageBody>
   )
 }

@@ -16,6 +16,7 @@ import type { IntelligenceDomain, Paged } from '@/types/common'
 import type { User } from '@/types/organisation'
 import { isoFromAnchor } from '@/utils/deterministic'
 import { ServiceError, assertAccess, deepClone, paginate, recordAudit, scopeToTenant, simulateLatency } from './client'
+import { isApiEnabled, request, type PagedEnvelope } from './http'
 import { emitChange, getCollection, setCollection, type SavedBrief } from './store'
 import { t } from '@/i18n'
 
@@ -92,6 +93,22 @@ function findOversightOrThrow(user: User | null, id: string): HumanOversightReco
 }
 
 async function requests(user: User | null, filters: AIRequestFilters = {}): Promise<Paged<AIRequestRecord>> {
+  // Served from the database when one is configured, so the AI Governance
+  // register shows what officers actually asked the Copilot — on this device
+  // and every other — rather than a generated fixture that observes nothing.
+  if (isApiEnabled()) {
+    return request<PagedEnvelope<AIRequestRecord>>('/api/ai/requests', {
+      query: {
+        useCase: filters.useCase?.join(','),
+        policyStatus: filters.policyStatus?.join(','),
+        reviewStatus: filters.reviewStatus?.join(','),
+        requestedBy: filters.requestedBy,
+        page: filters.page ?? 1,
+        pageSize: filters.pageSize ?? 30,
+      },
+    })
+  }
+
   await simulateLatency(`ai.requests:${JSON.stringify(filters)}`)
   if (!user) throw new ServiceError('forbidden', 'No authenticated principal.')
   const scoped = scopeToTenant(user, getCollection('aiRequests'))

@@ -9,6 +9,7 @@ import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { municipality } from '@/config/municipality.config'
 import { adminService } from '@/services'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { departmentName, officerDisplayName } from '@/data/reference'
 import { formatRelative } from '@/utils/format'
 import { CONNECTOR_TYPE_LABEL, type Connector } from '@/types/governance'
@@ -58,6 +59,12 @@ function provisioningPrerequisite(connector: Connector): string {
 export function ConnectorsPage(): React.JSX.Element {
   const connectorsQuery = useServiceQuery(queryKeys.admin('connectors'), (user) => adminService.connectors(user))
   const [selectedId, setSelectedId] = useState<string | null>(null)
+
+  // The shell renders the masthead; this page states what it should say.
+  usePageMasthead(
+    t('Connectors'),
+    t('The adapter configuration register for every connector this deployment\'s Urban Intelligence Core is capable of provisioning. No connector in this environment is authenticated against, or exchanging data with, a live {0} departmental system.', municipality.shortName),
+  )
 
   if (connectorsQuery.isLoading) return <LoadingState variant="table" />
   if (connectorsQuery.error) {
@@ -145,8 +152,6 @@ export function ConnectorsPage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('Administration')}
-        title={t('Connectors')}
-        description={t('The adapter configuration register for every connector this deployment\'s Urban Intelligence Core is capable of provisioning. No connector in this environment is authenticated against, or exchanging data with, a live {0} departmental system.', municipality.shortName)}
         breadcrumbs={[{ label: t('Administration') }, { label: t('Connectors') }]}
       />
 
@@ -226,7 +231,7 @@ export function ConnectorsPage(): React.JSX.Element {
                   ) : (
                     <AlertTriangle className="mt-px h-3.5 w-3.5 shrink-0 text-govt-600" />
                   )}
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-[0.6875rem] font-semibold text-ink-800">{t('Provisioning prerequisite')}</p>
                     <p className="mt-0.5 text-[0.6875rem] leading-relaxed text-ink-600">
                       {provisioningPrerequisite(selected)}

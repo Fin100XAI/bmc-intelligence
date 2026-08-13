@@ -22,6 +22,7 @@ import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { streetLightService } from '@/services'
 import { useFilterStore } from '@/stores/ui.store'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { wardName, wardShortName } from '@/data/reference'
 import {
   LAMP_TYPE_LABEL,
@@ -59,6 +60,11 @@ const LAMP_COLOUR: Record<LampType, string> = {
 }
 
 export function StreetLightingPage(): React.JSX.Element {
+  usePageMasthead(
+    t('Street Lighting'),
+    t('Feeder circuits, working poles, energy drawn against energy billed, and the faults still open against the time the corporation commits to. The cheapest safety infrastructure the city owns.'),
+  )
+
   const filters = useFilterStore((s) => s.filters)
 
   const circuitsQuery = useServiceQuery(queryKeys.streetLighting('circuits'), (u) => streetLightService.circuits(u))
@@ -83,7 +89,7 @@ export function StreetLightingPage(): React.JSX.Element {
   if (circuitsQuery.isLoading || faultsQuery.isLoading) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('City Intelligence')} title={t('Street Lighting')} breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Street Lighting') }]} />
+        <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Street Lighting') }]} />
         <LoadingState variant="metrics" />
         <LoadingState variant="table" rows={8} />
       </PageBody>
@@ -92,7 +98,7 @@ export function StreetLightingPage(): React.JSX.Element {
   if (circuitsQuery.error || faultsQuery.error) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('City Intelligence')} title={t('Street Lighting')} breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Street Lighting') }]} />
+        <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Street Lighting') }]} />
         <ErrorState
           detail={(circuitsQuery.error ?? faultsQuery.error)?.message}
           onRetry={() => { void circuitsQuery.refetch(); void faultsQuery.refetch() }}
@@ -216,8 +222,6 @@ export function StreetLightingPage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('City Intelligence')}
-        title={t('Street Lighting')}
-        description={t('Feeder circuits, working poles, energy drawn against energy billed, and the faults still open against the time the corporation commits to. The cheapest safety infrastructure the city owns.')}
         breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Street Lighting') }]}
         freshness={freshness}
       />
@@ -259,69 +263,77 @@ export function StreetLightingPage(): React.JSX.Element {
         />
       </MetricGrid>
 
-      <div className="grid gap-4 lg:grid-cols-[1fr_1.4fr]">
-        <Card className="flex flex-col">
-          <p className="label-institutional mb-2">{t('Poles by lamp type')}</p>
-          <div style={{ height: 200 }}>
-            <DonutChart
-              data={byLamp.map((l) => ({ label: LAMP_TYPE_LABEL[l.type], value: l.poles, colour: LAMP_COLOUR[l.type] }))}
-              centreValue={`${ledPct}%`}
-              centreLabel="LED"
-            />
-          </div>
-          <div className="mt-3 rounded-lg bg-surface-sunken p-3">
-            <p className="text-[0.6875rem] font-semibold text-ink-700">
-              {t('Indicative saving from completing conversion: ₹{0} Cr a year', indicativeAnnualSaving)}
-            </p>
-            <p className="mt-1 text-[0.625rem] leading-relaxed text-ink-500">
-              {t('Counts the energy difference only, at roughly a third of the draw of the fitting replaced. Nothing is claimed here for lamp life, maintenance or failure rates - all real, none quantifiable without the corporation&apos;s own contract terms.')}
-            </p>
-          </div>
+      {/* Two columns. What is broken now and what the corporation owns read
+          down the wide column in that order; the lamp mix that governs the
+          energy bill and the burning-hours ranking stand beside them. */}
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
+        <Card flush>
+            <CardHeader
+              bordered
+              icon={<TriangleAlert className="h-4 w-4" />}
+            title={t('Open faults')}
+            description={t('Reported and assigned faults, measured against the restoration time the corporation commits to for each severity.')}
+          />
+          {openFaults.length === 0 ? (
+            <EmptyState title={t('No open lighting faults')} detail="Every reported fault within your ward scope has been rectified." />
+          ) : (
+            <DataTable rows={openFaults} columns={faultColumns} rowKey={(r) => r.id} pageSize={10} />
+          )}
         </Card>
 
-        <Card flush className="flex flex-col">
+        <Card flush>
           <CardHeader
             bordered
-            title={t('Circuits by burning-hours compliance')}
-            description={t('Hours a circuit was actually lit against the hours it should have been. A circuit dark at 21:00 is a safety matter, not a billing one.')}
+            icon={<Lightbulb className="h-4 w-4" />}
+            title={t('Circuit register')}
+            description={t('Every feeder circuit within your authorised ward scope.')}
           />
-          <div className="px-4 pb-4" style={{ height: Math.max(210, worstCompliance.length * 26) }}>
-            <RankedBarChart
-              data={worstCompliance.map((c) => ({ label: c.location.slice(0, 22), value: c.burningHoursCompliancePct }))}
-              unit="%"
-              higherIsWorse={false}
-            />
-          </div>
+          {filtered.length === 0 ? (
+            <EmptyState title={t('No circuits match the current filters')} detail="Clear a filter to widen the register." />
+          ) : (
+            <DataTable rows={filtered} columns={circuitColumns} rowKey={(r) => r.id} pageSize={15} />
+          )}
         </Card>
+        </div>
+
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
+          <Card flush className="flex flex-col">
+            <CardHeader
+              bordered
+              title={t('Circuits by burning-hours compliance')}
+              description={t('Hours a circuit was actually lit against the hours it should have been. A circuit dark at 21:00 is a safety matter, not a billing one.')}
+            />
+            <div className="px-4 pb-4" style={{ height: Math.max(210, worstCompliance.length * 26) }}>
+              <RankedBarChart
+                data={worstCompliance.map((c) => ({ label: c.location.slice(0, 22), value: c.burningHoursCompliancePct }))}
+                unit="%"
+                higherIsWorse={false}
+              />
+            </div>
+          </Card>
+
+
+          <Card className="flex flex-col">
+            <p className="label-institutional mb-2">{t('Poles by lamp type')}</p>
+            <div style={{ height: 200 }}>
+              <DonutChart
+                data={byLamp.map((l) => ({ label: LAMP_TYPE_LABEL[l.type], value: l.poles, colour: LAMP_COLOUR[l.type] }))}
+                centreValue={`${ledPct}%`}
+                centreLabel="LED"
+              />
+            </div>
+            <div className="mt-3 rounded-lg bg-surface-sunken p-3">
+              <p className="text-[0.6875rem] font-semibold text-ink-700">
+                {t('Indicative saving from completing conversion: ₹{0} Cr a year', indicativeAnnualSaving)}
+              </p>
+              <p className="mt-1 text-[0.625rem] leading-relaxed text-ink-500">
+                {t('Counts the energy difference only, at roughly a third of the draw of the fitting replaced. Nothing is claimed here for lamp life, maintenance or failure rates - all real, none quantifiable without the corporation&apos;s own contract terms.')}
+              </p>
+            </div>
+          </Card>
+        </div>
       </div>
-
-      <Card flush>
-        <CardHeader
-          bordered
-          icon={<TriangleAlert className="h-4 w-4" />}
-          title={t('Open faults')}
-          description={t('Reported and assigned faults, measured against the restoration time the corporation commits to for each severity.')}
-        />
-        {openFaults.length === 0 ? (
-          <EmptyState title={t('No open lighting faults')} detail="Every reported fault within your ward scope has been rectified." />
-        ) : (
-          <DataTable rows={openFaults} columns={faultColumns} rowKey={(r) => r.id} pageSize={10} />
-        )}
-      </Card>
-
-      <Card flush>
-        <CardHeader
-          bordered
-          icon={<Lightbulb className="h-4 w-4" />}
-          title={t('Circuit register')}
-          description={t('Every feeder circuit within your authorised ward scope.')}
-        />
-        {filtered.length === 0 ? (
-          <EmptyState title={t('No circuits match the current filters')} detail="Clear a filter to widen the register." />
-        ) : (
-          <DataTable rows={filtered} columns={circuitColumns} rowKey={(r) => r.id} pageSize={15} />
-        )}
-      </Card>
     </PageBody>
   )
 }

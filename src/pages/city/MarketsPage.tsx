@@ -21,6 +21,7 @@ import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { marketsService } from '@/services'
 import { useFilterStore } from '@/stores/ui.store'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { wardName, wardShortName } from '@/data/reference'
 import {
   MARKET_INSPECTION_INTERVAL_DAYS,
@@ -72,6 +73,11 @@ function daysSinceInspection(iso: string): number {
 export function MarketsPage(): React.JSX.Element {
   const filters = useFilterStore((s) => s.filters)
 
+  usePageMasthead(
+    t('Markets & Slaughterhouses'),
+    t('The corporation\'s market estate and the trades it regulates inside it - stall occupancy, hygiene at the last inspection, the interval since anybody last looked, and whether trade effluent is leaving the premises lawfully.'),
+  )
+
   const facilitiesQuery = useServiceQuery(queryKeys.markets('facilities'), (u) => marketsService.facilities(u))
   const trendQuery = useServiceQuery(queryKeys.markets('trend'), (u) => marketsService.trend(u))
 
@@ -102,7 +108,6 @@ export function MarketsPage(): React.JSX.Element {
       <PageBody>
         <PageHeader
           eyebrow={t('City Intelligence')}
-          title={t('Markets & Slaughterhouses')}
           breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Markets & Slaughterhouses') }]}
         />
         <LoadingState variant="metrics" />
@@ -115,7 +120,6 @@ export function MarketsPage(): React.JSX.Element {
       <PageBody>
         <PageHeader
           eyebrow={t('City Intelligence')}
-          title={t('Markets & Slaughterhouses')}
           breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Markets & Slaughterhouses') }]}
         />
         <ErrorState
@@ -285,23 +289,11 @@ export function MarketsPage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('City Intelligence')}
-        title={t('Markets & Slaughterhouses')}
-        description={t('The corporation\'s market estate and the trades it regulates inside it - stall occupancy, hygiene at the last inspection, the interval since anybody last looked, and whether trade effluent is leaving the premises lawfully.')}
         breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Markets & Slaughterhouses') }]}
         freshness={freshness}
       />
 
       <DemonstrationNotice />
-
-      <Card tone="info" className="flex items-start gap-3">
-        <Beef className="mt-0.5 h-4 w-4 shrink-0 text-govt-600" aria-hidden />
-        <div className="min-w-0">
-          <p className="text-[0.8125rem] font-semibold text-govt-800">{t('A food-safety function before a revenue one')}</p>
-          <p className="mt-1 text-xs leading-relaxed text-ink-600">
-            {t('The Twelfth Schedule assigns the corporation regulation of slaughter houses and tanneries, not merely the letting of stalls. An uninspected slaughter house is a public-health exposure inside the city&apos;s meat supply whether or not its licence fee has been paid, which is why the interval since the last inspection leads this page and the rent roll does not. The interval - not the inspection count - is the control that matters: a rising monthly total achieved by revisiting the same compliant markets leaves exactly the same premises unvisited as no inspections at all. Effluent compliance is where a slaughter house or a tannery becomes an environmental matter as well as a hygiene one, since untreated trade effluent reaches a nullah and from there a creek.')}
-          </p>
-        </div>
-      </Card>
 
       <FilterBar show={['ward', 'search']} searchPlaceholder="Search markets, abattoirs and tanneries" />
 
@@ -341,75 +333,92 @@ export function MarketsPage(): React.JSX.Element {
         />
       </MetricGrid>
 
-      {effluentBreaches.length > 0 ? (
-        <Card tone="warn" className="flex items-start gap-3">
-          <Droplets className="mt-0.5 h-4 w-4 shrink-0 text-warn-600" aria-hidden />
-          <div className="min-w-0">
-            <p className="text-[0.8125rem] font-semibold text-warn-700">
-              {t('{0} facilities discharging outside consent conditions', formatNumber(effluentBreaches.length))}
-            </p>
-            <p className="mt-1 text-xs leading-relaxed text-ink-600">
-              {t('Trade effluent from a slaughter house, a tannery or a fish market is high-load organic and chemical waste. Where it is not treated to consent conditions it enters the storm water network, and the same premises reappear in the environment department&apos;s water-quality record downstream. These are hygiene findings and environmental findings at once, and closing them needs both departments in the room.')}
-            </p>
-          </div>
-        </Card>
-      ) : null}
-
-      <div className="grid gap-4 lg:grid-cols-[1.3fr_1fr]">
-        <Card className="flex flex-col">
-          <p className="label-institutional mb-2">{t('Monthly inspections, violations found and licences issued')}</p>
-          <div style={{ height: 220 }}>
-            <CategoryBarChart
-              data={trend as unknown as Array<Record<string, string | number>>}
-              categoryKey="month"
-              showLegend
-              series={[
-                { key: 'inspections', label: t('Inspections'), colour: CHART_COLOURS.primary },
-                { key: 'violationsFound', label: t('Violations found'), colour: CHART_COLOURS.warn },
-                { key: 'licencesIssued', label: t('Licences issued'), colour: CHART_COLOURS.intel },
-              ]}
+      {/* Two columns. The estate register and the enforcement series carry the
+          width; the function's own reading, the discharge exceptions and the
+          worst hygiene findings are read down the column beside them. */}
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
+          <Card flush>
+            <CardHeader
+              bordered
+              icon={<Store className="h-4 w-4" />}
+              title={t('Market estate and regulated trades')}
+              description={t('Retail markets, wholesale yards, fish markets, slaughter houses and tanneries within your authorised ward scope. Premises only - no trader, licence holder or tenancy is held.')}
             />
-          </div>
-          <p className="mt-2 text-[0.6875rem] leading-relaxed text-ink-500">
-            {t('Read the two enforcement series against each other rather than separately. Inspections rising while violations found stay flat usually means the inspections are going where they are easiest, not where they are needed - which is the failure mode the overdue count above is there to catch.')}
-          </p>
-        </Card>
-
-        <Card flush className="flex flex-col">
-          <CardHeader
-            bordered
-            title={t('Lowest hygiene score')}
-            description={t('Where the last inspection found the worst conditions. These are the premises a re-inspection should reach first.')}
-          />
-          <div className="px-4 pb-4" style={{ height: Math.max(210, lowestHygiene.length * 26) }}>
-            {lowestHygiene.length === 0 ? (
-              <EmptyState compact title={t('No facilities in scope')} detail="Clear a filter to widen the register." />
-            ) : (
-              <RankedBarChart
-                data={lowestHygiene.map((m) => ({ label: m.name.slice(0, 22), value: m.hygieneScore }))}
-                higherIsWorse={false}
+            {filtered.length === 0 ? (
+              <EmptyState
+                title={t('No facilities match the current filters')}
+                detail="Clear a filter to widen the register."
               />
+            ) : (
+              <DataTable rows={filtered} columns={columns} rowKey={(r) => r.id} pageSize={12} />
             )}
-          </div>
-        </Card>
-      </div>
+          </Card>
 
-      <Card flush>
-        <CardHeader
-          bordered
-          icon={<Store className="h-4 w-4" />}
-          title={t('Market estate and regulated trades')}
-          description={t('Retail markets, wholesale yards, fish markets, slaughter houses and tanneries within your authorised ward scope. Premises only - no trader, licence holder or tenancy is held.')}
-        />
-        {filtered.length === 0 ? (
-          <EmptyState
-            title={t('No facilities match the current filters')}
-            detail="Clear a filter to widen the register."
-          />
-        ) : (
-          <DataTable rows={filtered} columns={columns} rowKey={(r) => r.id} pageSize={12} />
-        )}
-      </Card>
+          <Card className="flex min-w-0 flex-col">
+            <p className="label-institutional mb-2">{t('Monthly inspections, violations found and licences issued')}</p>
+            <div style={{ height: 220 }}>
+              <CategoryBarChart
+                data={trend as unknown as Array<Record<string, string | number>>}
+                categoryKey="month"
+                showLegend
+                series={[
+                  { key: 'inspections', label: t('Inspections'), colour: CHART_COLOURS.primary },
+                  { key: 'violationsFound', label: t('Violations found'), colour: CHART_COLOURS.warn },
+                  { key: 'licencesIssued', label: t('Licences issued'), colour: CHART_COLOURS.intel },
+                ]}
+              />
+            </div>
+            <p className="mt-2 text-[0.6875rem] leading-relaxed text-ink-500">
+              {t('Read the two enforcement series against each other rather than separately. Inspections rising while violations found stay flat usually means the inspections are going where they are easiest, not where they are needed - which is the failure mode the overdue count above is there to catch.')}
+            </p>
+          </Card>
+        </div>
+
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
+          <Card tone="info" className="flex items-start gap-3">
+            <Beef className="mt-0.5 h-4 w-4 shrink-0 text-govt-600" aria-hidden />
+            <div className="min-w-0">
+              <p className="text-[0.8125rem] font-semibold text-govt-800">{t('A food-safety function before a revenue one')}</p>
+              <p className="mt-1 text-xs leading-relaxed text-ink-600">
+                {t('The Twelfth Schedule assigns the corporation regulation of slaughter houses and tanneries, not merely the letting of stalls. An uninspected slaughter house is a public-health exposure inside the city&apos;s meat supply whether or not its licence fee has been paid, which is why the interval since the last inspection leads this page and the rent roll does not. The interval - not the inspection count - is the control that matters: a rising monthly total achieved by revisiting the same compliant markets leaves exactly the same premises unvisited as no inspections at all. Effluent compliance is where a slaughter house or a tannery becomes an environmental matter as well as a hygiene one, since untreated trade effluent reaches a nullah and from there a creek.')}
+              </p>
+            </div>
+          </Card>
+
+          {effluentBreaches.length > 0 ? (
+            <Card tone="warn" className="flex items-start gap-3">
+              <Droplets className="mt-0.5 h-4 w-4 shrink-0 text-warn-600" aria-hidden />
+              <div className="min-w-0">
+                <p className="text-[0.8125rem] font-semibold text-warn-700">
+                  {t('{0} facilities discharging outside consent conditions', formatNumber(effluentBreaches.length))}
+                </p>
+                <p className="mt-1 text-xs leading-relaxed text-ink-600">
+                  {t('Trade effluent from a slaughter house, a tannery or a fish market is high-load organic and chemical waste. Where it is not treated to consent conditions it enters the storm water network, and the same premises reappear in the environment department&apos;s water-quality record downstream. These are hygiene findings and environmental findings at once, and closing them needs both departments in the room.')}
+                </p>
+              </div>
+            </Card>
+          ) : null}
+
+          <Card flush className="flex min-w-0 flex-col">
+            <CardHeader
+              bordered
+              title={t('Lowest hygiene score')}
+              description={t('Where the last inspection found the worst conditions. These are the premises a re-inspection should reach first.')}
+            />
+            <div className="px-4 pb-4" style={{ height: Math.max(210, lowestHygiene.length * 26) }}>
+              {lowestHygiene.length === 0 ? (
+                <EmptyState compact title={t('No facilities in scope')} detail="Clear a filter to widen the register." />
+              ) : (
+                <RankedBarChart
+                  data={lowestHygiene.map((m) => ({ label: m.name.slice(0, 22), value: m.hygieneScore }))}
+                  higherIsWorse={false}
+                />
+              )}
+            </div>
+          </Card>
+        </div>
+      </div>
     </PageBody>
   )
 }

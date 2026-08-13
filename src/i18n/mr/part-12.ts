@@ -59,8 +59,6 @@ export const MR_PART_12: Record<string, string> = {
   'Mean physical progress vs phased plan': 'सरासरी प्रत्यक्ष प्रगती वि. टप्प्याटप्प्याचा आराखडा',
   'Mean pre-monsoon desilting completion': 'सरासरी पावसाळापूर्व गाळ काढणी पूर्तता',
   'Mean quality (enabled)': 'सरासरी गुणवत्ता (सुरू)',
-  'Mean readiness {0}/100 · {1} chronic waterlogging location(s)':
-    'सरासरी सज्जता {0}/100 · {1} नेहमी पाणी साचणारी ठिकाणे',
   'Mean stage quality': 'सरासरी टप्पा गुणवत्ता',
   'Mean utilisation across treatment and trunk nodes located in the ward.':
     'प्रभागातील प्रक्रिया व मुख्य वाहिनी केंद्रांचा सरासरी वापर.',
@@ -82,8 +80,6 @@ export const MR_PART_12: Record<string, string> = {
   'Minimisation measures applied': 'लागू केलेले किमानीकरण उपाय',
   'Minor Nallah': 'लहान नाला',
   'missed point(s) this cycle.': 'या फेरीत चुकलेले थांबे.',
-  'MLD against': 'MLD, याच्या तुलनेत',
-  'MLD demand ·': 'MLD मागणी ·',
   'mm avg': 'मिमी सरासरी',
   'Model evaluation': 'प्रारूप मूल्यमापन',
   'Model involved': 'संबंधित प्रारूप',
@@ -321,7 +317,6 @@ export const MR_PART_12: Record<string, string> = {
   'No open incidents': 'प्रलंबित घटना नाहीत',
   'No open intelligence': 'प्रलंबित बुद्धिमत्ता नाही',
   'No open lighting faults': 'प्रलंबित पथदिवा बिघाड नाहीत',
-  'No open risks': 'प्रलंबित जोखमी नाहीत',
   'No open spaces match the current filters': 'सध्याच्या गाळण्यांशी जुळणाऱ्या मोकळ्या जागा नाहीत',
   'No outstanding workstream matches the current filters':
     'सध्याच्या गाळण्यांशी जुळणारा प्रलंबित कार्यप्रवाह नाही',

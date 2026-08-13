@@ -24,6 +24,7 @@ import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { healthService } from '@/services/health.service'
 import { useFilterStore } from '@/stores/ui.store'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { wardName } from '@/data/reference'
 import type { AirQualityStation, NoiseReading } from '@/types/city-domains'
 import type { DataFreshness, Trend } from '@/types/common'
@@ -88,13 +89,18 @@ export function EnvironmentIntelligencePage(): React.JSX.Element {
   const filters = useFilterStore((s) => s.filters)
   const [zoneFilter, setZoneFilter] = useState<'all' | NoiseReading['zoneType']>('all')
 
+  usePageMasthead(
+    t('Environment Intelligence'),
+    t('Air quality and ambient noise across every ward, read against the standards each zone type is held to.'),
+  )
+
   const aqiQuery = useServiceQuery(queryKeys.health('air-quality'), (u) => healthService.airQuality(u))
   const noiseQuery = useServiceQuery(queryKeys.health('noise'), (u) => healthService.noise(u))
 
   if (aqiQuery.isLoading || noiseQuery.isLoading) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('City Intelligence')} title={t('Environment Intelligence')} breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Environment Intelligence') }]} />
+        <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Environment Intelligence') }]} />
         <LoadingState variant="metrics" />
         <LoadingState variant="table" rows={8} />
       </PageBody>
@@ -103,7 +109,7 @@ export function EnvironmentIntelligencePage(): React.JSX.Element {
   if (aqiQuery.error || noiseQuery.error) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('City Intelligence')} title={t('Environment Intelligence')} breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Environment Intelligence') }]} />
+        <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Environment Intelligence') }]} />
         <ErrorState detail={(aqiQuery.error ?? noiseQuery.error)?.message} onRetry={() => { void aqiQuery.refetch(); void noiseQuery.refetch() }} />
       </PageBody>
     )
@@ -220,21 +226,9 @@ export function EnvironmentIntelligencePage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('City Intelligence')}
-        title={t('Environment Intelligence')}
-        description={t('Air quality and ambient noise across every ward, read against the standards each zone type is held to.')}
         breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Environment Intelligence') }]}
         freshness={freshness}
       />
-
-      <Card tone="info" className="flex items-start gap-3">
-        <CloudDrizzle className="mt-0.5 h-4 w-4 shrink-0 text-govt-600" aria-hidden />
-        <div className="min-w-0">
-          <p className="text-[0.8125rem] font-semibold text-govt-800">{t('Current readings are seasonal, not structural')}</p>
-          <p className="mt-1 text-xs leading-relaxed text-ink-600">
-            {t('These figures are drawn during the monsoon season, when rainfall washout materially suppresses particulate levels city-wide. The current AQI position should be read as a seasonal snapshot rather than the city&apos;s structural, year-round air-quality position - the same monitoring network typically reads materially higher in the dry winter months.')}
-          </p>
-        </div>
-      </Card>
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1fr_20rem]">
         <MetricGrid columns={4}>
@@ -263,92 +257,111 @@ export function EnvironmentIntelligencePage(): React.JSX.Element {
         </Card>
       </div>
 
-      <Card flush>
-        <CardHeader className="px-4 pt-4 pb-3" title={t('Monitoring station register')} description={t('Sortable; filter by ward using the controls below.')} />
-        <div className="px-4 pb-3">
-          <FilterBar show={['ward', 'search']} searchPlaceholder="Search station or ward" compact />
-        </div>
-        {filteredStations.length === 0 ? (
-          <EmptyState className="m-4" title={t('No stations match the current filters')} detail="Adjust the ward or search term above." />
-        ) : (
-          <DataTable rows={filteredStations} columns={aqiColumns} rowKey={(r) => r.id} pageSize={12} searchable={false} initialSort={{ columnId: 'aqi', direction: 'desc' }} ariaLabel="Air quality monitoring stations" />
-        )}
-      </Card>
+      {/* Two columns. The two registers an officer works from — stations and
+          noise readings — carry the width and are read one under the other.
+          The seasonal caveat, the ward map and the two distributions qualify
+          them from the column beside. */}
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
+          <Card flush>
+            <CardHeader className="px-4 pt-4 pb-3" title={t('Monitoring station register')} description={t('Sortable; filter by ward using the controls below.')} />
+            <div className="px-4 pb-3">
+              <FilterBar show={['ward', 'search']} searchPlaceholder="Search station or ward" compact />
+            </div>
+            {filteredStations.length === 0 ? (
+              <EmptyState className="m-4" title={t('No stations match the current filters')} detail="Adjust the ward or search term above." />
+            ) : (
+              <DataTable rows={filteredStations} columns={aqiColumns} rowKey={(r) => r.id} pageSize={12} searchable={false} initialSort={{ columnId: 'aqi', direction: 'desc' }} ariaLabel="Air quality monitoring stations" />
+            )}
+          </Card>
 
-      <Card>
-        <CardHeader title={t('AQI by ward')} description={t('Ward shading reflects the reading from the station within that ward.')} />
-        <div className="mt-3">
-          <CityMap
-            layers={[
-              {
-                id: 'aqi',
-                label: t('Air Quality Index'),
-                valueFor: (wardId) => {
-                  const s = stations.find((st) => st.wardId === wardId)
-                  if (!s) return undefined
-                  return Math.min(100, Math.round((s.aqi / 200) * 100))
-                },
-                higherIsWorse: true,
-                unit: ' AQI (scaled; 200 = 100)',
-                description: t('Reporting station AQI for the ward, scaled 0–100 against the moderate-category upper bound for visual contrast.'),
-              },
-            ]}
-            height={380}
-          />
+          <Card flush>
+            <CardHeader className="px-4 pt-4 pb-3" icon={<Volume2 className="h-4 w-4" />} title={t('Noise readings by zone type')} description={t('Measured against day and night limits for silence, residential, commercial and industrial zones.')} />
+            <div className="flex flex-wrap items-center gap-2 px-4 pb-3">
+              <FilterBar show={['ward', 'search']} searchPlaceholder="Search location or ward" compact />
+              <div className="flex items-center gap-1.5">
+                <Label className="mb-0 whitespace-nowrap">{t('Zone type')}</Label>
+                <Select
+                  value={zoneFilter}
+                  onChange={(e) => setZoneFilter(e.target.value as 'all' | NoiseReading['zoneType'])}
+                  className="w-auto min-w-[9.5rem]"
+                  options={[{ value: 'all', label: t('All zone types') }, ...ZONE_TYPES.map((z) => ({ value: z, label: ZONE_LABEL[z] }))]}
+                  aria-label={t('Filter by zone type')}
+                />
+              </div>
+            </div>
+            <MetricGrid columns={4} className="px-4 pb-3">
+              {noiseByZone.map((z) => (
+                <MetricCard key={z.label} label={z.label} value={`${formatNumber((z.exceeding / Math.max(1, z.total)) * 100, 0)}%`} support={t('{0} of {1} readings exceed limit', z.exceeding, z.total)} tone={z.exceeding > 0 ? 'warn' : 'default'} size="sm" />
+              ))}
+            </MetricGrid>
+            {filteredNoise.length === 0 ? (
+              <EmptyState className="m-4" title={t('No readings match the current filters')} detail="Adjust the zone type, ward or search term above." />
+            ) : (
+              <DataTable rows={filteredNoise} columns={noiseColumns} rowKey={(r) => r.id} pageSize={12} searchable={false} initialSort={{ columnId: 'exceedance', direction: 'desc' }} ariaLabel="Noise readings" />
+            )}
+          </Card>
         </div>
-      </Card>
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <Card>
-          <ChartFrame title={t('AQI distribution')} unit={t('Number of stations')} timeframe="Current reporting period" description={t('Stations grouped by air-quality category.')}>
-            <CategoryBarChart
-              data={categoryCounts.map((c) => ({ label: AQI_CATEGORY_LABEL[c.category], count: c.count }))}
-              series={[{ key: 'count', label: t('Stations'), colour: CHART_COLOURS.primary }]}
-              categoryKey="label"
-            />
-          </ChartFrame>
-        </Card>
-        <Card>
-          <ChartFrame title={t('Noise exceedance by zone type')} unit={t('Number of readings')} timeframe="Current reporting period" footnote={t('{0} of {1} readings city-wide currently exceed their day or night limit.', totalExceeding, noise.length)}>
-            <CategoryBarChart
-              data={noiseByZone}
-              series={[
-                { key: 'compliant', label: t('Within limits'), colour: CHART_COLOURS.positive, stackId: 'zone' },
-                { key: 'exceeding', label: t('Exceeding limits'), colour: CHART_COLOURS.critical, stackId: 'zone' },
-              ]}
-              categoryKey="label"
-              showLegend
-            />
-          </ChartFrame>
-        </Card>
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
+          <Card tone="info" className="flex items-start gap-3">
+            <CloudDrizzle className="mt-0.5 h-4 w-4 shrink-0 text-govt-600" aria-hidden />
+            <div className="min-w-0">
+              <p className="text-[0.8125rem] font-semibold text-govt-800">{t('Current readings are seasonal, not structural')}</p>
+              <p className="mt-1 text-xs leading-relaxed text-ink-600">
+                {t('These figures are drawn during the monsoon season, when rainfall washout materially suppresses particulate levels city-wide. The current AQI position should be read as a seasonal snapshot rather than the city&apos;s structural, year-round air-quality position - the same monitoring network typically reads materially higher in the dry winter months.')}
+              </p>
+            </div>
+          </Card>
+
+          <Card>
+            <CardHeader title={t('AQI by ward')} description={t('Ward shading reflects the reading from the station within that ward.')} />
+            <div className="mt-3">
+              <CityMap
+                layers={[
+                  {
+                    id: 'aqi',
+                    label: t('Air Quality Index'),
+                    valueFor: (wardId) => {
+                      const s = stations.find((st) => st.wardId === wardId)
+                      if (!s) return undefined
+                      return Math.min(100, Math.round((s.aqi / 200) * 100))
+                    },
+                    higherIsWorse: true,
+                    unit: ' AQI (scaled; 200 = 100)',
+                    description: t('Reporting station AQI for the ward, scaled 0–100 against the moderate-category upper bound for visual contrast.'),
+                  },
+                ]}
+                height={380}
+              />
+            </div>
+          </Card>
+
+          <Card>
+            <ChartFrame title={t('AQI distribution')} unit={t('Number of stations')} timeframe="Current reporting period" description={t('Stations grouped by air-quality category.')}>
+              <CategoryBarChart
+                data={categoryCounts.map((c) => ({ label: AQI_CATEGORY_LABEL[c.category], count: c.count }))}
+                series={[{ key: 'count', label: t('Stations'), colour: CHART_COLOURS.primary }]}
+                categoryKey="label"
+              />
+            </ChartFrame>
+          </Card>
+
+          <Card>
+            <ChartFrame title={t('Noise exceedance by zone type')} unit={t('Number of readings')} timeframe="Current reporting period" footnote={t('{0} of {1} readings city-wide currently exceed their day or night limit.', totalExceeding, noise.length)}>
+              <CategoryBarChart
+                data={noiseByZone}
+                series={[
+                  { key: 'compliant', label: t('Within limits'), colour: CHART_COLOURS.positive, stackId: 'zone' },
+                  { key: 'exceeding', label: t('Exceeding limits'), colour: CHART_COLOURS.critical, stackId: 'zone' },
+                ]}
+                categoryKey="label"
+                showLegend
+              />
+            </ChartFrame>
+          </Card>
+        </div>
       </div>
-
-      <Card flush>
-        <CardHeader className="px-4 pt-4 pb-3" icon={<Volume2 className="h-4 w-4" />} title={t('Noise readings by zone type')} description={t('Measured against day and night limits for silence, residential, commercial and industrial zones.')} />
-        <div className="flex flex-wrap items-center gap-2 px-4 pb-3">
-          <FilterBar show={['ward', 'search']} searchPlaceholder="Search location or ward" compact />
-          <div className="flex items-center gap-1.5">
-            <Label className="mb-0 whitespace-nowrap">{t('Zone type')}</Label>
-            <Select
-              value={zoneFilter}
-              onChange={(e) => setZoneFilter(e.target.value as 'all' | NoiseReading['zoneType'])}
-              className="w-auto min-w-[9.5rem]"
-              options={[{ value: 'all', label: t('All zone types') }, ...ZONE_TYPES.map((z) => ({ value: z, label: ZONE_LABEL[z] }))]}
-              aria-label={t('Filter by zone type')}
-            />
-          </div>
-        </div>
-        <MetricGrid columns={4} className="px-4 pb-3">
-          {noiseByZone.map((z) => (
-            <MetricCard key={z.label} label={z.label} value={`${formatNumber((z.exceeding / Math.max(1, z.total)) * 100, 0)}%`} support={t('{0} of {1} readings exceed limit', z.exceeding, z.total)} tone={z.exceeding > 0 ? 'warn' : 'default'} size="sm" />
-          ))}
-        </MetricGrid>
-        {filteredNoise.length === 0 ? (
-          <EmptyState className="m-4" title={t('No readings match the current filters')} detail="Adjust the zone type, ward or search term above." />
-        ) : (
-          <DataTable rows={filteredNoise} columns={noiseColumns} rowKey={(r) => r.id} pageSize={12} searchable={false} initialSort={{ columnId: 'exceedance', direction: 'desc' }} ariaLabel="Noise readings" />
-        )}
-      </Card>
 
       <DemonstrationNotice />
     </PageBody>

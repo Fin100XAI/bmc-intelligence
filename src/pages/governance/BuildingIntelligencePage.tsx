@@ -5,6 +5,7 @@ import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { buildingService } from '@/services'
 import { useDrawerStore } from '@/stores/ui.store'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { ROUTES } from '@/config/navigation'
 import type { BuildingProposal, BuildingRecord } from '@/types/city-domains'
 import { wardName } from '@/data/reference'
@@ -94,6 +95,12 @@ registerLayer(() => {
 })
 
 export function BuildingIntelligencePage(): React.JSX.Element {
+  // The shell's masthead carries the screen's name; the page states the wording.
+  usePageMasthead(
+    t('Building Intelligence'),
+    t('Structural audits, dilapidation status and development-control proposals across the municipal building stock. Structures with a C1 dilapidation category or an overdue structural audit are treated as a life-safety exposure requiring priority attention.'),
+  )
+
   const openDrawer = useDrawerStore((s) => s.open)
   const [wardFilter, setWardFilter] = useState<string>('all')
 
@@ -177,8 +184,6 @@ export function BuildingIntelligencePage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('Governance & Finance')}
-        title={t('Building Intelligence')}
-        description={t('Structural audits, dilapidation status and development-control proposals across the municipal building stock. Structures with a C1 dilapidation category or an overdue structural audit are treated as a life-safety exposure requiring priority attention.')}
         breadcrumbs={[{ label: t('Governance & Finance') }, { label: t('Building Intelligence') }]}
         freshness={FRESHNESS}
         actions={
@@ -230,6 +235,12 @@ export function BuildingIntelligencePage(): React.JSX.Element {
             </MetricGrid>
           </Card>
 
+          {/* Two columns. Life safety, then the two registers it is drawn
+              from, read down the wide column in the order an officer works
+              them; the compliance composition and the ageing distribution
+              stand beside as the summary of those same rows. */}
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+          <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
           {lifeSafety.length > 0 ? (
             <Card tone="critical" flush>
               <CardHeader
@@ -279,8 +290,9 @@ export function BuildingIntelligencePage(): React.JSX.Element {
             <CardHeader bordered title={t('Building proposals')} description={t('Development-control proposals with SLA age and breach status.')} />
             <DataTable rows={filteredProposals} columns={proposalColumns} rowKey={(r) => r.id} pageSize={10} stickyHeader maxHeight="26rem" searchPlaceholder="Search proposals" />
           </Card>
+          </div>
 
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
             <Card>
               <CardHeader title={t('Structural audit compliance')} description={t('Composition of the register by audit status.')} />
               <CompositionBar segments={auditComposition} className="mt-4" />
@@ -290,6 +302,7 @@ export function BuildingIntelligencePage(): React.JSX.Element {
                 <CategoryBarChart data={ageingData} categoryKey="label" series={[{ key: 'proposals', label: t('Proposals'), colour: '#2f6feb' }]} />
               </ChartFrame>
             </Card>
+          </div>
           </div>
         </>
       ) : null}

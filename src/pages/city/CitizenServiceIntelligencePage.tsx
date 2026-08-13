@@ -11,6 +11,7 @@ import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { citizenService } from '@/services'
 import type { RecurringCluster } from '@/domains/citizen-services/root-cause'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { WARDS } from '@/data/reference'
 import { COMPLAINT_CATEGORY_LABEL, type ComplaintCategory, type ComplaintChannel } from '@/types/operations'
 import { formatPercent } from '@/utils/format'
@@ -64,6 +65,11 @@ const FRESHNESS = {
 export function CitizenServiceIntelligencePage(): React.JSX.Element {
   const [wardId, setWardId] = useState<string>('')
   const [category, setCategory] = useState<string>('')
+
+  usePageMasthead(
+    t('Citizen Service Intelligence'),
+    t('Not how many complaints there are, but which ones keep coming back and what the corporation already holds a record of at that location. Recurrence is the signal that a service issue was closed without its cause being resolved.'),
+  )
 
   const filters = useMemo(
     () => ({
@@ -166,8 +172,6 @@ export function CitizenServiceIntelligencePage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('City Intelligence')}
-        title={t('Citizen Service Intelligence')}
-        description={t('Not how many complaints there are, but which ones keep coming back and what the corporation already holds a record of at that location. Recurrence is the signal that a service issue was closed without its cause being resolved.')}
         breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Citizen Service Intelligence') }]}
         freshness={FRESHNESS}
         controls={

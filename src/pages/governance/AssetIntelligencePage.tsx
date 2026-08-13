@@ -5,6 +5,7 @@ import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { projectService, wardService } from '@/services'
 import { useDrawerStore } from '@/stores/ui.store'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { ROUTES } from '@/config/navigation'
 import { ASSET_CATEGORY_LABEL, type AssetCategory, type MunicipalAsset } from '@/types/operations'
 import type { ProjectCategory, ProjectStatus } from '@/types/finance'
@@ -82,6 +83,12 @@ function pastDesignLife(asset: MunicipalAsset): boolean {
 }
 
 export function AssetIntelligencePage(): React.JSX.Element {
+  // The shell's masthead carries the screen's name; the page states the wording.
+  usePageMasthead(
+    t('Asset Intelligence'),
+    t('The municipal asset register - condition, age against design life and lifecycle exposure across every asset category. Assembled from every ward\'s asset holding within your authorised scope.'),
+  )
+
   const openDrawer = useDrawerStore((s) => s.open)
   const [categoryFilter, setCategoryFilter] = useState<'all' | AssetCategory>('all')
   const [wardFilter, setWardFilter] = useState<string>('all')
@@ -279,8 +286,6 @@ export function AssetIntelligencePage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('Governance & Finance')}
-        title={t('Asset Intelligence')}
-        description={t('The municipal asset register - condition, age against design life and lifecycle exposure across every asset category. Assembled from every ward\'s asset holding within your authorised scope.')}
         breadcrumbs={[{ label: t('Governance & Finance') }, { label: t('Asset Intelligence') }]}
         freshness={FRESHNESS}
         actions={
@@ -333,43 +338,12 @@ export function AssetIntelligencePage(): React.JSX.Element {
             </MetricGrid>
           </Card>
 
-          <Card flush>
-            <CardHeader bordered title={t('Asset register')} description={t('Sortable, filterable and paginated. Row click opens the asset\'s full record.')} />
-            <DataTable
-              rows={filtered}
-              columns={columns}
-              rowKey={(row) => row.id}
-              pageSize={12}
-              stickyHeader
-              maxHeight="30rem"
-              searchPlaceholder="Search assets"
-              onRowClick={(row) => openDrawer({ kind: 'asset', id: row.id })}
-              rowAccent={(row) => (
-                <span className={`w-[3px] rounded-full ${row.conditionIndex < 30 ? 'bg-crit-500' : row.conditionIndex < CONDITION_THRESHOLD ? 'bg-risk-500' : 'bg-ok-500'}`} />
-              )}
-            />
-          </Card>
-
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <Card>
-              <ChartFrame title={t('Assets by category')} unit="assets" timeframe="Current scope" freshness={FRESHNESS} height={230}>
-                <DonutChart data={countByCategory} unit="assets" centreValue={formatNumber(filtered.length)} centreLabel="Assets" />
-              </ChartFrame>
-            </Card>
-            <Card>
-              <ChartFrame
-                title={t('Condition distribution by category')}
-                unit={t('condition index')}
-                timeframe="Current scope"
-                description={t('Average condition index (0–100, higher is better) by asset category, weakest first.')}
-                freshness={FRESHNESS}
-                height={230}
-              >
-                <RankedBarChart data={conditionByCategory} unit="" higherIsWorse={false} />
-              </ChartFrame>
-            </Card>
-          </div>
-
+          {/* Two columns. Lifecycle exposure, the register it is drawn from and
+              the spatial view of that same register read down the wide column;
+              the two distributions and the standing note on the
+              cross-reference stand beside them. */}
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+          <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
           <Card tone="critical" flush>
             <CardHeader
               bordered
@@ -407,6 +381,23 @@ export function AssetIntelligencePage(): React.JSX.Element {
           </Card>
 
           <Card flush>
+            <CardHeader bordered title={t('Asset register')} description={t('Sortable, filterable and paginated. Row click opens the asset\'s full record.')} />
+            <DataTable
+              rows={filtered}
+              columns={columns}
+              rowKey={(row) => row.id}
+              pageSize={12}
+              stickyHeader
+              maxHeight="30rem"
+              searchPlaceholder="Search assets"
+              onRowClick={(row) => openDrawer({ kind: 'asset', id: row.id })}
+              rowAccent={(row) => (
+                <span className={`w-[3px] rounded-full ${row.conditionIndex < 30 ? 'bg-crit-500' : row.conditionIndex < CONDITION_THRESHOLD ? 'bg-risk-500' : 'bg-ok-500'}`} />
+              )}
+            />
+          </Card>
+
+          <Card flush>
             <CardHeader bordered title={t('Asset condition - spatial view')} description={t('Illustrative ward map shaded by average asset condition index for the current scope.')} />
             <div className="p-4">
               <CityMap
@@ -424,13 +415,35 @@ export function AssetIntelligencePage(): React.JSX.Element {
               />
             </div>
           </Card>
+          </div>
 
-          <Card tone="info">
-            <p className="flex items-start gap-2 text-xs leading-relaxed text-ink-600">
-              <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-govt-600" />
-              {t('The capital-project cross-reference used for lifecycle exposure matches an asset\'s category and ward against active or planned projects of a corresponding category. It identifies the apparent absence of a matching programme entry within the platform\'s own project data; it does not confirm the absence of a departmental replacement plan held outside this system.')}
-            </p>
-          </Card>
+          <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
+            <Card>
+              <ChartFrame title={t('Assets by category')} unit="assets" timeframe="Current scope" freshness={FRESHNESS} height={230}>
+                <DonutChart data={countByCategory} unit="assets" centreValue={formatNumber(filtered.length)} centreLabel="Assets" />
+              </ChartFrame>
+            </Card>
+            <Card>
+              <ChartFrame
+                title={t('Condition distribution by category')}
+                unit={t('condition index')}
+                timeframe="Current scope"
+                description={t('Average condition index (0–100, higher is better) by asset category, weakest first.')}
+                freshness={FRESHNESS}
+                height={230}
+              >
+                <RankedBarChart data={conditionByCategory} unit="" higherIsWorse={false} />
+              </ChartFrame>
+            </Card>
+
+            <Card tone="info">
+              <p className="flex items-start gap-2 text-xs leading-relaxed text-ink-600">
+                <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-govt-600" />
+                {t('The capital-project cross-reference used for lifecycle exposure matches an asset\'s category and ward against active or planned projects of a corresponding category. It identifies the apparent absence of a matching programme entry within the platform\'s own project data; it does not confirm the absence of a departmental replacement plan held outside this system.')}
+              </p>
+            </Card>
+          </div>
+          </div>
         </>
       ) : null}
 

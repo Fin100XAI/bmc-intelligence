@@ -21,6 +21,7 @@ import { MetricCard } from '@/components/cards'
 import { ContributionBars, MiniBar, RankedBarChart } from '@/components/charts'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { wardPerformanceService } from '@/services/ward-performance.service'
 import {
   QUARTILE_SHORT_LABEL,
@@ -102,6 +103,11 @@ function signed(value: number, decimals = 1): string {
 const CHART_LIMIT = 18
 
 export function WardPerformancePage(): React.JSX.Element {
+  usePageMasthead(
+    t('Like-for-Like Ward Performance'),
+    t('Ward outcomes read against the conditions each ward was handed. A raw ranking punishes whoever holds the hardest ward; this one separates how hard a ward is from how well it is being run.'),
+  )
+
   const [cohort, setCohort] = useState<CohortFilter>('all')
 
   const assessmentQuery = useServiceQuery(queryKeys.wardPerformance('assessment'), (u) =>
@@ -139,8 +145,6 @@ export function WardPerformancePage(): React.JSX.Element {
   const header = (
     <PageHeader
       eyebrow={t('Wards & Localities')}
-      title={t('Like-for-Like Ward Performance')}
-      description={t('Ward outcomes read against the conditions each ward was handed. A raw ranking punishes whoever holds the hardest ward; this one separates how hard a ward is from how well it is being run.')}
       breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Like-for-Like Ward Performance') }]}
       freshness={{
         generatedAt: DEMO_NOW.toISOString(),
@@ -288,21 +292,6 @@ export function WardPerformancePage(): React.JSX.Element {
 
       <DemonstrationNotice />
 
-      <Card tone="info" className="flex items-start gap-3">
-        <Scale className="mt-0.5 h-4 w-4 shrink-0 text-govt-600" aria-hidden />
-        <div className="min-w-0">
-          <p className="text-[0.8125rem] font-semibold text-govt-800">
-            {t('Why a raw league table gets argued with, and then ignored')}
-          </p>
-          <p className="mt-1 text-xs leading-relaxed text-ink-600">
-            {t('The officer holding the densest, most flood-exposed ward in the city can always say that a straight ranking is unfair to them, and they are usually right. Once that objection has been made and not answered, the table stops being used. Adjusting for difficulty is what allows a ranking to survive contact with the people it ranks: the conditions are set aside first, and only the part of the result the conditions do not explain is put to the ward.')}
-          </p>
-          <p className="mt-1.5 text-xs leading-relaxed text-ink-600">
-            <strong>{t('This is a list of places to look, not a list of people to blame.')}</strong>{' '}{t('A ward well above its line is running a practice nobody has written down yet and should be asked what it is doing. A ward well below its line is carrying an obstruction that has not been named and should be asked what is in the way.')}
-          </p>
-        </div>
-      </Card>
-
       {rows.length === 0 ? (
         <EmptyState
           title={t('No ward falls within your authorised scope')}
@@ -352,176 +341,200 @@ export function WardPerformancePage(): React.JSX.Element {
             />
           </MetricGrid>
 
-          <div className="grid gap-4 lg:grid-cols-[1.15fr_1fr]">
-            <Card flush className="flex flex-col">
-              <CardHeader
-                bordered
-                icon={<Ruler className="h-4 w-4" />}
-                title={t('How difficulty is scored')}
-                description={t('Four structural conditions, weighted to one hundred. None of them moves because a ward office works well or badly.')}
+          {/* Two columns. What the cohort filter selects, the register it
+              produces and the cohort bands read down the wide column; how
+              difficulty is scored, how the expectation line is set and what
+              the model does not claim read beside them. */}
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+            <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
+            <Card flush>
+                <CardHeader
+                  bordered
+                  icon={<Layers className="h-4 w-4" />}
+                title={t('Difficulty cohorts')}
+                description={t('Wards banded into difficulty quartiles, so each one can be read against genuine peers as well as against the line.')}
               />
-              <div className="px-4 py-4">
-                <ContributionBars
-                  items={modelSummary.map((c) => ({
-                    id: c.id,
-                    label: c.label,
-                    contribution: c.contribution,
-                    weight: c.weight,
-                    rawScore: c.score,
-                    explanation: c.explanation,
-                  }))}
-                />
-                <p className="mt-3 text-[0.6875rem] leading-relaxed text-ink-500">
-                  {t('Bars show the corporation-mean score on each condition and the points it puts on the board once weighted. Each condition is placed on a fixed 0-100 band rather than on the observed spread, so a ward&apos;s difficulty does not move when a different ward is added or removed.')}
-                </p>
-              </div>
-            </Card>
-
-            <Card flush className="flex flex-col">
-              <CardHeader
-                bordered
-                icon={<Sigma className="h-4 w-4" />}
-                title={t('How expectation is set')}
-                description={t('A least-squares line of observed health against difficulty, fitted across the wards.')}
-              />
-              <div className="px-4 py-4">
-                <p className="text-xs leading-relaxed text-ink-600">{statement}</p>
-                <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-4">
-                  {[
-                    { term: 'Slope', value: fit.slope.toFixed(3), note: t('per difficulty point') },
-                    { term: 'Intercept', value: fit.intercept.toFixed(1), note: t('at zero difficulty') },
-                    { term: 'R²', value: fit.rSquared.toFixed(2), note: t('variation explained') },
-                    { term: 'Typical residual', value: fit.residualSd.toFixed(1), note: t('standard error') },
-                  ].map((item) => (
-                    <div key={item.term}>
-                      <dt className="label-institutional">{item.term}</dt>
-                      <dd className="numeric mt-0.5 text-sm font-semibold text-ink-900">{item.value}</dd>
-                      <dd className="text-[0.625rem] text-ink-400">{item.note}</dd>
+              <div className="grid gap-3 px-4 py-4 sm:grid-cols-2 lg:grid-cols-4">
+                {cohorts.map((c) => (
+                  <div key={c.quartile} className="rounded-lg border border-ink-100 bg-surface-sunken p-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="text-[0.8125rem] font-semibold text-ink-900">{c.shortLabel}</p>
+                      <StateBadge state={c.pressureState} />
                     </div>
-                  ))}
-                </dl>
-                <p className="mt-3 text-[0.6875rem] leading-relaxed text-ink-500">
-                  {t('The fit is deliberately the plainest one available: an officer being measured against a line is entitled to reconstruct it with a spreadsheet. A ward is read as sitting on its line while its residual stays within {0} points, which is half a typical residual.{1}', fit.toleranceBand.toFixed(1), fit.fitted
-                    ? ''
-                    : ' Too few wards were in view to fit a line, so every ward is being read against the mean observed score - a placeholder, not a finding.')}
-                </p>
-              </div>
-            </Card>
-          </div>
-
-          <Card flush>
-            <CardHeader
-              bordered
-              icon={<Layers className="h-4 w-4" />}
-              title={t('Difficulty cohorts')}
-              description={t('Wards banded into difficulty quartiles, so each one can be read against genuine peers as well as against the line.')}
-            />
-            <div className="grid gap-3 px-4 py-4 sm:grid-cols-2 lg:grid-cols-4">
-              {cohorts.map((c) => (
-                <div key={c.quartile} className="rounded-lg border border-ink-100 bg-surface-sunken p-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <p className="text-[0.8125rem] font-semibold text-ink-900">{c.shortLabel}</p>
-                    <StateBadge state={c.pressureState} />
+                    <p className="mt-1 text-[0.6875rem] leading-relaxed text-ink-500">
+                      {t('{0} ward{1} · difficulty {2} to {3}', c.wardCount, c.wardCount === 1 ? '' : 's', c.difficultyFrom.toFixed(0), c.difficultyTo.toFixed(0))}
+                    </p>
+                    <dl className="mt-2 space-y-1 text-[0.6875rem]">
+                      <div className="flex items-baseline justify-between gap-2">
+                        <dt className="text-ink-500">{t('Mean observed')}</dt>
+                        <dd className="numeric font-semibold text-ink-800">{c.meanObserved.toFixed(1)}</dd>
+                      </div>
+                      <div className="flex items-baseline justify-between gap-2">
+                        <dt className="text-ink-500">{t('Above their line')}</dt>
+                        <dd className="numeric font-semibold text-ok-700">{c.aboveExpectation}</dd>
+                      </div>
+                      <div className="flex items-baseline justify-between gap-2">
+                        <dt className="text-ink-500">{t('Below their line')}</dt>
+                        <dd className="numeric font-semibold text-warn-700">{c.belowExpectation}</dd>
+                      </div>
+                    </dl>
                   </div>
-                  <p className="mt-1 text-[0.6875rem] leading-relaxed text-ink-500">
-                    {t('{0} ward{1} · difficulty {2} to {3}', c.wardCount, c.wardCount === 1 ? '' : 's', c.difficultyFrom.toFixed(0), c.difficultyTo.toFixed(0))}
-                  </p>
-                  <dl className="mt-2 space-y-1 text-[0.6875rem]">
-                    <div className="flex items-baseline justify-between gap-2">
-                      <dt className="text-ink-500">{t('Mean observed')}</dt>
-                      <dd className="numeric font-semibold text-ink-800">{c.meanObserved.toFixed(1)}</dd>
-                    </div>
-                    <div className="flex items-baseline justify-between gap-2">
-                      <dt className="text-ink-500">{t('Above their line')}</dt>
-                      <dd className="numeric font-semibold text-ok-700">{c.aboveExpectation}</dd>
-                    </div>
-                    <div className="flex items-baseline justify-between gap-2">
-                      <dt className="text-ink-500">{t('Below their line')}</dt>
-                      <dd className="numeric font-semibold text-warn-700">{c.belowExpectation}</dd>
-                    </div>
-                  </dl>
-                </div>
-              ))}
-            </div>
-            <p className="border-t border-ink-100 px-4 py-3 text-[0.6875rem] leading-relaxed text-ink-500">
-              {t('The state chip on each band describes the')}{' '}<strong>conditions</strong>{' '}{t('in that quartile, not the administration of it. A band marked critical is the hardest ground in the corporation to run, which is a statement about the ward and never about the people running it.')}
-            </p>
-          </Card>
-
-          <Card className="flex flex-wrap items-end gap-3">
-            <div>
-              <Label htmlFor="cohort-control">{t('Difficulty cohort')}</Label>
-              <div id="cohort-control">
-                <SegmentedControl<CohortFilter>
-                  value={cohort}
-                  onChange={setCohort}
-                  ariaLabel="Filter wards by difficulty quartile"
-                  options={COHORT_OPTIONS}
-                />
+                ))}
               </div>
-            </div>
-            <p className="min-w-[16rem] flex-1 text-[0.6875rem] leading-relaxed text-ink-500">
-              {t('Narrowing to a cohort changes which wards are listed, never the line they are measured against. The expectation is fitted across every ward in the corporation, because an expectation refitted on a smaller group would hand each group a private and flattering standard.')}
-            </p>
-          </Card>
+              <p className="border-t border-ink-100 px-4 py-3 text-[0.6875rem] leading-relaxed text-ink-500">
+                {t('The state chip on each band describes the')}{' '}<strong>conditions</strong>{' '}{t('in that quartile, not the administration of it. A band marked critical is the hardest ground in the corporation to run, which is a statement about the ward and never about the people running it.')}
+              </p>
+            </Card>
 
-          {filtered.length === 0 ? (
-            <EmptyState
-              title={t('No ward in this difficulty cohort')}
-              detail="Widen the cohort filter to see the wards in your authorised scope."
-            />
-          ) : (
-            <>
+            <Card className="flex flex-wrap items-end gap-3">
+              <div>
+                <Label htmlFor="cohort-control">{t('Difficulty cohort')}</Label>
+                <div id="cohort-control">
+                  <SegmentedControl<CohortFilter>
+                    value={cohort}
+                    onChange={setCohort}
+                    ariaLabel="Filter wards by difficulty quartile"
+                    options={COHORT_OPTIONS}
+                  />
+                </div>
+              </div>
+              <p className="min-w-[16rem] flex-1 text-[0.6875rem] leading-relaxed text-ink-500">
+                {t('Narrowing to a cohort changes which wards are listed, never the line they are measured against. The expectation is fitted across every ward in the corporation, because an expectation refitted on a smaller group would hand each group a private and flattering standard.')}
+              </p>
+            </Card>
+
+            {filtered.length === 0 ? (
+              <EmptyState
+                title={t('No ward in this difficulty cohort')}
+                detail="Widen the cohort filter to see the wards in your authorised scope."
+              />
+            ) : (
+              <>
+                <Card flush className="flex flex-col">
+                  <CardHeader
+                    bordered
+                    icon={<Award className="h-4 w-4" />}
+                    title={t('Residual against the expectation line')}
+                    description={t('Bars to the right of zero are wards doing better than their conditions predict. Bars to the left are wards doing worse.')}
+                  />
+                  <div className="px-4 py-4" style={{ height: Math.max(220, chartRows.length * 26) }}>
+                    <RankedBarChart
+                      data={chartRows.map((r) => ({ label: r.wardCode, value: r.residual }))}
+                      unit=" pts"
+                    />
+                  </div>
+                  <p className="border-t border-ink-100 px-4 py-3 text-[0.6875rem] leading-relaxed text-ink-500">
+                    {t('Every bar carries the same hue deliberately: the residuals are small numbers on a scale built for severity, and colouring them by magnitude would imply a seriousness the arithmetic does not support. Direction is the whole reading.{0}', filtered.length > chartRows.length
+                      ? ` The ${filtered.length - chartRows.length} wards nearest the line are omitted from this chart - where the residual is small there is nothing to learn - and all ${filtered.length} appear in the register below.`
+                      : '')}
+                  </p>
+                </Card>
+
+                <Card flush>
+                  <CardHeader
+                    bordered
+                    icon={<Scale className="h-4 w-4" />}
+                    title={t('Ward register, adjusted for difficulty')}
+                    description={t('{0} ward{1} in your authorised scope, ordered by how far each sits from the expectation set by its own conditions.', filtered.length, filtered.length === 1 ? '' : 's')}
+                  />
+                  <DataTable
+                    rows={filtered}
+                    columns={columns}
+                    rowKey={(r) => r.wardId}
+                    searchable
+                    searchPlaceholder="Search ward, code or region"
+                    pageSize={15}
+                  />
+                </Card>
+              </>
+            )}
+            </div>
+
+            <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
+            <Card tone="info" className="flex items-start gap-3">
+              <Scale className="mt-0.5 h-4 w-4 shrink-0 text-govt-600" aria-hidden />
+              <div className="min-w-0">
+                <p className="text-[0.8125rem] font-semibold text-govt-800">
+                  {t('Why a raw league table gets argued with, and then ignored')}
+                </p>
+                <p className="mt-1 text-xs leading-relaxed text-ink-600">
+                  {t('The officer holding the densest, most flood-exposed ward in the city can always say that a straight ranking is unfair to them, and they are usually right. Once that objection has been made and not answered, the table stops being used. Adjusting for difficulty is what allows a ranking to survive contact with the people it ranks: the conditions are set aside first, and only the part of the result the conditions do not explain is put to the ward.')}
+                </p>
+                <p className="mt-1.5 text-xs leading-relaxed text-ink-600">
+                  <strong>{t('This is a list of places to look, not a list of people to blame.')}</strong>{' '}{t('A ward well above its line is running a practice nobody has written down yet and should be asked what it is doing. A ward well below its line is carrying an obstruction that has not been named and should be asked what is in the way.')}
+                </p>
+              </div>
+            </Card>
+
               <Card flush className="flex flex-col">
                 <CardHeader
                   bordered
-                  icon={<Award className="h-4 w-4" />}
-                  title={t('Residual against the expectation line')}
-                  description={t('Bars to the right of zero are wards doing better than their conditions predict. Bars to the left are wards doing worse.')}
+                  icon={<Ruler className="h-4 w-4" />}
+                  title={t('How difficulty is scored')}
+                  description={t('Four structural conditions, weighted to one hundred. None of them moves because a ward office works well or badly.')}
                 />
-                <div className="px-4 py-4" style={{ height: Math.max(220, chartRows.length * 26) }}>
-                  <RankedBarChart
-                    data={chartRows.map((r) => ({ label: r.wardCode, value: r.residual }))}
-                    unit=" pts"
+                <div className="px-4 py-4">
+                  <ContributionBars
+                    items={modelSummary.map((c) => ({
+                      id: c.id,
+                      label: c.label,
+                      contribution: c.contribution,
+                      weight: c.weight,
+                      rawScore: c.score,
+                      explanation: c.explanation,
+                    }))}
                   />
+                  <p className="mt-3 text-[0.6875rem] leading-relaxed text-ink-500">
+                    {t('Bars show the corporation-mean score on each condition and the points it puts on the board once weighted. Each condition is placed on a fixed 0-100 band rather than on the observed spread, so a ward&apos;s difficulty does not move when a different ward is added or removed.')}
+                  </p>
                 </div>
-                <p className="border-t border-ink-100 px-4 py-3 text-[0.6875rem] leading-relaxed text-ink-500">
-                  {t('Every bar carries the same hue deliberately: the residuals are small numbers on a scale built for severity, and colouring them by magnitude would imply a seriousness the arithmetic does not support. Direction is the whole reading.{0}', filtered.length > chartRows.length
-                    ? ` The ${filtered.length - chartRows.length} wards nearest the line are omitted from this chart - where the residual is small there is nothing to learn - and all ${filtered.length} appear in the register below.`
-                    : '')}
-                </p>
               </Card>
 
-              <Card flush>
+              <Card flush className="flex flex-col">
                 <CardHeader
                   bordered
-                  icon={<Scale className="h-4 w-4" />}
-                  title={t('Ward register, adjusted for difficulty')}
-                  description={t('{0} ward{1} in your authorised scope, ordered by how far each sits from the expectation set by its own conditions.', filtered.length, filtered.length === 1 ? '' : 's')}
+                  icon={<Sigma className="h-4 w-4" />}
+                  title={t('How expectation is set')}
+                  description={t('A least-squares line of observed health against difficulty, fitted across the wards.')}
                 />
-                <DataTable
-                  rows={filtered}
-                  columns={columns}
-                  rowKey={(r) => r.wardId}
-                  searchable
-                  searchPlaceholder="Search ward, code or region"
-                  pageSize={15}
-                />
+                <div className="px-4 py-4">
+                  <p className="text-xs leading-relaxed text-ink-600">{statement}</p>
+                  <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-4">
+                    {[
+                      { term: 'Slope', value: fit.slope.toFixed(3), note: t('per difficulty point') },
+                      { term: 'Intercept', value: fit.intercept.toFixed(1), note: t('at zero difficulty') },
+                      { term: 'R²', value: fit.rSquared.toFixed(2), note: t('variation explained') },
+                      { term: 'Typical residual', value: fit.residualSd.toFixed(1), note: t('standard error') },
+                    ].map((item) => (
+                      <div key={item.term}>
+                        <dt className="label-institutional">{item.term}</dt>
+                        <dd className="numeric mt-0.5 text-sm font-semibold text-ink-900">{item.value}</dd>
+                        <dd className="text-[0.625rem] text-ink-400">{item.note}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                  <p className="mt-3 text-[0.6875rem] leading-relaxed text-ink-500">
+                    {t('The fit is deliberately the plainest one available: an officer being measured against a line is entitled to reconstruct it with a spreadsheet. A ward is read as sitting on its line while its residual stays within {0} points, which is half a typical residual.{1}', fit.toleranceBand.toFixed(1), fit.fitted
+                      ? ''
+                      : ' Too few wards were in view to fit a line, so every ward is being read against the mean observed score - a placeholder, not a finding.')}
+                  </p>
+                </div>
               </Card>
-            </>
-          )}
 
-          <Card tone="warn" className="flex items-start gap-3">
-            <Ruler className="mt-0.5 h-4 w-4 shrink-0 text-warn-600" aria-hidden />
-            <div className="min-w-0">
-              <p className="text-[0.8125rem] font-semibold text-warn-700">{t('The difficulty model is illustrative')}</p>
-              <p className="mt-1 text-xs leading-relaxed text-ink-600">
-                {t('The four weights above are a reasonable prior, not a finding. They were chosen so that a reader can reconstruct every figure on this page by hand, which matters more at this stage than being precisely right. A real deployment would fit both the difficulty weighting and the expectation line on the corporation&apos;s own historic record - several years of ward returns - and would revise them each year as the ground itself changes. Until that is done, treat the residuals as a way of choosing where to send the next visit, and not as a settled judgement on any ward office.{0}', assessment.outOfScopeCount > 0
-                  ? ` The line was fitted on ${fit.fittedOn} wards, of which ${assessment.outOfScopeCount} fall outside your authorised scope and are not listed here.`
-                  : '')}
-              </p>
+
+            <Card tone="warn" className="flex items-start gap-3">
+              <Ruler className="mt-0.5 h-4 w-4 shrink-0 text-warn-600" aria-hidden />
+              <div className="min-w-0">
+                <p className="text-[0.8125rem] font-semibold text-warn-700">{t('The difficulty model is illustrative')}</p>
+                <p className="mt-1 text-xs leading-relaxed text-ink-600">
+                  {t('The four weights above are a reasonable prior, not a finding. They were chosen so that a reader can reconstruct every figure on this page by hand, which matters more at this stage than being precisely right. A real deployment would fit both the difficulty weighting and the expectation line on the corporation&apos;s own historic record - several years of ward returns - and would revise them each year as the ground itself changes. Until that is done, treat the residuals as a way of choosing where to send the next visit, and not as a settled judgement on any ward office.{0}', assessment.outOfScopeCount > 0
+                    ? ` The line was fitted on ${fit.fittedOn} wards, of which ${assessment.outOfScopeCount} fall outside your authorised scope and are not listed here.`
+                    : '')}
+                </p>
+              </div>
+            </Card>
             </div>
-          </Card>
+          </div>
         </>
       )}
     </PageBody>

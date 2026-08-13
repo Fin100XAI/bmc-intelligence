@@ -21,6 +21,7 @@ import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { sewerageService, TREATMENT_COMPLIANCE_NORM } from '@/services'
 import { useFilterStore } from '@/stores/ui.store'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { wardName, wardShortName } from '@/data/reference'
 import type { SewerageNode } from '@/types/city-domains'
 import type { DataFreshness } from '@/types/common'
@@ -52,6 +53,11 @@ function shortNodeLabel(n: SewerageNode): string {
 }
 
 export function SewerageIntelligencePage(): React.JSX.Element {
+  usePageMasthead(
+    t('Sewerage Intelligence'),
+    t('Treatment facility capacity, loading and discharge compliance, trunk-sewer network condition by ward, and the wards where overflow events concentrate.'),
+  )
+
   const filters = useFilterStore((s) => s.filters)
   const setFilter = useFilterStore((s) => s.setFilter)
 
@@ -66,7 +72,7 @@ export function SewerageIntelligencePage(): React.JSX.Element {
   if (summaryQuery.isLoading || facilitiesQuery.isLoading || trunkQuery.isLoading || clustersQuery.isLoading || nodesQuery.isLoading) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('City Intelligence')} title={t('Sewerage Intelligence')} breadcrumbs={breadcrumbs} />
+        <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={breadcrumbs} />
         <LoadingState variant="metrics" />
         <LoadingState variant="table" rows={8} />
       </PageBody>
@@ -77,7 +83,7 @@ export function SewerageIntelligencePage(): React.JSX.Element {
   if (anyError) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('City Intelligence')} title={t('Sewerage Intelligence')} breadcrumbs={breadcrumbs} />
+        <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={breadcrumbs} />
         <ErrorState
           detail={anyError.message}
           onRetry={() => {
@@ -101,7 +107,7 @@ export function SewerageIntelligencePage(): React.JSX.Element {
   if (!summary || (facilities.length === 0 && trunkNodes.length === 0)) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('City Intelligence')} title={t('Sewerage Intelligence')} breadcrumbs={breadcrumbs} />
+        <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={breadcrumbs} />
         <EmptyState title={t('No sewerage network data available')} detail="No treatment facility or trunk-sewer records were returned for the current scope." />
         <DemonstrationNotice />
       </PageBody>
@@ -255,8 +261,6 @@ export function SewerageIntelligencePage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('City Intelligence')}
-        title={t('Sewerage Intelligence')}
-        description={t('Treatment facility capacity, loading and discharge compliance, trunk-sewer network condition by ward, and the wards where overflow events concentrate.')}
         breadcrumbs={breadcrumbs}
         freshness={FRESHNESS}
         controls={<FilterBar show={['ward', 'search']} searchPlaceholder="Search facility, reach or ward" />}
@@ -289,141 +293,150 @@ export function SewerageIntelligencePage(): React.JSX.Element {
         <MetricCard label={t('Nodes requiring attention')} value={summary.nodesRequiringAttention} support={t('At-risk or critical state')} tone={summary.nodesRequiringAttention > 0 ? 'warn' : 'default'} />
       </MetricGrid>
 
-      <Card flush>
-        <CardHeader className="px-4 pt-4 pb-3" title={t('Treatment facility register')} description={t('Facilities over capacity and compliance below the discharge norm are flagged directly.')} />
-        {filteredFacilities.length === 0 ? (
-          <EmptyState className="m-4" title={t('No facilities match the current filters')} detail="Adjust the ward or search term above." />
-        ) : (
-          <DataTable
-            rows={filteredFacilities}
-            columns={facilityColumns}
-            rowKey={(r) => r.id}
-            pageSize={10}
-            searchable={false}
-            initialSort={{ columnId: 'utilisation', direction: 'desc' }}
-            ariaLabel="Treatment facility register"
-          />
-        )}
-      </Card>
-
-      {facilitiesBelowNorm.length > 0 ? (
-        <Card tone="critical" className="flex items-start gap-3">
-          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-crit-600" aria-hidden />
-          <p className="text-xs leading-relaxed text-ink-700">
-            <span className="font-semibold">{t('Compliance shortfall.')}</span> {facilitiesBelowNorm.length} of {facilities.length}{' '}{t('treatment facilit')}{facilitiesBelowNorm.length === 1 ? 'y' : 'ies'}{' '}{t('currently read below the')}{' '}{TREATMENT_COMPLIANCE_NORM}{t('% discharge-compliance norm:')}{' '}{facilitiesBelowNorm.map((f) => shortNodeLabel(f)).join(', ')}{t('. This is a compliance shortfall against the departmental norm, not a data anomaly, and is stated here without qualification.')}
-          </p>
+      {/* Two columns, read downward. The three registers — facilities, the
+          trunk network and the map they sit on — carry the width. The
+          compliance shortfall, where overflows concentrate and the two ranked
+          distributions read down the column beside them. */}
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
+        <Card flush>
+            <CardHeader className="px-4 pt-4 pb-3" title={t('Treatment facility register')} description={t('Facilities over capacity and compliance below the discharge norm are flagged directly.')} />
+          {filteredFacilities.length === 0 ? (
+            <EmptyState className="m-4" title={t('No facilities match the current filters')} detail="Adjust the ward or search term above." />
+          ) : (
+            <DataTable
+              rows={filteredFacilities}
+              columns={facilityColumns}
+              rowKey={(r) => r.id}
+              pageSize={10}
+              searchable={false}
+              initialSort={{ columnId: 'utilisation', direction: 'desc' }}
+              ariaLabel="Treatment facility register"
+            />
+          )}
         </Card>
-      ) : null}
 
-      <Card flush>
-        <CardHeader className="px-4 pt-4 pb-3" title={t('Ward trunk-network position')} description={t('Trunk-sewer reach condition, loading and blockage/overflow volume - one reach per ward.')} />
-        {filteredTrunk.length === 0 ? (
-          <EmptyState className="m-4" title={t('No trunk reaches match the current filters')} detail="Adjust the ward or search term above." />
-        ) : (
-          <DataTable
-            rows={filteredTrunk}
-            columns={trunkColumns}
-            rowKey={(r) => r.id}
-            pageSize={10}
-            searchable={false}
-            initialSort={{ columnId: 'overflow', direction: 'desc' }}
-            ariaLabel="Ward trunk-network position"
-          />
-        )}
-      </Card>
+        <Card flush>
+          <CardHeader className="px-4 pt-4 pb-3" title={t('Ward trunk-network position')} description={t('Trunk-sewer reach condition, loading and blockage/overflow volume - one reach per ward.')} />
+          {filteredTrunk.length === 0 ? (
+            <EmptyState className="m-4" title={t('No trunk reaches match the current filters')} detail="Adjust the ward or search term above." />
+          ) : (
+            <DataTable
+              rows={filteredTrunk}
+              columns={trunkColumns}
+              rowKey={(r) => r.id}
+              pageSize={10}
+              searchable={false}
+              initialSort={{ columnId: 'overflow', direction: 'desc' }}
+              ariaLabel="Ward trunk-network position"
+            />
+          )}
+        </Card>
 
-      <Card flush>
-        <CardHeader
-          className="px-4 pt-4 pb-3"
-          title={t('Overflow-event concentration')}
-          description={t('Wards ranked by overflow events in the last 30 days. A structural pattern - repeat events across fixed nodes - is distinguished from volume handled by routine maintenance.')}
-        />
-        {filteredClusters.length === 0 ? (
-          <EmptyState compact className="m-4" title={t('No overflow events in scope')} detail="No ward in the current filter reports an overflow event in the last 30 days." />
-        ) : (
-          <ul className="divide-y divide-ink-50">
-            {filteredClusters.map((c) => (
-              <li key={c.wardId} className="px-4 py-3">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="text-xs font-semibold text-ink-800">{wardName(c.wardId)}</span>
-                  <span className="flex flex-wrap items-center gap-1.5">
-                    <Badge tone={c.structuralPattern ? 'critical' : 'neutral'}>{c.structuralPattern ? 'Structural pattern' : 'Routine maintenance volume'}</Badge>
-                    <Badge tone="muted">{t('{0} overflow event(s)', c.overflowEvents30d)}</Badge>
-                    <Badge tone="muted">{t('{0} blockage(s)', c.blockages30d)}</Badge>
-                    <Badge tone="muted">{t('Condition {0}', c.meanConditionIndex)}</Badge>
-                  </span>
-                </div>
-                <p className="mt-1.5 text-[0.6875rem] leading-relaxed text-ink-600">{c.note}</p>
-              </li>
-            ))}
-          </ul>
-        )}
-      </Card>
-
-      <Card>
-        <CardHeader title={t('Network map')} description={t('Sewerage-load layer (mean node utilisation by ward) with treatment-facility markers. Click a ward to focus the filter above.')} />
-        <div className="mt-3">
-          <CityMap
-            layers={[
-              {
-                id: 'sewerage-load',
-                label: t('Sewerage Network Load'),
-                valueFor: (wardId) => average(utilisationByWard.get(wardId)),
-                higherIsWorse: true,
-                unit: '% utilisation',
-                description: t('Mean utilisation across treatment and trunk nodes located in the ward.'),
-              },
-            ]}
-            markers={facilityMarkers}
-            selectedWardId={filters.wardIds.length === 1 ? filters.wardIds[0] : null}
-            onWardSelect={(wardId) => setFilter('wardIds', filters.wardIds.length === 1 && filters.wardIds[0] === wardId ? [] : [wardId])}
-            height={400}
-          />
+        <Card>
+          <CardHeader title={t('Network map')} description={t('Sewerage-load layer (mean node utilisation by ward) with treatment-facility markers. Click a ward to focus the filter above.')} />
+          <div className="mt-3">
+            <CityMap
+              layers={[
+                {
+                  id: 'sewerage-load',
+                  label: t('Sewerage Network Load'),
+                  valueFor: (wardId) => average(utilisationByWard.get(wardId)),
+                  higherIsWorse: true,
+                  unit: '% utilisation',
+                  description: t('Mean utilisation across treatment and trunk nodes located in the ward.'),
+                },
+              ]}
+              markers={facilityMarkers}
+              selectedWardId={filters.wardIds.length === 1 ? filters.wardIds[0] : null}
+              onWardSelect={(wardId) => setFilter('wardIds', filters.wardIds.length === 1 && filters.wardIds[0] === wardId ? [] : [wardId])}
+              height={400}
+            />
+          </div>
+        </Card>
         </div>
-      </Card>
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <Card>
-          <ChartFrame
-            title={t('Utilisation distribution')}
-            unit={t('% of design capacity')}
-            timeframe="Current reporting position"
-            description={t('Every treatment facility and trunk-sewer reach ranked by utilisation. Nodes above the 100% reference line are running above design capacity.')}
-            height={Math.max(320, utilisationChartData.length * 11)}
-          >
-            <CategoryBarChart
-              data={utilisationChartData}
-              categoryKey="label"
-              layout="horizontal"
-              series={[{ key: 'value', label: t('Utilisation %'), colour: CHART_COLOURS.primary }]}
-              referenceValue={100}
-              referenceLabel="Design capacity"
-            />
-          </ChartFrame>
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
+        {facilitiesBelowNorm.length > 0 ? (
+          <Card tone="critical" className="flex items-start gap-3">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-crit-600" aria-hidden />
+            <p className="text-xs leading-relaxed text-ink-700">
+              <span className="font-semibold">{t('Compliance shortfall.')}</span> {facilitiesBelowNorm.length} of {facilities.length}{' '}{t('treatment facilit')}{facilitiesBelowNorm.length === 1 ? 'y' : 'ies'}{' '}{t('currently read below the')}{' '}{TREATMENT_COMPLIANCE_NORM}{t('% discharge-compliance norm:')}{' '}{facilitiesBelowNorm.map((f) => shortNodeLabel(f)).join(', ')}{t('. This is a compliance shortfall against the departmental norm, not a data anomaly, and is stated here without qualification.')}
+            </p>
+          </Card>
+        ) : null}
+
+        <Card flush>
+          <CardHeader
+            className="px-4 pt-4 pb-3"
+            title={t('Overflow-event concentration')}
+            description={t('Wards ranked by overflow events in the last 30 days. A structural pattern - repeat events across fixed nodes - is distinguished from volume handled by routine maintenance.')}
+          />
+          {filteredClusters.length === 0 ? (
+            <EmptyState compact className="m-4" title={t('No overflow events in scope')} detail="No ward in the current filter reports an overflow event in the last 30 days." />
+          ) : (
+            <ul className="divide-y divide-ink-50">
+              {filteredClusters.map((c) => (
+                <li key={c.wardId} className="px-4 py-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="text-xs font-semibold text-ink-800">{wardName(c.wardId)}</span>
+                    <span className="flex flex-wrap items-center gap-1.5">
+                      <Badge tone={c.structuralPattern ? 'critical' : 'neutral'}>{c.structuralPattern ? 'Structural pattern' : 'Routine maintenance volume'}</Badge>
+                      <Badge tone="muted">{t('{0} overflow event(s)', c.overflowEvents30d)}</Badge>
+                      <Badge tone="muted">{t('{0} blockage(s)', c.blockages30d)}</Badge>
+                      <Badge tone="muted">{t('Condition {0}', c.meanConditionIndex)}</Badge>
+                    </span>
+                  </div>
+                  <p className="mt-1.5 text-[0.6875rem] leading-relaxed text-ink-600">{c.note}</p>
+                </li>
+              ))}
+            </ul>
+          )}
         </Card>
-        <Card>
-          <ChartFrame
-            title={t('Treatment compliance against the discharge norm')}
-            unit={t('% compliant')}
-            timeframe="Current reporting position"
-            description={t('Treatment facilities only - trunk reaches carry no compliance figure. Ranked from lowest to highest against the departmental norm.')}
-            height={260}
-            footnote={
-              facilitiesBelowNorm.length > 0
-                ? `${facilitiesBelowNorm.length} of ${facilities.length} facilit${facilitiesBelowNorm.length === 1 ? 'y' : 'ies'} read below the ${TREATMENT_COMPLIANCE_NORM}% norm: ${facilitiesBelowNorm.map((f) => shortNodeLabel(f)).join(', ')}.`
-                : `All ${facilities.length} treatment facilities meet or exceed the ${TREATMENT_COMPLIANCE_NORM}% norm.`
-            }
-          >
-            <CategoryBarChart
-              data={complianceChartData}
-              categoryKey="label"
-              layout="horizontal"
-              series={[{ key: 'value', label: t('Compliance %'), colour: CHART_COLOURS.intel }]}
-              referenceValue={TREATMENT_COMPLIANCE_NORM}
-              referenceLabel={`${TREATMENT_COMPLIANCE_NORM}% norm`}
-            />
-          </ChartFrame>
-        </Card>
+
+          <Card>
+            <ChartFrame
+              title={t('Utilisation distribution')}
+              unit={t('% of design capacity')}
+              timeframe="Current reporting position"
+              description={t('Every treatment facility and trunk-sewer reach ranked by utilisation. Nodes above the 100% reference line are running above design capacity.')}
+              height={Math.max(320, utilisationChartData.length * 11)}
+            >
+              <CategoryBarChart
+                data={utilisationChartData}
+                categoryKey="label"
+                layout="horizontal"
+                series={[{ key: 'value', label: t('Utilisation %'), colour: CHART_COLOURS.primary }]}
+                referenceValue={100}
+                referenceLabel="Design capacity"
+              />
+            </ChartFrame>
+          </Card>
+          <Card>
+            <ChartFrame
+              title={t('Treatment compliance against the discharge norm')}
+              unit={t('% compliant')}
+              timeframe="Current reporting position"
+              description={t('Treatment facilities only - trunk reaches carry no compliance figure. Ranked from lowest to highest against the departmental norm.')}
+              height={260}
+              footnote={
+                facilitiesBelowNorm.length > 0
+                  ? `${facilitiesBelowNorm.length} of ${facilities.length} facilit${facilitiesBelowNorm.length === 1 ? 'y' : 'ies'} read below the ${TREATMENT_COMPLIANCE_NORM}% norm: ${facilitiesBelowNorm.map((f) => shortNodeLabel(f)).join(', ')}.`
+                  : `All ${facilities.length} treatment facilities meet or exceed the ${TREATMENT_COMPLIANCE_NORM}% norm.`
+              }
+            >
+              <CategoryBarChart
+                data={complianceChartData}
+                categoryKey="label"
+                layout="horizontal"
+                series={[{ key: 'value', label: t('Compliance %'), colour: CHART_COLOURS.intel }]}
+                referenceValue={TREATMENT_COMPLIANCE_NORM}
+                referenceLabel={`${TREATMENT_COMPLIANCE_NORM}% norm`}
+              />
+            </ChartFrame>
+          </Card>
+
+        </div>
       </div>
 
       <DemonstrationNotice />

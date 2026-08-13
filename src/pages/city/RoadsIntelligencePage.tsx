@@ -38,6 +38,7 @@ import {
 import { allowed } from '@/security'
 import { useCurrentUser } from '@/stores/auth.store'
 import { useFilterStore } from '@/stores/ui.store'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { wardName } from '@/data/reference'
 import type { RoadDefect, RoadSegment } from '@/types/city-domains'
 import type { DataFreshness } from '@/types/common'
@@ -147,6 +148,11 @@ export function RoadsIntelligencePage(): React.JSX.Element {
   const [emergencyOnly, setEmergencyOnly] = useState(false)
   const [pendingStatusChange, setPendingStatusChange] = useState<{ defect: RoadDefect; next: RoadDefect['status'] } | null>(null)
 
+  usePageMasthead(
+    t('Roads Intelligence'),
+    t('Network condition and the explainable Road Defect Priority Engine that directs constrained rectification capacity, together with the asset-lifecycle position behind the resurfacing programme.'),
+  )
+
   const segmentsQuery = useServiceQuery(queryKeys.roads('segments'), (u) => roadsService.segments(u))
   const defectsQuery = useServiceQuery(queryKeys.roads('defects'), (u) => roadsService.defects(u, {}))
 
@@ -160,7 +166,7 @@ export function RoadsIntelligencePage(): React.JSX.Element {
   if (segmentsQuery.isLoading || defectsQuery.isLoading) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('City Intelligence')} title={t('Roads Intelligence')} breadcrumbs={breadcrumbs} />
+        <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={breadcrumbs} />
         <LoadingState variant="metrics" />
         <LoadingState variant="table" rows={10} />
       </PageBody>
@@ -171,7 +177,7 @@ export function RoadsIntelligencePage(): React.JSX.Element {
   if (anyError) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('City Intelligence')} title={t('Roads Intelligence')} breadcrumbs={breadcrumbs} />
+        <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={breadcrumbs} />
         <ErrorState
           detail={anyError.message}
           onRetry={() => {
@@ -189,7 +195,7 @@ export function RoadsIntelligencePage(): React.JSX.Element {
   if (segments.length === 0) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('City Intelligence')} title={t('Roads Intelligence')} breadcrumbs={breadcrumbs} />
+        <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={breadcrumbs} />
         <EmptyState title={t('No road network data available')} detail="No segment records were returned for the current scope." />
         <DemonstrationNotice />
       </PageBody>
@@ -361,8 +367,6 @@ export function RoadsIntelligencePage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('City Intelligence')}
-        title={t('Roads Intelligence')}
-        description={t('Network condition and the explainable Road Defect Priority Engine that directs constrained rectification capacity, together with the asset-lifecycle position behind the resurfacing programme.')}
         breadcrumbs={breadcrumbs}
         freshness={FRESHNESS}
         controls={
@@ -383,103 +387,63 @@ export function RoadsIntelligencePage(): React.JSX.Element {
         <MetricCard label={t('Complaints (90d)')} value={formatNumber(complaints90d)} />
       </MetricGrid>
 
-      <Card flush>
-        <CardHeader className="px-4 pt-4 pb-3" title={t('Road segment register')} description={t('Selecting a segment focuses the ward filter across the rest of this page.')} />
-        {filteredSegments.length === 0 ? (
-          <EmptyState className="m-4" title={t('No segments match the current filters')} detail="Adjust the ward or search term above." />
-        ) : (
-          <DataTable
-            rows={filteredSegments}
-            columns={segmentColumns}
-            rowKey={(r) => r.id}
-            pageSize={10}
-            searchable={false}
-            onRowClick={(r) => setFilter('wardIds', filters.wardIds.length === 1 && filters.wardIds[0] === r.wardId ? [] : [r.wardId])}
-            initialSort={{ columnId: 'condition', direction: 'asc' }}
-            ariaLabel="Road segment register"
+      {/* Two columns, read downward. The registers and the map an engineer
+          works from carry the width; the published weights that order the
+          queue, the driver breakdown for the defect currently open, and the
+          band and pipeline composition read down the column beside them —
+          the explanation next to the work rather than above it. */}
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
+        <Card flush>
+            <CardHeader className="px-4 pt-4 pb-3" title={t('Road segment register')} description={t('Selecting a segment focuses the ward filter across the rest of this page.')} />
+          {filteredSegments.length === 0 ? (
+            <EmptyState className="m-4" title={t('No segments match the current filters')} detail="Adjust the ward or search term above." />
+          ) : (
+            <DataTable
+              rows={filteredSegments}
+              columns={segmentColumns}
+              rowKey={(r) => r.id}
+              pageSize={10}
+              searchable={false}
+              onRowClick={(r) => setFilter('wardIds', filters.wardIds.length === 1 && filters.wardIds[0] === r.wardId ? [] : [r.wardId])}
+              initialSort={{ columnId: 'condition', direction: 'asc' }}
+              ariaLabel="Road segment register"
+            />
+          )}
+        </Card>
+
+        <Card flush>
+          <CardHeader
+            className="px-4 pt-4 pb-3"
+            title={t('Priority queue - top ranked defects')}
+            description={t('Highest-priority open defects by published score, {0}. Excludes repaired and verified-closed defects.', bandWardId ? wardName(bandWardId) : 'city-wide')}
           />
-        )}
-      </Card>
-
-      {/* --- Road Defect Priority Engine --------------------------------- */}
-      <Card tone="info">
-        <CardHeader
-          icon={<Wrench className="h-4 w-4" />}
-          title={t('Road Defect Priority Engine')}
-          description={t('Constrained rectification capacity is directed strictly by a published, weighted score. The ordering is transparent so it can be defended, and so a ward receiving no treatment in a given window can be shown why.')}
-        />
-        <blockquote className="mt-3 border-l-2 border-govt-300 pl-3 text-xs leading-relaxed text-ink-700 italic">{PRIORITY_ENGINE_STATEMENT}</blockquote>
-        <div className="mt-4">
-          <p className="label-institutional mb-2">{t('Published priority weights')}</p>
-          <ContributionBars items={weightItems} />
-        </div>
-      </Card>
-
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <Card>
-          <CardHeader title={t('Priority band distribution')} description={bandWardId ? `Filtered to ${wardName(bandWardId)}.` : 'City-wide, all wards.'} />
-          <div className="mt-3">
-            <CompositionBar segments={bands.map((b) => ({ id: b.band, label: b.band, value: b.count, colour: BAND_COLOUR[b.tone] }))} />
-          </div>
-          <ul className="mt-3 space-y-2">
-            {bands.map((b) => (
-              <li key={b.band} className="flex items-start justify-between gap-3 text-xs">
-                <div className="min-w-0">
-                  <span className="font-semibold text-ink-800">{b.band}</span>
-                  <span className="ml-1.5 text-ink-400">
-                    ({b.min}–{b.max})
-                  </span>
-                  <p className="mt-0.5 leading-relaxed text-ink-500">{b.description}</p>
-                </div>
-                <Badge tone={b.tone} className="shrink-0">
-                  {b.count}
-                </Badge>
-              </li>
-            ))}
-          </ul>
+          {rankedForBand.length === 0 ? (
+            <EmptyState className="m-4" compact title={t('No open defects in the priority queue')} detail="Every defect in this scope has been repaired or verified closed." />
+          ) : (
+            <ol className="divide-y divide-ink-50">
+              {rankedForBand.slice(0, 8).map((d, i) => (
+                <li key={d.id}>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedDefectId(d.id === selectedDefectId ? null : d.id)}
+                    className={cn('flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-govt-50/50', d.id === selectedDefectId && 'bg-govt-50')}
+                  >
+                    <span className="numeric w-5 shrink-0 text-xs font-semibold text-ink-400">{i + 1}</span>
+                    <span className="min-w-0 flex-1 truncate text-xs font-medium text-ink-800">
+                      {DEFECT_TYPE_LABEL[d.type]} · {segmentById.get(d.segmentId)?.name ?? d.segmentId}
+                    </span>
+                    <span className="shrink-0 text-[0.6875rem] text-ink-400">{wardName(d.wardId)}</span>
+                    <Badge tone={toneForScore(d.priorityScore, false)} className="shrink-0">
+                      {d.priorityScore}/100
+                    </Badge>
+                  </button>
+                </li>
+              ))}
+            </ol>
+          )}
         </Card>
 
-        <Card>
-          <CardHeader title={t('Work-order pipeline')} description={bandWardId ? `Filtered to ${wardName(bandWardId)}.` : 'City-wide, all wards.'} />
-          <div className="mt-3">
-            <CompositionBar segments={pipeline.map((p) => ({ id: p.id, label: p.label, value: p.value, colour: PIPELINE_COLOUR[p.id as RoadDefect['status']] }))} />
-          </div>
-        </Card>
-      </div>
-
-      <Card flush>
-        <CardHeader
-          className="px-4 pt-4 pb-3"
-          title={t('Priority queue - top ranked defects')}
-          description={t('Highest-priority open defects by published score, {0}. Excludes repaired and verified-closed defects.', bandWardId ? wardName(bandWardId) : 'city-wide')}
-        />
-        {rankedForBand.length === 0 ? (
-          <EmptyState className="m-4" compact title={t('No open defects in the priority queue')} detail="Every defect in this scope has been repaired or verified closed." />
-        ) : (
-          <ol className="divide-y divide-ink-50">
-            {rankedForBand.slice(0, 8).map((d, i) => (
-              <li key={d.id}>
-                <button
-                  type="button"
-                  onClick={() => setSelectedDefectId(d.id === selectedDefectId ? null : d.id)}
-                  className={cn('flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-govt-50/50', d.id === selectedDefectId && 'bg-govt-50')}
-                >
-                  <span className="numeric w-5 shrink-0 text-xs font-semibold text-ink-400">{i + 1}</span>
-                  <span className="min-w-0 flex-1 truncate text-xs font-medium text-ink-800">
-                    {DEFECT_TYPE_LABEL[d.type]} · {segmentById.get(d.segmentId)?.name ?? d.segmentId}
-                  </span>
-                  <span className="shrink-0 text-[0.6875rem] text-ink-400">{wardName(d.wardId)}</span>
-                  <Badge tone={toneForScore(d.priorityScore, false)} className="shrink-0">
-                    {d.priorityScore}/100
-                  </Badge>
-                </button>
-              </li>
-            ))}
-          </ol>
-        )}
-      </Card>
-
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_22rem]">
         <Card flush>
           <CardHeader
             className="px-4 pt-4 pb-3"
@@ -515,104 +479,152 @@ export function RoadsIntelligencePage(): React.JSX.Element {
           )}
         </Card>
 
-        <Card className="min-w-0">
-          <CardHeader title={t('Selected defect - driver breakdown')} description={t('Weight, raw score and contribution behind this defect\'s priority score.')} />
-          {selectedDefect ? (
-            <div className="mt-3">
-              <div className="flex flex-wrap items-center gap-1.5">
-                <Badge tone="neutral">{DEFECT_TYPE_LABEL[selectedDefect.type]}</Badge>
-                <SeverityBadge severity={selectedDefect.severity} />
-                <Badge tone={toneForScore(selectedDefect.priorityScore, false)}>{selectedDefect.priorityScore}/100</Badge>
-              </div>
-              <p className="mt-2 text-xs text-ink-500">
-                {segmentById.get(selectedDefect.segmentId)?.name ?? selectedDefect.segmentId} · {wardName(selectedDefect.wardId)}
-              </p>
-              <div className="mt-3">
-                <ContributionBars items={selectedDefect.priorityDrivers} />
-              </div>
+        <Card>
+          <CardHeader title={t('Network map')} description={t('Road-condition layer with defect markers. Click a marker to inspect its driver breakdown.')} />
+          <div className="mt-3">
+            <CityMap
+              layers={[
+                {
+                  id: 'condition',
+                  label: t('Road Condition Index'),
+                  valueFor: (wardId) => average(conditionByWard.get(wardId)),
+                  higherIsWorse: false,
+                  unit: '/100 condition',
+                  description: t('Average pavement condition index of segments mapped in the ward.'),
+                },
+              ]}
+              markers={defectMarkers}
+              height={420}
+            />
+          </div>
+          {filteredDefects.length > markerSource.length ? (
+            <p className="mt-2 text-[0.6875rem] text-ink-400">
+              {t('Showing the {0} highest-priority markers of {1} defects in the current filter.', markerSource.length, filteredDefects.length)}
+            </p>
+          ) : null}
+        </Card>
 
-              <div className="mt-3 border-t border-ink-100 pt-3">
-                <p className="label-institutional mb-1.5">{t('Update status')}</p>
-                {(() => {
-                  const next = nextDefectStatus(selectedDefect.status)
-                  if (!next) return <span className="text-xs text-ink-400">{t('This defect has reached its terminal status.')}</span>
-                  const mayEdit = allowed(user, 'project', 'edit', { wardId: selectedDefect.wardId, domain: 'roads' })
-                  return (
-                    <Button
-                      size="xs"
-                      variant="primary"
-                      disabled={!mayEdit}
-                      title={mayEdit ? `Move to ${STATUS_LABEL[next]}` : 'Your role does not hold project:edit for this ward. This control is disabled by the permission engine.'}
-                      onClick={() => setPendingStatusChange({ defect: selectedDefect, next })}
-                    >
-                      {t('Move to {0}', STATUS_LABEL[next])}
-                    </Button>
-                  )
-                })()}
-              </div>
-
-              {selectedSegment?.emergencyRoute || selectedSegment?.hospitalAccess ? (
-                <p className="mt-2.5 flex items-start gap-1.5 text-[0.6875rem] leading-relaxed text-crit-700">
-                  <ShieldAlert className="mt-px h-3 w-3 shrink-0" />
-                  {t('This defect sits on a segment carrying')}{' '}{selectedSegment.emergencyRoute ? 'designated emergency-route' : 'hospital-access'}{' '}{t('status.')}
-                </p>
-              ) : null}
-            </div>
+        <Card>
+          <CardHeader
+            icon={<Hammer className="h-4 w-4" />}
+            title={t('Resurfacing schedule - asset lifecycle position')}
+            description={t('Segments overdue against an indicative departmental resurfacing cycle by surface type (asphalt 6 years, paver block 10 years, mastic 8 years, concrete 15 years), used here for planning purposes only.')}
+          />
+          {overdueSegments.length === 0 ? (
+            <EmptyState compact className="mt-3" title={t('No segment overdue against its indicative cycle')} detail="Every segment has been resurfaced within its indicative surface-type cycle." />
           ) : (
-            <EmptyState compact className="mt-3" title={t('No defect selected')} detail="Select a row in the defect register, an entry in the priority queue, or a marker on the map." />
+            <ul className="mt-3 divide-y divide-ink-50">
+              {overdueSegments.slice(0, 12).map((r) => (
+                <li key={r.segment.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
+                  <span className="min-w-0 truncate text-xs font-medium text-ink-800">
+                    {r.segment.name} <span className="font-normal text-ink-500">· {wardName(r.segment.wardId)} · {SURFACE_LABEL[r.segment.surface]}</span>
+                  </span>
+                  <span className="flex shrink-0 items-center gap-1.5">
+                    <Badge tone="muted">{t('Resurfaced {0}', r.segment.lastResurfacedYear)}</Badge>
+                    <Badge tone="warn">{t('{0} yr overdue', r.overdueBy)}</Badge>
+                  </span>
+                </li>
+              ))}
+            </ul>
           )}
         </Card>
-      </div>
-
-      <Card>
-        <CardHeader title={t('Network map')} description={t('Road-condition layer with defect markers. Click a marker to inspect its driver breakdown.')} />
-        <div className="mt-3">
-          <CityMap
-            layers={[
-              {
-                id: 'condition',
-                label: t('Road Condition Index'),
-                valueFor: (wardId) => average(conditionByWard.get(wardId)),
-                higherIsWorse: false,
-                unit: '/100 condition',
-                description: t('Average pavement condition index of segments mapped in the ward.'),
-              },
-            ]}
-            markers={defectMarkers}
-            height={420}
-          />
         </div>
-        {filteredDefects.length > markerSource.length ? (
-          <p className="mt-2 text-[0.6875rem] text-ink-400">
-            {t('Showing the {0} highest-priority markers of {1} defects in the current filter.', markerSource.length, filteredDefects.length)}
-          </p>
-        ) : null}
-      </Card>
 
-      <Card>
-        <CardHeader
-          icon={<Hammer className="h-4 w-4" />}
-          title={t('Resurfacing schedule - asset lifecycle position')}
-          description={t('Segments overdue against an indicative departmental resurfacing cycle by surface type (asphalt 6 years, paver block 10 years, mastic 8 years, concrete 15 years), used here for planning purposes only.')}
-        />
-        {overdueSegments.length === 0 ? (
-          <EmptyState compact className="mt-3" title={t('No segment overdue against its indicative cycle')} detail="Every segment has been resurfaced within its indicative surface-type cycle." />
-        ) : (
-          <ul className="mt-3 divide-y divide-ink-50">
-            {overdueSegments.slice(0, 12).map((r) => (
-              <li key={r.segment.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
-                <span className="min-w-0 truncate text-xs font-medium text-ink-800">
-                  {r.segment.name} <span className="font-normal text-ink-500">· {wardName(r.segment.wardId)} · {SURFACE_LABEL[r.segment.surface]}</span>
-                </span>
-                <span className="flex shrink-0 items-center gap-1.5">
-                  <Badge tone="muted">{t('Resurfaced {0}', r.segment.lastResurfacedYear)}</Badge>
-                  <Badge tone="warn">{t('{0} yr overdue', r.overdueBy)}</Badge>
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </Card>
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
+          {/* --- Road Defect Priority Engine --------------------------------- */}
+          <Card tone="info">
+            <CardHeader
+              icon={<Wrench className="h-4 w-4" />}
+              title={t('Road Defect Priority Engine')}
+              description={t('Constrained rectification capacity is directed strictly by a published, weighted score. The ordering is transparent so it can be defended, and so a ward receiving no treatment in a given window can be shown why.')}
+            />
+            <blockquote className="mt-3 border-l-2 border-govt-300 pl-3 text-xs leading-relaxed text-ink-700 italic">{PRIORITY_ENGINE_STATEMENT}</blockquote>
+            <div className="mt-4">
+              <p className="label-institutional mb-2">{t('Published priority weights')}</p>
+              <ContributionBars items={weightItems} />
+            </div>
+          </Card>
+
+          <Card className="min-w-0">
+            <CardHeader title={t('Selected defect - driver breakdown')} description={t('Weight, raw score and contribution behind this defect\'s priority score.')} />
+            {selectedDefect ? (
+              <div className="mt-3">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <Badge tone="neutral">{DEFECT_TYPE_LABEL[selectedDefect.type]}</Badge>
+                  <SeverityBadge severity={selectedDefect.severity} />
+                  <Badge tone={toneForScore(selectedDefect.priorityScore, false)}>{selectedDefect.priorityScore}/100</Badge>
+                </div>
+                <p className="mt-2 text-xs text-ink-500">
+                  {segmentById.get(selectedDefect.segmentId)?.name ?? selectedDefect.segmentId} · {wardName(selectedDefect.wardId)}
+                </p>
+                <div className="mt-3">
+                  <ContributionBars items={selectedDefect.priorityDrivers} />
+                </div>
+
+                <div className="mt-3 border-t border-ink-100 pt-3">
+                  <p className="label-institutional mb-1.5">{t('Update status')}</p>
+                  {(() => {
+                    const next = nextDefectStatus(selectedDefect.status)
+                    if (!next) return <span className="text-xs text-ink-400">{t('This defect has reached its terminal status.')}</span>
+                    const mayEdit = allowed(user, 'project', 'edit', { wardId: selectedDefect.wardId, domain: 'roads' })
+                    return (
+                      <Button
+                        size="xs"
+                        variant="primary"
+                        disabled={!mayEdit}
+                        title={mayEdit ? `Move to ${STATUS_LABEL[next]}` : 'Your role does not hold project:edit for this ward. This control is disabled by the permission engine.'}
+                        onClick={() => setPendingStatusChange({ defect: selectedDefect, next })}
+                      >
+                        {t('Move to {0}', STATUS_LABEL[next])}
+                      </Button>
+                    )
+                  })()}
+                </div>
+
+                {selectedSegment?.emergencyRoute || selectedSegment?.hospitalAccess ? (
+                  <p className="mt-2.5 flex items-start gap-1.5 text-[0.6875rem] leading-relaxed text-crit-700">
+                    <ShieldAlert className="mt-px h-3 w-3 shrink-0" />
+                    {t('This defect sits on a segment carrying')}{' '}{selectedSegment.emergencyRoute ? 'designated emergency-route' : 'hospital-access'}{' '}{t('status.')}
+                  </p>
+                ) : null}
+              </div>
+            ) : (
+              <EmptyState compact className="mt-3" title={t('No defect selected')} detail="Select a row in the defect register, an entry in the priority queue, or a marker on the map." />
+            )}
+          </Card>
+
+          <Card>
+            <CardHeader title={t('Priority band distribution')} description={bandWardId ? `Filtered to ${wardName(bandWardId)}.` : 'City-wide, all wards.'} />
+            <div className="mt-3">
+              <CompositionBar segments={bands.map((b) => ({ id: b.band, label: b.band, value: b.count, colour: BAND_COLOUR[b.tone] }))} />
+            </div>
+            <ul className="mt-3 space-y-2">
+              {bands.map((b) => (
+                <li key={b.band} className="flex items-start justify-between gap-3 text-xs">
+                  <div className="min-w-0">
+                    <span className="font-semibold text-ink-800">{b.band}</span>
+                    <span className="ml-1.5 text-ink-400">
+                      ({b.min}–{b.max})
+                    </span>
+                    <p className="mt-0.5 leading-relaxed text-ink-500">{b.description}</p>
+                  </div>
+                  <Badge tone={b.tone} className="shrink-0">
+                    {b.count}
+                  </Badge>
+                </li>
+              ))}
+            </ul>
+          </Card>
+
+          <Card>
+            <CardHeader title={t('Work-order pipeline')} description={bandWardId ? `Filtered to ${wardName(bandWardId)}.` : 'City-wide, all wards.'} />
+            <div className="mt-3">
+              <CompositionBar segments={pipeline.map((p) => ({ id: p.id, label: p.label, value: p.value, colour: PIPELINE_COLOUR[p.id as RoadDefect['status']] }))} />
+            </div>
+          </Card>
+
+        </div>
+      </div>
 
       <ConfirmDialog
         open={Boolean(pendingStatusChange)}

@@ -5,6 +5,7 @@ import { useServiceAction, useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { aiService, type OversightFilters } from '@/services'
 import { useCurrentUser } from '@/stores/auth.store'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { allowed } from '@/security'
 import { isoFromAnchor } from '@/utils/deterministic'
 import { formatPercent, formatRelative } from '@/utils/format'
@@ -107,6 +108,13 @@ function toRecommendationBlock(record: HumanOversightRecord, request: AIRequestR
 
 export function AIRecommendationsPage(): React.JSX.Element {
   const user = useCurrentUser()
+
+  // The shell's masthead states the screen's name; the page states the wording.
+  usePageMasthead(
+    t('AI Recommendations'),
+    t('Every advisory recommendation the AI layer has produced, awaiting or carrying a named officer\'s decision. An AI recommendation is not an instruction - it becomes an action only once a competent, accountable officer approves it here.'),
+  )
+
   const [tab, setTab] = useState<HumanOversightRecord['outcome']>('pending')
   const [dialog, setDialog] = useState<{ id: string; outcome: HumanOversightRecord['outcome']; title: string } | null>(null)
 
@@ -159,8 +167,6 @@ export function AIRecommendationsPage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('AI & Automation')}
-        title={t('AI Recommendations')}
-        description={t('Every advisory recommendation the AI layer has produced, awaiting or carrying a named officer\'s decision. An AI recommendation is not an instruction - it becomes an action only once a competent, accountable officer approves it here.')}
         breadcrumbs={[{ label: t('AI & Automation') }, { label: t('AI Recommendations') }]}
         freshness={FRESHNESS}
       />
@@ -176,68 +182,81 @@ export function AIRecommendationsPage(): React.JSX.Element {
         />
       ) : null}
 
-      {!anyLoading && !anyError && summary ? (
-        <>
-          <MetricGrid columns={5}>
-            <MetricCard label={t('Pending review')} value={summary.pending} tone={summary.pending > 0 ? 'warn' : 'default'} icon={<Sparkles className="h-4 w-4" />} />
-            <MetricCard label={t('Accepted')} value={summary.accepted} tone="positive" />
-            <MetricCard label={t('Modified')} value={summary.modified} />
-            <MetricCard label={t('Rejected')} value={summary.rejected} />
-            <MetricCard label={t('Acceptance rate')} value={formatPercent(summary.acceptanceRate)} support={t('Of all reviewed recommendations')} />
-          </MetricGrid>
-
-          <Card flush>
-            <div className="border-b border-ink-100 px-4 pt-4 pb-3">
-              <Tabs items={tabItems} value={tab} onChange={(id) => setTab(id as HumanOversightRecord['outcome'])} />
-            </div>
-
-            {records.length === 0 ? (
-              <EmptyState
-                className="m-4"
-                title={t('No {0} recommendations', tab)}
-                detail="No recommendation currently sits in this review state within your authorised scope."
-              />
-            ) : (
-              <div className="grid grid-cols-1 gap-3 p-4 lg:grid-cols-2">
-                {records.map((record) => (
-                  <AIRecommendationCard
-                    key={record.id}
-                    recommendation={toRecommendationBlock(record, requestById.get(record.aiRequestId))}
-                    status={record.outcome}
-                    onApprove={
-                      tab === 'pending' && mayReview
-                        ? () => setDialog({ id: record.id, outcome: 'accepted', title: t('Approve - {0}', record.recommendationTitle) })
-                        : undefined
-                    }
-                    onModify={
-                      tab === 'pending' && mayReview
-                        ? () => setDialog({ id: record.id, outcome: 'modified', title: t('Modify - {0}', record.recommendationTitle) })
-                        : undefined
-                    }
-                    onReject={
-                      tab === 'pending' && mayReview
-                        ? () => setDialog({ id: record.id, outcome: 'rejected', title: t('Reject - {0}', record.recommendationTitle) })
-                        : undefined
-                    }
-                  />
-                ))}
+      {/* ── Two columns ─────────────────────────────────────────────
+          The recommendations awaiting a decision take the wide column — that
+          is the work. The standing counts and the statement of what an
+          approval does and does not do sit beside them, where an officer sees
+          the limit of the act before performing it. */}
+      <div className="grid grid-cols-1 gap-3 xl:grid-cols-12">
+        <div className="flex min-w-0 flex-col gap-3 xl:col-span-8">
+          {!anyLoading && !anyError && summary ? (
+            <Card flush>
+              <div className="border-b border-ink-100 px-4 pt-4 pb-3">
+                <Tabs items={tabItems} value={tab} onChange={(id) => setTab(id as HumanOversightRecord['outcome'])} />
               </div>
-            )}
-            {!mayReview ? (
-              <p className="border-t border-ink-100 px-4 py-3 text-[0.6875rem] text-ink-400">
-                {t('Your assigned role does not hold ai-governance:approve. Review controls are disabled - this is enforced by the permission engine, not hidden from view.')}
-              </p>
-            ) : null}
-          </Card>
-        </>
-      ) : null}
 
-      <Card tone="info">
-        <p className="flex items-start gap-2 text-xs leading-relaxed text-ink-700">
-          <AlertOctagon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-govt-600" />
-          {t('Recommendations never execute automatically. Approving a recommendation here records the officer\'s decision against the audit trail; it does not itself deploy a resource, transfer funds or change a municipal record - the accountable department still carries out and records the resulting action through its own workflow.')}
-        </p>
-      </Card>
+              {records.length === 0 ? (
+                <EmptyState
+                  className="m-4"
+                  title={t('No {0} recommendations', tab)}
+                  detail="No recommendation currently sits in this review state within your authorised scope."
+                />
+              ) : (
+                <div className="grid grid-cols-1 gap-3 p-4 lg:grid-cols-2">
+                  {records.map((record) => (
+                    <AIRecommendationCard
+                      key={record.id}
+                      recommendation={toRecommendationBlock(record, requestById.get(record.aiRequestId))}
+                      status={record.outcome}
+                      onApprove={
+                        tab === 'pending' && mayReview
+                          ? () => setDialog({ id: record.id, outcome: 'accepted', title: t('Approve - {0}', record.recommendationTitle) })
+                          : undefined
+                      }
+                      onModify={
+                        tab === 'pending' && mayReview
+                          ? () => setDialog({ id: record.id, outcome: 'modified', title: t('Modify - {0}', record.recommendationTitle) })
+                          : undefined
+                      }
+                      onReject={
+                        tab === 'pending' && mayReview
+                          ? () => setDialog({ id: record.id, outcome: 'rejected', title: t('Reject - {0}', record.recommendationTitle) })
+                          : undefined
+                      }
+                    />
+                  ))}
+                </div>
+              )}
+              {!mayReview ? (
+                <p className="border-t border-ink-100 px-4 py-3 text-[0.6875rem] text-ink-400">
+                  {t('Your assigned role does not hold ai-governance:approve. Review controls are disabled - this is enforced by the permission engine, not hidden from view.')}
+                </p>
+              ) : null}
+            </Card>
+            ) : null}
+        </div>
+
+        <div className="flex min-w-0 flex-col gap-3 xl:col-span-4">
+          {!anyLoading && !anyError && summary ? (
+            <MetricGrid columns={2}>
+              <MetricCard label={t('Pending review')} value={summary.pending} tone={summary.pending > 0 ? 'warn' : 'default'} icon={<Sparkles className="h-4 w-4" />} />
+              <MetricCard label={t('Accepted')} value={summary.accepted} tone="positive" />
+              <MetricCard label={t('Modified')} value={summary.modified} />
+              <MetricCard label={t('Rejected')} value={summary.rejected} />
+              <MetricCard label={t('Acceptance rate')} value={formatPercent(summary.acceptanceRate)} support={t('Of all reviewed recommendations')} />
+            </MetricGrid>
+          ) : null}
+
+          <Card tone="info">
+            <p className="flex items-start gap-2 text-xs leading-relaxed text-ink-700">
+              <AlertOctagon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-govt-600" />
+              {t('Recommendations never execute automatically. Approving a recommendation here records the officer\'s decision against the audit trail; it does not itself deploy a resource, transfer funds or change a municipal record - the accountable department still carries out and records the resulting action through its own workflow.')}
+            </p>
+          </Card>
+
+          <DemonstrationNotice />
+        </div>
+      </div>
 
       <ConfirmDialog
         open={dialog !== null}
@@ -255,8 +274,6 @@ export function AIRecommendationsPage(): React.JSX.Element {
         intent={dialog?.outcome === 'accepted' ? 'positive' : dialog?.outcome === 'rejected' ? 'critical' : 'primary'}
         requireReason={dialog?.outcome === 'modified' || dialog?.outcome === 'rejected'}
       />
-
-      <DemonstrationNotice />
     </PageBody>
   )
 }

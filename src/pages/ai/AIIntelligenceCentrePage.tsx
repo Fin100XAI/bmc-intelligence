@@ -5,6 +5,7 @@ import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { aiService } from '@/services'
 import { DEMO_USERS } from '@/stores/auth.store'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { getRole } from '@/security'
 import { isoFromAnchor } from '@/utils/deterministic'
 import { formatPercent } from '@/utils/format'
@@ -76,6 +77,12 @@ registerLayer(() => {
 })
 
 export function AIIntelligenceCentrePage(): React.JSX.Element {
+  // The shell's masthead states the screen's name; the page states the wording.
+  usePageMasthead(
+    t('AI Intelligence Centre'),
+    t('Every request the governed AI layer has processed, with the model that produced it, the evidence it drew on and the human review and policy outcome recorded against it. This is the operational control surface for AI use across the platform.'),
+  )
+
   const requestsQuery = useServiceQuery(queryKeys.ai('requests-all'), (u) => aiService.requests(u, { pageSize: 300 }))
 
   const [useCaseFilter, setUseCaseFilter] = useState<'all' | AIUseCase>('all')
@@ -230,8 +237,6 @@ export function AIIntelligenceCentrePage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('AI & Automation')}
-        title={t('AI Intelligence Centre')}
-        description={t('Every request the governed AI layer has processed, with the model that produced it, the evidence it drew on and the human review and policy outcome recorded against it. This is the operational control surface for AI use across the platform.')}
         breadcrumbs={[{ label: t('AI & Automation') }, { label: t('AI Intelligence Centre') }]}
         freshness={FRESHNESS}
       />
@@ -253,128 +258,137 @@ export function AIIntelligenceCentrePage(): React.JSX.Element {
               <MetricCard label={t('Pending review')} value={requests.filter((r) => r.reviewStatus === 'pending').length} tone="warn" />
             </MetricGrid>
 
-            <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-              <Card>
-                <ChartFrame title={t('Requests by use case')} unit="requests" timeframe="All recorded requests" height={220}>
-                  <CategoryBarChart data={byUseCase} series={[{ key: 'value', label: t('Requests'), colour: '#2f6feb' }]} layout="horizontal" />
-                </ChartFrame>
-              </Card>
-              <Card>
-                <ChartFrame title={t('Confidence distribution')} unit="requests" timeframe="All recorded requests" height={220}>
-                  <DonutChart data={byConfidence} centreValue={String(requests.length)} centreLabel="Requests" />
-                </ChartFrame>
-              </Card>
-              <Card>
-                <ChartFrame title={t('Latency distribution')} unit="requests" timeframe="All recorded requests" height={220}>
-                  <CategoryBarChart data={byLatency} series={[{ key: 'value', label: t('Requests'), colour: '#0ea5b7' }]} layout="vertical" />
-                </ChartFrame>
-              </Card>
+            {/* ── Two columns ───────────────────────────────────────
+                The log is the record and takes the wide column; the three
+                distributions and the policy exceptions read beside it, where
+                a shape in the chart can be checked against the rows that
+                produced it without scrolling the table away. */}
+            <div className="grid grid-cols-1 gap-3 xl:grid-cols-12">
+              <div className="min-w-0 xl:col-span-8">
+                  <Card flush>
+                    <CardHeader
+                      bordered
+                      title={t('AI request log')}
+                      description={t('Sortable, searchable and paginated. Column visibility can be adjusted for a narrower screen.')}
+                      actions={
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Select
+                            aria-label={t('Filter by use case')}
+                            value={useCaseFilter}
+                            onChange={(e) => setUseCaseFilter(e.target.value as typeof useCaseFilter)}
+                            className="w-auto min-w-[10rem]"
+                            options={[{ value: 'all', label: t('All use cases') }, ...(Object.keys(AI_USE_CASE_LABEL) as AIUseCase[]).map((u) => ({ value: u, label: AI_USE_CASE_LABEL[u] }))]}
+                          />
+                          <Select
+                            aria-label={t('Filter by model')}
+                            value={modelFilter}
+                            onChange={(e) => setModelFilter(e.target.value)}
+                            className="w-auto min-w-[9rem]"
+                            options={[{ value: 'all', label: t('All models') }, ...models.map((m) => ({ value: m, label: m }))]}
+                          />
+                          <Select
+                            aria-label={t('Filter by review status')}
+                            value={reviewFilter}
+                            onChange={(e) => setReviewFilter(e.target.value as typeof reviewFilter)}
+                            className="w-auto min-w-[10rem]"
+                            options={[
+                              { value: 'all', label: t('All review statuses') },
+                              { value: 'not-required', label: t('Not required') },
+                              { value: 'pending', label: t('Pending') },
+                              { value: 'accepted', label: t('Accepted') },
+                              { value: 'modified', label: t('Modified') },
+                              { value: 'rejected', label: t('Rejected') },
+                              { value: 'escalated', label: t('Escalated') },
+                            ]}
+                          />
+                          <Select
+                            aria-label={t('Filter by policy status')}
+                            value={policyFilter}
+                            onChange={(e) => setPolicyFilter(e.target.value as typeof policyFilter)}
+                            className="w-auto min-w-[9rem]"
+                            options={[
+                              { value: 'all', label: t('All policy statuses') },
+                              { value: 'passed', label: t('Passed') },
+                              { value: 'flagged', label: t('Flagged') },
+                              { value: 'blocked', label: t('Blocked') },
+                            ]}
+                          />
+                          <Select
+                            aria-label={t('Filter by confidence')}
+                            value={confidenceFilter}
+                            onChange={(e) => setConfidenceFilter(e.target.value as typeof confidenceFilter)}
+                            className="w-auto min-w-[9rem]"
+                            options={[
+                              { value: 'all', label: t('All confidence') },
+                              { value: 'high', label: t('High') },
+                              { value: 'medium', label: t('Medium') },
+                              { value: 'low', label: t('Low') },
+                            ]}
+                          />
+                        </div>
+                      }
+                    />
+                    <DataTable
+                      rows={filtered}
+                      columns={columns}
+                      rowKey={(row) => row.id}
+                      pageSize={12}
+                      stickyHeader
+                      maxHeight="30rem"
+                      searchPlaceholder="Search prompts"
+                      initialSort={{ columnId: 'latency', direction: 'desc' }}
+                      emptyTitle={t('No requests match these filters')}
+                      emptyDetail="Adjust the filters above to widen the result set."
+                    />
+                  </Card>
+              </div>
+
+              <div className="flex min-w-0 flex-col gap-3 xl:col-span-4">
+                <Card>
+                  <ChartFrame title={t('Requests by use case')} unit="requests" timeframe="All recorded requests" height={220}>
+                    <CategoryBarChart data={byUseCase} series={[{ key: 'value', label: t('Requests'), colour: '#2f6feb' }]} layout="horizontal" />
+                  </ChartFrame>
+                </Card>
+                <Card>
+                  <ChartFrame title={t('Confidence distribution')} unit="requests" timeframe="All recorded requests" height={220}>
+                    <DonutChart data={byConfidence} centreValue={String(requests.length)} centreLabel="Requests" />
+                  </ChartFrame>
+                </Card>
+                <Card>
+                  <ChartFrame title={t('Latency distribution')} unit="requests" timeframe="All recorded requests" height={220}>
+                    <CategoryBarChart data={byLatency} series={[{ key: 'value', label: t('Requests'), colour: '#0ea5b7' }]} layout="vertical" />
+                  </ChartFrame>
+                </Card>
+
+                {flaggedOrBlocked.length > 0 ? (
+                  <Card tone="warn">
+                    <CardHeader
+                      icon={<AlertTriangle className="h-4 w-4" />}
+                      title={t('Flagged and blocked requests')}
+                      description={t('Requests the AI gateway policy flagged for review or blocked outright before reaching a model, with the recorded policy note.')}
+                    />
+                    <ul className="mt-3 space-y-2">
+                      {flaggedOrBlocked.map((r) => (
+                        <li key={r.id} className="flex items-start gap-2 rounded-[2px] border border-warn-200 bg-warn-50/40 p-2.5 text-xs">
+                          {r.policyStatus === 'blocked' ? (
+                            <Ban className="mt-0.5 h-3.5 w-3.5 shrink-0 text-crit-600" />
+                          ) : (
+                            <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warn-600" />
+                          )}
+                          <div className="min-w-0">
+                            <p className="font-medium text-ink-800">
+                              <Badge tone={POLICY_TONE[r.policyStatus]} className="mr-1.5">{r.policyStatus}</Badge>
+                              {AI_USE_CASE_LABEL[r.useCase]} · {r.modelId}
+                            </p>
+                            <p className="mt-0.5 leading-relaxed text-ink-600">{r.policyNote ?? 'No policy note recorded.'}</p>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </Card>
+                ) : null}
+              </div>
             </div>
-
-            {flaggedOrBlocked.length > 0 ? (
-              <Card tone="warn">
-                <CardHeader
-                  icon={<AlertTriangle className="h-4 w-4" />}
-                  title={t('Flagged and blocked requests')}
-                  description={t('Requests the AI gateway policy flagged for review or blocked outright before reaching a model, with the recorded policy note.')}
-                />
-                <ul className="mt-3 space-y-2">
-                  {flaggedOrBlocked.map((r) => (
-                    <li key={r.id} className="flex items-start gap-2 rounded-md border border-warn-200 bg-warn-50/40 p-2.5 text-xs">
-                      {r.policyStatus === 'blocked' ? (
-                        <Ban className="mt-0.5 h-3.5 w-3.5 shrink-0 text-crit-600" />
-                      ) : (
-                        <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warn-600" />
-                      )}
-                      <div className="min-w-0">
-                        <p className="font-medium text-ink-800">
-                          <Badge tone={POLICY_TONE[r.policyStatus]} className="mr-1.5">{r.policyStatus}</Badge>
-                          {AI_USE_CASE_LABEL[r.useCase]} · {r.modelId}
-                        </p>
-                        <p className="mt-0.5 leading-relaxed text-ink-600">{r.policyNote ?? 'No policy note recorded.'}</p>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </Card>
-            ) : null}
-
-            <Card flush>
-              <CardHeader
-                bordered
-                title={t('AI request log')}
-                description={t('Sortable, searchable and paginated. Column visibility can be adjusted for a narrower screen.')}
-                actions={
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Select
-                      aria-label={t('Filter by use case')}
-                      value={useCaseFilter}
-                      onChange={(e) => setUseCaseFilter(e.target.value as typeof useCaseFilter)}
-                      className="w-auto min-w-[10rem]"
-                      options={[{ value: 'all', label: t('All use cases') }, ...(Object.keys(AI_USE_CASE_LABEL) as AIUseCase[]).map((u) => ({ value: u, label: AI_USE_CASE_LABEL[u] }))]}
-                    />
-                    <Select
-                      aria-label={t('Filter by model')}
-                      value={modelFilter}
-                      onChange={(e) => setModelFilter(e.target.value)}
-                      className="w-auto min-w-[9rem]"
-                      options={[{ value: 'all', label: t('All models') }, ...models.map((m) => ({ value: m, label: m }))]}
-                    />
-                    <Select
-                      aria-label={t('Filter by review status')}
-                      value={reviewFilter}
-                      onChange={(e) => setReviewFilter(e.target.value as typeof reviewFilter)}
-                      className="w-auto min-w-[10rem]"
-                      options={[
-                        { value: 'all', label: t('All review statuses') },
-                        { value: 'not-required', label: t('Not required') },
-                        { value: 'pending', label: t('Pending') },
-                        { value: 'accepted', label: t('Accepted') },
-                        { value: 'modified', label: t('Modified') },
-                        { value: 'rejected', label: t('Rejected') },
-                        { value: 'escalated', label: t('Escalated') },
-                      ]}
-                    />
-                    <Select
-                      aria-label={t('Filter by policy status')}
-                      value={policyFilter}
-                      onChange={(e) => setPolicyFilter(e.target.value as typeof policyFilter)}
-                      className="w-auto min-w-[9rem]"
-                      options={[
-                        { value: 'all', label: t('All policy statuses') },
-                        { value: 'passed', label: t('Passed') },
-                        { value: 'flagged', label: t('Flagged') },
-                        { value: 'blocked', label: t('Blocked') },
-                      ]}
-                    />
-                    <Select
-                      aria-label={t('Filter by confidence')}
-                      value={confidenceFilter}
-                      onChange={(e) => setConfidenceFilter(e.target.value as typeof confidenceFilter)}
-                      className="w-auto min-w-[9rem]"
-                      options={[
-                        { value: 'all', label: t('All confidence') },
-                        { value: 'high', label: t('High') },
-                        { value: 'medium', label: t('Medium') },
-                        { value: 'low', label: t('Low') },
-                      ]}
-                    />
-                  </div>
-                }
-              />
-              <DataTable
-                rows={filtered}
-                columns={columns}
-                rowKey={(row) => row.id}
-                pageSize={12}
-                stickyHeader
-                maxHeight="30rem"
-                searchPlaceholder="Search prompts"
-                initialSort={{ columnId: 'latency', direction: 'desc' }}
-                emptyTitle={t('No requests match these filters')}
-                emptyDetail="Adjust the filters above to widen the result set."
-              />
-            </Card>
           </>
         )
       ) : null}

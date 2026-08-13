@@ -192,7 +192,6 @@ export const MR_PART_15: Record<string, string> = {
   'Top 20 by composite project risk score.': 'एकत्रित प्रकल्प जोखीम गुणांनुसार पहिले 20.',
   'Top anomaly:': 'प्रमुख विसंगती:',
   'Top domains by item count.': 'बाबींच्या संख्येनुसार प्रमुख क्षेत्रे.',
-  'Top emerging risks': 'प्रमुख उदयोन्मुख जोखमी',
   'Top risks': 'प्रमुख जोखमी',
   'Top signals': 'प्रमुख संकेत',
   'Top vendor:': 'प्रमुख पुरवठादार:',
@@ -322,8 +321,6 @@ export const MR_PART_15: Record<string, string> = {
   'Ward variance': 'प्रभाग फरक',
   'Ward-by-ward position': 'प्रभागनिहाय स्थिती',
   'Ward-disease indicators monitored': 'देखरेखीखालील प्रभाग-रोग निर्देशक',
-  'Ward-level composite indicators. Click a ward to open its profile.':
-    'प्रभाग स्तरावरील एकत्रित निर्देशक. प्रभागाचा तपशील उघडण्यासाठी त्यावर क्लिक करा.',
   'ward–segment records': 'प्रभाग–भाग नोंदी',
   'ward(s) below threshold': 'मर्यादेखालील प्रभाग',
   'Wards above expectation': 'अपेक्षेपेक्षा वरचे प्रभाग',
@@ -366,8 +363,6 @@ export const MR_PART_15: Record<string, string> = {
   'Water supply, solid waste, road condition, drainage readiness and municipal asset condition.':
     'पाणीपुरवठा, घनकचरा, रस्त्यांची स्थिती, जलनिस्सारण सज्जता आणि महानगरपालिका मालमत्तेची स्थिती.',
   'Water zones at risk:': 'धोक्यातील पाणी झोन:',
-  'Water, drainage and roads - the physical service condition of the city.':
-    'पाणी, जलनिस्सारण आणि रस्ते - शहराच्या प्रत्यक्ष सेवांची स्थिती.',
   'Waterlogging Risk Map': 'पाणी साचण्याचा जोखीम नकाशा',
   'Waterlogging spot · chronic index {0} · current risk {1}/100{2}':
     'पाणी साचण्याचे ठिकाण · दीर्घकालीन निर्देशांक {0} · सध्याची जोखीम {1}/100{2}',
@@ -386,7 +381,6 @@ export const MR_PART_15: Record<string, string> = {
     'या महानगरपालिकेसाठी मूल्यांकित सर्व {0} धोक्यांवर भारित.',
   'Weighted across all twelve dimensions.': 'सर्व बारा परिमाणांवर भारित.',
   'Weighted across six published components.': 'सहा प्रकाशित घटकांवर भारित.',
-  'Weighted components': 'भारित घटक',
   "Weights sum to {0} across the {1} dimensions assessed here, ordered so that flood and extreme rainfall carry the most weight - the recurring monsoon hazards every municipal corporation in the state plans against. A dimension the corporation has no jurisdiction over is not scored at all rather than scored as zero, and the remaining weights are rescaled in proportion, so two corporations' composite scores stay comparable. Flood, rainfall, fire, building and emergency-response dimensions read live from the corporation's registers; heat and utility-failure resilience are partially instrumented and carry demonstration baselines until their production telemetry is connected.":
     'येथे मूल्यांकित {1} परिमाणांवरील भारांची बेरीज {0} होते, आणि पूर व अतिवृष्टीला सर्वाधिक भार मिळेल अशा क्रमाने ती मांडली आहे - राज्यातील प्रत्येक महानगरपालिका ज्यांच्यासाठी नियोजन करते तेच हे वारंवार येणारे पावसाळी धोके आहेत. ज्या परिमाणावर महानगरपालिकेचे कार्यक्षेत्र नाही त्याला शून्य गुण न देता त्याचे मूल्यमापनच केले जात नाही, आणि उरलेले भार प्रमाणशीर पद्धतीने पुन्हा मोजले जातात, जेणेकरून दोन महानगरपालिकांचे एकत्रित गुण तुलनायोग्य राहतील. पूर, पर्जन्यमान, आग, इमारत आणि आपत्कालीन प्रतिसाद ही परिमाणे महानगरपालिकेच्या नोंदवह्यांतून थेट वाचली जातात; उष्णता आणि सुविधा-बिघाड लवचिकता अंशतःच मोजली जाते आणि तिचे उत्पादन दूरमापन जोडले जाईपर्यंत ती प्रात्यक्षिक आधाररेषा वापरते.',
   'Weights sum to {0}. A supplier may ask how their standing was reached, and this is the answer.':

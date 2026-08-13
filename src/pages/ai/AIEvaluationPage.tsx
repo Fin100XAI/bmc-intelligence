@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { ClipboardCheck, FlaskConical, ShieldCheck } from 'lucide-react'
-import { PageBody, PageHeader, SplitLayout } from '@/components/layout/PageHeader'
+import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { Badge } from '@/components/ui/badges'
 import { Card, CardHeader, DefinitionList, DefinitionRow, MetricGrid, ProgressBar } from '@/components/ui/primitives'
 import { DemonstrationNotice, EmptyState, ErrorState, LoadingState } from '@/components/ui/states'
@@ -8,6 +8,7 @@ import { MetricCard } from '@/components/cards/MetricCard'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { aiService } from '@/services'
+import { usePageMasthead } from '@/stores/masthead.store'
 import type { AIEvaluation } from '@/types/ai'
 import { formatRelative } from '@/utils/format'
 import { cn } from '@/utils/cn'
@@ -54,6 +55,12 @@ registerLayer(() => {
 })
 
 export function AIEvaluationPage(): React.JSX.Element {
+  // The shell's masthead states the screen's name; the page states the wording.
+  usePageMasthead(
+    t('AI Evaluation'),
+    t('The evidence behind each model\'s evaluation status: a dated run against six published dimensions, each scored against a published threshold. A model is approved for use only if it clears every dimension.'),
+  )
+
   const query = useServiceQuery(queryKeys.ai('evaluations'), (u) => aiService.evaluations(u))
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
@@ -74,29 +81,29 @@ export function AIEvaluationPage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('AI & Automation')}
-        title={t('AI Evaluation')}
-        description={t('The evidence behind each model\'s evaluation status: a dated run against six published dimensions, each scored against a published threshold. A model is approved for use only if it clears every dimension.')}
         breadcrumbs={[{ label: t('AI & Automation') }, { label: t('AI Evaluation') }]}
         freshness={FRESHNESS}
       />
 
-      <DemonstrationNotice />
+      {/* ── Two columns ─────────────────────────────────────────────
+          The standing count of what passes, fails and is due, then the runs
+          themselves, read down the wide column. The run an officer has opened
+          — its composite, its six dimensions and the rule that a single failed
+          threshold withholds the model — stands pinned beside them. */}
+      <div className="grid grid-cols-1 gap-3 xl:grid-cols-12">
+        <div className="flex min-w-0 flex-col gap-3 xl:col-span-8">
+          <MetricGrid columns={3}>
+            <MetricCard label={t('Models evaluated')} value={evaluations.length} support={`${passed} passing`} icon={<FlaskConical className="h-4 w-4" />} />
+            <MetricCard
+              label={t('Failing evaluation')}
+              value={failed}
+              tone={failed > 0 ? 'critical' : 'positive'}
+              support={t('Withheld from declared uses')}
+              icon={<ShieldCheck className="h-4 w-4" />}
+            />
+            <MetricCard label={t('Re-evaluation due')} value={due} tone={due > 0 ? 'warn' : 'default'} support={t('Approaching or past threshold')} icon={<ClipboardCheck className="h-4 w-4" />} />
+          </MetricGrid>
 
-      <MetricGrid columns={3}>
-        <MetricCard label={t('Models evaluated')} value={evaluations.length} support={`${passed} passing`} icon={<FlaskConical className="h-4 w-4" />} />
-        <MetricCard
-          label={t('Failing evaluation')}
-          value={failed}
-          tone={failed > 0 ? 'critical' : 'positive'}
-          support={t('Withheld from declared uses')}
-          icon={<ShieldCheck className="h-4 w-4" />}
-        />
-        <MetricCard label={t('Re-evaluation due')} value={due} tone={due > 0 ? 'warn' : 'default'} support={t('Approaching or past threshold')} icon={<ClipboardCheck className="h-4 w-4" />} />
-      </MetricGrid>
-
-      <SplitLayout
-        asideWidth="lg"
-        main={
           <Card flush>
             <CardHeader bordered title={t('Evaluation runs')} description={t('One run per model. Select a run to open its dimension scores.')} />
             {evaluations.length === 0 ? (
@@ -144,65 +151,72 @@ export function AIEvaluationPage(): React.JSX.Element {
               </ul>
             )}
           </Card>
-        }
-        aside={
-          selected ? (
-            <>
-              <Card>
-                <CardHeader
-                  title={`${selected.modelName} v${selected.modelVersion}`}
-                  description={selected.summary}
-                  actions={<Badge tone={VERDICT_TONE[selected.verdict]}>{VERDICT_LABEL[selected.verdict]}</Badge>}
-                />
-                <DefinitionList className="mt-3">
-                  <DefinitionRow label={t('Composite score')}>{selected.compositeScore}/100</DefinitionRow>
-                  <DefinitionRow label={t('Held-out cases')}>{selected.caseCount.toLocaleString()}</DefinitionRow>
-                  <DefinitionRow label={t('Evaluated')}>{formatRelative(selected.evaluatedAt)}</DefinitionRow>
-                </DefinitionList>
-              </Card>
+        </div>
 
-              <Card>
-                <CardHeader
-                  title={t('Dimension results')}
-                  description={t('Each dimension scored against its published pass threshold.')}
-                />
-                <ul className="mt-3 space-y-3">
-                  {selected.dimensions.map((d) => (
-                    <li key={d.id}>
-                      <div className="flex items-baseline justify-between gap-2">
-                        <span className="text-[0.8125rem] font-medium text-ink-800">{d.label}</span>
-                        <span className="numeric text-[0.6875rem] text-ink-500">
-                          <span className={cn('font-semibold', d.passed ? 'text-ok-700' : 'text-crit-700')}>
-                            {d.score}
+        {/* The whole column pins, not one panel of it: a `sticky` element stays
+            in flow, so a panel below a pinned one would slide up underneath it. */}
+        <div className="xl:col-span-4">
+          <div className="scrollbar-rail flex flex-col gap-3 xl:sticky xl:top-[3.75rem] xl:max-h-[calc(100vh-4.5rem)] xl:overflow-y-auto">
+            {selected ? (
+              <>
+                <Card>
+                  <CardHeader
+                    title={`${selected.modelName} v${selected.modelVersion}`}
+                    description={selected.summary}
+                    actions={<Badge tone={VERDICT_TONE[selected.verdict]}>{VERDICT_LABEL[selected.verdict]}</Badge>}
+                  />
+                  <DefinitionList className="mt-3">
+                    <DefinitionRow label={t('Composite score')}>{selected.compositeScore}/100</DefinitionRow>
+                    <DefinitionRow label={t('Held-out cases')}>{selected.caseCount.toLocaleString()}</DefinitionRow>
+                    <DefinitionRow label={t('Evaluated')}>{formatRelative(selected.evaluatedAt)}</DefinitionRow>
+                  </DefinitionList>
+                </Card>
+
+                <Card>
+                  <CardHeader
+                    title={t('Dimension results')}
+                    description={t('Each dimension scored against its published pass threshold.')}
+                  />
+                  <ul className="mt-3 space-y-3">
+                    {selected.dimensions.map((d) => (
+                      <li key={d.id}>
+                        <div className="flex items-baseline justify-between gap-2">
+                          <span className="text-[0.8125rem] font-medium text-ink-800">{d.label}</span>
+                          <span className="numeric text-[0.6875rem] text-ink-500">
+                            <span className={cn('font-semibold', d.passed ? 'text-ok-700' : 'text-crit-700')}>
+                              {d.score}
+                            </span>
+                            <span className="mx-1 text-ink-300">/</span>
+                            threshold {d.threshold}
                           </span>
-                          <span className="mx-1 text-ink-300">/</span>
-                          threshold {d.threshold}
-                        </span>
-                      </div>
-                      <div className="mt-1 flex items-center gap-2">
-                        <ProgressBar value={d.score} className="flex-1" />
-                        <Badge tone={d.passed ? 'positive' : 'critical'} size="sm">
-                          {d.passed ? 'Pass' : 'Fail'}
-                        </Badge>
-                      </div>
-                      <p className="mt-1 text-[0.6875rem] leading-relaxed text-ink-500">{d.detail}</p>
-                    </li>
-                  ))}
-                </ul>
-              </Card>
+                        </div>
+                        <div className="mt-1 flex items-center gap-2">
+                          <ProgressBar value={d.score} className="flex-1" />
+                          <Badge tone={d.passed ? 'positive' : 'critical'} size="sm">
+                            {d.passed ? 'Pass' : 'Fail'}
+                          </Badge>
+                        </div>
+                        <p className="mt-1 text-[0.6875rem] leading-relaxed text-ink-500">{d.detail}</p>
+                      </li>
+                    ))}
+                  </ul>
+                </Card>
 
-              <Card tone="sunken">
-                <div className="flex items-start gap-2.5">
-                  <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-govt-600" aria-hidden />
-                  <p className="text-[0.6875rem] leading-relaxed text-ink-600">
-                    {t('A model is approved for its declared uses only when it clears every dimension. A single failed dimension withholds the model, regardless of how high the composite score is - the composite cannot buy back a failed threshold.')}
-                  </p>
-                </div>
-              </Card>
-            </>
-          ) : null
-        }
-      />
+                <Card tone="sunken">
+                  <div className="flex items-start gap-2.5">
+                    <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-govt-600" aria-hidden />
+                    <p className="text-[0.6875rem] leading-relaxed text-ink-600">
+                      {t('A model is approved for its declared uses only when it clears every dimension. A single failed dimension withholds the model, regardless of how high the composite score is - the composite cannot buy back a failed threshold.')}
+                    </p>
+                  </div>
+                </Card>
+              </>
+            ) : null}
+
+            <DemonstrationNotice />
+          </div>
+        </div>
+      </div>
     </PageBody>
   )
 }

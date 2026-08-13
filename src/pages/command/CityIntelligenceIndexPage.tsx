@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { ArrowDownRight, ArrowRight, ArrowUpRight, Gauge, Minus, Plus } from 'lucide-react'
-import { PageBody, PageHeader, SplitLayout } from '@/components/layout/PageHeader'
+import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { Badge, ConfidenceBadge, StateBadge } from '@/components/ui/badges'
 import { Card, CardHeader, ProgressBar, ScoreDial } from '@/components/ui/primitives'
 import { DemonstrationNotice, ErrorState, LoadingState } from '@/components/ui/states'
@@ -8,6 +8,7 @@ import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { cityIndexService } from '@/services'
 import { useActiveCorporation } from '@/stores/corporation.store'
+import { usePageMasthead } from '@/stores/masthead.store'
 import type { IndexDimension } from '@/domains/executive/intelligence-index'
 import { INDEX_WEIGHTS } from '@/domains/executive/intelligence-index'
 import { cn } from '@/utils/cn'
@@ -46,6 +47,12 @@ export function CityIntelligenceIndexPage(): React.JSX.Element {
   const query = useServiceQuery(queryKeys.cityIndex(), (u) => cityIndexService.index(u))
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
+  // The shell renders the masthead; this page states what it should say.
+  usePageMasthead(
+    t('{0} City Intelligence Index', corporation.city),
+    t('One composite across twelve dimensions of the city\'s condition, each computed from the corporation\'s own records. Every score can be opened to its positive and negative contributors - this page never shows a number it cannot explain.'),
+  )
+
   const dimensions = useMemo(() => query.data?.dimensions ?? [], [query.data])
   const selected = useMemo(
     () => dimensions.find((d) => d.id === selectedId) ?? dimensions[0] ?? null,
@@ -62,72 +69,38 @@ export function CityIntelligenceIndexPage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('Command')}
-        title={t('{0} City Intelligence Index', corporation.city)}
-        description={t('One composite across twelve dimensions of the city\'s condition, each computed from the corporation\'s own records. Every score can be opened to its positive and negative contributors - this page never shows a number it cannot explain.')}
         breadcrumbs={[{ label: t('Command') }, { label: t('City Intelligence Index') }]}
         freshness={FRESHNESS}
       />
 
       <DemonstrationNotice />
 
-      {/* Headline ------------------------------------------------------ */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
-        <Card>
-          <CardHeader title={t('Composite index')} description={t('Weighted across all twelve dimensions.')} />
-          <div className="mt-3 flex items-center gap-4">
-            <ScoreDial score={index.score} label={t('Index')} caption={`${index.score}/100`} />
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <StateBadge state={index.state} />
-                <span className="inline-flex items-center gap-1 text-[0.6875rem] font-medium text-ink-600">
-                  <TrendGlyph points={index.trendPoints} />
-                  {index.trendPoints >= 0 ? '+' : ''}
-                  {index.trendPoints}{' '}{t('vs baseline')}
-                </span>
+      {/* ── Two columns ──────────────────────────────────────────────
+          The composite and the twelve figures it is made of read down the
+          wide column, in the order the arithmetic runs. Beside them: where
+          the index is moving, and the full account of whichever dimension
+          is open — so a score and its drivers are on screen together. */}
+      <div className="grid grid-cols-1 gap-3 xl:grid-cols-12">
+        {/* Column 1 — the composite and its components -------------- */}
+        <div className="flex min-w-0 flex-col gap-3 xl:col-span-7">
+          <Card>
+            <CardHeader title={t('Composite index')} description={t('Weighted across all twelve dimensions.')} />
+            <div className="mt-3 flex items-center gap-4">
+              <ScoreDial score={index.score} label={t('Index')} caption={`${index.score}/100`} />
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <StateBadge state={index.state} />
+                  <span className="inline-flex items-center gap-1 text-[0.6875rem] font-medium text-ink-600">
+                    <TrendGlyph points={index.trendPoints} />
+                    {index.trendPoints >= 0 ? '+' : ''}
+                    {index.trendPoints}{' '}{t('vs baseline')}
+                  </span>
+                </div>
+                <p className="mt-2 text-xs leading-relaxed text-ink-600">{index.narrative}</p>
               </div>
-              <p className="mt-2 text-xs leading-relaxed text-ink-600">{index.narrative}</p>
             </div>
-          </div>
-        </Card>
+          </Card>
 
-        <Card>
-          <CardHeader
-            title={t('Movement highlights')}
-            description={t('Where the composite is anchored and where it is moving.')}
-          />
-          <div className="mt-3 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-            {[
-              { label: t('Strongest dimension'), dim: index.strongest, tone: 'positive' as const },
-              { label: t('Weakest dimension'), dim: index.weakest, tone: 'critical' as const },
-              { label: t('Most improved'), dim: index.mostImproved, tone: 'positive' as const },
-              { label: t('Most deteriorated'), dim: index.mostDeteriorated, tone: 'critical' as const },
-            ].map(({ label, dim }) =>
-              dim ? (
-                <button
-                  key={label}
-                  type="button"
-                  onClick={() => setSelectedId(dim.id)}
-                  className="rounded-lg border border-ink-100 p-2.5 text-left transition-colors hover:bg-ink-50/70"
-                >
-                  <p className="label-institutional">{label}</p>
-                  <p className="mt-1 truncate text-[0.8125rem] font-semibold text-ink-900">{dim.label}</p>
-                  <p className="numeric mt-0.5 flex items-center gap-1.5 text-[0.6875rem] text-ink-500">
-                    {dim.score}/100
-                    <span className="text-ink-300">·</span>
-                    <TrendGlyph points={dim.trendPoints} />
-                    {dim.trendPoints >= 0 ? '+' : ''}
-                    {dim.trendPoints}
-                  </p>
-                </button>
-              ) : null,
-            )}
-          </div>
-        </Card>
-      </div>
-
-      <SplitLayout
-        asideWidth="lg"
-        main={
           <Card flush>
             <CardHeader
               bordered
@@ -174,15 +147,53 @@ export function CityIntelligenceIndexPage(): React.JSX.Element {
                 ))}
             </ul>
           </Card>
-        }
-        aside={selected ? <DimensionDetail dimension={selected} /> : null}
-      />
 
-      <Card tone="sunken">
-        <p className="text-[0.6875rem] leading-relaxed text-ink-500">
-          {t('Weights sum to {0}. The trend for each dimension is computed against a deterministic prior-period baseline held in the demonstration environment - it is a modelled comparison, not an observed historical series, because this environment holds no time-series store. In production this becomes a genuine period-over-period comparison from the metric store.', Object.values(INDEX_WEIGHTS).reduce((s, w) => s + w, 0).toFixed(2))}
-        </p>
-      </Card>
+          <Card tone="sunken">
+            <p className="text-[0.6875rem] leading-relaxed text-ink-500">
+              {t('Weights sum to {0}. The trend for each dimension is computed against a deterministic prior-period baseline held in the demonstration environment - it is a modelled comparison, not an observed historical series, because this environment holds no time-series store. In production this becomes a genuine period-over-period comparison from the metric store.', Object.values(INDEX_WEIGHTS).reduce((s, w) => s + w, 0).toFixed(2))}
+            </p>
+          </Card>
+        </div>
+
+        {/* Column 2 — movement and the open dimension --------------- */}
+        <div className="flex min-w-0 flex-col gap-3 xl:col-span-5">
+          <Card>
+            <CardHeader
+              title={t('Movement highlights')}
+              description={t('Where the composite is anchored and where it is moving.')}
+            />
+            <div className="mt-3 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+              {[
+                { label: t('Strongest dimension'), dim: index.strongest, tone: 'positive' as const },
+                { label: t('Weakest dimension'), dim: index.weakest, tone: 'critical' as const },
+                { label: t('Most improved'), dim: index.mostImproved, tone: 'positive' as const },
+                { label: t('Most deteriorated'), dim: index.mostDeteriorated, tone: 'critical' as const },
+              ].map(({ label, dim }) =>
+                dim ? (
+                  <button
+                    key={label}
+                    type="button"
+                    onClick={() => setSelectedId(dim.id)}
+                    className="rounded-[2px] border border-ink-100 p-2.5 text-left transition-colors hover:bg-ink-50/70"
+                  >
+                    <p className="label-institutional">{label}</p>
+                    <p className="mt-1 truncate text-[0.8125rem] font-semibold text-ink-900">{dim.label}</p>
+                    <p className="numeric mt-0.5 flex items-center gap-1.5 text-[0.6875rem] text-ink-500">
+                      {dim.score}/100
+                      <span className="text-ink-300">·</span>
+                      <TrendGlyph points={dim.trendPoints} />
+                      {dim.trendPoints >= 0 ? '+' : ''}
+                      {dim.trendPoints}
+                    </p>
+                  </button>
+                ) : null,
+              )}
+            </div>
+          </Card>
+
+          {selected ? <DimensionDetail dimension={selected} /> : null}
+        </div>
+      </div>
     </PageBody>
   )
 }
@@ -224,7 +235,7 @@ function DimensionDetail({ dimension }: { dimension: IndexDimension }): React.JS
         ) : (
           <ul className="mt-3 space-y-2">
             {dimension.positiveContributors.map((c, i) => (
-              <li key={`pos-${i}`} className="rounded-lg border border-ok-100 bg-ok-50/40 p-2.5">
+              <li key={`pos-${i}`} className="rounded-[2px] border border-ok-100 bg-ok-50/40 p-2.5">
                 <div className="flex items-start justify-between gap-2">
                   <p className="min-w-0 text-[0.8125rem] font-medium text-ink-800">{c.label}</p>
                   <span className="numeric inline-flex shrink-0 items-center gap-0.5 text-[0.6875rem] font-semibold text-ok-700">
@@ -248,7 +259,7 @@ function DimensionDetail({ dimension }: { dimension: IndexDimension }): React.JS
         ) : (
           <ul className="mt-3 space-y-2">
             {dimension.negativeContributors.map((c, i) => (
-              <li key={`neg-${i}`} className="rounded-lg border border-crit-100 bg-crit-50/40 p-2.5">
+              <li key={`neg-${i}`} className="rounded-[2px] border border-crit-100 bg-crit-50/40 p-2.5">
                 <div className="flex items-start justify-between gap-2">
                   <p className="min-w-0 text-[0.8125rem] font-medium text-ink-800">{c.label}</p>
                   <span className="numeric inline-flex shrink-0 items-center gap-0.5 text-[0.6875rem] font-semibold text-crit-700">
