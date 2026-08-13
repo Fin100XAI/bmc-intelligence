@@ -17,6 +17,9 @@ import { RequireAuth, RequirePermission, RoleLandingRedirect } from './RouteGuar
 const LoginPage = lazy(() => import('@/pages/auth/LoginPage'))
 const PortalLandingPage = lazy(() => import('@/pages/auth/PortalLandingPage'))
 
+// --- Public --------------------------------------------------------------
+const TransparencyPortalPage = lazy(() => import('@/pages/public/TransparencyPortalPage'))
+
 // --- Command ---------------------------------------------------------------
 const ExecutiveOverviewPage = lazy(() => import('@/pages/command/ExecutiveOverviewPage'))
 const CommissionerCockpitPage = lazy(() => import('@/pages/command/CommissionerCockpitPage'))
@@ -61,9 +64,14 @@ const AnimalWelfarePage = lazy(() => import('@/pages/city/AnimalWelfarePage'))
 const LivelihoodsPage = lazy(() => import('@/pages/city/LivelihoodsPage'))
 const SocialWelfarePage = lazy(() => import('@/pages/city/SocialWelfarePage'))
 const AmenitiesPage = lazy(() => import('@/pages/city/AmenitiesPage'))
+const HeritageTourismPage = lazy(() => import('@/pages/city/HeritageTourismPage'))
+const CivicParticipationPage = lazy(() => import('@/pages/city/CivicParticipationPage'))
 
 // --- Council ---------------------------------------------------------------
 const CouncilResolutionsPage = lazy(() => import('@/pages/council/CouncilResolutionsPage'))
+const WardCommitteesPage = lazy(() => import('@/pages/council/WardCommitteesPage'))
+const GovernmentCorrespondencePage = lazy(() => import('@/pages/council/GovernmentCorrespondencePage'))
+const LegalLitigationPage = lazy(() => import('@/pages/council/LegalLitigationPage'))
 
 // --- Governance & finance --------------------------------------------------
 const PropertyIntelligencePage = lazy(() => import('@/pages/governance/PropertyIntelligencePage'))
@@ -78,12 +86,16 @@ const ProjectIntelligencePage = lazy(() => import('@/pages/governance/ProjectInt
 const ContractorIntelligencePage = lazy(() => import('@/pages/governance/ContractorIntelligencePage'))
 const BuildingIntelligencePage = lazy(() => import('@/pages/governance/BuildingIntelligencePage'))
 const AssetIntelligencePage = lazy(() => import('@/pages/governance/AssetIntelligencePage'))
+const BuildingEntityPage = lazy(() => import('@/pages/governance/BuildingEntityPage'))
 const WorkforceIntelligencePage = lazy(() => import('@/pages/governance/WorkforceIntelligencePage'))
 const LicensingIntelligencePage = lazy(() => import('@/pages/governance/LicensingIntelligencePage'))
+const EnforcementPage = lazy(() => import('@/pages/governance/EnforcementPage'))
+const InfrastructureCoordinationPage = lazy(() => import('@/pages/governance/InfrastructureCoordinationPage'))
 
 // --- Strategic -------------------------------------------------------------
 const BenchmarkingPage = lazy(() => import('@/pages/strategic/BenchmarkingPage'))
 const UrbanPlanningPage = lazy(() => import('@/pages/strategic/UrbanPlanningPage'))
+const DevelopmentPlanPage = lazy(() => import('@/pages/strategic/DevelopmentPlanPage'))
 const DigitalTwinPage = lazy(() => import('@/pages/strategic/DigitalTwinPage'))
 const KnowledgeGraphPage = lazy(() => import('@/pages/strategic/KnowledgeGraphPage'))
 const InfrastructureGraphPage = lazy(() => import('@/pages/strategic/InfrastructureGraphPage'))
@@ -143,6 +155,12 @@ export const router = createBrowserRouter([
     // than on a 404.
     path: ROUTES.loginDirect,
     element: <LoginPage />,
+  },
+  {
+    // The one genuinely public route in the platform - no `RequireAuth`, no
+    // `AppShell`. See `src/pages/public/TransparencyPortalPage.tsx`.
+    path: ROUTES.transparency,
+    element: <TransparencyPortalPage />,
   },
   {
     // The portal front page, behind the session. `RequireAuth` rather than the
@@ -209,9 +227,14 @@ export const router = createBrowserRouter([
       { path: ROUTES.livelihoods, element: guarded(<LivelihoodsPage />) },
       { path: ROUTES.welfare, element: guarded(<SocialWelfarePage />) },
       { path: ROUTES.amenities, element: guarded(<AmenitiesPage />) },
+      { path: ROUTES.heritage, element: guarded(<HeritageTourismPage />) },
+      { path: ROUTES.civicParticipation, element: guarded(<CivicParticipationPage />) },
 
       // Council
       { path: ROUTES.councilResolutions, element: guarded(<CouncilResolutionsPage />) },
+      { path: ROUTES.wardCommittees, element: guarded(<WardCommitteesPage />) },
+      { path: ROUTES.correspondence, element: guarded(<GovernmentCorrespondencePage />) },
+      { path: ROUTES.legal, element: guarded(<LegalLitigationPage />) },
 
       // Governance & finance
       { path: ROUTES.property, element: guarded(<PropertyIntelligencePage />) },
@@ -226,12 +249,16 @@ export const router = createBrowserRouter([
       { path: ROUTES.contractors, element: guarded(<ContractorIntelligencePage />) },
       { path: ROUTES.buildings, element: guarded(<BuildingIntelligencePage />) },
       { path: ROUTES.assets, element: guarded(<AssetIntelligencePage />) },
+      { path: ROUTES.buildingEntity, element: guarded(<BuildingEntityPage />) },
       { path: ROUTES.workforce, element: guarded(<WorkforceIntelligencePage />) },
       { path: ROUTES.licensing, element: guarded(<LicensingIntelligencePage />) },
+      { path: ROUTES.enforcement, element: guarded(<EnforcementPage />) },
+      { path: ROUTES.infraCoordination, element: guarded(<InfrastructureCoordinationPage />) },
 
       // Strategic
       { path: ROUTES.benchmarking, element: guarded(<BenchmarkingPage />) },
       { path: ROUTES.planning, element: guarded(<UrbanPlanningPage />) },
+      { path: ROUTES.developmentPlan, element: guarded(<DevelopmentPlanPage />) },
       { path: ROUTES.digitalTwin, element: guarded(<DigitalTwinPage />) },
       { path: ROUTES.knowledgeGraph, element: guarded(<KnowledgeGraphPage />) },
       { path: ROUTES.infrastructureGraph, element: guarded(<InfrastructureGraphPage />) },

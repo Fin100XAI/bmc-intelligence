@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://maha-ai.example/schema/canonical/ward.json",
+  "title": "CanonicalWard",
+  "description": "Pilot canonical entity. See docs/architecture/02-canonical-data-model.md. Deliberately transport-agnostic (plain JSON Schema, not a TypeScript-only type) so a future server, ETL job, or a different ULB's non-TypeScript system can validate against the same contract this frontend's Ward interface (src/types/organisation.ts) already satisfies.",
+  "type": "object",
+  "required": ["id", "tenantId", "code", "name", "zoneId", "population", "areaSqKm"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^ward-[a-z0-9-]+$" },
+    "tenantId": { "type": "string", "description": "The corporation this ward belongs to - see src/config/corporations.ts." },
+    "code": { "type": "string", "description": "The corporation's own published ward code, e.g. 'K/W' for Brihanmumbai." },
+    "name": { "type": "string" },
+    "zoneId": { "type": "string" },
+    "region": { "type": "string" },
+    "population": { "type": "integer", "minimum": 0 },
+    "areaSqKm": { "type": "number", "minimum": 0 },
+    "households": { "type": "integer", "minimum": 0 },
+    "wardOfficerId": { "type": "string" }
+  }
+}
