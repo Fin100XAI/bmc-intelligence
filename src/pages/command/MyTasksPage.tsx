@@ -15,7 +15,8 @@ import type { Severity } from '@/types/common'
 import type { User } from '@/types/organisation'
 import { allowed } from '@/security/access'
 import { useCurrentUser } from '@/stores/auth.store'
-import { useDrawerStore } from '@/stores/ui.store'
+import { useDrawerStore, useFilterStore } from '@/stores/ui.store'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { departmentName, wardName } from '@/data/reference'
 import { formatDate, formatRelative } from '@/utils/format'
 import { isoFromAnchor } from '@/utils/deterministic'
@@ -49,25 +50,64 @@ const STATUS_TONE: Record<string, 'muted' | 'info' | 'warn' | 'positive' | 'crit
 
 const PRIORITIES: Severity[] = ['critical', 'high', 'medium', 'low']
 
+/**
+ * Narrows a task register to the wards selected across the shell.
+ *
+ * A task carries the ward or wards it is tagged with, so a selection matches
+ * on any of them - a task spanning two wards belongs in both officers' ward
+ * views. No selection means no narrowing, which is the city-wide register.
+ *
+ * The test is the same one the other command registers apply, so the ward
+ * selector cannot mean one thing on Alerts and another here.
+ */
+function inWardScope(tasks: ActionItem[], wardIds: string[]): ActionItem[] {
+  if (wardIds.length === 0) return tasks
+  return tasks.filter((task) => task.wardIds.some((wardId) => wardIds.includes(wardId)))
+}
+
 export function MyTasksPage(): React.JSX.Element {
   const [assignOpen, setAssignOpen] = useState(false)
+
+  // The shell renders the masthead; this page states what it should say.
+  usePageMasthead(
+    t('My Tasks'),
+    t('The tasks assigned to you, and the tasks you have assigned to other officers. Assigning a task here places it directly on that officer\'s own dashboard — it is waiting for them the moment they sign in.'),
+  )
+
+  /**
+   * The ward selection in effect across the shell.
+   *
+   * This screen read neither store, so narrowing the interface to a ward left
+   * the officer's own task list showing every ward's work under a heading that
+   * said otherwise. The selection is read here, where it narrows what is
+   * DISPLAYED; it is not - and must not be - what decides what may be read.
+   * That remains the service's ownership check: a task assigned to you is
+   * yours to open whatever ward it is tagged with, and no ward selection can
+   * widen that set, only shorten it.
+   *
+   * `useFilterStore.filters.wardIds` rather than `useContextStore.wardId`
+   * because the two are reconciled by a single writer and the filter form is
+   * the general one - it holds a set, so a comparison across several wards
+   * narrows this list correctly too. It is the same source the sibling command
+   * screens (Alerts, Decision Centre, Intelligence Feed) read.
+   */
+  const wardScope = useFilterStore((s) => s.filters.wardIds)
 
   const myTasksQuery = useServiceQuery(queryKeys.myTasks('to-me'), (u) => actionService.myTasks(u))
   const assignedQuery = useServiceQuery(queryKeys.myTasks('by-me'), (u) => actionService.assignedByMe(u))
 
+  const myTasks = useMemo(() => inWardScope(myTasksQuery.data ?? [], wardScope), [myTasksQuery.data, wardScope])
+  const assignedByMe = useMemo(() => inWardScope(assignedQuery.data ?? [], wardScope), [assignedQuery.data, wardScope])
+
   if (myTasksQuery.isLoading) return <LoadingState variant="block" rows={6} />
   if (myTasksQuery.error) return <ErrorState detail={myTasksQuery.error.message} onRetry={() => myTasksQuery.refetch()} />
 
-  const myTasks = myTasksQuery.data ?? []
-  const assignedByMe = assignedQuery.data ?? []
   const openCount = myTasks.filter((actionItem) => actionItem.status !== 'closed' && actionItem.status !== 'verified').length
 
   return (
     <PageBody>
       <PageHeader
         eyebrow={t('Command')}
-        title={t('My Tasks')}
-        description={t('The tasks assigned to you, and the tasks you have assigned to other officers. Assigning a task here places it directly on that officer\'s own dashboard — it is waiting for them the moment they sign in.')}
         breadcrumbs={[{ label: t('Command') }, { label: t('My Tasks') }]}
         hideProvenance
         actions={
@@ -79,55 +119,66 @@ export function MyTasksPage(): React.JSX.Element {
 
       <DemonstrationNotice />
 
-      <MetricGrid columns={3}>
-        <MetricCard label={t('Assigned to me')} value={myTasks.length} support={t('{0} still open', openCount)} icon={<Inbox className="h-4 w-4" />} />
-        <MetricCard label={t('Assigned by me')} value={assignedByMe.length} support={t('Dispatched to other officers')} icon={<Send className="h-4 w-4" />} />
-        <MetricCard
-          label={t('Completed')}
-          value={myTasks.filter((actionItem) => actionItem.status === 'completed' || actionItem.status === 'verified' || actionItem.status === 'closed').length}
-          support={t('Of the tasks assigned to me')}
-          icon={<CheckCircle2 className="h-4 w-4" />}
-        />
-      </MetricGrid>
+      {/* ── Two columns ──────────────────────────────────────────────
+          The officer's own workload reads down the wide column — what is
+          waiting on them first, what they have handed on beneath it — with
+          the three standing figures beside it rather than above it, so the
+          first register is on screen without scrolling. */}
+      <div className="grid grid-cols-1 gap-3 xl:grid-cols-12">
+        {/* Column 1 — the registers -------------------------------- */}
+        <div className="flex min-w-0 flex-col gap-3 xl:col-span-8">
+          <Card flush>
+            <CardHeader
+              bordered
+              icon={<Inbox className="h-4 w-4" />}
+              title={t('Assigned to me')}
+              description={t('Tasks another officer has assigned to you. Assignment is the authorisation — these appear regardless of domain.')}
+            />
+            {myTasks.length === 0 ? (
+              <EmptyState
+                title={t('No tasks assigned to you')}
+                detail="When another officer assigns you a task, it will appear here the moment you sign in."
+              />
+            ) : (
+              <ul className="divide-y divide-ink-50">
+                {myTasks.map((task) => (
+                  <TaskRow key={task.id} task={task} perspective="to-me" />
+                ))}
+              </ul>
+            )}
+          </Card>
 
-      {/* Assigned to me ------------------------------------------------ */}
-      <Card flush>
-        <CardHeader
-          bordered
-          icon={<Inbox className="h-4 w-4" />}
-          title={t('Assigned to me')}
-          description={t('Tasks another officer has assigned to you. Assignment is the authorisation — these appear regardless of domain.')}
-        />
-        {myTasks.length === 0 ? (
-          <EmptyState
-            title={t('No tasks assigned to you')}
-            detail="When another officer assigns you a task, it will appear here the moment you sign in."
-          />
-        ) : (
-          <ul className="divide-y divide-ink-50">
-            {myTasks.map((task) => (
-              <TaskRow key={task.id} task={task} perspective="to-me" />
-            ))}
-          </ul>
-        )}
-      </Card>
+          {assignedByMe.length > 0 ? (
+            <Card flush>
+              <CardHeader
+                bordered
+                icon={<Send className="h-4 w-4" />}
+                title={t('Assigned by me')}
+                description={t('Tasks you have dispatched to other officers. Each is now on that officer\'s own dashboard.')}
+              />
+              <ul className="divide-y divide-ink-50">
+                {assignedByMe.map((task) => (
+                  <TaskRow key={task.id} task={task} perspective="by-me" />
+                ))}
+              </ul>
+            </Card>
+          ) : null}
+        </div>
 
-      {/* Assigned by me ------------------------------------------------ */}
-      {assignedByMe.length > 0 ? (
-        <Card flush>
-          <CardHeader
-            bordered
-            icon={<Send className="h-4 w-4" />}
-            title={t('Assigned by me')}
-            description={t('Tasks you have dispatched to other officers. Each is now on that officer\'s own dashboard.')}
-          />
-          <ul className="divide-y divide-ink-50">
-            {assignedByMe.map((task) => (
-              <TaskRow key={task.id} task={task} perspective="by-me" />
-            ))}
-          </ul>
-        </Card>
-      ) : null}
+        {/* Column 2 — the standing figures -------------------------- */}
+        <div className="min-w-0 xl:col-span-4">
+          <MetricGrid columns={3} className="xl:grid-cols-1">
+            <MetricCard label={t('Assigned to me')} value={myTasks.length} support={t('{0} still open', openCount)} icon={<Inbox className="h-4 w-4" />} />
+            <MetricCard label={t('Assigned by me')} value={assignedByMe.length} support={t('Dispatched to other officers')} icon={<Send className="h-4 w-4" />} />
+            <MetricCard
+              label={t('Completed')}
+              value={myTasks.filter((actionItem) => actionItem.status === 'completed' || actionItem.status === 'verified' || actionItem.status === 'closed').length}
+              support={t('Of the tasks assigned to me')}
+              icon={<CheckCircle2 className="h-4 w-4" />}
+            />
+          </MetricGrid>
+        </div>
+      </div>
 
       {assignOpen ? <AssignTaskModal onClose={() => setAssignOpen(false)} /> : null}
     </PageBody>
@@ -282,7 +333,7 @@ function AssignTaskModal({ onClose }: { onClose: () => void }): React.JSX.Elemen
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
             <Label htmlFor="task-priority">{t('Priority')}</Label>
             <Select

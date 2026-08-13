@@ -23,6 +23,7 @@ import { PROJECTS, CONTRACTORS } from '@/data/finance.data'
 import { DECISION_CASES, INCIDENTS } from '@/data/operations.data'
 import { INTELLIGENCE_ITEMS, ALERTS } from '@/data/intelligence.data'
 import { DATASETS } from '@/data/governance.data'
+import { authService } from '@/services/auth.service'
 import { useAuthStore, useCurrentUser } from '@/stores/auth.store'
 import { useCommandStore, useContextStore, useDrawerStore } from '@/stores/ui.store'
 import { cn } from '@/utils/cn'
@@ -315,9 +316,17 @@ export function CommandPalette(): React.JSX.Element | null {
         icon: <UserCog className="h-3.5 w-3.5" />,
         keywords: `role switch change ${demoUser.name} ${demoUser.designation}`,
         run: () => {
-          const next = switchRole(demoUser.id)
-          close()
-          if (next) {
+          // Awaited before the local switch, not fired alongside it. The new
+          // cookie must be in place before any screen mounts and starts
+          // fetching: otherwise the interface renders as the officer being
+          // switched to while the API still answers as the previous one, and
+          // the palette silently shows one officer another's task queue.
+          void (async () => {
+            await authService.establishServerSession(demoUser.id).catch(() => undefined)
+            const next = switchRole(demoUser.id)
+            close()
+            if (!next) return
+
             const role = next.roleId
             const landing = ALL_NAV_ITEMS.find((i) => i.id === 'executive')
             navigate(
@@ -335,7 +344,7 @@ export function CommandPalette(): React.JSX.Element | null {
                           ? ROUTES.evidenceAudit
                           : (landing?.to ?? ROUTES.executive),
             )
-          }
+          })()
         },
       })
     }

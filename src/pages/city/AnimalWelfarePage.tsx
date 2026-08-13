@@ -21,6 +21,7 @@ import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { animalWelfareService } from '@/services'
 import { useFilterStore } from '@/stores/ui.store'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { WARD_BY_ID, wardName, wardShortName } from '@/data/reference'
 import {
   ANIMAL_WELFARE_OPERATOR_LABEL,
@@ -69,6 +70,11 @@ const BITE_RATE_CONCERN_PER_10K = 3.5
 export function AnimalWelfarePage(): React.JSX.Element {
   const filters = useFilterStore((s) => s.filters)
 
+  usePageMasthead(
+    t('Animal Welfare'),
+    t('Cattle pounds, birth control centres, shelters and anti-rabies clinics - what the corporation operates, and the dog bite rate each ward records against it.'),
+  )
+
   const unitsQuery = useServiceQuery(queryKeys.animalWelfare('units'), (u) => animalWelfareService.units(u))
   const signalsQuery = useServiceQuery(queryKeys.animalWelfare('ward-signals'), (u) =>
     animalWelfareService.wardSignals(u),
@@ -113,7 +119,6 @@ export function AnimalWelfarePage(): React.JSX.Element {
       <PageBody>
         <PageHeader
           eyebrow={t('City Intelligence')}
-          title={t('Animal Welfare')}
           breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Animal Welfare') }]}
         />
         <LoadingState variant="metrics" />
@@ -126,7 +131,6 @@ export function AnimalWelfarePage(): React.JSX.Element {
       <PageBody>
         <PageHeader
           eyebrow={t('City Intelligence')}
-          title={t('Animal Welfare')}
           breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Animal Welfare') }]}
         />
         <ErrorState
@@ -343,25 +347,11 @@ export function AnimalWelfarePage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('City Intelligence')}
-        title={t('Animal Welfare')}
-        description={t('Cattle pounds, birth control centres, shelters and anti-rabies clinics - what the corporation operates, and the dog bite rate each ward records against it.')}
         breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Animal Welfare') }]}
         freshness={freshness}
       />
 
       <DemonstrationNotice />
-
-      <Card tone="info" className="flex items-start gap-3">
-        <PawPrint className="mt-0.5 h-4 w-4 shrink-0 text-govt-600" aria-hidden />
-        <div className="min-w-0">
-          <p className="text-[0.8125rem] font-semibold text-govt-800">
-            {t('Sterilisation is the input. The bite rate is the result.')}
-          </p>
-          <p className="mt-1 text-xs leading-relaxed text-ink-600">
-            {t('The Animal Birth Control (Dogs) Rules make sterilisation - not removal and not relocation - the lawful method of controlling the free-roaming dog population. That settles the method and leaves one honest question about performance: did the bite rate move? A corporation that publishes sterilisation numbers without bite rates is reporting activity, not results, so both are held on this screen and neither is shown alone. Cattle pounds appear in the same estate because they are the same statutory duty - though loose cattle on a carriageway are a nuisance and a road-safety cause before they are a welfare case.')}
-          </p>
-        </div>
-      </Card>
 
       <FilterBar show={['ward', 'search']} searchPlaceholder="Search units and wards" />
 
@@ -404,78 +394,98 @@ export function AnimalWelfarePage(): React.JSX.Element {
         />
       </MetricGrid>
 
-      <div className="grid gap-4 lg:grid-cols-[1.35fr_1fr]">
-        <Card className="flex flex-col">
-          <p className="label-institutional mb-2">{t('Monthly sterilisations, vaccinations and dog bites')}</p>
-          <div style={{ height: 220 }}>
-            <CategoryBarChart
-              data={trend as unknown as Array<Record<string, string | number>>}
-              categoryKey="month"
-              showLegend
-              series={[
-                { key: 'sterilisations', label: t('Sterilisations'), colour: CHART_COLOURS.primary },
-                { key: 'vaccinations', label: t('Anti-rabies doses'), colour: CHART_COLOURS.intel },
-                { key: 'dogBites', label: t('Dog bites reported'), colour: CHART_COLOURS.critical },
-              ]}
+      {/* Two columns. The result the ward records is read first and carries the
+          width; the estate that produced it follows beneath. The programme's
+          own reasoning and the ranking of where it has not reached stand
+          beside them rather than pushing the registers down the page. */}
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
+          <Card flush>
+            <CardHeader
+              bordered
+              icon={<ShieldAlert className="h-4 w-4" />}
+              title={t('Ward outcome register')}
+              description={t('The result side of the function - sterilised share against the bite rate the ward records. The first is what the corporation did; the second is what residents felt.')}
             />
-          </div>
-          <p className="mt-2 text-[0.6875rem] leading-relaxed text-ink-500">
-            {t('The two headline series move against each other - sterilisations {0} {1}% across the period, reported bites {2} {3}%. That inverse relationship, sustained over months, is the entire case for the programme; a single reporting period shows neither. Vaccination is delivered in the same visit as sterilisation, which is why the two rise together.', sterilisationMovementPct >= 0 ? 'up' : 'down', Math.abs(sterilisationMovementPct), biteMovementPct <= 0 ? 'down' : 'up', Math.abs(biteMovementPct))}
-          </p>
-        </Card>
-
-        <Card flush className="flex flex-col">
-          <CardHeader
-            bordered
-            title={t('Wards with the highest bite rate')}
-            description={t('Bites per 10,000 residents in 30 days - where the programme has not yet reached.')}
-          />
-          <div className="px-4 pb-4" style={{ height: Math.max(210, worstWards.length * 26) }}>
-            {worstWards.length === 0 ? (
-              <EmptyState title={t('No ward outcome recorded')} detail="Clear a filter to widen the comparison." compact />
-            ) : (
-              <RankedBarChart
-                data={worstWards.map((w) => ({ label: wardShortName(w.wardId), value: w.bitesPer10kPopulation }))}
-                unit=" / 10k"
+            {filteredSignals.length === 0 ? (
+              <EmptyState
+                title={t('No ward outcome matches the current filters')}
+                detail="Clear a filter to widen the register."
               />
+            ) : (
+              <DataTable rows={filteredSignals} columns={signalColumns} rowKey={(w) => w.wardId} pageSize={12} />
             )}
-          </div>
-        </Card>
+          </Card>
+
+          <Card flush>
+            <CardHeader
+              bordered
+              icon={<PawPrint className="h-4 w-4" />}
+              title={t('Animal welfare estate')}
+              description={t('Birth control centres, pounds, shelters and clinics within your authorised ward scope. {0} of {1} are run by NGO partners under contract, where the corporation\'s inspection record is its only assurance; {2} cattle pound{3} carry the traffic-safety side of the duty.', formatNumber(ngoOperated), formatNumber(filteredUnits.length), formatNumber(pounds), pounds === 1 ? '' : 's')}
+            />
+            {filteredUnits.length === 0 ? (
+              <EmptyState
+                title={t('No animal welfare units match the current filters')}
+                detail="Clear a filter to widen the register."
+              />
+            ) : (
+              <DataTable rows={filteredUnits} columns={unitColumns} rowKey={(u) => u.id} pageSize={12} />
+            )}
+          </Card>
+
+          <Card className="flex flex-col">
+            <p className="label-institutional mb-2">{t('Monthly sterilisations, vaccinations and dog bites')}</p>
+            <div style={{ height: 220 }}>
+              <CategoryBarChart
+                data={trend as unknown as Array<Record<string, string | number>>}
+                categoryKey="month"
+                showLegend
+                series={[
+                  { key: 'sterilisations', label: t('Sterilisations'), colour: CHART_COLOURS.primary },
+                  { key: 'vaccinations', label: t('Anti-rabies doses'), colour: CHART_COLOURS.intel },
+                  { key: 'dogBites', label: t('Dog bites reported'), colour: CHART_COLOURS.critical },
+                ]}
+              />
+            </div>
+            <p className="mt-2 text-[0.6875rem] leading-relaxed text-ink-500">
+              {t('The two headline series move against each other - sterilisations {0} {1}% across the period, reported bites {2} {3}%. That inverse relationship, sustained over months, is the entire case for the programme; a single reporting period shows neither. Vaccination is delivered in the same visit as sterilisation, which is why the two rise together.', sterilisationMovementPct >= 0 ? 'up' : 'down', Math.abs(sterilisationMovementPct), biteMovementPct <= 0 ? 'down' : 'up', Math.abs(biteMovementPct))}
+            </p>
+          </Card>
+        </div>
+
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
+          <Card tone="info" className="flex items-start gap-3">
+            <PawPrint className="mt-0.5 h-4 w-4 shrink-0 text-govt-600" aria-hidden />
+            <div className="min-w-0">
+              <p className="text-[0.8125rem] font-semibold text-govt-800">
+                {t('Sterilisation is the input. The bite rate is the result.')}
+              </p>
+              <p className="mt-1 text-xs leading-relaxed text-ink-600">
+                {t('The Animal Birth Control (Dogs) Rules make sterilisation - not removal and not relocation - the lawful method of controlling the free-roaming dog population. That settles the method and leaves one honest question about performance: did the bite rate move? A corporation that publishes sterilisation numbers without bite rates is reporting activity, not results, so both are held on this screen and neither is shown alone. Cattle pounds appear in the same estate because they are the same statutory duty - though loose cattle on a carriageway are a nuisance and a road-safety cause before they are a welfare case.')}
+              </p>
+            </div>
+          </Card>
+
+          <Card flush className="flex flex-col">
+            <CardHeader
+              bordered
+              title={t('Wards with the highest bite rate')}
+              description={t('Bites per 10,000 residents in 30 days - where the programme has not yet reached.')}
+            />
+            <div className="px-4 pb-4" style={{ height: Math.max(210, worstWards.length * 26) }}>
+              {worstWards.length === 0 ? (
+                <EmptyState title={t('No ward outcome recorded')} detail="Clear a filter to widen the comparison." compact />
+              ) : (
+                <RankedBarChart
+                  data={worstWards.map((w) => ({ label: wardShortName(w.wardId), value: w.bitesPer10kPopulation }))}
+                  unit=" / 10k"
+                />
+              )}
+            </div>
+          </Card>
+        </div>
       </div>
-
-      <Card flush>
-        <CardHeader
-          bordered
-          icon={<ShieldAlert className="h-4 w-4" />}
-          title={t('Ward outcome register')}
-          description={t('The result side of the function - sterilised share against the bite rate the ward records. The first is what the corporation did; the second is what residents felt.')}
-        />
-        {filteredSignals.length === 0 ? (
-          <EmptyState
-            title={t('No ward outcome matches the current filters')}
-            detail="Clear a filter to widen the register."
-          />
-        ) : (
-          <DataTable rows={filteredSignals} columns={signalColumns} rowKey={(w) => w.wardId} pageSize={12} />
-        )}
-      </Card>
-
-      <Card flush>
-        <CardHeader
-          bordered
-          icon={<PawPrint className="h-4 w-4" />}
-          title={t('Animal welfare estate')}
-          description={t('Birth control centres, pounds, shelters and clinics within your authorised ward scope. {0} of {1} are run by NGO partners under contract, where the corporation\'s inspection record is its only assurance; {2} cattle pound{3} carry the traffic-safety side of the duty.', formatNumber(ngoOperated), formatNumber(filteredUnits.length), formatNumber(pounds), pounds === 1 ? '' : 's')}
-        />
-        {filteredUnits.length === 0 ? (
-          <EmptyState
-            title={t('No animal welfare units match the current filters')}
-            detail="Clear a filter to widen the register."
-          />
-        ) : (
-          <DataTable rows={filteredUnits} columns={unitColumns} rowKey={(u) => u.id} pageSize={12} />
-        )}
-      </Card>
     </PageBody>
   )
 }

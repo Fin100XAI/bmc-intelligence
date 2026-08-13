@@ -8,6 +8,7 @@ import { isoFromAnchor } from '@/utils/deterministic'
 import { findTransition } from '@/workflows/engine'
 import { actionWorkflow } from '@/workflows/machines'
 import { ServiceError, assertAccess, deepClone, paginate, recordAudit, scopeToTenant, simulateLatency } from './client'
+import { isApiEnabled, request, type ListEnvelope, type PagedEnvelope } from './http'
 import { emitChange, getCollection, setCollection } from './store'
 import { DEMO_USERS } from '@/auth/demo-users'
 import { t } from '@/i18n'
@@ -87,6 +88,24 @@ function matchesFilters(item: ActionItem, filters: ActionFilters): boolean {
 }
 
 async function list(user: User | null, filters: ActionFilters = {}): Promise<Paged<ActionItem>> {
+  if (isApiEnabled()) {
+    return request<PagedEnvelope<ActionItem>>('/api/actions', {
+      query: {
+        // Arrays are comma-joined rather than repeated, matching the `$in`
+        // the route builds from them.
+        status: filters.status?.join(','),
+        priority: filters.priority?.join(','),
+        departmentId: filters.departmentId,
+        wardId: filters.wardId,
+        domain: filters.domain,
+        ownerId: filters.ownerId,
+        search: filters.search,
+        page: filters.page ?? 1,
+        pageSize: filters.pageSize ?? 20,
+      },
+    })
+  }
+
   await simulateLatency(`action.list:${JSON.stringify(filters)}`)
   const scoped = scopeToTenant(user, getCollection('actions'))
   const visible = filterByScope(user, scoped, contextFor, 'action')
@@ -97,6 +116,8 @@ async function list(user: User | null, filters: ActionFilters = {}): Promise<Pag
 }
 
 async function get(user: User | null, id: string): Promise<ActionItem> {
+  if (isApiEnabled()) return request<ActionItem>(`/api/actions/${encodeURIComponent(id)}`)
+
   await simulateLatency(`action.get:${id}`)
   const item = findOrThrow(user, id)
   assertAccess(user, 'action', 'view', contextFor(item), meta(item))
@@ -104,6 +125,8 @@ async function get(user: User | null, id: string): Promise<ActionItem> {
 }
 
 async function create(user: User | null, input: ActionCreateInput): Promise<ActionItem> {
+  if (isApiEnabled()) return request<ActionItem>('/api/actions', { method: 'POST', body: input })
+
   await simulateLatency('action.create', 200, 480)
   const context: AccessContext = {
     wardIds: input.wardIds,
@@ -155,6 +178,13 @@ async function create(user: User | null, input: ActionCreateInput): Promise<Acti
 }
 
 async function transition(user: User | null, id: string, to: ActionStatus, reason?: string): Promise<ActionItem> {
+  if (isApiEnabled()) {
+    return request<ActionItem>(`/api/actions/${encodeURIComponent(id)}/transition`, {
+      method: 'POST',
+      body: { to, reason },
+    })
+  }
+
   await simulateLatency(`action.transition:${id}:${to}`)
   const item = findOrThrow(user, id)
   const definition = findTransition(actionWorkflow, item.status, to)
@@ -182,6 +212,16 @@ async function transition(user: User | null, id: string, to: ActionStatus, reaso
 }
 
 async function assign(user: User | null, id: string, ownerId: string, reason?: string): Promise<ActionItem> {
+  // The one call that has to reach the database. Everything the assignee will
+  // later see on their own device is a consequence of this write landing in
+  // Mongo rather than in this tab's memory.
+  if (isApiEnabled()) {
+    return request<ActionItem>(`/api/actions/${encodeURIComponent(id)}/assign`, {
+      method: 'POST',
+      body: { ownerId, reason },
+    })
+  }
+
   await simulateLatency(`action.assign:${id}`)
   const item = findOrThrow(user, id)
   const definition = findTransition(actionWorkflow, item.status, 'assigned')
@@ -211,6 +251,13 @@ async function assign(user: User | null, id: string, ownerId: string, reason?: s
 }
 
 async function addNote(user: User | null, id: string, body: string): Promise<ActionItem> {
+  if (isApiEnabled()) {
+    return request<ActionItem>(`/api/actions/${encodeURIComponent(id)}/notes`, {
+      method: 'POST',
+      body: { body },
+    })
+  }
+
   await simulateLatency(`action.addNote:${id}`)
   const item = findOrThrow(user, id)
   const authed = assertAccess(user, 'action', 'edit', contextFor(item), meta(item))
@@ -271,6 +318,14 @@ function ownerIdentities(user: User): string[] {
  * they see it on their own dashboard" work across a role switch.
  */
 async function myTasks(user: User | null): Promise<ActionItem[]> {
+  // Resolved server-side against the identity the session cookie proves, not
+  // against anything this browser holds. That is what makes the queue the same
+  // on a phone, a fresh laptop, or a machine that has never opened the site.
+  if (isApiEnabled()) {
+    const { items } = await request<ListEnvelope<ActionItem>>('/api/actions/mine')
+    return items
+  }
+
   await simulateLatency('action.myTasks')
   const authed = assertAccess(user, 'action', 'view', {}, {
     resourceType: 'Action',
@@ -285,6 +340,11 @@ async function myTasks(user: User | null): Promise<ActionItem[]> {
 /** The tasks the acting principal has assigned to others - the other side of
  *  the same loop, so an assigner can watch what they dispatched. */
 async function assignedByMe(user: User | null): Promise<ActionItem[]> {
+  if (isApiEnabled()) {
+    const { items } = await request<ListEnvelope<ActionItem>>('/api/actions/assigned-by-me')
+    return items
+  }
+
   await simulateLatency('action.assignedByMe')
   const authed = assertAccess(user, 'action', 'view', {}, {
     resourceType: 'Action',
@@ -328,6 +388,11 @@ export interface AssignableUser {
  * so the list can never offer an assignment the assignee would be denied.
  */
 async function assignableUsers(user: User | null): Promise<AssignableUser[]> {
+  if (isApiEnabled()) {
+    const { items } = await request<ListEnvelope<AssignableUser>>('/api/actions/assignable-users')
+    return items
+  }
+
   await simulateLatency('action.assignableUsers')
   const authed = assertAccess(user, 'action', 'assign', {}, {
     resourceType: 'Action',

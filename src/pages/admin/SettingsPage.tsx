@@ -56,6 +56,7 @@ import { canAccess } from '@/security/access'
 import { useCurrentUser } from '@/stores/auth.store'
 import { useLayoutStore } from '@/stores/ui.store'
 import { useLocale, useSetLocale } from '@/stores/locale.store'
+import { usePageMasthead } from '@/stores/masthead.store'
 import {
   DATE_FORMAT_LABEL,
   DENSITY_LABEL,
@@ -441,6 +442,12 @@ export function SettingsPage(): React.JSX.Element {
   const setSidebarCollapsed = useLayoutStore((s) => s.toggleSidebar)
   const sidebarCollapsed = useLayoutStore((s) => s.sidebarCollapsed)
 
+  // The shell renders the masthead; this page states what it should say.
+  usePageMasthead(
+    t('Settings'),
+    t('Your interface preferences and this deployment\'s municipal configuration, on one page. Preferences are yours to change and take effect immediately; the deployment profile, feature flags and tenancy register below are build-time artefacts of the Urban Intelligence Core, presented for inspection.'),
+  )
+
   // Session-local feature flag overrides. Deliberately not persisted — see the
   // notice at the head of the feature flags section.
   const [overrides, setOverrides] = useState<Record<string, boolean>>({})
@@ -504,8 +511,6 @@ export function SettingsPage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('Administration')}
-        title={t('Settings')}
-        description={t('Your interface preferences and this deployment\'s municipal configuration, on one page. Preferences are yours to change and take effect immediately; the deployment profile, feature flags and tenancy register below are build-time artefacts of the Urban Intelligence Core, presented for inspection.')}
         breadcrumbs={[{ label: t('Administration') }, { label: t('Settings') }]}
         actions={
           <>

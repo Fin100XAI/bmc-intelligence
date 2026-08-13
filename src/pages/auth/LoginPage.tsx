@@ -15,9 +15,11 @@ import { ROUTES } from '@/config/navigation'
 import { DEMO_ACCESS_PASSPHRASE, DEMO_USERS, SIGN_IN_BAND_ORDER, USER_BY_ID } from '@/auth/demo-users'
 import { getRole } from '@/security/roles'
 import { resolvePreferredLanding } from '@/routes/RouteGuard'
+import { authService } from '@/services/auth.service'
+import { ServiceError } from '@/services/client'
+import { isApiEnabled } from '@/services/http'
 import { useAuthStore, useIsAuthenticated } from '@/stores/auth.store'
 import { useActiveCorporation } from '@/stores/corporation.store'
-import { usePreferencesStore } from '@/stores/preferences.store'
 import { useApplyLocale } from '@/stores/locale.store'
 import { LanguageSwitcher } from '@/components/layout/LanguageSwitcher'
 import { cn } from '@/utils/cn'
@@ -83,6 +85,9 @@ export function LoginPage(): React.JSX.Element {
   const [revealed, setRevealed] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [attempted, setAttempted] = useState(false)
+  /** True while the server session is being established, so the form cannot be
+   *  submitted twice and the operator can see that something is happening. */
+  const [signingIn, setSigningIn] = useState(false)
 
   /** Positions grouped by institutional band, most senior first. */
   const grouped = useMemo(() => {
@@ -99,12 +104,25 @@ export function LoginPage(): React.JSX.Element {
     })).filter((group) => group.users.length > 0)
   }, [])
 
-  if (isAuthenticated) return <Navigate to="/" replace />
+  /*
+   * Already signed in: go to the portal, not straight into the console.
+   *
+   * The session is persisted, so an officer who returns to this screen with a
+   * live session never reaches the submit handler below — and that handler is
+   * the only path that opened the portal. Sending them to `/` instead meant
+   * the corporation's own front page was unreachable for anyone who had signed
+   * in once and not since signed out, which is everyone, most of the time.
+   *
+   * The portal is one click from the console, so this costs a returning
+   * officer nothing and makes the institutional route the default arrival for
+   * both a fresh sign-in and a return visit.
+   */
+  if (isAuthenticated) return <Navigate to={ROUTES.portal} replace />
 
   const selectedUser = USER_BY_ID.get(selected)
   const selectedRole = selectedUser ? getRole(selectedUser.roleId) : null
 
-  const handleSubmit = (event: FormEvent): void => {
+  const handleSubmit = async (event: FormEvent): Promise<void> => {
     event.preventDefault()
     setAttempted(true)
 
@@ -112,10 +130,34 @@ export function LoginPage(): React.JSX.Element {
       setError('Enter the demonstration passphrase to continue.')
       return
     }
-    if (passphrase !== DEMO_ACCESS_PASSPHRASE) {
+    // Kept for the demonstration build, where there is no server to ask. When
+    // an API is configured this check is only a courtesy that saves a round
+    // trip: `establishServerSession` below compares the passphrase again on
+    // the server, against a value that never ships to the browser, and that
+    // comparison is the one that decides anything.
+    if (!isApiEnabled() && passphrase !== DEMO_ACCESS_PASSPHRASE) {
       setError('That passphrase is not recognised. Check it and try again.')
       return
     }
+
+    // Establish the server session BEFORE the local one. The cookie issued
+    // here is what lets this officer read their own task queue, complaints and
+    // audit trail from the database — on this device or any other. If it
+    // fails, the operator must land back on this screen with the reason rather
+    // than inside an application that will refuse every request it makes.
+    setSigningIn(true)
+    try {
+      await authService.establishServerSession(selected, passphrase)
+    } catch (cause) {
+      setSigningIn(false)
+      setError(
+        cause instanceof ServiceError
+          ? cause.message
+          : 'The intelligence service could not be reached. Check the connection and try again.',
+      )
+      return
+    }
+    setSigningIn(false)
 
     const user = signIn(selected)
     if (!user) {
@@ -137,12 +179,18 @@ export function LoginPage(): React.JSX.Element {
     // landing them on a refusal. Naming a route in the query string therefore
     // cannot grant one.
     const requested = resolvePreferredLanding(user, nextRoute)
-    const preferred = resolvePreferredLanding(user, usePreferencesStore.getState().defaultLanding)
-    const overview = resolvePreferredLanding(user, ROUTES.executive)
-    navigate(
-      requested ?? preferred ?? overview ?? getRole(user.roleId)?.landingRoute ?? ROUTES.executive,
-      { replace: true },
-    )
+    if (requested) {
+      navigate(requested, { replace: true })
+      return
+    }
+
+    // With nothing specifically requested, sign-in opens the corporation's
+    // portal front page rather than dropping the officer straight into a
+    // module. The portal is where the platform states what it is and offers
+    // every surface at once; entering through it is the institutional route,
+    // and it is one click from the console. A `?next=` click still wins,
+    // because an explicit request made a moment ago beats a default.
+    navigate(ROUTES.portal, { replace: true })
   }
 
   return (
@@ -244,7 +292,7 @@ export function LoginPage(): React.JSX.Element {
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} noValidate>
+          <form onSubmit={(event) => void handleSubmit(event)} noValidate>
             {/* Position ------------------------------------------------- */}
             <div className="mb-4">
               <Label htmlFor="position" required>
@@ -322,8 +370,15 @@ export function LoginPage(): React.JSX.Element {
               ) : null}
             </div>
 
-            <Button variant="primary" size="md" block type="submit" iconRight={<ArrowRight className="h-4 w-4" />}>
-              {t('Sign in')}
+            <Button
+              variant="primary"
+              size="md"
+              block
+              type="submit"
+              disabled={signingIn}
+              iconRight={<ArrowRight className="h-4 w-4" />}
+            >
+              {signingIn ? t('Signing in…') : t('Sign in')}
             </Button>
           </form>
 

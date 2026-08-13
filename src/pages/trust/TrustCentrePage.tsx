@@ -51,6 +51,7 @@ import {
 import { municipality } from '@/config/municipality.config'
 import { ROUTES } from '@/config/navigation'
 import { useCurrentUser } from '@/stores/auth.store'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { formatPercent } from '@/utils/format'
 import { cn } from '@/utils/cn'
 import type { IntelligenceDomain } from '@/types/common'
@@ -218,6 +219,12 @@ export function TrustCentrePage(): React.JSX.Element {
   const [running, setRunning] = useState(false)
   const [runError, setRunError] = useState<string | null>(null)
 
+  // The shell's masthead carries the screen's name; the page states the wording.
+  usePageMasthead(
+    t('Trust Centre'),
+    t('Security, privacy, AI governance, data lineage, evidence, access, integrations, audit and platform resilience - the full institutional accountability surface behind every intelligence screen in this platform.'),
+  )
+
   const summaryQuery = useServiceQuery(['trust-centre', 'summary'], (u) => loadTrustSummary(u))
 
   async function verify(): Promise<void> {
@@ -252,8 +259,6 @@ export function TrustCentrePage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('Trust Centre')}
-        title={t('Trust Centre')}
-        description={t('Security, privacy, AI governance, data lineage, evidence, access, integrations, audit and platform resilience - the full institutional accountability surface behind every intelligence screen in this platform.')}
         breadcrumbs={[{ label: t('Trust Centre') }]}
         actions={
           tab === 'verification' ? (
@@ -490,8 +495,20 @@ function VerificationTab({
       {running ? <LoadingState variant="block" rows={5} /> : null}
 
       {run && !running ? (
-        <>
-          <MetricGrid columns={4}>
+        /* Two columns. The seven control results are the record of the pass
+           and hold the wide column; the tally and the note on what could not
+           be exercised read beside them. */
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+          <div className="min-w-0 xl:order-1 xl:col-span-8">
+            <div className="space-y-3">
+              {run.results.map((result) => (
+                <ControlCheckCard key={result.id} result={result} />
+              ))}
+            </div>
+          </div>
+
+          <div className="flex min-w-0 flex-col gap-4 xl:order-2 xl:col-span-4">
+          <MetricGrid columns={2}>
             <Card tone={run.passed === run.results.length ? 'default' : 'default'}>
               <p className="label-institutional">{t('Passed')}</p>
               <p className="numeric mt-2 text-metric font-semibold text-ok-700">{run.passed}</p>
@@ -524,13 +541,8 @@ function VerificationTab({
               </p>
             </Card>
           ) : null}
-
-          <div className="space-y-3">
-            {run.results.map((result) => (
-              <ControlCheckCard key={result.id} result={result} />
-            ))}
           </div>
-        </>
+        </div>
       ) : null}
     </>
   )

@@ -21,6 +21,7 @@ import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { amenitiesService } from '@/services'
 import { useFilterStore } from '@/stores/ui.store'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { wardName, wardShortName } from '@/data/reference'
 import {
   AMENITY_CAPACITY_UNIT,
@@ -72,6 +73,12 @@ const OCCUPANCY_PRESSURE_THRESHOLD = 88
 export function AmenitiesPage(): React.JSX.Element {
   const filters = useFilterStore((s) => s.filters)
 
+  // The shell's masthead carries the screen's name; the page states the wording.
+  usePageMasthead(
+    t('Parking & Public Amenities'),
+    t('Parking lots, public conveniences, bus shelters, drinking water posts and community halls - what the corporation holds, what condition it is in, and how far it reaches the people it is meant to serve. Street lighting is reported separately.'),
+  )
+
   const amenitiesQuery = useServiceQuery(queryKeys.amenities('estate'), (u) => amenitiesService.amenities(u))
   const gapsQuery = useServiceQuery(queryKeys.amenities('ward-gaps'), (u) => amenitiesService.wardGaps(u))
   const trendQuery = useServiceQuery(queryKeys.amenities('trend'), (u) => amenitiesService.trend(u))
@@ -109,7 +116,6 @@ export function AmenitiesPage(): React.JSX.Element {
       <PageBody>
         <PageHeader
           eyebrow={t('City Intelligence')}
-          title={t('Parking & Public Amenities')}
           breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Parking & Public Amenities') }]}
         />
         <LoadingState variant="metrics" />
@@ -123,7 +129,6 @@ export function AmenitiesPage(): React.JSX.Element {
       <PageBody>
         <PageHeader
           eyebrow={t('City Intelligence')}
-          title={t('Parking & Public Amenities')}
           breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Parking & Public Amenities') }]}
         />
         <ErrorState
@@ -392,23 +397,11 @@ export function AmenitiesPage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('City Intelligence')}
-        title={t('Parking & Public Amenities')}
-        description={t('Parking lots, public conveniences, bus shelters, drinking water posts and community halls - what the corporation holds, what condition it is in, and how far it reaches the people it is meant to serve. Street lighting is reported separately.')}
         breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Parking & Public Amenities') }]}
         freshness={freshness}
       />
 
       <DemonstrationNotice />
-
-      <Card tone="info" className="flex items-start gap-3">
-        <Droplets className="mt-0.5 h-4 w-4 shrink-0 text-govt-600" aria-hidden />
-        <div className="min-w-0">
-          <p className="text-[0.8125rem] font-semibold text-govt-800">{t('A facility count is not a service')}</p>
-          <p className="mt-1 text-xs leading-relaxed text-ink-600">
-            {t('A public convenience that exists but has no water supply is not a working amenity, which is why availability and condition are reported together on this page and never as a bare count of facilities. Residents per public toilet seat is the honest denominator - it is the figure that decides whether a woman can move through this city for a full working day, and it is the Swachh Bharat measure that a count of blocks conceals. The {0} conveniences standing without a water supply are counted here as needing repair, not as provision.', formatNumber(dryToilets))}
-          </p>
-        </div>
-      </Card>
 
       <FilterBar show={['ward', 'search']} searchPlaceholder="Search amenities, wards or classes" />
 
@@ -452,89 +445,106 @@ export function AmenitiesPage(): React.JSX.Element {
         />
       </MetricGrid>
 
-      <div className="grid gap-4 lg:grid-cols-[1.3fr_1fr]">
-        <Card className="flex flex-col">
-          <p className="label-institutional mb-2">{t('Amenity grievances raised against grievances resolved')}</p>
-          <div style={{ height: 220 }}>
-            <CategoryBarChart
-              data={trend as unknown as Array<Record<string, string | number>>}
-              categoryKey="month"
-              showLegend
-              series={[
-                { key: 'complaintsRaised', label: t('Raised'), colour: CHART_COLOURS.primary },
-                { key: 'complaintsResolved', label: t('Resolved'), colour: CHART_COLOURS.positive },
-              ]}
+      {/* Two columns, read downward. The registers — what the corporation
+          holds and where provision falls short — carry the width; the ranking
+          and the two readings that qualify them stand beside, not below. */}
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
+          <Card flush>
+            <CardHeader
+              bordered
+              icon={<Droplets className="h-4 w-4" />}
+              title={t('Public amenities')}
+              description={t('Every facility within your authorised ward scope, with the condition that qualifies it. Availability alone is never reported here.')}
             />
-          </div>
-          <p className="mt-2 text-[0.6875rem] leading-relaxed text-ink-500">
-            {t('The two series are charted side by side rather than netted off, because the gap between them is the finding. It opens every monsoon - complaints rise exactly when the crews who would close them are hardest to deploy - and a single net figure would show the shortfall as a small number instead of a widening one.')}
-          </p>
-        </Card>
-
-        <Card flush className="flex flex-col">
-          <CardHeader
-            bordered
-            title={t('Wards worst served for public conveniences')}
-            description={t('Residents for every usable toilet seat. Ranked, not averaged - the average is always survivable and the worst ward never is.')}
-          />
-          <div className="px-4 pb-4" style={{ height: Math.max(210, worstToiletRatio.length * 26) }}>
-            {worstToiletRatio.length === 0 ? (
-              <EmptyState compact title={t('No wards in scope')} detail="Widen the ward filter to rank provision." />
-            ) : (
-              <RankedBarChart
-                data={worstToiletRatio.map((g) => ({
-                  label: wardShortName(g.wardId),
-                  value: g.populationPerPublicToilet,
-                }))}
+            {filtered.length === 0 ? (
+              <EmptyState
+                title={t('No amenities match the current filters')}
+                detail="Clear a filter to widen the amenity register."
               />
+            ) : (
+              <DataTable rows={filtered} columns={columns} rowKey={(a) => a.id} pageSize={12} />
             )}
-          </div>
-        </Card>
-      </div>
+          </Card>
 
-      <Card tone="default" className="flex items-start gap-3">
-        <SquareParking className="mt-0.5 h-4 w-4 shrink-0 text-govt-600" aria-hidden />
-        <div className="min-w-0">
-          <p className="text-[0.8125rem] font-semibold text-ink-900">{t('Parking is a demand-management instrument')}</p>
-          <p className="mt-1 text-xs leading-relaxed text-ink-600">
-            {t('The corporation holds {0} public bays against the vehicle fleet in these wards - {1} bays for every thousand registered vehicles, against a planning benchmark of {2}. Where that ratio collapses the shortfall does not disappear, it moves onto the carriageway and reappears as a traffic finding. Collections of {3} a month are what falls out of pricing the instrument correctly - they are the consequence of the policy, not the reason for it.', formatNumber(parkingBays), meanBaysPer1000, PARKING_BAYS_PER_1000_VEHICLES_BENCHMARK, formatCrore(monthlyParkingRevenueLakh / 100))}
-          </p>
+          <Card flush>
+            <CardHeader
+              bordered
+              icon={<Wrench className="h-4 w-4" />}
+              title={t('Ward provision gap')}
+              description={t('Provision measured against the people it serves rather than against last year\'s asset register.')}
+            />
+            {filteredGaps.length === 0 ? (
+              <EmptyState
+                title={t('No wards match the current filters')}
+                detail="Clear the ward filter to see provision across the corporation."
+              />
+            ) : (
+              <DataTable rows={filteredGaps} columns={gapColumns} rowKey={(g) => g.wardId} pageSize={12} />
+            )}
+          </Card>
+
+          <Card className="flex flex-col">
+            <p className="label-institutional mb-2">{t('Amenity grievances raised against grievances resolved')}</p>
+            <div style={{ height: 220 }}>
+              <CategoryBarChart
+                data={trend as unknown as Array<Record<string, string | number>>}
+                categoryKey="month"
+                showLegend
+                series={[
+                  { key: 'complaintsRaised', label: t('Raised'), colour: CHART_COLOURS.primary },
+                  { key: 'complaintsResolved', label: t('Resolved'), colour: CHART_COLOURS.positive },
+                ]}
+              />
+            </div>
+            <p className="mt-2 text-[0.6875rem] leading-relaxed text-ink-500">
+              {t('The two series are charted side by side rather than netted off, because the gap between them is the finding. It opens every monsoon - complaints rise exactly when the crews who would close them are hardest to deploy - and a single net figure would show the shortfall as a small number instead of a widening one.')}
+            </p>
+          </Card>
         </div>
-      </Card>
 
-      <Card flush>
-        <CardHeader
-          bordered
-          icon={<Droplets className="h-4 w-4" />}
-          title={t('Public amenities')}
-          description={t('Every facility within your authorised ward scope, with the condition that qualifies it. Availability alone is never reported here.')}
-        />
-        {filtered.length === 0 ? (
-          <EmptyState
-            title={t('No amenities match the current filters')}
-            detail="Clear a filter to widen the amenity register."
-          />
-        ) : (
-          <DataTable rows={filtered} columns={columns} rowKey={(a) => a.id} pageSize={12} />
-        )}
-      </Card>
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
+          <Card tone="info" className="flex items-start gap-3">
+            <Droplets className="mt-0.5 h-4 w-4 shrink-0 text-govt-600" aria-hidden />
+            <div className="min-w-0">
+              <p className="text-[0.8125rem] font-semibold text-govt-800">{t('A facility count is not a service')}</p>
+              <p className="mt-1 text-xs leading-relaxed text-ink-600">
+                {t('A public convenience that exists but has no water supply is not a working amenity, which is why availability and condition are reported together on this page and never as a bare count of facilities. Residents per public toilet seat is the honest denominator - it is the figure that decides whether a woman can move through this city for a full working day, and it is the Swachh Bharat measure that a count of blocks conceals. The {0} conveniences standing without a water supply are counted here as needing repair, not as provision.', formatNumber(dryToilets))}
+              </p>
+            </div>
+          </Card>
 
-      <Card flush>
-        <CardHeader
-          bordered
-          icon={<Wrench className="h-4 w-4" />}
-          title={t('Ward provision gap')}
-          description={t('Provision measured against the people it serves rather than against last year\'s asset register.')}
-        />
-        {filteredGaps.length === 0 ? (
-          <EmptyState
-            title={t('No wards match the current filters')}
-            detail="Clear the ward filter to see provision across the corporation."
-          />
-        ) : (
-          <DataTable rows={filteredGaps} columns={gapColumns} rowKey={(g) => g.wardId} pageSize={12} />
-        )}
-      </Card>
+          <Card flush className="flex flex-col">
+            <CardHeader
+              bordered
+              title={t('Wards worst served for public conveniences')}
+              description={t('Residents for every usable toilet seat. Ranked, not averaged - the average is always survivable and the worst ward never is.')}
+            />
+            <div className="px-4 pb-4" style={{ height: Math.max(210, worstToiletRatio.length * 26) }}>
+              {worstToiletRatio.length === 0 ? (
+                <EmptyState compact title={t('No wards in scope')} detail="Widen the ward filter to rank provision." />
+              ) : (
+                <RankedBarChart
+                  data={worstToiletRatio.map((g) => ({
+                    label: wardShortName(g.wardId),
+                    value: g.populationPerPublicToilet,
+                  }))}
+                />
+              )}
+            </div>
+          </Card>
+
+          <Card tone="default" className="flex items-start gap-3">
+            <SquareParking className="mt-0.5 h-4 w-4 shrink-0 text-govt-600" aria-hidden />
+            <div className="min-w-0">
+              <p className="text-[0.8125rem] font-semibold text-ink-900">{t('Parking is a demand-management instrument')}</p>
+              <p className="mt-1 text-xs leading-relaxed text-ink-600">
+                {t('The corporation holds {0} public bays against the vehicle fleet in these wards - {1} bays for every thousand registered vehicles, against a planning benchmark of {2}. Where that ratio collapses the shortfall does not disappear, it moves onto the carriageway and reappears as a traffic finding. Collections of {3} a month are what falls out of pricing the instrument correctly - they are the consequence of the policy, not the reason for it.', formatNumber(parkingBays), meanBaysPer1000, PARKING_BAYS_PER_1000_VEHICLES_BENCHMARK, formatCrore(monthlyParkingRevenueLakh / 100))}
+              </p>
+            </div>
+          </Card>
+        </div>
+      </div>
     </PageBody>
   )
 }

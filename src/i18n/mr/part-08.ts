@@ -221,6 +221,10 @@ export const MR_PART_08: Record<string, string> = {
   'Select ward': 'प्रभाग निवडा',
   'Services at risk': 'जोखमीतील सेवा',
   'Sign in': 'प्रवेश करा',
+  'Signing in…': 'प्रवेश करत आहे…',
+  'Enter the console': 'कन्सोलमध्ये प्रवेश करा',
+  'Scroll sections left': 'विभाग डावीकडे सरकवा',
+  'Scroll sections right': 'विभाग उजवीकडे सरकवा',
   'SLA breached': 'सेवा-हमी भंग',
   State: 'अवस्था',
   'Survey no.': 'सर्वेक्षण क्र.',
@@ -353,7 +357,6 @@ export const MR_PART_08: Record<string, string> = {
   '{0} felling permissions granted · {1} of {2} compensatory trees planted':
     '{0} वृक्षतोड परवानग्या मंजूर · {2} पैकी {1} भरपाई वृक्ष लावले',
   '{0} h/day': '{0} तास/दिवस',
-  '{0} highest-severity open items': 'सर्वाधिक तीव्रतेच्या {0} प्रलंबित बाबी',
   '{0} hop{1} from anchor · {2} entit{3}': 'आधारबिंदूपासून {0} टप्पा{1} · {2} घटक{3}',
   '{0} in scope for this mode': 'या पद्धतीच्या व्याप्तीत {0}',
   '{0} incident{1} still open. Figures derived from this feed remain published, with the gap visible in the record rather than interpolated over.':

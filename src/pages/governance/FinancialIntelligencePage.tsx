@@ -7,6 +7,7 @@ import { DemonstrationNotice, ErrorState, LoadingState, PartialDataWarning } fro
 import { MetricCard } from '@/components/cards/MetricCard'
 import { ContributionBars } from '@/components/charts'
 import { useServiceQuery } from '@/hooks'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { queryKeys } from '@/app/queryClient'
 import { financialIntelligenceService } from '@/services'
 import type { DepartmentFinancialRow } from '@/domains/finance/health-index'
@@ -40,6 +41,12 @@ const FRESHNESS = {
 }
 
 export function FinancialIntelligencePage(): React.JSX.Element {
+  // The shell's masthead carries the screen's name; the page states the wording.
+  usePageMasthead(
+    t('Municipal Financial Intelligence'),
+    t('The corporation\'s consolidated financial position - revenue, budget, commitments, capital and project spend - as one index that can always be taken apart into the six components that produced it.'),
+  )
+
   const query = useServiceQuery(queryKeys.finance('intelligence'), (u) => financialIntelligenceService.position(u))
 
   if (query.isLoading) return <LoadingState variant="metrics" />
@@ -115,8 +122,6 @@ export function FinancialIntelligencePage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('Governance & Finance')}
-        title={t('Municipal Financial Intelligence')}
-        description={t('The corporation\'s consolidated financial position - revenue, budget, commitments, capital and project spend - as one index that can always be taken apart into the six components that produced it.')}
         breadcrumbs={[{ label: t('Governance & Finance') }, { label: t('Financial Intelligence') }]}
         freshness={FRESHNESS}
       />

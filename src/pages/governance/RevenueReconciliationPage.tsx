@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { AlertTriangle, ListChecks, ScrollText } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { useServiceQuery } from '@/hooks'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { queryKeys } from '@/app/queryClient'
 import { reconciliationService } from '@/services'
 import { ROUTES } from '@/config/navigation'
@@ -53,6 +54,12 @@ const FRESHNESS = {
 const TIER_COLOUR: Record<number, string> = { 1: '#e5484d', 2: '#f59e0b', 3: '#8195ac' }
 
 export function RevenueReconciliationPage(): React.JSX.Element {
+  // The shell's masthead carries the screen's name; the page states the wording.
+  usePageMasthead(
+    t('Registry Reconciliation'),
+    t('Where the corporation\'s own registers disagree about the same property. Every rule in the catalogue is published in full - its condition, why it matters, and the lawful reasons it fires on a property where nothing is wrong - because an assessment the corporation cannot explain is an assessment it cannot defend at a hearing.'),
+  )
+
   const [wardFilter, setWardFilter] = useState('all')
 
   const summaryQuery = useServiceQuery(queryKeys.reconciliation(`summary:${wardFilter}`), (user) =>
@@ -175,8 +182,6 @@ export function RevenueReconciliationPage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('Governance & Finance')}
-        title={t('Registry Reconciliation')}
-        description={t('Where the corporation\'s own registers disagree about the same property. Every rule in the catalogue is published in full - its condition, why it matters, and the lawful reasons it fires on a property where nothing is wrong - because an assessment the corporation cannot explain is an assessment it cannot defend at a hearing.')}
         breadcrumbs={[{ label: t('Governance & Finance') }, { label: t('Registry Reconciliation') }]}
         freshness={FRESHNESS}
         actions={
@@ -251,9 +256,15 @@ export function RevenueReconciliationPage(): React.JSX.Element {
             </div>
           </Card>
 
+          {/* Two columns. What the rules actually did — their observed
+              precision, then the catalogue itself — reads down the wide
+              column; the candidate position those rules produced stands
+              beside it as the running count. */}
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+          <div className="flex min-w-0 flex-col gap-4 xl:order-2 xl:col-span-4">
           <Card>
             <CardHeader title={t('Candidate position')} description={t('Scoped to the ward filter above.')} />
-            <MetricGrid columns={5} className="mt-4">
+            <MetricGrid columns={2} className="mt-4">
               <MetricCard label={t('Candidates raised')} value={formatNumber(summary.raised)} />
               <MetricCard
                 label={t('Tier 1 candidates')}
@@ -282,7 +293,9 @@ export function RevenueReconciliationPage(): React.JSX.Element {
               </div>
             ) : null}
           </Card>
+          </div>
 
+          <div className="flex min-w-0 flex-col gap-4 xl:order-1 xl:col-span-8">
           {/* --- Observed precision -------------------------------------- */}
           <Card flush>
             <CardHeader
@@ -313,6 +326,8 @@ export function RevenueReconciliationPage(): React.JSX.Element {
                 <RuleCard key={rule.id} rule={rule} precision={precision.find((p) => p.ruleId === rule.id)} />
               ))}
             </div>
+          </div>
+          </div>
           </div>
         </>
       ) : null}

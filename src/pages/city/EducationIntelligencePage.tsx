@@ -21,6 +21,7 @@ import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { educationService } from '@/services'
 import { useFilterStore } from '@/stores/ui.store'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { wardName, wardShortName } from '@/data/reference'
 import {
   SCHOOL_LEVEL_LABEL,
@@ -64,6 +65,11 @@ const MEDIUM_COLOUR: Record<SchoolMedium, string> = {
 export function EducationIntelligencePage(): React.JSX.Element {
   const filters = useFilterStore((s) => s.filters)
 
+  usePageMasthead(
+    t('Education Intelligence'),
+    t('The corporation\'s own schools - enrolment, the teaching establishment against sanctioned strength, and the condition of the buildings children are taught in.'),
+  )
+
   const schoolsQuery = useServiceQuery(queryKeys.education('schools'), (u) => educationService.schools(u))
   const wardQuery = useServiceQuery(queryKeys.education('wards'), (u) => educationService.wardSummary(u))
 
@@ -86,7 +92,7 @@ export function EducationIntelligencePage(): React.JSX.Element {
   if (schoolsQuery.isLoading || wardQuery.isLoading) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('City Intelligence')} title={t('Education Intelligence')} breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Education Intelligence') }]} />
+        <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Education Intelligence') }]} />
         <LoadingState variant="metrics" />
         <LoadingState variant="table" rows={8} />
       </PageBody>
@@ -95,7 +101,7 @@ export function EducationIntelligencePage(): React.JSX.Element {
   if (schoolsQuery.error || wardQuery.error) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('City Intelligence')} title={t('Education Intelligence')} breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Education Intelligence') }]} />
+        <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Education Intelligence') }]} />
         <ErrorState
           detail={(schoolsQuery.error ?? wardQuery.error)?.message}
           onRetry={() => { void schoolsQuery.refetch(); void wardQuery.refetch() }}
@@ -179,23 +185,11 @@ export function EducationIntelligencePage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('City Intelligence')}
-        title={t('Education Intelligence')}
-        description={t('The corporation\'s own schools - enrolment, the teaching establishment against sanctioned strength, and the condition of the buildings children are taught in.')}
         breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Education Intelligence') }]}
         freshness={freshness}
       />
 
       <DemonstrationNotice />
-
-      <Card tone="info" className="flex items-start gap-3">
-        <GraduationCap className="mt-0.5 h-4 w-4 shrink-0 text-govt-600" aria-hidden />
-        <div className="min-w-0">
-          <p className="text-[0.8125rem] font-semibold text-govt-800">{t('This page holds schools, never pupils')}</p>
-          <p className="mt-1 text-xs leading-relaxed text-ink-600">
-            {t('Attendance and dropout below are school-level rates. No child&apos;s record, name or individual attendance is held anywhere behind this page, and the education service exposes no method that could return one. A corporation&apos;s duty here is to the school estate and the teaching establishment; the child&apos;s record belongs to the school and stays there.')}
-          </p>
-        </div>
-      </Card>
 
       <FilterBar show={['ward', 'search']} searchPlaceholder="Search schools" />
 
@@ -219,68 +213,86 @@ export function EducationIntelligencePage(): React.JSX.Element {
         />
       </MetricGrid>
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Card className="flex flex-col">
-          <p className="label-institutional mb-2">{t('Medium of instruction')}</p>
-          <div style={{ height: 190 }}>
-            <DonutChart
-              data={byMedium.map((m) => ({ label: SCHOOL_MEDIUM_LABEL[m.medium], value: m.count, colour: MEDIUM_COLOUR[m.medium] }))}
-              centreValue={String(filtered.length)}
-              centreLabel="schools"
+      {/* Two columns. The estate register and the vacancy ranking — what the
+          department is held to account for — carry the width; the composition
+          of the estate and the ratio a classroom actually experiences read
+          down the narrower column beside them. */}
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
+          <Card flush>
+            <CardHeader
+              bordered
+              icon={<School className="h-4 w-4" />}
+              title={t('School register')}
+              description={t('Every municipal school within your authorised ward scope.')}
             />
-          </div>
-        </Card>
+            {filtered.length === 0 ? (
+              <EmptyState title={t('No schools match the current filters')} detail="Clear a filter to widen the register." />
+            ) : (
+              <DataTable rows={filtered} columns={columns} rowKey={(r) => r.id} pageSize={15} />
+            )}
+          </Card>
 
-        <Card className="flex flex-col">
-          <p className="label-institutional mb-2">{t('Schools by level')}</p>
-          <div style={{ height: 190 }}>
-            <CategoryBarChart
-              data={byLevel}
-              series={[{ key: 'value', label: t('Schools'), colour: CHART_COLOURS.primary }]}
+          <Card flush>
+            <CardHeader
+              bordered
+              icon={<UserRoundX className="h-4 w-4" />}
+              title={t('Wards by teaching vacancy')}
+              description={t('Where the gap between sanctioned and filled teaching posts is widest. A vacancy is a class without a teacher, not a line in an establishment register.')}
             />
-          </div>
-        </Card>
-
-        <Card className="flex flex-col">
-          <p className="label-institutional mb-2">{t('Pupil-teacher ratio')}</p>
-          <div className="flex flex-1 flex-col items-center justify-center">
-            <p className="numeric text-metric font-semibold text-ink-900">{pupilTeacher}</p>
-            <p className="mt-1 text-[0.6875rem] text-ink-500">{t('children per teacher in post')}</p>
-            <p className="mt-3 max-w-[15rem] text-center text-[0.6875rem] leading-relaxed text-ink-500">
-              {t('Calculated against teachers actually in position, not against sanctioned strength - the ratio a classroom experiences rather than the one the establishment register shows.')}
-            </p>
-          </div>
-        </Card>
-      </div>
-
-      <Card flush>
-        <CardHeader
-          bordered
-          icon={<UserRoundX className="h-4 w-4" />}
-          title={t('Wards by teaching vacancy')}
-          description={t('Where the gap between sanctioned and filled teaching posts is widest. A vacancy is a class without a teacher, not a line in an establishment register.')}
-        />
-        <div className="px-4 pb-4" style={{ height: Math.max(200, worstVacancy.length * 26) }}>
-          <RankedBarChart
-            data={worstVacancy.map((w) => ({ label: wardShortName(w.wardId), value: w.teacherVacancyPct }))}
-            unit="%"
-          />
+            <div className="px-4 pb-4" style={{ height: Math.max(200, worstVacancy.length * 26) }}>
+              <RankedBarChart
+                data={worstVacancy.map((w) => ({ label: wardShortName(w.wardId), value: w.teacherVacancyPct }))}
+                unit="%"
+              />
+            </div>
+          </Card>
         </div>
-      </Card>
 
-      <Card flush>
-        <CardHeader
-          bordered
-          icon={<School className="h-4 w-4" />}
-          title={t('School register')}
-          description={t('Every municipal school within your authorised ward scope.')}
-        />
-        {filtered.length === 0 ? (
-          <EmptyState title={t('No schools match the current filters')} detail="Clear a filter to widen the register." />
-        ) : (
-          <DataTable rows={filtered} columns={columns} rowKey={(r) => r.id} pageSize={15} />
-        )}
-      </Card>
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
+          <Card tone="info" className="flex items-start gap-3">
+            <GraduationCap className="mt-0.5 h-4 w-4 shrink-0 text-govt-600" aria-hidden />
+            <div className="min-w-0">
+              <p className="text-[0.8125rem] font-semibold text-govt-800">{t('This page holds schools, never pupils')}</p>
+              <p className="mt-1 text-xs leading-relaxed text-ink-600">
+                {t('Attendance and dropout below are school-level rates. No child&apos;s record, name or individual attendance is held anywhere behind this page, and the education service exposes no method that could return one. A corporation&apos;s duty here is to the school estate and the teaching establishment; the child&apos;s record belongs to the school and stays there.')}
+              </p>
+            </div>
+          </Card>
+
+          <Card className="flex flex-col">
+            <p className="label-institutional mb-2">{t('Pupil-teacher ratio')}</p>
+            <div className="flex flex-1 flex-col items-center justify-center">
+              <p className="numeric text-metric font-semibold text-ink-900">{pupilTeacher}</p>
+              <p className="mt-1 text-[0.6875rem] text-ink-500">{t('children per teacher in post')}</p>
+              <p className="mt-3 max-w-[15rem] text-center text-[0.6875rem] leading-relaxed text-ink-500">
+                {t('Calculated against teachers actually in position, not against sanctioned strength - the ratio a classroom experiences rather than the one the establishment register shows.')}
+              </p>
+            </div>
+          </Card>
+
+          <Card className="flex flex-col">
+            <p className="label-institutional mb-2">{t('Medium of instruction')}</p>
+            <div style={{ height: 190 }}>
+              <DonutChart
+                data={byMedium.map((m) => ({ label: SCHOOL_MEDIUM_LABEL[m.medium], value: m.count, colour: MEDIUM_COLOUR[m.medium] }))}
+                centreValue={String(filtered.length)}
+                centreLabel="schools"
+              />
+            </div>
+          </Card>
+
+          <Card className="flex flex-col">
+            <p className="label-institutional mb-2">{t('Schools by level')}</p>
+            <div style={{ height: 190 }}>
+              <CategoryBarChart
+                data={byLevel}
+                series={[{ key: 'value', label: t('Schools'), colour: CHART_COLOURS.primary }]}
+              />
+            </div>
+          </Card>
+        </div>
+      </div>
     </PageBody>
   )
 }

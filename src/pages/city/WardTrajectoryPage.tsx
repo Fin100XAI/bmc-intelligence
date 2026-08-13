@@ -20,6 +20,7 @@ import { CATEGORICAL_SERIES, CHART_COLOURS, CategoryBarChart, Sparkline, TrendCh
 import { FilterBar } from '@/components/filters/FilterBar'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { wardTrajectoryService } from '@/services/ward-trajectory.service'
 import type { WardTrajectory } from '@/services/ward-trajectory.service'
 // Vocabulary only. Every figure on this page arrives through the service above;
@@ -81,6 +82,16 @@ export function WardTrajectoryPage(): React.JSX.Element {
   const boardQuery = useServiceQuery(queryKeys.wardTrajectory('board'), (u) => wardTrajectoryService.board(u))
 
   const board = boardQuery.data ?? null
+
+  // The standfirst quotes the threshold the board itself publishes, so it can
+  // only be stated once the board has resolved. Until then the masthead keeps
+  // the route's own description rather than printing a placeholder figure.
+  usePageMasthead(
+    TITLE,
+    board
+      ? t('Which wards are moving, how fast, and when the fitted rate would carry them below the {0}-point intervention threshold. Every other ward surface reports where a ward is; this one reports where it is heading.', board.interventionThreshold)
+      : undefined,
+  )
   const fastestId = board?.summary.fastestFalling?.wardId ?? null
 
   // The projection line is fetched for whichever ward is falling fastest, which
@@ -137,7 +148,7 @@ export function WardTrajectoryPage(): React.JSX.Element {
   if (boardQuery.isLoading) {
     return (
       <PageBody>
-        <PageHeader eyebrow={EYEBROW} title={TITLE} breadcrumbs={BREADCRUMBS} />
+        <PageHeader eyebrow={EYEBROW} breadcrumbs={BREADCRUMBS} />
         <LoadingState variant="metrics" />
         <LoadingState variant="table" rows={8} />
       </PageBody>
@@ -147,7 +158,7 @@ export function WardTrajectoryPage(): React.JSX.Element {
   if (boardQuery.error || !board) {
     return (
       <PageBody>
-        <PageHeader eyebrow={EYEBROW} title={TITLE} breadcrumbs={BREADCRUMBS} />
+        <PageHeader eyebrow={EYEBROW} breadcrumbs={BREADCRUMBS} />
         <ErrorState
           detail={boardQuery.error?.message}
           onRetry={() => {
@@ -301,23 +312,11 @@ export function WardTrajectoryPage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={EYEBROW}
-        title={TITLE}
-        description={t('Which wards are moving, how fast, and when the fitted rate would carry them below the {0}-point intervention threshold. Every other ward surface reports where a ward is; this one reports where it is heading.', interventionThreshold)}
         breadcrumbs={BREADCRUMBS}
         freshness={freshness}
       />
 
       <DemonstrationNotice />
-
-      <Card tone="info" className="flex items-start gap-3">
-        <Gauge className="mt-0.5 h-4 w-4 shrink-0 text-govt-600" aria-hidden />
-        <div className="min-w-0">
-          <p className="text-[0.8125rem] font-semibold text-govt-800">{t('Level is not the same as direction')}</p>
-          <p className="mt-1 text-xs leading-relaxed text-ink-600">
-            {t('A ward at 72 falling four points a month needs attention before a ward that has sat at 65 for a year. The first will be the worse of the two within five months; the second has already found its floor. Ward rankings sorted by level put the settled ward first and the falling one further down, which is why acting on level alone guarantees arriving after the deterioration rather than before it. This page exists to make the second ward visible while there is still time to change its direction.')}
-          </p>
-        </div>
-      </Card>
 
       <FilterBar show={['ward', 'search']} searchPlaceholder="Search wards by name or code" />
 
@@ -377,111 +376,130 @@ export function WardTrajectoryPage(): React.JSX.Element {
         </Card>
       ) : (
         <>
-          <div className="grid gap-4 xl:grid-cols-[1.25fr_1fr]">
-            <Card flush className="flex flex-col">
-              <CardHeader
-                bordered
-                icon={<TrendingDown className="h-4 w-4" />}
-                title={t('Trajectories of the {0} fastest-falling wards', highlight.length)}
-                description={t('Health score by month over the last {0} months, against the {1}-point intervention threshold. The rightmost month is each ward\'s live figure, unchanged from Ward Intelligence.', observationMonths, interventionThreshold)}
+          {/* Two columns. The ranked register and the trajectories behind it
+              carry the width; the single extended ward, why direction is read
+              before level and what the extension does not claim stand
+              beside. */}
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+            <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
+            <Card flush>
+                <CardHeader
+                  bordered
+                  icon={<LineChart className="h-4 w-4" />}
+                  title={t('Ward trajectories')}
+                  description={t('Ranked by rate of deterioration across the {0} wards within your authorised scope. Rank 1 is the fastest-falling.', summary.wardsAssessed)}
               />
-              <div className="px-4 pt-3 pb-4" style={{ height: 264 }}>
-                <CategoryBarChart
-                  data={highlightData}
-                  categoryKey="month"
-                  series={highlightSeries}
-                  showLegend
-                  referenceValue={interventionThreshold}
-                  referenceLabel={`Intervention threshold ${interventionThreshold}`}
-                />
-              </div>
-              <p className="px-4 pb-4 text-[0.6875rem] leading-relaxed text-ink-500">
-                {t('Months before the current one are reconstructed from each ward&apos;s published movement against the previous thirty days. They are a modelled history, not a retained record - the figure that is authoritative is the last one.')}
-              </p>
+              <DataTable rows={filtered} columns={columns} rowKey={(r) => r.wardId} pageSize={12} />
             </Card>
 
-            <Card flush className="flex flex-col">
-              <CardHeader
-                bordered
-                icon={<CalendarClock className="h-4 w-4" />}
-                title={fastest ? `${fastest.wardName} - observed and extended` : 'No ward is deteriorating'}
-                description={
-                  fastest
-                    ? `${observationMonths} reconstructed months followed by ${projectionHorizonMonths} months of straight-line extension at ${formatSlope(fastest.slopePerMonth)} points per month.`
-                    : 'Every ward in the current cohort is steady or improving, so there is no falling trajectory to extend.'
-                }
-              />
-              {fastest ? (
-                <>
-                  <div className="px-4 pt-3 pb-2" style={{ height: 218 }}>
-                    {projectionQuery.isLoading ? (
-                      <LoadingState variant="chart" />
-                    ) : projectionQuery.error ? (
-                      <ErrorState
-                        compact
-                        title={t('The projection could not be retrieved')}
-                        detail={projectionQuery.error.message}
-                        onRetry={() => {
-                          void projectionQuery.refetch()
-                        }}
-                      />
-                    ) : (
-                      <TrendChart
-                        points={projectionQuery.data ?? []}
-                        variant="line"
-                        unit=" pts"
-                        seriesLabel="Health score"
-                        colour={CHART_COLOURS.critical}
-                        referenceValue={interventionThreshold}
-                        referenceLabel={`Threshold ${interventionThreshold}`}
-                        domain={['auto', 'auto']}
-                      />
-                    )}
-                  </div>
-                  <div className="border-t border-ink-100 px-4 py-3">
-                    <p className="text-[0.6875rem] leading-relaxed text-ink-500">
-                      {t('Points beyond {0} are marked as simulated in the tooltip. {1}', fastest.series[fastest.series.length - 1]?.month, fastest.alreadyBelowThreshold
-                        ? `${fastest.wardShortName} is already below ${interventionThreshold}, so no crossing is projected - the question is no longer when to intervene.`
-                        : fastest.crossingMonth
-                          ? `On this rate the ward reaches ${interventionThreshold} in ${fastest.monthsToThreshold?.toFixed(1)} months, around ${fastest.crossingMonth}.`
-                          : `The rate does not carry the ward below ${interventionThreshold} inside a horizon worth stating as a date.`)}
-                    </p>
-                  </div>
-                </>
-              ) : (
-                <div className="p-4">
-                  <EmptyState
-                    compact
-                    title={t('No falling trajectory to extend')}
-                    detail={`Every ward in the current cohort sits inside the ${steadyBandPerMonth}-point steady band or above it.`}
+              <Card flush className="flex flex-col">
+                <CardHeader
+                  bordered
+                  icon={<TrendingDown className="h-4 w-4" />}
+                  title={t('Trajectories of the {0} fastest-falling wards', highlight.length)}
+                  description={t('Health score by month over the last {0} months, against the {1}-point intervention threshold. The rightmost month is each ward\'s live figure, unchanged from Ward Intelligence.', observationMonths, interventionThreshold)}
+                />
+                <div className="px-4 pt-3 pb-4" style={{ height: 264 }}>
+                  <CategoryBarChart
+                    data={highlightData}
+                    categoryKey="month"
+                    series={highlightSeries}
+                    showLegend
+                    referenceValue={interventionThreshold}
+                    referenceLabel={`Intervention threshold ${interventionThreshold}`}
                   />
                 </div>
-              )}
-            </Card>
-          </div>
-
-          <Card tone="warn" className="flex items-start gap-3">
-            <CalendarClock className="mt-0.5 h-4 w-4 shrink-0 text-warn-700" aria-hidden />
-            <div className="min-w-0">
-              <p className="text-[0.8125rem] font-semibold text-warn-700">{t('What the projection is, and what it is not')}</p>
-              <p className="mt-1 text-xs leading-relaxed text-ink-600">
-                {t('The months-to-threshold figure is a straight-line extrapolation of recent movement. It is not a forecast. It carries no model of monsoon seasonality, no knowledge of works already sanctioned in the ward and no allowance for anything the corporation is about to do. It assumes nothing changes - which is precisely the assumption an intervention is meant to break. Read it as an approximate horizon for a decision, never as a date the ward is expected to reach.')}
-              </p>
-              <p className="mt-2 text-xs leading-relaxed text-ink-600">
-                {t('Direction is a least-squares slope fitted across all {0} months, and a ward is called moving only where that slope exceeds {1} points per month. The band is deliberately wider than the noise in the reconstruction, so a ward described as steady here is steady and not merely quiet - and wider than the dead band behind a flat 30-day trend on Ward Intelligence, so a ward flat there is always steady here. The reverse is intended rather than accidental: a ward showing a slight 30-day movement may still be reported steady on this page, because a few tenths of a point a month is not a trend and calling it one would fill this list with wards that need nothing.', observationMonths, steadyBandPerMonth)}
-              </p>
+                <p className="px-4 pb-4 text-[0.6875rem] leading-relaxed text-ink-500">
+                  {t('Months before the current one are reconstructed from each ward&apos;s published movement against the previous thirty days. They are a modelled history, not a retained record - the figure that is authoritative is the last one.')}
+                </p>
+              </Card>
             </div>
-          </Card>
 
-          <Card flush>
-            <CardHeader
-              bordered
-              icon={<LineChart className="h-4 w-4" />}
-              title={t('Ward trajectories')}
-              description={t('Ranked by rate of deterioration across the {0} wards within your authorised scope. Rank 1 is the fastest-falling.', summary.wardsAssessed)}
-            />
-            <DataTable rows={filtered} columns={columns} rowKey={(r) => r.wardId} pageSize={12} />
-          </Card>
+            <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
+              <Card flush className="flex flex-col">
+                <CardHeader
+                  bordered
+                  icon={<CalendarClock className="h-4 w-4" />}
+                  title={fastest ? `${fastest.wardName} - observed and extended` : 'No ward is deteriorating'}
+                  description={
+                    fastest
+                      ? `${observationMonths} reconstructed months followed by ${projectionHorizonMonths} months of straight-line extension at ${formatSlope(fastest.slopePerMonth)} points per month.`
+                      : 'Every ward in the current cohort is steady or improving, so there is no falling trajectory to extend.'
+                  }
+                />
+                {fastest ? (
+                  <>
+                    <div className="px-4 pt-3 pb-2" style={{ height: 218 }}>
+                      {projectionQuery.isLoading ? (
+                        <LoadingState variant="chart" />
+                      ) : projectionQuery.error ? (
+                        <ErrorState
+                          compact
+                          title={t('The projection could not be retrieved')}
+                          detail={projectionQuery.error.message}
+                          onRetry={() => {
+                            void projectionQuery.refetch()
+                          }}
+                        />
+                      ) : (
+                        <TrendChart
+                          points={projectionQuery.data ?? []}
+                          variant="line"
+                          unit=" pts"
+                          seriesLabel="Health score"
+                          colour={CHART_COLOURS.critical}
+                          referenceValue={interventionThreshold}
+                          referenceLabel={`Threshold ${interventionThreshold}`}
+                          domain={['auto', 'auto']}
+                        />
+                      )}
+                    </div>
+                    <div className="border-t border-ink-100 px-4 py-3">
+                      <p className="text-[0.6875rem] leading-relaxed text-ink-500">
+                        {t('Points beyond {0} are marked as simulated in the tooltip. {1}', fastest.series[fastest.series.length - 1]?.month, fastest.alreadyBelowThreshold
+                          ? `${fastest.wardShortName} is already below ${interventionThreshold}, so no crossing is projected - the question is no longer when to intervene.`
+                          : fastest.crossingMonth
+                            ? `On this rate the ward reaches ${interventionThreshold} in ${fastest.monthsToThreshold?.toFixed(1)} months, around ${fastest.crossingMonth}.`
+                            : `The rate does not carry the ward below ${interventionThreshold} inside a horizon worth stating as a date.`)}
+                      </p>
+                    </div>
+                  </>
+                ) : (
+                  <div className="p-4">
+                    <EmptyState
+                      compact
+                      title={t('No falling trajectory to extend')}
+                      detail={`Every ward in the current cohort sits inside the ${steadyBandPerMonth}-point steady band or above it.`}
+                    />
+                  </div>
+                )}
+              </Card>
+
+
+            <Card tone="info" className="flex items-start gap-3">
+              <Gauge className="mt-0.5 h-4 w-4 shrink-0 text-govt-600" aria-hidden />
+              <div className="min-w-0">
+                <p className="text-[0.8125rem] font-semibold text-govt-800">{t('Level is not the same as direction')}</p>
+                <p className="mt-1 text-xs leading-relaxed text-ink-600">
+                  {t('A ward at 72 falling four points a month needs attention before a ward that has sat at 65 for a year. The first will be the worse of the two within five months; the second has already found its floor. Ward rankings sorted by level put the settled ward first and the falling one further down, which is why acting on level alone guarantees arriving after the deterioration rather than before it. This page exists to make the second ward visible while there is still time to change its direction.')}
+                </p>
+              </div>
+            </Card>
+
+            <Card tone="warn" className="flex items-start gap-3">
+              <CalendarClock className="mt-0.5 h-4 w-4 shrink-0 text-warn-700" aria-hidden />
+              <div className="min-w-0">
+                <p className="text-[0.8125rem] font-semibold text-warn-700">{t('What the projection is, and what it is not')}</p>
+                <p className="mt-1 text-xs leading-relaxed text-ink-600">
+                  {t('The months-to-threshold figure is a straight-line extrapolation of recent movement. It is not a forecast. It carries no model of monsoon seasonality, no knowledge of works already sanctioned in the ward and no allowance for anything the corporation is about to do. It assumes nothing changes - which is precisely the assumption an intervention is meant to break. Read it as an approximate horizon for a decision, never as a date the ward is expected to reach.')}
+                </p>
+                <p className="mt-2 text-xs leading-relaxed text-ink-600">
+                  {t('Direction is a least-squares slope fitted across all {0} months, and a ward is called moving only where that slope exceeds {1} points per month. The band is deliberately wider than the noise in the reconstruction, so a ward described as steady here is steady and not merely quiet - and wider than the dead band behind a flat 30-day trend on Ward Intelligence, so a ward flat there is always steady here. The reverse is intended rather than accidental: a ward showing a slight 30-day movement may still be reported steady on this page, because a few tenths of a point a month is not a trend and calling it one would fill this list with wards that need nothing.', observationMonths, steadyBandPerMonth)}
+                </p>
+              </div>
+            </Card>
+            </div>
+          </div>
         </>
       )}
     </PageBody>

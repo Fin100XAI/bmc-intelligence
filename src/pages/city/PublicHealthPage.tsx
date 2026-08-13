@@ -27,6 +27,7 @@ import { healthService } from '@/services/health.service'
 import { alertService } from '@/services/alert.service'
 import { useDrawerStore } from '@/stores/ui.store'
 import { useActiveCorporation } from '@/stores/corporation.store'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { ROUTES } from '@/config/navigation'
 import { WARDS, wardName, wardShortName } from '@/data/reference'
 import { DISEASE_LABEL, type DiseaseIndicator, type HealthIndicator } from '@/types/city-domains'
@@ -112,6 +113,11 @@ export function PublicHealthPage(): React.JSX.Element {
   const corporation = useActiveCorporation()
   const [focusedId, setFocusedId] = useState<string | null>(null)
 
+  usePageMasthead(
+    t('{0} Public Health Intelligence', corporation.city),
+    t('Aggregate disease surveillance across dengue, malaria, leptospirosis, gastroenteritis, hepatitis, respiratory illness and chikungunya, read alongside hospital utilisation and environmental correlates. These are aggregate ward-level indicators; no patient-level record exists anywhere in the platform.'),
+  )
+
   const indicatorsQuery = useServiceQuery(queryKeys.health('indicators'), (u) => healthService.indicators(u))
   const outbreakQuery = useServiceQuery(queryKeys.health('outbreak-signals'), (u) => healthService.outbreakSignals(u))
   const hospitalsQuery = useServiceQuery(queryKeys.health('hospitals'), (u) => healthService.hospitals(u))
@@ -135,12 +141,16 @@ export function PublicHealthPage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('City Intelligence')}
-        title={t('{0} Public Health Intelligence', corporation.city)}
-        description={t('Aggregate disease surveillance across dengue, malaria, leptospirosis, gastroenteritis, hepatitis, respiratory illness and chikungunya, read alongside hospital utilisation and environmental correlates. These are aggregate ward-level indicators; no patient-level record exists anywhere in the platform.')}
         breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Public Health') }]}
       />
 
-      {criticalNotice}
+      {/* Two columns, read downward. The surveillance record — the condition
+          summary, the ward-by-condition matrix, the ranked signals and the
+          alerts raised against them — carries the width. The standing caveat,
+          the seasonal framing, the recorded correlates and the capacity
+          position that receives the cases read beside it. */}
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
 
       {/* --- Disease indicator summary ---------------------------------- */}
       {indicatorsQuery.isLoading ? (
@@ -310,6 +320,72 @@ export function PublicHealthPage(): React.JSX.Element {
         })()
       )}
 
+      {/* --- Health alerts ---------------------------------------------------- */}
+      {alertsQuery.isLoading ? (
+        <LoadingState variant="block" rows={3} />
+      ) : alertsQuery.error ? (
+        <ErrorState detail={alertsQuery.error.message} onRetry={() => alertsQuery.refetch()} />
+      ) : (
+        (() => {
+          const alerts = alertsQuery.data?.items ?? []
+          return (
+            <Card flush>
+              <CardHeader className="px-4 pt-4 pb-3" title={t('Health alerts')} description={t('Open operational alerts raised against the public health domain.')} />
+              {alerts.length === 0 ? (
+                <EmptyState compact className="mx-4 mb-4" title={t('No open health alerts')} detail="No alert is currently open against the public health domain." />
+              ) : (
+                <div className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 2xl:grid-cols-3">
+                  {alerts.map((alert) => (
+                    <AlertCard key={alert.id} alert={alert} onClick={() => openDrawer({ kind: 'alert', id: alert.id })} />
+                  ))}
+                </div>
+              )}
+            </Card>
+          )
+        })()
+      )}
+
+        </div>
+
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
+          {criticalNotice}
+
+      {/* --- Hospital utilisation summary ----------------------------------- */}
+      {hospitalsQuery.isLoading ? (
+        <LoadingState variant="metrics" />
+      ) : hospitalsQuery.error ? (
+        <ErrorState detail={hospitalsQuery.error.message} onRetry={() => hospitalsQuery.refetch()} />
+      ) : (
+        (() => {
+          const hospitals = hospitalsQuery.data ?? []
+          const totalBeds = hospitals.reduce((s, h) => s + h.bedsTotal, 0)
+          const occupiedBeds = hospitals.reduce((s, h) => s + h.bedsOccupied, 0)
+          const occupancyPct = totalBeds > 0 ? Math.round((occupiedBeds / totalBeds) * 1000) / 10 : 0
+          const icuTotal = hospitals.reduce((s, h) => s + h.icuTotal, 0)
+          const icuOccupied = hospitals.reduce((s, h) => s + h.icuOccupied, 0)
+          const icuOccupancyPct = icuTotal > 0 ? Math.round((icuOccupied / icuTotal) * 1000) / 10 : 0
+          const highLoad = hospitals.filter((h) => h.emergencyLoadIndex >= 80).length
+
+          return (
+            <Card>
+              <CardHeader
+                icon={<HospitalIcon className="h-4 w-4" />}
+                title={t('Hospital utilisation summary')}
+                description={t('City-wide capacity position across major, peripheral, maternity and dispensary facilities.')}
+                actions={<LinkButton to={ROUTES.hospitals} size="xs" variant="outline">{t('Open Hospital Intelligence')}</LinkButton>}
+              />
+              <MetricGrid columns={2} className="mt-3">
+                <MetricCard label={t('Functional beds')} value={formatCompact(totalBeds)} support={`${hospitals.length} facilities`} />
+                <MetricCard label={t('Bed occupancy')} value={formatPercent(occupancyPct)} tone={occupancyPct >= 90 ? 'critical' : occupancyPct >= 78 ? 'warn' : 'default'} />
+                <MetricCard label={t('ICU occupancy')} value={formatPercent(icuOccupancyPct)} support={t('{0} of {1} beds', icuOccupied, icuTotal)} tone={icuOccupancyPct >= 92 ? 'critical' : icuOccupancyPct >= 80 ? 'warn' : 'default'} />
+                <MetricCard label={t('Facilities at high emergency load')} value={highLoad} support={t('Emergency load index ≥ 80')} tone={highLoad > 0 ? 'warn' : 'default'} />
+              </MetricGrid>
+            </Card>
+          )
+        })()
+      )}
+
+
       {/* --- Vector-borne risk framed to monsoon season -------------------- */}
       {indicatorsQuery.data && indicatorsQuery.data.length > 0 ? (
         (() => {
@@ -327,8 +403,8 @@ export function PublicHealthPage(): React.JSX.Element {
           return (
             <Card>
               <CardHeader icon={<Bug className="h-4 w-4" />} title={t('Vector-borne risk - monsoon season framing')} description={t('Dengue, malaria and chikungunya are mosquito-borne conditions whose breeding conditions are seasonally associated with standing water during the monsoon. This is a seasonal association, not a forecast of any individual outbreak.')} />
-              <div className="mt-3 grid grid-cols-1 gap-4 lg:grid-cols-[1fr_20rem]">
-                <MetricGrid columns={3}>
+              <div className="mt-3 grid grid-cols-1 gap-4">
+                <MetricGrid columns={2}>
                   <MetricCard label={t('Vector-borne cases, this period')} value={formatCompact(vectorCases)} support={t('Dengue + malaria + chikungunya')} origin="demonstration" />
                   <MetricCard label={t('Average outbreak signal')} value={vectorAvgSignal} unit="/100" tone={vectorAvgSignal >= 50 ? 'warn' : 'default'} support={t('Across vector-borne conditions')} />
                   <MetricCard
@@ -392,65 +468,8 @@ export function PublicHealthPage(): React.JSX.Element {
         })()
       ) : null}
 
-      {/* --- Hospital utilisation summary ----------------------------------- */}
-      {hospitalsQuery.isLoading ? (
-        <LoadingState variant="metrics" />
-      ) : hospitalsQuery.error ? (
-        <ErrorState detail={hospitalsQuery.error.message} onRetry={() => hospitalsQuery.refetch()} />
-      ) : (
-        (() => {
-          const hospitals = hospitalsQuery.data ?? []
-          const totalBeds = hospitals.reduce((s, h) => s + h.bedsTotal, 0)
-          const occupiedBeds = hospitals.reduce((s, h) => s + h.bedsOccupied, 0)
-          const occupancyPct = totalBeds > 0 ? Math.round((occupiedBeds / totalBeds) * 1000) / 10 : 0
-          const icuTotal = hospitals.reduce((s, h) => s + h.icuTotal, 0)
-          const icuOccupied = hospitals.reduce((s, h) => s + h.icuOccupied, 0)
-          const icuOccupancyPct = icuTotal > 0 ? Math.round((icuOccupied / icuTotal) * 1000) / 10 : 0
-          const highLoad = hospitals.filter((h) => h.emergencyLoadIndex >= 80).length
-
-          return (
-            <Card>
-              <CardHeader
-                icon={<HospitalIcon className="h-4 w-4" />}
-                title={t('Hospital utilisation summary')}
-                description={t('City-wide capacity position across major, peripheral, maternity and dispensary facilities.')}
-                actions={<LinkButton to={ROUTES.hospitals} size="xs" variant="outline">{t('Open Hospital Intelligence')}</LinkButton>}
-              />
-              <MetricGrid columns={4} className="mt-3">
-                <MetricCard label={t('Functional beds')} value={formatCompact(totalBeds)} support={`${hospitals.length} facilities`} />
-                <MetricCard label={t('Bed occupancy')} value={formatPercent(occupancyPct)} tone={occupancyPct >= 90 ? 'critical' : occupancyPct >= 78 ? 'warn' : 'default'} />
-                <MetricCard label={t('ICU occupancy')} value={formatPercent(icuOccupancyPct)} support={t('{0} of {1} beds', icuOccupied, icuTotal)} tone={icuOccupancyPct >= 92 ? 'critical' : icuOccupancyPct >= 80 ? 'warn' : 'default'} />
-                <MetricCard label={t('Facilities at high emergency load')} value={highLoad} support={t('Emergency load index ≥ 80')} tone={highLoad > 0 ? 'warn' : 'default'} />
-              </MetricGrid>
-            </Card>
-          )
-        })()
-      )}
-
-      {/* --- Health alerts ---------------------------------------------------- */}
-      {alertsQuery.isLoading ? (
-        <LoadingState variant="block" rows={3} />
-      ) : alertsQuery.error ? (
-        <ErrorState detail={alertsQuery.error.message} onRetry={() => alertsQuery.refetch()} />
-      ) : (
-        (() => {
-          const alerts = alertsQuery.data?.items ?? []
-          return (
-            <Card flush>
-              <CardHeader className="px-4 pt-4 pb-3" title={t('Health alerts')} description={t('Open operational alerts raised against the public health domain.')} />
-              {alerts.length === 0 ? (
-                <EmptyState compact className="mx-4 mb-4" title={t('No open health alerts')} detail="No alert is currently open against the public health domain." />
-              ) : (
-                <div className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 xl:grid-cols-3">
-                  {alerts.map((alert) => (
-                    <AlertCard key={alert.id} alert={alert} onClick={() => openDrawer({ kind: 'alert', id: alert.id })} />
-                  ))}
-                </div>
-              )}
-            </Card>
-          )
-        })()
-      )}
+        </div>
+      </div>
 
       <DemonstrationNotice />
     </PageBody>

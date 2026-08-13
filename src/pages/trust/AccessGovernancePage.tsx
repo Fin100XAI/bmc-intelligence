@@ -28,6 +28,7 @@ import {
   type ResourceType,
 } from '@/security'
 import type { AccessContext, AccessDecision } from '@/security/model'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { CLASSIFICATION_LABEL, DOMAIN_LABEL, type DataClassification, type IntelligenceDomain } from '@/types/common'
 import type { Role } from '@/types/organisation'
 import { DEPARTMENTS_ORDERED, wardName } from '@/data/reference'
@@ -131,6 +132,12 @@ registerLayer(() => {
 export function AccessGovernancePage(): React.JSX.Element {
   const [selectedRoleId, setSelectedRoleId] = useState<string>(ROLES_ORDERED[0]?.id ?? '')
 
+  // The shell's masthead carries the screen's name; the page states the wording.
+  usePageMasthead(
+    t('Access Governance'),
+    t('Every read and write in this platform resolves through one permission engine - role-based grants combined with ward, department, domain and classification attributes. This page renders the role catalogue exactly as configured and calls that same engine live, so the decision shown below is the decision the platform itself would make.'),
+  )
+
   const profilesQuery = useServiceQuery(['trust-access-governance', 'demo-profiles'], () =>
     authService.listDemoProfiles(),
   )
@@ -169,8 +176,6 @@ export function AccessGovernancePage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('Trust Centre')}
-        title={t('Access Governance')}
-        description={t('Every read and write in this platform resolves through one permission engine - role-based grants combined with ward, department, domain and classification attributes. This page renders the role catalogue exactly as configured and calls that same engine live, so the decision shown below is the decision the platform itself would make.')}
         breadcrumbs={[{ label: t('Trust Centre'), to: '/trust' }, { label: t('Access Governance') }]}
       />
 
@@ -195,6 +200,12 @@ export function AccessGovernancePage(): React.JSX.Element {
         </Card>
       </MetricGrid>
 
+      {/* Two columns. What is configured — the catalogue and the matrix — reads
+          down the wide column; the engine that acts on that configuration sits
+          beside it, so a decision can be checked against the grant that
+          produced it without leaving the row. */}
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
       <Card flush>
         <CardHeader
           className="p-4"
@@ -318,7 +329,9 @@ export function AccessGovernancePage(): React.JSX.Element {
           {t('Column key: {0}', ROLES_ORDERED.map((r) => `${roleAbbreviation(r)}=${r.name}`).join(' · '))}
         </p>
       </Card>
+        </div>
 
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
       <Card tone="info">
         <CardHeader
           icon={<ShieldQuestion className="h-4 w-4" />}
@@ -326,7 +339,9 @@ export function AccessGovernancePage(): React.JSX.Element {
           description={t('Selects a principal, a resource and an action, evaluates the request through the real canAccess engine and shows the resulting decision, reason and basis. No record is read or written and no audit event is produced.')}
         />
 
-        <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+        {/* Two selects abreast at most — the tester now stands in a narrow
+            column, and a four-across form there would truncate every label. */}
+        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-2">
           <div>
             <Label htmlFor="tester-principal">{t('Acting principal')}</Label>
             <Select
@@ -414,7 +429,7 @@ export function AccessGovernancePage(): React.JSX.Element {
 
         <Divider className="my-4" />
 
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-1">
           <Card tone={decision.allowed ? 'positive' : 'critical'}>
             <div className="flex items-center gap-2">
               {decision.allowed ? (
@@ -466,6 +481,8 @@ export function AccessGovernancePage(): React.JSX.Element {
           ) : null}
         </div>
       </Card>
+        </div>
+      </div>
 
       <DemonstrationNotice />
     </PageBody>

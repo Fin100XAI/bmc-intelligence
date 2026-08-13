@@ -47,7 +47,8 @@ import type { DeployTeamInput, IncidentCreateInput, MonsoonScenarioPreset } from
 import { MONSOON_SCENARIO_PRESETS, DEFAULT_MONSOON_SCENARIO, SIMULATION_STATEMENT } from '@/domains'
 import { useCurrentUser } from '@/stores/auth.store'
 import { useActiveCorporation } from '@/stores/corporation.store'
-import { useDrawerStore } from '@/stores/ui.store'
+import { usePageMasthead } from '@/stores/masthead.store'
+import { useContextStore, useDrawerStore } from '@/stores/ui.store'
 import { allowed } from '@/security'
 import { wardName } from '@/data/reference'
 import type {
@@ -195,9 +196,29 @@ function RangeField({
 export function MonsoonIntelligencePage(): React.JSX.Element {
   const user = useCurrentUser()
   const corporation = useActiveCorporation()
-  const [focusWardId, setFocusWardId] = useState<string | null>(null)
+  /**
+   * The ward this centre is read against answers to two things: the ward
+   * selected across the platform in the command bar, and the ward the duty
+   * officer clicks on the waterlogging map or a marker. Holding the map focus
+   * purely locally made this screen ignore the shared selection entirely - an
+   * operator could narrow the whole interface to Ward K/E and read city-wide
+   * pump, drain, rainfall and preparedness registers underneath it.
+   *
+   * `from` records which shared selection the local focus was taken against,
+   * so the two compose without an effect and without either silently winning:
+   * a new selection in the command bar governs the page, and clicking on the
+   * map overrides it until the command bar moves again.
+   */
+  const contextWardId = useContextStore((s) => s.wardId)
+  const [mapFocus, setMapFocus] = useState<{ wardId: string | null; from: string | null }>({ wardId: null, from: null })
+  const focusWardId = mapFocus.from === contextWardId ? mapFocus.wardId : contextWardId
   const [committedInputs, setCommittedInputs] = useState<MonsoonScenarioInput>(DEFAULT_MONSOON_SCENARIO)
   const hasScenarioAccess = allowed(user, 'situation-room', 'edit', { domain: 'monsoon' })
+
+  usePageMasthead(
+    t('{0} Monsoon Intelligence Centre', corporation.city),
+    t('City-wide preparedness posture, live-observed rainfall, tide and pumping position, and a deterministic scenario tool for compound flood-event planning. Scenario output is always a simulation, never a forecast.'),
+  )
 
   const scenarioQuery = useServiceQuery(
     ['bmc-mii', 'monsoon-scenario', JSON.stringify(committedInputs)],
@@ -210,7 +231,10 @@ export function MonsoonIntelligencePage(): React.JSX.Element {
   )
 
   function toggleFocusWard(id: string): void {
-    setFocusWardId((prev) => (prev === id ? null : id))
+    setMapFocus((prev) => {
+      const current = prev.from === contextWardId ? prev.wardId : contextWardId
+      return { wardId: current === id ? null : id, from: contextWardId }
+    })
   }
 
   const freshness: DataFreshness = {
@@ -226,8 +250,6 @@ export function MonsoonIntelligencePage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('City Intelligence')}
-        title={t('{0} Monsoon Intelligence Centre', corporation.city)}
-        description={t('City-wide preparedness posture, live-observed rainfall, tide and pumping position, and a deterministic scenario tool for compound flood-event planning. Scenario output is always a simulation, never a forecast.')}
         breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Monsoon Intelligence') }]}
         freshness={freshness}
       />
@@ -238,13 +260,28 @@ export function MonsoonIntelligencePage(): React.JSX.Element {
         scenarioResult={scenarioQuery.data}
         hasScenarioAccess={hasScenarioAccess}
       />
-      <PumpingStationSection focusWardId={focusWardId} />
-      <DrainRiskSection focusWardId={focusWardId} />
-      <HighTideSection />
-      <RainfallSection focusWardId={focusWardId} />
-      <CriticalRouteSection />
-      <HospitalAccessSection />
-      <WardPreparednessSection focusWardId={focusWardId} />
+
+      {/* Two columns, read downward. The asset and observation registers the
+          control room works from run down the wide column in the order they
+          are checked — pumps, drains, rainfall, ward posture, live response.
+          Tide, critical routes and hospital access are the three standing
+          exposures read against them, and sit beside rather than between. */}
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
+          <PumpingStationSection focusWardId={focusWardId} />
+          <DrainRiskSection focusWardId={focusWardId} />
+          <RainfallSection focusWardId={focusWardId} />
+          <WardPreparednessSection focusWardId={focusWardId} />
+          <ActiveResponseSection />
+        </div>
+
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
+          <HighTideSection />
+          <CriticalRouteSection />
+          <HospitalAccessSection />
+        </div>
+      </div>
+
       <MonsoonScenarioCentre
         committedInputs={committedInputs}
         onRunScenario={setCommittedInputs}
@@ -254,7 +291,6 @@ export function MonsoonIntelligencePage(): React.JSX.Element {
         driverBreakdown={driverQuery.data}
         hasScenarioAccess={hasScenarioAccess}
       />
-      <ActiveResponseSection />
 
       <DemonstrationNotice />
     </PageBody>
@@ -848,7 +884,7 @@ function CriticalRouteSection(): React.JSX.Element {
             <span className="min-w-0 truncate text-ink-700">
               {s.name} <span className="text-ink-400">· {wardName(s.wardId)}</span>
             </span>
-            <span className="flex shrink-0 items-center gap-1.5">
+            <span className="flex min-w-0 flex-wrap items-center gap-1.5">
               <Badge tone="muted">{t('Chronic {0}', s.chronicIndex)}</Badge>
               <Badge tone={s.mitigationStatus === 'completed' ? 'positive' : s.mitigationStatus === 'in-progress' ? 'warn' : 'neutral'}>{titleCase(s.mitigationStatus)}</Badge>
               <span className="numeric text-ink-500">{t('{0} km to nearest hospital', s.nearestHospitalKm)}</span>

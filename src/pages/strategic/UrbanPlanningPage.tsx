@@ -4,6 +4,8 @@ import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { monsoonService, roadsService, wardService } from '@/services'
+import { usePageMasthead } from '@/stores/masthead.store'
+import { useContextStore } from '@/stores/ui.store'
 import {
   DEFAULT_PLANNING_SCENARIO,
   PLANNING_SCENARIO_PRESETS,
@@ -127,10 +129,32 @@ function RangeField({
 }
 
 export function UrbanPlanningPage(): React.JSX.Element {
+  // The shell's masthead states the screen's name; the page states the wording.
+  usePageMasthead(
+    t('Urban Planning'),
+    t('Population pressure, infrastructure adequacy, transport access and capital planning exposure across every ward, with a scenario engine for population growth, capital investment, transport demand and extreme rainfall frequency.'),
+  )
+
   const wardsQuery = useServiceQuery(queryKeys.wards(), (u) => wardService.list(u))
   const segmentsQuery = useServiceQuery(queryKeys.roads('segments-planning'), (u) => roadsService.segments(u))
   const corridorsQuery = useServiceQuery(queryKeys.roads('corridors-planning'), (u) => roadsService.corridors(u))
   const readinessQuery = useServiceQuery(queryKeys.monsoon('readiness-planning'), (u) => monsoonService.readiness(u))
+
+  /**
+   * The ward selected in the command bar governs this page.
+   *
+   * The scenario engine is corporation-wide by construction - it walks every
+   * planning indicator - so nothing it returns is narrowed on its own. The
+   * page read the shared selection nowhere at all, which left the register,
+   * the rankings, the map and the city position identical for all wards while
+   * the command bar said otherwise.
+   *
+   * Scope is taken from `wardService.list`, which is already filtered through
+   * the tenant and ward-scope helpers, so a ward the principal may not read is
+   * absent from `wards` and therefore absent from every figure below - the
+   * shared selection can narrow the page but never widen it.
+   */
+  const contextWardId = useContextStore((s) => s.wardId)
 
   const [selectedWardId, setSelectedWardId] = useState<string | null>(null)
   const [scenarioInputs, setScenarioInputs] = useState<PlanningScenarioInput>(DEFAULT_PLANNING_SCENARIO)
@@ -140,8 +164,21 @@ export function UrbanPlanningPage(): React.JSX.Element {
   const active = scenarioResult ?? baseline
   const isScenario = scenarioResult !== null
 
-  const wards = wardsQuery.data ?? []
+  const authorisedWards = wardsQuery.data ?? []
+  const wards = useMemo(
+    () => (contextWardId ? authorisedWards.filter((w) => w.id === contextWardId) : authorisedWards),
+    [authorisedWards, contextWardId],
+  )
+  const wardIdsInScope = useMemo(() => new Set(wards.map((w) => w.id)), [wards])
   const readinessByWard = useMemo(() => new Map((readinessQuery.data ?? []).map((r) => [r.wardId, r])), [readinessQuery.data])
+
+  /**
+   * The scenario engine returns every ward in the corporation. Everything the
+   * page renders reads this narrowed set instead, so the shared selection
+   * reaches the register, the rankings, the map shading and the city position
+   * together rather than one of them.
+   */
+  const scopedWardRows = useMemo(() => active.byWard.filter((r) => wardIdsInScope.has(r.wardId)), [active, wardIdsInScope])
 
   const extrasByWard = useMemo(() => {
     const map = new Map<string, WardExtras>()
@@ -161,13 +198,35 @@ export function UrbanPlanningPage(): React.JSX.Element {
 
   const rows = useMemo(
     () =>
-      active.byWard.map((row) => {
+      scopedWardRows.map((row) => {
         const extras = extrasByWard.get(row.wardId)
         const gaps = Array.from(new Set([...(extras?.baselineGaps ?? []), ...row.newServiceGaps]))
         return { ...row, ...extras, gaps }
       }),
-    [active, extrasByWard],
+    [scopedWardRows, extrasByWard],
   )
+
+  /**
+   * The city position summarises the wards in view. At full scope this is the
+   * same arithmetic the engine performs across every ward, so an unnarrowed
+   * page reads exactly as it did; with a ward selected it states that ward's
+   * position rather than a corporation figure the operator did not ask for.
+   */
+  const position = useMemo(() => {
+    const count = Math.max(scopedWardRows.length, 1)
+    const baselineAdequacy = scopedWardRows.reduce((s, w) => s + w.baselineAdequacy, 0) / count
+    const scenarioAdequacy = scopedWardRows.reduce((s, w) => s + w.scenarioAdequacy, 0) / count
+    return {
+      baselineAdequacy: Math.round(baselineAdequacy * 10) / 10,
+      scenarioAdequacy: Math.round(scenarioAdequacy * 10) / 10,
+      delta: Math.round((scenarioAdequacy - baselineAdequacy) * 10) / 10,
+      wardsBelowThreshold: scopedWardRows.filter((w) => w.scenarioAdequacy < ADEQUACY_THRESHOLD).length,
+      newGapCount: scopedWardRows.reduce((s, w) => s + w.newServiceGaps.length, 0),
+      projectedPopulation: Math.round(
+        wards.reduce((s, w) => s + w.population, 0) * (1 + active.inputs.populationDeltaPct / 100),
+      ),
+    }
+  }, [scopedWardRows, wards, active])
 
   const anyLoading = wardsQuery.isLoading || segmentsQuery.isLoading || corridorsQuery.isLoading || readinessQuery.isLoading
   const anyError = wardsQuery.error ?? segmentsQuery.error ?? corridorsQuery.error ?? readinessQuery.error
@@ -180,7 +239,7 @@ export function UrbanPlanningPage(): React.JSX.Element {
 
   const landAreaByAdequacyBand = useMemo(() => {
     const bands: Record<OperationalState, number> = { operational: 0, degraded: 0, 'at-risk': 0, critical: 0, simulation: 0, 'adapter-ready': 0, 'not-connected': 0, 'review-required': 0, planned: 0 }
-    for (const row of active.byWard) {
+    for (const row of scopedWardRows) {
       const ward = wards.find((w) => w.id === row.wardId)
       if (!ward) continue
       bands[row.state] += ward.areaSqKm
@@ -189,11 +248,11 @@ export function UrbanPlanningPage(): React.JSX.Element {
     return (['operational', 'degraded', 'at-risk', 'critical'] as OperationalState[])
       .filter((s) => bands[s] > 0)
       .map((s) => ({ label: s.replace('-', ' '), value: Math.round(bands[s] * 10) / 10, colour: colour[s] }))
-  }, [active, wards])
+  }, [scopedWardRows, wards])
 
   const rankedAdequacy = useMemo(
-    () => [...active.byWard].sort((a, b) => a.scenarioAdequacy - b.scenarioAdequacy).slice(0, 12).map((r) => ({ label: r.label, value: r.scenarioAdequacy })),
-    [active],
+    () => [...scopedWardRows].sort((a, b) => a.scenarioAdequacy - b.scenarioAdequacy).slice(0, 12).map((r) => ({ label: r.label, value: r.scenarioAdequacy })),
+    [scopedWardRows],
   )
 
   const columns: Array<Column<(typeof rows)[number]>> = [
@@ -277,8 +336,6 @@ export function UrbanPlanningPage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('Strategic Urban Intelligence')}
-        title={t('Urban Planning')}
-        description={t('Population pressure, infrastructure adequacy, transport access and capital planning exposure across every ward, with a scenario engine for population growth, capital investment, transport demand and extreme rainfall frequency.')}
         breadcrumbs={[{ label: t('Strategic Urban Intelligence') }, { label: t('Urban Planning') }]}
         freshness={FRESHNESS}
         actions={isScenario ? <SimulationBadge /> : undefined}
@@ -301,23 +358,29 @@ export function UrbanPlanningPage(): React.JSX.Element {
         wards.length === 0 ? (
           <EmptyState title={t('No wards available')} detail="No ward records are visible within your authorised scope." />
         ) : (
-          <>
-            <Card>
-              <CardHeader
-                icon={<Globe2 className="h-4 w-4" />}
-                title={isScenario ? 'City position - scenario applied' : 'City position - current'}
-                description={isScenario ? PLANNING_SIMULATION_STATEMENT : 'Infrastructure adequacy as presently assessed, computed from the published planning scenario engine at zero adjustment.'}
-              />
-              <MetricGrid columns={5} className="mt-3">
-                <MetricCard label={t('Mean adequacy')} value={`${active.city.scenarioAdequacy}/100`} support={isScenario ? `Baseline ${active.city.baselineAdequacy}/100` : undefined} />
-                <MetricCard label={t('Movement')} value={formatDelta(active.city.delta)} tone={active.city.delta < 0 ? 'critical' : 'default'} />
-                <MetricCard label={t('Wards below threshold')} value={active.city.wardsBelowThreshold} tone={active.city.wardsBelowThreshold > 0 ? 'warn' : 'default'} />
-                <MetricCard label={t('New service gaps')} value={active.city.newGapCount} tone={active.city.newGapCount > 0 ? 'warn' : 'default'} />
-                <MetricCard label={t('Projected population')} value={formatCompact(active.city.projectedPopulation)} />
-              </MetricGrid>
-            </Card>
+          /* ── Two columns ───────────────────────────────────────────
+             The city position, the ward register and the scenario engine that
+             recomputes them read down the wide column, in the order an officer
+             works: what the position is, ward by ward, then what a stated
+             change would do to it. The map and the two compositions stand
+             beside the register they shade. */
+          <div className="grid grid-cols-1 gap-3 xl:grid-cols-12">
+            <div className="flex min-w-0 flex-col gap-3 xl:col-span-8">
+              <Card>
+                <CardHeader
+                  icon={<Globe2 className="h-4 w-4" />}
+                  title={isScenario ? 'City position - scenario applied' : 'City position - current'}
+                  description={isScenario ? PLANNING_SIMULATION_STATEMENT : 'Infrastructure adequacy as presently assessed, computed from the published planning scenario engine at zero adjustment.'}
+                />
+                <MetricGrid columns={5} className="mt-3">
+                  <MetricCard label={t('Mean adequacy')} value={`${position.scenarioAdequacy}/100`} support={isScenario ? `Baseline ${position.baselineAdequacy}/100` : undefined} />
+                  <MetricCard label={t('Movement')} value={formatDelta(position.delta)} tone={position.delta < 0 ? 'critical' : 'default'} />
+                  <MetricCard label={t('Wards below threshold')} value={position.wardsBelowThreshold} tone={position.wardsBelowThreshold > 0 ? 'warn' : 'default'} />
+                  <MetricCard label={t('New service gaps')} value={position.newGapCount} tone={position.newGapCount > 0 ? 'warn' : 'default'} />
+                  <MetricCard label={t('Projected population')} value={formatCompact(position.projectedPopulation)} />
+                </MetricGrid>
+              </Card>
 
-            <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.3fr_1fr]">
               <Card flush>
                 <CardHeader bordered title={t('Ward planning table')} description={t('Sortable and searchable. Selecting a row highlights the ward on the map.')} />
                 <DataTable
@@ -334,6 +397,41 @@ export function UrbanPlanningPage(): React.JSX.Element {
                 />
               </Card>
 
+              <Card>
+                <CardHeader
+                  icon={<Globe2 className="h-4 w-4" />}
+                  title={t('Scenario modelling')}
+                  description={t('Project infrastructure adequacy under a stated change to population, capital investment, transport demand and extreme rainfall frequency. This recomputes the table, map and rankings above.')}
+                  actions={<SimulationBadge />}
+                />
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {PLANNING_SCENARIO_PRESETS.map((preset) => (
+                    <Button key={preset.id} size="xs" variant="outline" title={preset.description} onClick={() => setScenarioInputs(preset.inputs)}>
+                      {preset.label}
+                    </Button>
+                  ))}
+                </div>
+                <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                  <RangeField label={t('Population growth')} value={scenarioInputs.populationDeltaPct} onChange={(v) => setScenarioInputs((s) => ({ ...s, populationDeltaPct: v }))} min={-10} max={30} unit="%" />
+                  <RangeField label={t('Capital investment')} value={scenarioInputs.capitalInvestmentDeltaPct} onChange={(v) => setScenarioInputs((s) => ({ ...s, capitalInvestmentDeltaPct: v }))} min={-20} max={50} unit="%" />
+                  <RangeField label={t('Transport demand')} value={scenarioInputs.transportDemandDeltaPct} onChange={(v) => setScenarioInputs((s) => ({ ...s, transportDemandDeltaPct: v }))} min={-10} max={40} unit="%" />
+                  <RangeField label={t('Extreme rainfall frequency')} value={scenarioInputs.extremeRainfallDeltaPct} onChange={(v) => setScenarioInputs((s) => ({ ...s, extremeRainfallDeltaPct: v }))} min={-20} max={60} unit="%" />
+                </div>
+                <div className="mt-3 flex items-center gap-2">
+                  <Button variant="primary" onClick={() => setScenarioResult(runPlanningScenario(scenarioInputs))}>
+                    {t('Run scenario')}
+                  </Button>
+                  {isScenario ? (
+                    <Button variant="ghost" icon={<RotateCcw className="h-3 w-3" />} onClick={() => { setScenarioResult(null); setScenarioInputs(DEFAULT_PLANNING_SCENARIO) }}>
+                      {t('Reset to current position')}
+                    </Button>
+                  ) : null}
+                </div>
+                {isScenario ? <p className="mt-3 text-xs leading-relaxed text-ink-700">{active.narrative}</p> : null}
+              </Card>
+            </div>
+
+            <div className="flex min-w-0 flex-col gap-3 xl:col-span-4">
               <Card>
                 <CardHeader title={t('Map - adequacy and density')} description={t('Toggle the layer selector to switch between infrastructure adequacy and population density shading.')} />
                 <div className="mt-3">
@@ -365,14 +463,13 @@ export function UrbanPlanningPage(): React.JSX.Element {
                   />
                 </div>
               </Card>
-            </div>
 
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
               <Card>
                 <ChartFrame title={t('Adequacy ranking - lowest first')} unit="/100" timeframe="Current view" height={280}>
                   <RankedBarChart data={rankedAdequacy} higherIsWorse={false} unit="/100" />
                 </ChartFrame>
               </Card>
+
               <Card>
                 <CardHeader
                   icon={<Info className="h-4 w-4" />}
@@ -393,40 +490,7 @@ export function UrbanPlanningPage(): React.JSX.Element {
                 </div>
               </Card>
             </div>
-
-            <Card>
-              <CardHeader
-                icon={<Globe2 className="h-4 w-4" />}
-                title={t('Scenario modelling')}
-                description={t('Project infrastructure adequacy under a stated change to population, capital investment, transport demand and extreme rainfall frequency. This recomputes the table, map and rankings above.')}
-                actions={<SimulationBadge />}
-              />
-              <div className="mt-3 flex flex-wrap gap-1.5">
-                {PLANNING_SCENARIO_PRESETS.map((preset) => (
-                  <Button key={preset.id} size="xs" variant="outline" title={preset.description} onClick={() => setScenarioInputs(preset.inputs)}>
-                    {preset.label}
-                  </Button>
-                ))}
-              </div>
-              <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <RangeField label={t('Population growth')} value={scenarioInputs.populationDeltaPct} onChange={(v) => setScenarioInputs((s) => ({ ...s, populationDeltaPct: v }))} min={-10} max={30} unit="%" />
-                <RangeField label={t('Capital investment')} value={scenarioInputs.capitalInvestmentDeltaPct} onChange={(v) => setScenarioInputs((s) => ({ ...s, capitalInvestmentDeltaPct: v }))} min={-20} max={50} unit="%" />
-                <RangeField label={t('Transport demand')} value={scenarioInputs.transportDemandDeltaPct} onChange={(v) => setScenarioInputs((s) => ({ ...s, transportDemandDeltaPct: v }))} min={-10} max={40} unit="%" />
-                <RangeField label={t('Extreme rainfall frequency')} value={scenarioInputs.extremeRainfallDeltaPct} onChange={(v) => setScenarioInputs((s) => ({ ...s, extremeRainfallDeltaPct: v }))} min={-20} max={60} unit="%" />
-              </div>
-              <div className="mt-3 flex items-center gap-2">
-                <Button variant="primary" onClick={() => setScenarioResult(runPlanningScenario(scenarioInputs))}>
-                  {t('Run scenario')}
-                </Button>
-                {isScenario ? (
-                  <Button variant="ghost" icon={<RotateCcw className="h-3 w-3" />} onClick={() => { setScenarioResult(null); setScenarioInputs(DEFAULT_PLANNING_SCENARIO) }}>
-                    {t('Reset to current position')}
-                  </Button>
-                ) : null}
-              </div>
-              {isScenario ? <p className="mt-3 text-xs leading-relaxed text-ink-700">{active.narrative}</p> : null}
-            </Card>
-          </>
+          </div>
         )
       ) : null}
 

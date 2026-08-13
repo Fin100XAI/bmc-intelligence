@@ -15,6 +15,7 @@ import { intelligenceService } from '@/services'
 import { useDrawerStore } from '@/stores/ui.store'
 import { useFilterStore } from '@/stores/ui.store'
 import type { FilterState } from '@/stores/ui.store'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { DEMO_NOW } from '@/utils/deterministic'
 import {
   DOMAIN_LABEL,
@@ -94,6 +95,12 @@ export function IntelligenceFeedPage(): React.JSX.Element {
   const [groupByDomain, setGroupByDomain] = useState(false)
   const [confidenceFilter, setConfidenceFilter] = useState<ConfidenceLevel[]>([])
   const [typeFilter, setTypeFilter] = useState<IntelligenceType[]>([])
+
+  // The shell renders the masthead; this page states what it should say.
+  usePageMasthead(
+    t('Intelligence Feed'),
+    t('Every signal the platform has raised - anomaly, risk, forecast, SLA breach, revenue exception or cross-domain correlation - with its evidence, confidence, recommended action and workflow status. Uncertainty is always stated; a correlation is never presented as a cause.'),
+  )
 
   const feedQuery = useServiceQuery(queryKeys.intelligence(), (u) => intelligenceService.list(u, { pageSize: 500 }))
   const countsQuery = useServiceQuery(queryKeys.intelligence('counts'), (u) => intelligenceService.feedCounts(u))
@@ -222,8 +229,6 @@ export function IntelligenceFeedPage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('Command')}
-        title={t('Intelligence Feed')}
-        description={t('Every signal the platform has raised - anomaly, risk, forecast, SLA breach, revenue exception or cross-domain correlation - with its evidence, confidence, recommended action and workflow status. Uncertainty is always stated; a correlation is never presented as a cause.')}
         breadcrumbs={[{ label: t('Command') }, { label: t('Intelligence Feed') }]}
         controls={
           <FilterBar
@@ -306,36 +311,30 @@ export function IntelligenceFeedPage(): React.JSX.Element {
         asideWidth="sm"
         main={
           <Card flush>
-            <CardHeader
-              bordered
-              eyebrow={t('Feed')}
-              title={t('{0} item(s) shown', filtered.length)}
-              actions={
-                <div className="flex items-center gap-2">
-                  <SegmentedControl
-                    ariaLabel="Sort by"
-                    size="xs"
-                    value={sortKey}
-                    onChange={setSortKey}
-                    options={[
-                      { value: 'severity', label: t('Severity'), icon: <SlidersHorizontal className="h-3 w-3" /> },
-                      { value: 'recency', label: t('Recency'), icon: <Clock className="h-3 w-3" /> },
-                      { value: 'confidence', label: t('Confidence'), icon: <ArrowDownAZ className="h-3 w-3" /> },
-                    ]}
-                  />
-                  <SegmentedControl
-                    ariaLabel="Group by domain"
-                    size="xs"
-                    value={groupByDomain ? 'grouped' : 'flat'}
-                    onChange={(v) => setGroupByDomain(v === 'grouped')}
-                    options={[
-                      { value: 'flat', label: t('Flat'), icon: <Rows3 className="h-3 w-3" /> },
-                      { value: 'grouped', label: t('By domain'), icon: <LayoutGrid className="h-3 w-3" /> },
-                    ]}
-                  />
-                </div>
-              }
-            />
+            <CardHeader bordered eyebrow={t('Feed')} title={t('{0} item(s) shown', filtered.length)} />
+            <div className="flex flex-wrap items-center gap-2 border-b border-ink-100 px-4 py-2">
+              <SegmentedControl
+                ariaLabel="Sort by"
+                size="xs"
+                value={sortKey}
+                onChange={setSortKey}
+                options={[
+                  { value: 'severity', label: t('Severity'), icon: <SlidersHorizontal className="h-3 w-3" /> },
+                  { value: 'recency', label: t('Recency'), icon: <Clock className="h-3 w-3" /> },
+                  { value: 'confidence', label: t('Confidence'), icon: <ArrowDownAZ className="h-3 w-3" /> },
+                ]}
+              />
+              <SegmentedControl
+                ariaLabel="Group by domain"
+                size="xs"
+                value={groupByDomain ? 'grouped' : 'flat'}
+                onChange={(v) => setGroupByDomain(v === 'grouped')}
+                options={[
+                  { value: 'flat', label: t('Flat'), icon: <Rows3 className="h-3 w-3" /> },
+                  { value: 'grouped', label: t('By domain'), icon: <LayoutGrid className="h-3 w-3" /> },
+                ]}
+              />
+            </div>
             <div className="p-4">{listBody}</div>
           </Card>
         }

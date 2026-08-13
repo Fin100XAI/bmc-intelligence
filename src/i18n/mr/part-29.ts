@@ -37,7 +37,6 @@ export const MR_PART_29: Record<string, string> = {
      own wording, and duplicating it here would leave two copies to keep in
      step. `Officer sign-in` stays: it is the label on the door. */
   Established: 'स्थापना',
-  'Officer sign-in': 'अधिकारी प्रवेश',
 
   /* --- Footer ------------------------------------------------------------------ */
   'Privacy policy': 'गोपनीयता धोरण',
@@ -89,35 +88,9 @@ export const MR_PART_29: Record<string, string> = {
      The tab bar is no longer segmented by audience, so these are the group
      headings and surface names the command rail behind sign-in also carries.
      "Intelligence" follows the catalogue's existing rendering, बुद्धिमत्ता. */
-  'Risk & Response': 'धोका व प्रतिसाद',
-  'Revenue & Finance': 'महसूल व वित्त',
-  'AI & Trust': 'एआय व विश्वास',
-  'Where a decision starts': 'निर्णय कोठून सुरू होतो',
-  'How it is carried': 'तो कसा पुढे नेला जातो',
-  'Held to account': 'उत्तरदायित्व',
-  'Roads & the public realm': 'रस्ते व सार्वजनिक अवकाश',
   'Service delivery': 'सेवा वितरण',
-  'Health & social development': 'आरोग्य व सामाजिक विकास',
-  Preparedness: 'सज्जता',
-  'Standing risk': 'कायमस्वरूपी धोके',
-  'What comes in': 'जमा',
-  'What goes out': 'खर्च',
-  'Planning the city': 'शहराचे नियोजन',
-  'The institution': 'संस्था',
-  'Decision support': 'निर्णय सहाय्य',
-  'Answerable for it': 'त्याचे उत्तरदायित्व',
-  'Trade Licensing': 'व्यापार परवाना',
-  'Housing & Social Welfare': 'गृहनिर्माण व समाजकल्याण',
-  'Scenario Planning': 'परिदृश्य नियोजन',
-  'Property Tax Intelligence': 'मालमत्ता कर बुद्धिमत्ता',
-  'Revenue Reconciliation': 'महसूल ताळमेळ',
-  'Contractor Performance': 'कंत्राटदार कामगिरी',
   'Building Permission': 'बांधकाम परवानगी',
-  'Knowledge Graph': 'ज्ञान आलेख',
   'Council Resolutions': 'सभागृह ठराव',
-  'AI Centre': 'एआय केंद्र',
-  'Access & Roles': 'प्रवेश व भूमिका',
-  'Security Posture': 'सुरक्षा स्थिती',
 
   /* --- The notice board, read by officers ----------------------------------- */
   'Read more': 'अधिक वाचा',

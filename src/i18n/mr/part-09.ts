@@ -304,7 +304,6 @@ export const MR_PART_09: Record<string, string> = {
   'are minimised, banded or dropped before anything enters the platform store — the declaration is what a privacy review is conducted against, so an undeclared field is a defect, not an omission.':
     'मंचाच्या कोशात काहीही येण्यापूर्वी किमान केली जातात, पट्ट्यांत बसवली जातात किंवा वगळली जातात — गोपनीयता पुनरावलोकन याच घोषणेच्या आधारे केले जाते, त्यामुळे घोषित न केलेले क्षेत्र ही निव्वळ राहून गेलेली बाब नसून दोष आहे.',
   'Are there any unusual collection patterns?': 'वसुलीत काही असामान्य नमुने आहेत का?',
-  'Arrears outstanding:': 'थकबाकी शिल्लक:',
   Ask: 'विचारा',
   "Ask about {0}'s risks, wards, projects, budget or service delivery…":
     '{0} च्या जोखीम, प्रभाग, प्रकल्प, अर्थसंकल्प किंवा सेवा वितरणाबद्दल विचारा…',

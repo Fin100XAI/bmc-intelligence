@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { AlertTriangle, ArrowRightLeft, Gavel, Scale } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { useServiceAction, useServiceQuery } from '@/hooks'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { queryKeys } from '@/app/queryClient'
 import { reconciliationService } from '@/services'
 import { ROUTES } from '@/config/navigation'
@@ -121,6 +122,12 @@ type PendingAction =
   | 'dismiss-match'
 
 export function RecoveryWorklistPage(): React.JSX.Element {
+  // The shell's masthead carries the screen's name; the page states the wording.
+  usePageMasthead(
+    t('Assessment Recovery Worklist'),
+    t('Assessment review candidates raised where two municipal registers disagree about the same property. Each row is a candidate for verification by a named officer, not a finding - and closing one without action, with a recorded reason, is an equal outcome to revising a demand.'),
+  )
+
   const [tab, setTab] = useState<WorklistTab>('worklist')
   const [wardFilter, setWardFilter] = useState('all')
   const [openId, setOpenId] = useState<string | null>(null)
@@ -254,8 +261,6 @@ export function RecoveryWorklistPage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('Governance & Finance')}
-        title={t('Assessment Recovery Worklist')}
-        description={t('Assessment review candidates raised where two municipal registers disagree about the same property. Each row is a candidate for verification by a named officer, not a finding - and closing one without action, with a recorded reason, is an equal outcome to revising a demand.')}
         breadcrumbs={[{ label: t('Governance & Finance') }, { label: t('Assessment Recovery Worklist') }]}
         freshness={FRESHNESS}
         actions={
@@ -590,28 +595,30 @@ function CandidateDetail({ id, onClose }: { id: string | null; onClose: () => vo
                 <Badge tone="warn">{t('Below the confidence floor - officer confirmation required')}</Badge>
               ) : null}
             </div>
-            <table className="mt-3 w-full text-left text-[0.6875rem]">
-              <thead className="text-ink-500">
-                <tr>
-                  <th className="py-1 pr-2 font-medium">{t('Signal')}</th>
-                  <th className="py-1 pr-2 font-medium">{t('Assessment register')}</th>
-                  <th className="py-1 pr-2 font-medium">{t('Counterpart register')}</th>
-                  <th className="py-1 pr-2 text-right font-medium">{t('Agreement')}</th>
-                  <th className="py-1 text-right font-medium">{t('Weight')}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-ink-50">
-                {exception.match.evidence.map((e) => (
-                  <tr key={e.signal}>
-                    <td className="py-1.5 pr-2 text-ink-700">{MATCH_SIGNAL_LABEL[e.signal]}</td>
-                    <td className="py-1.5 pr-2 break-words text-ink-500">{e.parcelValue}</td>
-                    <td className="py-1.5 pr-2 break-words text-ink-500">{e.counterpartValue}</td>
-                    <td className="numeric py-1.5 pr-2 text-right text-ink-700">{formatPercent(e.agreement * 100, 0)}</td>
-                    <td className="numeric py-1.5 text-right text-ink-500">{formatPercent(e.weight * 100, 0)}</td>
+            <div className="scrollbar-slim mt-3 overflow-x-auto">
+              <table className="w-full text-left text-[0.6875rem]">
+                <thead className="text-ink-500">
+                  <tr>
+                    <th className="py-1 pr-2 font-medium">{t('Signal')}</th>
+                    <th className="py-1 pr-2 font-medium">{t('Assessment register')}</th>
+                    <th className="py-1 pr-2 font-medium">{t('Counterpart register')}</th>
+                    <th className="py-1 pr-2 text-right font-medium">{t('Agreement')}</th>
+                    <th className="py-1 text-right font-medium">{t('Weight')}</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-ink-50">
+                  {exception.match.evidence.map((e) => (
+                    <tr key={e.signal}>
+                      <td className="py-1.5 pr-2 text-ink-700">{MATCH_SIGNAL_LABEL[e.signal]}</td>
+                      <td className="py-1.5 pr-2 break-words text-ink-500">{e.parcelValue}</td>
+                      <td className="py-1.5 pr-2 break-words text-ink-500">{e.counterpartValue}</td>
+                      <td className="numeric py-1.5 pr-2 text-right text-ink-700">{formatPercent(e.agreement * 100, 0)}</td>
+                      <td className="numeric py-1.5 text-right text-ink-500">{formatPercent(e.weight * 100, 0)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
             <p className="mt-2 text-[0.6875rem] leading-relaxed text-ink-500">
               {t('Municipal registers share no common property identifier, so a match is a weighted score over published signals rather than a lookup. A signal the counterpart register does not carry at all is excluded from the calculation rather than scored as a disagreement.')}
             </p>

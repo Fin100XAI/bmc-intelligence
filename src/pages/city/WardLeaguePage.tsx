@@ -20,6 +20,7 @@ import { MetricCard } from '@/components/cards'
 import { RankedBarChart } from '@/components/charts'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { wardService, type WardRankMetric, type WardRankRow } from '@/services/ward.service'
 import { useDrawerStore } from '@/stores/ui.store'
 import type { DataFreshness } from '@/types/common'
@@ -160,6 +161,11 @@ function formatValue(value: number, metric: LeagueMetric): string {
 }
 
 export function WardLeaguePage(): React.JSX.Element {
+  usePageMasthead(
+    t('Ward League Table'),
+    t('Every ward on one indicator, in one order. Ward Intelligence answers how a ward is doing; this page answers which ward to attend to first.'),
+  )
+
   const [metricId, setMetricId] = useState<WardRankMetric>('risk')
   const openDrawer = useDrawerStore((s) => s.open)
 
@@ -216,7 +222,6 @@ export function WardLeaguePage(): React.JSX.Element {
       <PageBody>
         <PageHeader
           eyebrow={t('Wards & Localities')}
-          title={t('Ward League Table')}
           breadcrumbs={[{ label: t('Wards & Localities') }, { label: t('Ward League Table') }]}
         />
         <LoadingState variant="metrics" />
@@ -230,7 +235,6 @@ export function WardLeaguePage(): React.JSX.Element {
       <PageBody>
         <PageHeader
           eyebrow={t('Wards & Localities')}
-          title={t('Ward League Table')}
           breadcrumbs={[{ label: t('Wards & Localities') }, { label: t('Ward League Table') }]}
         />
         <ErrorState
@@ -352,28 +356,16 @@ export function WardLeaguePage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('Wards & Localities')}
-        title={t('Ward League Table')}
-        description={t('Every ward on one indicator, in one order. Ward Intelligence answers how a ward is doing; this page answers which ward to attend to first.')}
         breadcrumbs={[{ label: t('Wards & Localities') }, { label: t('Ward League Table') }]}
         freshness={freshness}
       />
 
       <DemonstrationNotice />
 
-      <Card tone="info" className="flex items-start gap-3">
-        <Scale className="mt-0.5 h-4 w-4 shrink-0 text-govt-600" aria-hidden />
-        <div className="min-w-0">
-          <p className="text-[0.8125rem] font-semibold text-govt-800">{t('Read the spread, not the leader')}</p>
-          <p className="mt-1 text-xs leading-relaxed text-ink-600">
-            {t('The finding on this page is not any single ward&apos;s score. It is the distance between the best ward and the worst. A city where the best ward scores 82 and the worst 41 is not one city being served - it is two, and no city-wide average will show that. Every figure here is the figure Ward Intelligence reports for the same ward: this page orders and compares them, and computes nothing of its own beyond the median and the spread.')}
-          </p>
-        </div>
-      </Card>
-
       <Card className="flex flex-wrap items-end gap-4">
-        <div>
+        <div className="min-w-0">
           <Label htmlFor="league-metric">{t('Indicator')}</Label>
-          <div id="league-metric">
+          <div id="league-metric" className="scrollbar-slim overflow-x-auto">
             <SegmentedControl<WardRankMetric>
               value={metricId}
               onChange={setMetricId}
@@ -440,64 +432,83 @@ export function WardLeaguePage(): React.JSX.Element {
             />
           </MetricGrid>
 
-          <Card tone={spreadTone === 'positive' ? 'default' : spreadTone} className="flex items-start gap-3">
-            <ArrowDownUp className="mt-0.5 h-4 w-4 shrink-0 text-ink-500" aria-hidden />
-            <div className="min-w-0">
-              <p className="text-[0.8125rem] font-semibold text-ink-900">
-                {spreadTone === 'critical'
-                  ? 'The city is not being served evenly on this indicator'
-                  : spreadTone === 'warn'
-                    ? 'A material gap separates the best and worst wards'
-                    : 'Wards are closely grouped on this indicator'}
-              </p>
-              <p className="mt-1 text-xs leading-relaxed text-ink-600">
-                {t('{0} stands at {1} and {2} at {3} - a spread of {4} against a city median of {5}. {6}', stats.best.label, formatValue(stats.best.value, metric), stats.worst.label, formatValue(stats.worst.value, metric), formatNumber(stats.spread, metric.decimals), formatValue(Math.round(stats.median * 10) / 10, metric), spreadTone === 'positive'
-                  ? 'A narrow spread means the indicator is a city-wide condition rather than a ward-specific one, and city-wide action is the proportionate response.'
-                  : 'Where the spread is this wide, allocating uniformly across wards leaves the worst-served wards no better off. The wards at the head of this table are where a marginal crew, a marginal rupee or a marginal inspection buys the most.')}
-              </p>
-            </div>
-          </Card>
-
-          <Card flush className="flex flex-col">
-            <CardHeader
-              bordered
-              icon={<ListOrdered className="h-4 w-4" />}
-              title={t('Every ward · {0}', metric.shortLabel)}
-              description={t('All {0} wards in scope, worst first. {1}', formatNumber(stats.count), metric.merit)}
-            />
-            <div className="px-4 py-4" style={{ height: Math.max(240, rows.length * 24) }}>
-              <RankedBarChart
-                data={rows.map((r) => ({ label: r.label.slice(0, 22), value: r.value }))}
-                unit={metric.unit}
-                higherIsWorse={!metric.higherIsBetter}
+          {/* Two columns. The league table is the answer to the question the
+              page asks and carries the width; the spread reading, the ranked
+              bars and the standing note on how to read them run beside it. */}
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+            <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
+            <Card flush>
+              <CardHeader
+                bordered
+                icon={<Scale className="h-4 w-4" />}
+                title={t('League table')}
+                description={t('Position one is the ward most in need of attention on the selected indicator, not the leader. Sort on any column to read it the other way round. Select a ward to open its full profile.')}
               />
+              <DataTable
+                rows={rows}
+                columns={columns}
+                rowKey={(r) => r.wardId}
+                searchable
+                searchPlaceholder="Search wards"
+                onRowClick={(r) => openDrawer({ kind: 'ward', id: r.wardId })}
+                pageSize={15}
+                exportName={`ward-league-${metric.id}`}
+                exportFilters={{ Indicator: metric.label, Order: 'Worst first' }}
+              />
+            </Card>
             </div>
-            {metric.isCount ? (
-              <p className="px-4 pb-4 text-[0.6875rem] leading-relaxed text-ink-500">
-                {t('Bar colour is banded for 0-100 indices, so on a raw complaint count the bars carry length only. Read the order and the length, not the hue.')}
-              </p>
-            ) : null}
-          </Card>
 
-          <Card flush>
-            <CardHeader
-              bordered
-              icon={<Scale className="h-4 w-4" />}
-              title={t('League table')}
-              description={t('Position one is the ward most in need of attention on the selected indicator, not the leader. Sort on any column to read it the other way round. Select a ward to open its full profile.')}
-            />
-            <DataTable
-              rows={rows}
-              columns={columns}
-              rowKey={(r) => r.wardId}
-              searchable
-              searchPlaceholder="Search wards"
-              onRowClick={(r) => openDrawer({ kind: 'ward', id: r.wardId })}
-              pageSize={15}
-              exportName={`ward-league-${metric.id}`}
-              exportFilters={{ Indicator: metric.label, Order: 'Worst first' }}
-            />
-          </Card>
+            <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
+            <Card tone={spreadTone === 'positive' ? 'default' : spreadTone} className="flex items-start gap-3">
+              <ArrowDownUp className="mt-0.5 h-4 w-4 shrink-0 text-ink-500" aria-hidden />
+              <div className="min-w-0">
+                <p className="text-[0.8125rem] font-semibold text-ink-900">
+                  {spreadTone === 'critical'
+                    ? 'The city is not being served evenly on this indicator'
+                    : spreadTone === 'warn'
+                      ? 'A material gap separates the best and worst wards'
+                      : 'Wards are closely grouped on this indicator'}
+                </p>
+                <p className="mt-1 text-xs leading-relaxed text-ink-600">
+                  {t('{0} stands at {1} and {2} at {3} - a spread of {4} against a city median of {5}. {6}', stats.best.label, formatValue(stats.best.value, metric), stats.worst.label, formatValue(stats.worst.value, metric), formatNumber(stats.spread, metric.decimals), formatValue(Math.round(stats.median * 10) / 10, metric), spreadTone === 'positive'
+                    ? 'A narrow spread means the indicator is a city-wide condition rather than a ward-specific one, and city-wide action is the proportionate response.'
+                    : 'Where the spread is this wide, allocating uniformly across wards leaves the worst-served wards no better off. The wards at the head of this table are where a marginal crew, a marginal rupee or a marginal inspection buys the most.')}
+                </p>
+              </div>
+            </Card>
+
+            <Card flush className="flex flex-col">
+              <CardHeader
+                bordered
+                icon={<ListOrdered className="h-4 w-4" />}
+                title={t('Every ward · {0}', metric.shortLabel)}
+                description={t('All {0} wards in scope, worst first. {1}', formatNumber(stats.count), metric.merit)}
+              />
+              <div className="px-4 py-4" style={{ height: Math.max(240, rows.length * 24) }}>
+                <RankedBarChart
+                  data={rows.map((r) => ({ label: r.label.slice(0, 22), value: r.value }))}
+                  unit={metric.unit}
+                  higherIsWorse={!metric.higherIsBetter}
+                />
+              </div>
+              {metric.isCount ? (
+                <p className="px-4 pb-4 text-[0.6875rem] leading-relaxed text-ink-500">
+                  {t('Bar colour is banded for 0-100 indices, so on a raw complaint count the bars carry length only. Read the order and the length, not the hue.')}
+                </p>
+              ) : null}
+            </Card>
+
+            <Card tone="info" className="flex items-start gap-3">
+              <Scale className="mt-0.5 h-4 w-4 shrink-0 text-govt-600" aria-hidden />
+              <div className="min-w-0">
+                <p className="text-[0.8125rem] font-semibold text-govt-800">{t('Read the spread, not the leader')}</p>
+                <p className="mt-1 text-xs leading-relaxed text-ink-600">
+                  {t('The finding on this page is not any single ward&apos;s score. It is the distance between the best ward and the worst. A city where the best ward scores 82 and the worst 41 is not one city being served - it is two, and no city-wide average will show that. Every figure here is the figure Ward Intelligence reports for the same ward: this page orders and compares them, and computes nothing of its own beyond the median and the spread.')}
+                </p>
+              </div>
+            </Card>
+            </div>
+          </div>
         </>
       )}
     </PageBody>

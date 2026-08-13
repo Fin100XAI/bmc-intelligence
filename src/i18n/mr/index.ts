@@ -30,6 +30,7 @@ import { MR_PART_28 } from './part-28'
 import { MR_PART_29 } from './part-29'
 import { MR_PART_30 } from './part-30'
 import { MR_PART_31 } from './part-31'
+import { MR_PART_32 } from './part-32'
 
 /**
  * The Marathi catalogue.
@@ -75,3 +76,4 @@ registerMessages('mr', MR_PART_28)
 registerMessages('mr', MR_PART_29)
 registerMessages('mr', MR_PART_30)
 registerMessages('mr', MR_PART_31)
+registerMessages('mr', MR_PART_32)

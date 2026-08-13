@@ -9,6 +9,8 @@ import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { roadsService } from '@/services'
 import { wardShortName } from '@/data/reference'
+import { usePageMasthead } from '@/stores/masthead.store'
+import { useFilterStore } from '@/stores/ui.store'
 import type { RoadSegment, TrafficCorridor } from '@/types/city-domains'
 import type { DataFreshness } from '@/types/common'
 import { isoFromAnchor } from '@/utils/deterministic'
@@ -41,7 +43,26 @@ function congestionTone(index: number): 'primary' | 'warn' | 'critical' {
 }
 
 export function TrafficIntelligencePage(): React.JSX.Element {
+  usePageMasthead(
+    t('Traffic & Mobility'),
+    t('Corridor-level congestion, incidents and closures across the city\'s principal traffic corridors, read alongside the road condition and planned works in the wards each corridor serves.'),
+  )
+
   const [selectedCorridorId, setSelectedCorridorId] = useState<string | null>(null)
+
+  /**
+   * The ward selected in the command bar is the operator's statement about
+   * what they are looking at. This page used to ignore it entirely: every
+   * corridor, every metric and the whole cross-domain panel read corporation-
+   * wide no matter which of the twenty-four wards was in force, which tells an
+   * operator something untrue about the figures in front of them.
+   *
+   * The selection is narrowed here, above the permission layer rather than
+   * around it - the service has already returned only the corridors the
+   * principal may read (`filterByScope` on `mobility`), so this can subtract
+   * from that set and can never add to it.
+   */
+  const wardScope = useFilterStore((s) => s.filters.wardIds)
 
   const corridorsQuery = useServiceQuery(queryKeys.roads('corridors'), (u) => roadsService.corridors(u))
   const segmentsQuery = useServiceQuery(queryKeys.roads('segments'), (u) => roadsService.segments(u))
@@ -51,7 +72,7 @@ export function TrafficIntelligencePage(): React.JSX.Element {
   if (corridorsQuery.isLoading || segmentsQuery.isLoading) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('City Intelligence')} title={t('Traffic & Mobility')} breadcrumbs={breadcrumbs} />
+        <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={breadcrumbs} />
         <LoadingState variant="metrics" />
         <LoadingState variant="table" rows={8} />
       </PageBody>
@@ -62,7 +83,7 @@ export function TrafficIntelligencePage(): React.JSX.Element {
   if (anyError) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('City Intelligence')} title={t('Traffic & Mobility')} breadcrumbs={breadcrumbs} />
+        <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={breadcrumbs} />
         <ErrorState
           detail={anyError.message}
           onRetry={() => {
@@ -74,13 +95,18 @@ export function TrafficIntelligencePage(): React.JSX.Element {
     )
   }
 
-  const corridors = corridorsQuery.data ?? []
-  const segments = segmentsQuery.data ?? []
+  // A corridor is in scope when it serves at least one ward in the selection;
+  // with no ward selected the corporation-wide position stands.
+  const servesScope = (wardIds: string[]): boolean =>
+    wardScope.length === 0 || wardIds.some((w) => wardScope.includes(w))
+
+  const corridors = (corridorsQuery.data ?? []).filter((c) => servesScope(c.wardIds))
+  const segments = (segmentsQuery.data ?? []).filter((s) => servesScope([s.wardId]))
 
   if (corridors.length === 0) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('City Intelligence')} title={t('Traffic & Mobility')} breadcrumbs={breadcrumbs} />
+        <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={breadcrumbs} />
         <EmptyState title={t('No corridor data available')} detail="No traffic corridor records were returned for the current scope." />
         <DemonstrationNotice />
       </PageBody>
@@ -162,8 +188,6 @@ export function TrafficIntelligencePage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('City Intelligence')}
-        title={t('Traffic & Mobility')}
-        description={t('Corridor-level congestion, incidents and closures across the city\'s principal traffic corridors, read alongside the road condition and planned works in the wards each corridor serves.')}
         breadcrumbs={breadcrumbs}
         freshness={FRESHNESS}
       />
@@ -175,143 +199,151 @@ export function TrafficIntelligencePage(): React.JSX.Element {
         <MetricCard label={t('Active closures')} value={activeClosures} tone={activeClosures > 0 ? 'critical' : 'default'} icon={<Construction className="h-4 w-4" />} />
       </MetricGrid>
 
-      <Card>
-        <CardHeader title={t('Corridor map')} description={t('Corridor geometry toned by congestion. Click a corridor row, or a ward the corridor serves, to highlight it - selection syncs between the map and the table.')} />
-        <div className="mt-3">
-          <CityMap
-            layers={[
-              {
-                id: 'congestion',
-                label: t('Corridor Congestion (ward average)'),
-                valueFor: (wardId) => average(congestionByWard.get(wardId)),
-                higherIsWorse: true,
-                unit: '/100 congestion',
-                description: t('Average congestion index of corridors serving the ward.'),
-              },
-            ]}
-            paths={paths}
-            selectedWardId={selectedCorridor?.wardIds[0] ?? null}
-            onWardSelect={(wardId) => {
-              const match = corridors.find((c) => c.wardIds.includes(wardId))
-              if (match) setSelectedCorridorId(match.id === selectedCorridorId ? null : match.id)
-            }}
-            height={420}
+      {/* Two columns, read downward. The corridor register and the
+          cross-domain reference carry the width; the map, the closures
+          currently in force and the speed profile read beside them. */}
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
+        <Card flush>
+            <CardHeader className="px-4 pt-4 pb-3" title={t('Corridor register')} description={t('Sortable and searchable. Select a row to highlight the corridor on the map.')} />
+          <DataTable
+            rows={corridors}
+            columns={corridorColumns}
+            rowKey={(r) => r.id}
+            pageSize={10}
+            searchPlaceholder="Search corridor or ward"
+            onRowClick={(r) => setSelectedCorridorId(r.id === selectedCorridorId ? null : r.id)}
+            activeRowKey={selectedCorridorId ?? undefined}
+            initialSort={{ columnId: 'congestion', direction: 'desc' }}
+            ariaLabel="Traffic corridor register"
           />
-        </div>
-        {selectedCorridor ? (
-          <p className="mt-2 text-[0.6875rem] leading-relaxed text-ink-500">
-            <span className="font-semibold text-ink-700">{selectedCorridor.name}</span>{' '}{t('highlighted · congestion')}{' '}{selectedCorridor.congestionIndex}/100 ·{' '}
-            {selectedCorridor.incidents30d}{' '}{t('incident(s) in 30 days ·')}{' '}{selectedCorridor.closures}{' '}{t('closure(s).')}
-          </p>
-        ) : null}
-      </Card>
-
-      <Card flush>
-        <CardHeader className="px-4 pt-4 pb-3" title={t('Corridor register')} description={t('Sortable and searchable. Select a row to highlight the corridor on the map.')} />
-        <DataTable
-          rows={corridors}
-          columns={corridorColumns}
-          rowKey={(r) => r.id}
-          pageSize={10}
-          searchPlaceholder="Search corridor or ward"
-          onRowClick={(r) => setSelectedCorridorId(r.id === selectedCorridorId ? null : r.id)}
-          activeRowKey={selectedCorridorId ?? undefined}
-          initialSort={{ columnId: 'congestion', direction: 'desc' }}
-          ariaLabel="Traffic corridor register"
-        />
-      </Card>
-
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
-        <Card>
-          <ChartFrame
-            title={t('Congestion profile - free-flow vs peak-hour speed')}
-            unit={'km/h'}
-            timeframe="Current reporting position"
-            description={t('Ranked by congestion index, highest first. The gap between free-flow and peak-hour speed is the corridor\'s congestion.')}
-            height={Math.max(280, corridors.length * 26)}
-          >
-            <CategoryBarChart
-              data={profileData}
-              categoryKey="label"
-              layout="horizontal"
-              series={[
-                { key: 'freeFlow', label: t('Free-flow speed'), colour: CHART_COLOURS.neutral },
-                { key: 'peak', label: t('Peak-hour speed'), colour: CHART_COLOURS.primary },
-              ]}
-              showLegend
-            />
-          </ChartFrame>
         </Card>
 
         <Card flush>
-          <CardHeader className="px-4 pt-4 pb-3" title={t('Junction & closure impact')} description={t('Corridors currently carrying one or more closures, ranked by count.')} />
-          {closureImpact.length === 0 ? (
-            <EmptyState compact className="m-4" title={t('No active closures')} detail="No corridor currently reports a closure." />
-          ) : (
-            <ul className="divide-y divide-ink-50">
-              {closureImpact.map((c) => (
-                <li key={c.id} className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5">
-                  <div className="min-w-0">
-                    <p className="truncate text-xs font-medium text-ink-800">{c.name}</p>
-                    <p className="mt-0.5 truncate text-[0.6875rem] text-ink-400">{c.wardIds.map((w) => wardShortName(w)).join(', ')}</p>
-                  </div>
-                  <span className="flex shrink-0 items-center gap-1.5">
-                    <Badge tone="warn">{t('{0} closure(s)', c.closures)}</Badge>
-                    <Badge tone="muted">{t('Congestion {0}', c.congestionIndex)}</Badge>
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
+          <CardHeader
+            className="px-4 pt-4 pb-3"
+            icon={<GitCompare className="h-4 w-4" />}
+            title={t('Cross-domain panel - corridor degradation, road condition and planned works')}
+            description={t('Average pavement condition and count of planned closures across the road segments in each corridor\'s served wards, set alongside the corridor\'s own congestion index.')}
+          />
+          <div className="mx-4 mb-3 flex items-start gap-2 rounded-md border border-warn-200 bg-warn-50/70 px-3 py-2">
+            <AlertTriangle className="mt-px h-3.5 w-3.5 shrink-0 text-warn-700" aria-hidden />
+            <p className="text-[0.6875rem] leading-relaxed text-warn-700">
+              <span className="font-semibold">{t('Correlation, not causation.')}</span>{' '}{t('These figures share a ward, not a demonstrated cause. A corridor may be congested for reasons unrelated to pavement condition or planned works - junction geometry, signal timing, trip demand and enforcement all contribute. Any relationship shown here requires field assessment before it is treated as an explanation.')}
+            </p>
+          </div>
+          <DataTable
+            rows={crossDomainRows}
+            rowKey={(r) => r.corridor.id}
+            pageSize={10}
+            searchable={false}
+            initialSort={{ columnId: 'congestion', direction: 'desc' }}
+            ariaLabel="Corridor degradation and road condition cross-reference"
+            columns={[
+              { id: 'corridor', header: t('Corridor'), cell: (r) => <span className="font-medium text-ink-900">{r.corridor.name}</span>, sortValue: (r) => r.corridor.name, width: '15rem' },
+              {
+                id: 'congestion',
+                header: t('Congestion index'),
+                cell: (r) => <Badge tone={r.corridor.congestionIndex >= 55 ? 'critical' : r.corridor.congestionIndex >= DEGRADED_CONGESTION_THRESHOLD ? 'warn' : 'positive'}>{r.corridor.congestionIndex}/100</Badge>,
+                sortValue: (r) => r.corridor.congestionIndex,
+              },
+              {
+                id: 'condition',
+                header: t('Avg road condition (wards served)'),
+                cell: (r) => (typeof r.avgCondition === 'number' ? `${Math.round(r.avgCondition)}/100` : <span className="text-ink-300">{t('No data')}</span>),
+                sortValue: (r) => r.avgCondition ?? -1,
+                align: 'right',
+              },
+              {
+                id: 'works',
+                header: t('Planned closures (wards served)'),
+                cell: (r) => (r.plannedClosures > 0 ? <Badge tone="warn">{t('{0} segment(s)', r.plannedClosures)}</Badge> : <span className="text-ink-300">{t('None')}</span>),
+                sortValue: (r) => r.plannedClosures,
+                align: 'right',
+              },
+              { id: 'wardsServed', header: t('Wards served'), cell: (r) => r.corridor.wardIds.map((w) => wardShortName(w)).join(', '), sortValue: (r) => r.corridor.wardIds.length, hideBelow: 'lg' },
+            ]}
+          />
         </Card>
-      </div>
-
-      <Card flush>
-        <CardHeader
-          className="px-4 pt-4 pb-3"
-          icon={<GitCompare className="h-4 w-4" />}
-          title={t('Cross-domain panel - corridor degradation, road condition and planned works')}
-          description={t('Average pavement condition and count of planned closures across the road segments in each corridor\'s served wards, set alongside the corridor\'s own congestion index.')}
-        />
-        <div className="mx-4 mb-3 flex items-start gap-2 rounded-md border border-warn-200 bg-warn-50/70 px-3 py-2">
-          <AlertTriangle className="mt-px h-3.5 w-3.5 shrink-0 text-warn-700" aria-hidden />
-          <p className="text-[0.6875rem] leading-relaxed text-warn-700">
-            <span className="font-semibold">{t('Correlation, not causation.')}</span>{' '}{t('These figures share a ward, not a demonstrated cause. A corridor may be congested for reasons unrelated to pavement condition or planned works - junction geometry, signal timing, trip demand and enforcement all contribute. Any relationship shown here requires field assessment before it is treated as an explanation.')}
-          </p>
         </div>
-        <DataTable
-          rows={crossDomainRows}
-          rowKey={(r) => r.corridor.id}
-          pageSize={10}
-          searchable={false}
-          initialSort={{ columnId: 'congestion', direction: 'desc' }}
-          ariaLabel="Corridor degradation and road condition cross-reference"
-          columns={[
-            { id: 'corridor', header: t('Corridor'), cell: (r) => <span className="font-medium text-ink-900">{r.corridor.name}</span>, sortValue: (r) => r.corridor.name, width: '15rem' },
-            {
-              id: 'congestion',
-              header: t('Congestion index'),
-              cell: (r) => <Badge tone={r.corridor.congestionIndex >= 55 ? 'critical' : r.corridor.congestionIndex >= DEGRADED_CONGESTION_THRESHOLD ? 'warn' : 'positive'}>{r.corridor.congestionIndex}/100</Badge>,
-              sortValue: (r) => r.corridor.congestionIndex,
-            },
-            {
-              id: 'condition',
-              header: t('Avg road condition (wards served)'),
-              cell: (r) => (typeof r.avgCondition === 'number' ? `${Math.round(r.avgCondition)}/100` : <span className="text-ink-300">{t('No data')}</span>),
-              sortValue: (r) => r.avgCondition ?? -1,
-              align: 'right',
-            },
-            {
-              id: 'works',
-              header: t('Planned closures (wards served)'),
-              cell: (r) => (r.plannedClosures > 0 ? <Badge tone="warn">{t('{0} segment(s)', r.plannedClosures)}</Badge> : <span className="text-ink-300">{t('None')}</span>),
-              sortValue: (r) => r.plannedClosures,
-              align: 'right',
-            },
-            { id: 'wardsServed', header: t('Wards served'), cell: (r) => r.corridor.wardIds.map((w) => wardShortName(w)).join(', '), sortValue: (r) => r.corridor.wardIds.length, hideBelow: 'lg' },
-          ]}
-        />
-      </Card>
+
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
+        <Card>
+          <CardHeader title={t('Corridor map')} description={t('Corridor geometry toned by congestion. Click a corridor row, or a ward the corridor serves, to highlight it - selection syncs between the map and the table.')} />
+          <div className="mt-3">
+            <CityMap
+              layers={[
+                {
+                  id: 'congestion',
+                  label: t('Corridor Congestion (ward average)'),
+                  valueFor: (wardId) => average(congestionByWard.get(wardId)),
+                  higherIsWorse: true,
+                  unit: '/100 congestion',
+                  description: t('Average congestion index of corridors serving the ward.'),
+                },
+              ]}
+              paths={paths}
+              selectedWardId={selectedCorridor?.wardIds[0] ?? null}
+              onWardSelect={(wardId) => {
+                const match = corridors.find((c) => c.wardIds.includes(wardId))
+                if (match) setSelectedCorridorId(match.id === selectedCorridorId ? null : match.id)
+              }}
+              height={420}
+            />
+          </div>
+          {selectedCorridor ? (
+            <p className="mt-2 text-[0.6875rem] leading-relaxed text-ink-500">
+              <span className="font-semibold text-ink-700">{selectedCorridor.name}</span>{' '}{t('highlighted · congestion')}{' '}{selectedCorridor.congestionIndex}/100 ·{' '}
+              {selectedCorridor.incidents30d}{' '}{t('incident(s) in 30 days ·')}{' '}{selectedCorridor.closures}{' '}{t('closure(s).')}
+            </p>
+          ) : null}
+        </Card>
+
+          <Card flush>
+            <CardHeader className="px-4 pt-4 pb-3" title={t('Junction & closure impact')} description={t('Corridors currently carrying one or more closures, ranked by count.')} />
+            {closureImpact.length === 0 ? (
+              <EmptyState compact className="m-4" title={t('No active closures')} detail="No corridor currently reports a closure." />
+            ) : (
+              <ul className="divide-y divide-ink-50">
+                {closureImpact.map((c) => (
+                  <li key={c.id} className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5">
+                    <div className="min-w-0">
+                      <p className="truncate text-xs font-medium text-ink-800">{c.name}</p>
+                      <p className="mt-0.5 truncate text-[0.6875rem] text-ink-400">{c.wardIds.map((w) => wardShortName(w)).join(', ')}</p>
+                    </div>
+                    <span className="flex shrink-0 items-center gap-1.5">
+                      <Badge tone="warn">{t('{0} closure(s)', c.closures)}</Badge>
+                      <Badge tone="muted">{t('Congestion {0}', c.congestionIndex)}</Badge>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Card>
+
+
+          <Card>
+            <ChartFrame
+              title={t('Congestion profile - free-flow vs peak-hour speed')}
+              unit={'km/h'}
+              timeframe="Current reporting position"
+              description={t('Ranked by congestion index, highest first. The gap between free-flow and peak-hour speed is the corridor\'s congestion.')}
+              height={Math.max(280, corridors.length * 26)}
+            >
+              <CategoryBarChart
+                data={profileData}
+                categoryKey="label"
+                layout="horizontal"
+                series={[
+                  { key: 'freeFlow', label: t('Free-flow speed'), colour: CHART_COLOURS.neutral },
+                  { key: 'peak', label: t('Peak-hour speed'), colour: CHART_COLOURS.primary },
+                ]}
+                showLegend
+              />
+            </ChartFrame>
+          </Card>
+        </div>
+      </div>
 
       <DemonstrationNotice />
     </PageBody>

@@ -21,6 +21,7 @@ import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { livelihoodsService } from '@/services'
 import { useFilterStore } from '@/stores/ui.store'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { wardName, wardShortName } from '@/data/reference'
 import { LIVELIHOOD_CENTRE_KIND_LABEL, type LivelihoodCentre, type VendorZone } from '@/types/livelihoods'
 import type { DataFreshness } from '@/types/common'
@@ -79,6 +80,11 @@ const KIND_TONE: Record<LivelihoodCentre['kind'], 'neutral' | 'info' | 'intel' |
 export function LivelihoodsPage(): React.JSX.Element {
   const filters = useFilterStore((s) => s.filters)
 
+  usePageMasthead(
+    TITLE,
+    t('The corporation\'s obligation under function 11 of the Twelfth Schedule - skill training and placement under DAY-NULM, self-help group formation and bank linkage, shelters for the urban homeless, and the vending register held under the Street Vendors Act, 2014.'),
+  )
+
   const centresQuery = useServiceQuery(queryKeys.livelihoods('centres'), (u) => livelihoodsService.centres(u))
   const zonesQuery = useServiceQuery(queryKeys.livelihoods('vendor-zones'), (u) => livelihoodsService.vendorZones(u))
   const trendQuery = useServiceQuery(queryKeys.livelihoods('trend'), (u) => livelihoodsService.trend(u))
@@ -119,7 +125,7 @@ export function LivelihoodsPage(): React.JSX.Element {
   if (isLoading) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('City Intelligence')} title={TITLE} breadcrumbs={BREADCRUMBS} />
+        <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={BREADCRUMBS} />
         <LoadingState variant="metrics" />
         <LoadingState variant="table" rows={8} />
       </PageBody>
@@ -128,7 +134,7 @@ export function LivelihoodsPage(): React.JSX.Element {
   if (error) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('City Intelligence')} title={TITLE} breadcrumbs={BREADCRUMBS} />
+        <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={BREADCRUMBS} />
         <ErrorState
           detail={error.message}
           onRetry={() => {
@@ -362,25 +368,11 @@ export function LivelihoodsPage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('City Intelligence')}
-        title={TITLE}
-        description={t('The corporation\'s obligation under function 11 of the Twelfth Schedule - skill training and placement under DAY-NULM, self-help group formation and bank linkage, shelters for the urban homeless, and the vending register held under the Street Vendors Act, 2014.')}
         breadcrumbs={BREADCRUMBS}
         freshness={freshness}
       />
 
       <DemonstrationNotice />
-
-      <Card tone="info" className="flex items-start gap-3">
-        <Scale className="mt-0.5 h-4 w-4 shrink-0 text-govt-600" aria-hidden />
-        <div className="min-w-0">
-          <p className="text-[0.8125rem] font-semibold text-govt-800">
-            {t('A certificate of vending is an entitlement, not a favour')}
-          </p>
-          <p className="mt-1 text-xs leading-relaxed text-ink-600">
-            {t('Under the Street Vendors (Protection of Livelihood and Regulation of Street Vending) Act, 2014, once the statutory survey has been carried out a vendor on the register is entitled to a certificate of vending, and issuing it is a duty this corporation owes. The shortfall reported below is therefore a measure of the corporation&apos;s own statutory compliance - it records what the administration has not yet done, and it says nothing whatever about the people who earn their living by vending. Where the survey has not been carried out or the Town Vending Committee has not been constituted, the duty has not even begun to be discharged.')}
-          </p>
-        </div>
-      </Card>
 
       <FilterBar show={['ward', 'search']} searchPlaceholder="Search premises and vending zones" />
 
@@ -417,46 +409,12 @@ export function LivelihoodsPage(): React.JSX.Element {
         />
       </MetricGrid>
 
-      <div className="grid gap-4 lg:grid-cols-[1.3fr_1fr]">
-        <Card className="flex flex-col">
-          <p className="label-institutional mb-2">{t('Trained and placed, by month')}</p>
-          <div style={{ height: 220 }}>
-            <CategoryBarChart
-              data={trend as unknown as Array<Record<string, string | number>>}
-              categoryKey="month"
-              showLegend
-              series={[
-                { key: 'trained', label: t('Trained'), colour: CHART_COLOURS.primary },
-                { key: 'placed', label: t('In work after three months'), colour: CHART_COLOURS.positive },
-                { key: 'certificatesIssued', label: t('Certificates of vending issued'), colour: CHART_COLOURS.intel },
-              ]}
-            />
-          </div>
-          <p className="mt-2 text-[0.6875rem] leading-relaxed text-ink-500">
-            {t('The two training lines are shown together because the upper one on its own is not an outcome. Training that does not end in work is expenditure the corporation has made and a year the trainee has given, with nothing at the end of it for either - so the distance between the bars is the measure that carries weight, not the height of the first.')}
-          </p>
-        </Card>
-
-        <Card flush className="flex flex-col">
-          <CardHeader
-            bordered
-            title={t('Where the certificate shortfall falls')}
-            description={t('Registered vendors without the certificate of vending the Act entitles them to, by ward.')}
-          />
-          <div className="px-4 pb-4" style={{ height: Math.max(210, worstWards.length * 26) }}>
-            {worstWards.length === 0 ? (
-              <EmptyState
-                compact
-                title={t('No vending zones in scope')}
-                detail="Clear a filter to widen the vending register."
-              />
-            ) : (
-              <RankedBarChart data={worstWards} unit=" vendors" />
-            )}
-          </div>
-        </Card>
-      </div>
-
+      {/* Two columns. The statutory registers — vending zones and the estate
+          the corporation runs against function 11 — carry the width, with the
+          training outcome beneath. The Act's own reading and the ward-level
+          shortfall stand beside them. */}
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
       <Card flush>
         <CardHeader
           bordered
@@ -490,6 +448,60 @@ export function LivelihoodsPage(): React.JSX.Element {
           <DataTable rows={filteredCentres} columns={centreColumns} rowKey={(r) => r.id} pageSize={12} />
         )}
       </Card>
+
+          <Card className="flex flex-col">
+            <p className="label-institutional mb-2">{t('Trained and placed, by month')}</p>
+            <div style={{ height: 220 }}>
+              <CategoryBarChart
+                data={trend as unknown as Array<Record<string, string | number>>}
+                categoryKey="month"
+                showLegend
+                series={[
+                  { key: 'trained', label: t('Trained'), colour: CHART_COLOURS.primary },
+                  { key: 'placed', label: t('In work after three months'), colour: CHART_COLOURS.positive },
+                  { key: 'certificatesIssued', label: t('Certificates of vending issued'), colour: CHART_COLOURS.intel },
+                ]}
+              />
+            </div>
+            <p className="mt-2 text-[0.6875rem] leading-relaxed text-ink-500">
+              {t('The two training lines are shown together because the upper one on its own is not an outcome. Training that does not end in work is expenditure the corporation has made and a year the trainee has given, with nothing at the end of it for either - so the distance between the bars is the measure that carries weight, not the height of the first.')}
+            </p>
+          </Card>
+        </div>
+
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
+          <Card tone="info" className="flex items-start gap-3">
+            <Scale className="mt-0.5 h-4 w-4 shrink-0 text-govt-600" aria-hidden />
+            <div className="min-w-0">
+              <p className="text-[0.8125rem] font-semibold text-govt-800">
+                {t('A certificate of vending is an entitlement, not a favour')}
+              </p>
+              <p className="mt-1 text-xs leading-relaxed text-ink-600">
+                {t('Under the Street Vendors (Protection of Livelihood and Regulation of Street Vending) Act, 2014, once the statutory survey has been carried out a vendor on the register is entitled to a certificate of vending, and issuing it is a duty this corporation owes. The shortfall reported below is therefore a measure of the corporation&apos;s own statutory compliance - it records what the administration has not yet done, and it says nothing whatever about the people who earn their living by vending. Where the survey has not been carried out or the Town Vending Committee has not been constituted, the duty has not even begun to be discharged.')}
+              </p>
+            </div>
+          </Card>
+
+          <Card flush className="flex flex-col">
+            <CardHeader
+              bordered
+              title={t('Where the certificate shortfall falls')}
+              description={t('Registered vendors without the certificate of vending the Act entitles them to, by ward.')}
+            />
+            <div className="px-4 pb-4" style={{ height: Math.max(210, worstWards.length * 26) }}>
+              {worstWards.length === 0 ? (
+                <EmptyState
+                  compact
+                  title={t('No vending zones in scope')}
+                  detail="Clear a filter to widen the vending register."
+                />
+              ) : (
+                <RankedBarChart data={worstWards} unit=" vendors" />
+              )}
+            </div>
+          </Card>
+        </div>
+      </div>
     </PageBody>
   )
 }

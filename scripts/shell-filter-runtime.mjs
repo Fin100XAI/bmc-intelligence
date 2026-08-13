@@ -174,6 +174,25 @@ const PAGES = [
   'city/AmenitiesPage',
   'city/WardTrajectoryPage',
   'command/IntelligenceFeedPage',
+  // Added after fifteen screens were found reading the shared ward selection
+  // while sitting outside this list. An explicit list only fails loudly for the
+  // pages it names; for every other page it is silent, which is the same as not
+  // checking. These were the silent ones.
+  'city/CoastalIntelligencePage',
+  'city/DeathcarePage',
+  'city/EducationIntelligencePage',
+  'city/HyperlocalIntelligencePage',
+  'city/MonsoonIntelligencePage',
+  'city/TrafficIntelligencePage',
+  'city/WardIntelligencePage',
+  'command/AlertsPage',
+  'command/DecisionCentrePage',
+  'command/MyTasksPage',
+  'command/SituationRoomPage',
+  'governance/LicensingIntelligencePage',
+  'governance/PropertyIntelligencePage',
+  'strategic/DigitalTwinPage',
+  'strategic/UrbanPlanningPage',
 ]
 
 const args = process.argv.slice(2)

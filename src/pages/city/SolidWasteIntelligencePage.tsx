@@ -24,6 +24,7 @@ import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { wasteService } from '@/services'
 import { useFilterStore } from '@/stores/ui.store'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { wardName } from '@/data/reference'
 import type { WasteFacility, WasteHotspot, WasteRoute, WasteWardPerformance } from '@/types/city-domains'
 import type { DataFreshness } from '@/types/common'
@@ -62,6 +63,11 @@ const FRESHNESS: DataFreshness = {
 }
 
 export function SolidWasteIntelligencePage(): React.JSX.Element {
+  usePageMasthead(
+    t('Solid Waste Intelligence'),
+    t('Collection coverage and segregation by ward, live route adherence, processing and disposal facility capacity, and recurring hotspots across the solid waste management network.'),
+  )
+
   const filters = useFilterStore((s) => s.filters)
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null)
 
@@ -77,7 +83,7 @@ export function SolidWasteIntelligencePage(): React.JSX.Element {
   if (performanceQuery.isLoading || routesQuery.isLoading || facilitiesQuery.isLoading || hotspotsQuery.isLoading) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('City Intelligence')} title={t('Solid Waste Intelligence')} breadcrumbs={breadcrumbs} />
+        <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={breadcrumbs} />
         <LoadingState variant="metrics" />
         <LoadingState variant="table" rows={8} />
       </PageBody>
@@ -88,7 +94,7 @@ export function SolidWasteIntelligencePage(): React.JSX.Element {
   if (anyError) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('City Intelligence')} title={t('Solid Waste Intelligence')} breadcrumbs={breadcrumbs} />
+        <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={breadcrumbs} />
         <ErrorState
           detail={anyError.message}
           onRetry={() => {
@@ -110,7 +116,7 @@ export function SolidWasteIntelligencePage(): React.JSX.Element {
   if (performance.length === 0) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('City Intelligence')} title={t('Solid Waste Intelligence')} breadcrumbs={breadcrumbs} />
+        <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={breadcrumbs} />
         <EmptyState title={t('No solid waste data available')} detail="No ward performance records were returned for the current scope." />
         <DemonstrationNotice />
       </PageBody>
@@ -314,8 +320,6 @@ export function SolidWasteIntelligencePage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('City Intelligence')}
-        title={t('Solid Waste Intelligence')}
-        description={t('Collection coverage and segregation by ward, live route adherence, processing and disposal facility capacity, and recurring hotspots across the solid waste management network.')}
         breadcrumbs={breadcrumbs}
         freshness={FRESHNESS}
         controls={<FilterBar show={['ward', 'search']} searchPlaceholder="Search ward, route or facility" />}
@@ -332,124 +336,133 @@ export function SolidWasteIntelligencePage(): React.JSX.Element {
         <MetricCard label={t('Vehicles deployed')} value={vehiclesDeployed} icon={<Truck className="h-4 w-4" />} />
       </MetricGrid>
 
-      {recurringShortfallWards.length > 0 || isolatedDisruptionWards.length > 0 ? (
-        <Card tone="warn" className="flex items-start gap-3">
-          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warn-700" aria-hidden />
-          <p className="text-xs leading-relaxed text-ink-700">
-            <span className="font-semibold">{t('{0} ward(s)', recurringShortfallWards.length)}</span>{' '}{t('show coverage below the')}{' '}{COVERAGE_STANDARD}{t('% standard with')}{' '}{RECURRING_MISSED_THRESHOLD}{' '}{t('or more missed collections in the last 7 days - a recurring pattern rather than a single-day disruption. A further')}{' '}<span className="font-semibold">{t('{0} ward(s)', isolatedDisruptionWards.length)}</span>{' '}{t('read below standard with few missed collections, consistent with an isolated, single-day disruption rather than a systemic shortfall.')}
-          </p>
-        </Card>
-      ) : null}
-
-      <Card flush>
-        <CardHeader className="px-4 pt-4 pb-3" title={t('Ward performance')} description={t('Sortable; coverage and segregation shown as bars against the 100% standard.')} />
-        <DataTable
-          rows={filteredPerformance}
-          columns={performanceColumns}
-          rowKey={(r) => r.wardId}
-          pageSize={12}
-          searchPlaceholder="Search ward"
-          initialSort={{ columnId: 'coverage', direction: 'asc' }}
-          ariaLabel="Ward collection performance"
-        />
-      </Card>
-
-      <Card>
-        <CardHeader
-          icon={<RouteIcon className="h-4 w-4" />}
-          title={t('Collection routes')}
-          description={t('Route geometry on the map at left; selecting a route in the table highlights it on the map. Filter by ward to reduce map density.')}
-        />
-        <div className="mt-3 grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
-          <CityMap
-            layers={[
-              {
-                id: 'coverage',
-                label: t('Ward Collection Coverage'),
-                valueFor: (wardId) => coverageByWard.get(wardId),
-                higherIsWorse: false,
-                unit: '% coverage',
-                description: t('Scheduled collection points serviced, by ward.'),
-              },
-            ]}
-            paths={paths}
-            markers={facilityMarkers}
-            height={420}
-          />
-          <div className="min-w-0">
-            {filteredRoutes.length === 0 ? (
-              <EmptyState title={t('No routes match the current filters')} detail="Select a single ward, or clear the ward filter, to see routes." />
-            ) : (
-              <DataTable
-                rows={filteredRoutes}
-                columns={routeColumns}
-                rowKey={(r) => r.id}
-                pageSize={8}
-                searchable={false}
-                onRowClick={(r) => setSelectedRouteId(r.id === selectedRouteId ? null : r.id)}
-                activeRowKey={selectedRouteId ?? undefined}
-                initialSort={{ columnId: 'adherence', direction: 'asc' }}
-                ariaLabel="Collection routes"
-                maxHeight="26rem"
-                stickyHeader
-              />
-            )}
-            {selectedRoute ? (
-              <p className="mt-2 text-[0.6875rem] leading-relaxed text-ink-500">
-                <span className="font-semibold text-ink-700">{selectedRoute.name}</span>{' '}{t('highlighted on the map · vehicle')}{' '}
-                {selectedRoute.vehicleId} · {selectedRoute.missedPoints}{' '}{t('missed point(s) this cycle.')}
-              </p>
-            ) : null}
-          </div>
-        </div>
-      </Card>
-
-      <Card flush>
-        <CardHeader className="px-4 pt-4 pb-3" title={t('Processing, transfer and disposal facilities')} description={t('Capacity and utilisation across transfer stations, processing plants, composting units, bio-methanation and landfills. Low remaining life is flagged for landfill sites.')} />
-        <DataTable
-          rows={filteredFacilities}
-          columns={facilityColumns}
-          rowKey={(r) => r.id}
-          pageSize={10}
-          searchPlaceholder="Search facility"
-          initialSort={{ columnId: 'utilisation', direction: 'desc' }}
-          ariaLabel="Processing and disposal facilities"
-        />
-      </Card>
-
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]">
+      {/* Two columns, read downward. Ward performance, the route surface and
+          the facility register are the working record and carry the width;
+          the shortfall reading, the recurring hotspots and the diversion
+          position stand beside them. */}
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
         <Card flush>
-          <CardHeader className="px-4 pt-4 pb-3" title={t('Recurring hotspots')} description={t('Locations with repeated dumping or accumulation, ranked by recurrence count.')} />
-          {filteredHotspots.length === 0 ? (
-            <EmptyState className="m-4" title={t('No recurring hotspots match the current filters')} detail="No hotspot records were returned for the selected ward or search term." />
-          ) : (
-            <DataTable
-              rows={filteredHotspots}
-              columns={hotspotColumns}
-              rowKey={(r) => r.id}
-              pageSize={10}
-              searchPlaceholder="Search location or ward"
-              initialSort={{ columnId: 'recurrence', direction: 'desc' }}
-              ariaLabel="Recurring hotspots"
-            />
-          )}
+            <CardHeader className="px-4 pt-4 pb-3" title={t('Ward performance')} description={t('Sortable; coverage and segregation shown as bars against the 100% standard.')} />
+          <DataTable
+            rows={filteredPerformance}
+            columns={performanceColumns}
+            rowKey={(r) => r.wardId}
+            pageSize={12}
+            searchPlaceholder="Search ward"
+            initialSort={{ columnId: 'coverage', direction: 'asc' }}
+            ariaLabel="Ward collection performance"
+          />
         </Card>
 
         <Card>
-          <ChartFrame title={t('Diversion from landfill')} unit={t('Tonnes per day')} timeframe="Current modelled load" description={t('Processing, composting and bio-methanation load against landfill load. Transfer-station throughput is excluded as it passes onward to another facility.')} height={220}>
-            <DonutChart
-              data={[
-                { label: t('Diverted (processing, composting, biogas)'), value: diversionLoad, colour: CHART_COLOURS.positive },
-                { label: t('Landfilled'), value: landfillLoad, colour: CHART_COLOURS.critical },
+          <CardHeader
+            icon={<RouteIcon className="h-4 w-4" />}
+            title={t('Collection routes')}
+            description={t('Route geometry on the map at left; selecting a route in the table highlights it on the map. Filter by ward to reduce map density.')}
+          />
+          <div className="mt-3 grid grid-cols-1 gap-4 2xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
+            <CityMap
+              layers={[
+                {
+                  id: 'coverage',
+                  label: t('Ward Collection Coverage'),
+                  valueFor: (wardId) => coverageByWard.get(wardId),
+                  higherIsWorse: false,
+                  unit: '% coverage',
+                  description: t('Scheduled collection points serviced, by ward.'),
+                },
               ]}
-              centreValue={`${Math.round(diversionPct)}%`}
-              centreLabel="diverted"
+              paths={paths}
+              markers={facilityMarkers}
+              height={420}
             />
-          </ChartFrame>
-          <p className="mt-2 text-[0.6875rem] leading-relaxed text-ink-400">
-            {t('{0} TPD diverted against {1} TPD landfilled, across facilities with a non-zero modelled load.', formatNumber(diversionLoad, 0), formatNumber(landfillLoad, 0))}
-          </p>
+            <div className="min-w-0">
+              {filteredRoutes.length === 0 ? (
+                <EmptyState title={t('No routes match the current filters')} detail="Select a single ward, or clear the ward filter, to see routes." />
+              ) : (
+                <DataTable
+                  rows={filteredRoutes}
+                  columns={routeColumns}
+                  rowKey={(r) => r.id}
+                  pageSize={8}
+                  searchable={false}
+                  onRowClick={(r) => setSelectedRouteId(r.id === selectedRouteId ? null : r.id)}
+                  activeRowKey={selectedRouteId ?? undefined}
+                  initialSort={{ columnId: 'adherence', direction: 'asc' }}
+                  ariaLabel="Collection routes"
+                  maxHeight="26rem"
+                  stickyHeader
+                />
+              )}
+              {selectedRoute ? (
+                <p className="mt-2 text-[0.6875rem] leading-relaxed text-ink-500">
+                  <span className="font-semibold text-ink-700">{selectedRoute.name}</span>{' '}{t('highlighted on the map · vehicle')}{' '}
+                  {selectedRoute.vehicleId} · {selectedRoute.missedPoints}{' '}{t('missed point(s) this cycle.')}
+                </p>
+              ) : null}
+            </div>
+          </div>
         </Card>
+
+        <Card flush>
+          <CardHeader className="px-4 pt-4 pb-3" title={t('Processing, transfer and disposal facilities')} description={t('Capacity and utilisation across transfer stations, processing plants, composting units, bio-methanation and landfills. Low remaining life is flagged for landfill sites.')} />
+          <DataTable
+            rows={filteredFacilities}
+            columns={facilityColumns}
+            rowKey={(r) => r.id}
+            pageSize={10}
+            searchPlaceholder="Search facility"
+            initialSort={{ columnId: 'utilisation', direction: 'desc' }}
+            ariaLabel="Processing and disposal facilities"
+          />
+        </Card>
+        </div>
+
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
+        {recurringShortfallWards.length > 0 || isolatedDisruptionWards.length > 0 ? (
+          <Card tone="warn" className="flex items-start gap-3">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warn-700" aria-hidden />
+            <p className="text-xs leading-relaxed text-ink-700">
+              <span className="font-semibold">{t('{0} ward(s)', recurringShortfallWards.length)}</span>{' '}{t('show coverage below the')}{' '}{COVERAGE_STANDARD}{t('% standard with')}{' '}{RECURRING_MISSED_THRESHOLD}{' '}{t('or more missed collections in the last 7 days - a recurring pattern rather than a single-day disruption. A further')}{' '}<span className="font-semibold">{t('{0} ward(s)', isolatedDisruptionWards.length)}</span>{' '}{t('read below standard with few missed collections, consistent with an isolated, single-day disruption rather than a systemic shortfall.')}
+            </p>
+          </Card>
+        ) : null}
+
+          <Card flush>
+            <CardHeader className="px-4 pt-4 pb-3" title={t('Recurring hotspots')} description={t('Locations with repeated dumping or accumulation, ranked by recurrence count.')} />
+            {filteredHotspots.length === 0 ? (
+              <EmptyState className="m-4" title={t('No recurring hotspots match the current filters')} detail="No hotspot records were returned for the selected ward or search term." />
+            ) : (
+              <DataTable
+                rows={filteredHotspots}
+                columns={hotspotColumns}
+                rowKey={(r) => r.id}
+                pageSize={10}
+                searchPlaceholder="Search location or ward"
+                initialSort={{ columnId: 'recurrence', direction: 'desc' }}
+                ariaLabel="Recurring hotspots"
+              />
+            )}
+          </Card>
+
+          <Card>
+            <ChartFrame title={t('Diversion from landfill')} unit={t('Tonnes per day')} timeframe="Current modelled load" description={t('Processing, composting and bio-methanation load against landfill load. Transfer-station throughput is excluded as it passes onward to another facility.')} height={220}>
+              <DonutChart
+                data={[
+                  { label: t('Diverted (processing, composting, biogas)'), value: diversionLoad, colour: CHART_COLOURS.positive },
+                  { label: t('Landfilled'), value: landfillLoad, colour: CHART_COLOURS.critical },
+                ]}
+                centreValue={`${Math.round(diversionPct)}%`}
+                centreLabel="diverted"
+              />
+            </ChartFrame>
+            <p className="mt-2 text-[0.6875rem] leading-relaxed text-ink-400">
+              {t('{0} TPD diverted against {1} TPD landfilled, across facilities with a non-zero modelled load.', formatNumber(diversionLoad, 0), formatNumber(landfillLoad, 0))}
+            </p>
+          </Card>
+
+        </div>
       </div>
 
       <DemonstrationNotice />

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { FileSpreadsheet, ListChecks, Target } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { useServiceAction, useServiceQuery } from '@/hooks'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { queryKeys } from '@/app/queryClient'
 import { reconciliationService } from '@/services'
 import { ROUTES } from '@/config/navigation'
@@ -68,6 +69,12 @@ const FRESHNESS = {
 const generateReturn = (user: User) => reconciliationService.statutoryReturn(user)
 
 export function RecoveryPilotPage(): React.JSX.Element {
+  // The shell's masthead carries the screen's name; the page states the wording.
+  usePageMasthead(
+    t('Recovery Pilot & Statutory Return'),
+    t('Scope a single-ward recovery pilot on four measurable outputs, and generate the property tax return a corporation has to file against Finance Commission grant conditions. A pilot at this size sits inside the Commissioner\'s own administrative approval limit and produces the number that funds anything larger.'),
+  )
+
   const [wardId, setWardId] = useState<string>('')
   const [statutory, setStatutory] = useState<StatutoryReturn | null>(null)
   const [returnError, setReturnError] = useState<string | null>(null)
@@ -163,8 +170,6 @@ export function RecoveryPilotPage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('Governance & Finance')}
-        title={t('Recovery Pilot & Statutory Return')}
-        description={t('Scope a single-ward recovery pilot on four measurable outputs, and generate the property tax return a corporation has to file against Finance Commission grant conditions. A pilot at this size sits inside the Commissioner\'s own administrative approval limit and produces the number that funds anything larger.')}
         breadcrumbs={[{ label: t('Governance & Finance') }, { label: t('Recovery Pilot & Statutory Return') }]}
         freshness={FRESHNESS}
         actions={
@@ -205,6 +210,11 @@ export function RecoveryPilotPage(): React.JSX.Element {
         />
       ) : null}
 
+      {/* Two columns. The pilot as scoped — its scorecard, then the ranking
+          that sets where it should run — reads down the wide column; the
+          filing that pilot ultimately feeds stands beside it. */}
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
       {pilot ? (
         <Card tone="default">
           <CardHeader
@@ -266,7 +276,9 @@ export function RecoveryPilotPage(): React.JSX.Element {
           />
         </Card>
       ) : null}
+        </div>
 
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
       {/* --- Statutory return ------------------------------------------- */}
       <Card flush>
         <CardHeader
@@ -320,6 +332,8 @@ export function RecoveryPilotPage(): React.JSX.Element {
           </div>
         ) : null}
       </Card>
+        </div>
+      </div>
 
       <DemonstrationNotice />
     </PageBody>

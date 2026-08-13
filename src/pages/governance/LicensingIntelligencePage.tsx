@@ -21,6 +21,7 @@ import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { licenceService } from '@/services'
 import { useFilterStore } from '@/stores/ui.store'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { wardName, wardShortName } from '@/data/reference'
 import { LICENCE_CATEGORY_LABEL, type LicenceCategory, type LicenceRegister } from '@/types/civic-services'
 import type { DataFreshness } from '@/types/common'
@@ -60,6 +61,12 @@ const CATEGORY_COLOUR: Record<LicenceCategory, string> = {
 const CHARTER_THRESHOLD = 80
 
 export function LicensingIntelligencePage(): React.JSX.Element {
+  // The shell's masthead carries the screen's name; the page states the wording.
+  usePageMasthead(
+    t('Licences & Trade'),
+    t('The licensing regime behind the licence-fee revenue head - what is current, what has lapsed, how long a decision takes against the citizens\' charter, and what enforcement follows.'),
+  )
+
   const filters = useFilterStore((s) => s.filters)
 
   const registersQuery = useServiceQuery(queryKeys.licensing('registers'), (u) => licenceService.registers(u))
@@ -82,7 +89,7 @@ export function LicensingIntelligencePage(): React.JSX.Element {
   if (registersQuery.isLoading) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('Governance & Finance')} title={t('Licences & Trade')} breadcrumbs={[{ label: t('Governance & Finance') }, { label: t('Licences & Trade') }]} />
+        <PageHeader eyebrow={t('Governance & Finance')} breadcrumbs={[{ label: t('Governance & Finance') }, { label: t('Licences & Trade') }]} />
         <LoadingState variant="metrics" />
         <LoadingState variant="table" rows={8} />
       </PageBody>
@@ -91,7 +98,7 @@ export function LicensingIntelligencePage(): React.JSX.Element {
   if (registersQuery.error) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('Governance & Finance')} title={t('Licences & Trade')} breadcrumbs={[{ label: t('Governance & Finance') }, { label: t('Licences & Trade') }]} />
+        <PageHeader eyebrow={t('Governance & Finance')} breadcrumbs={[{ label: t('Governance & Finance') }, { label: t('Licences & Trade') }]} />
         <ErrorState detail={registersQuery.error.message} onRetry={() => registersQuery.refetch()} />
       </PageBody>
     )
@@ -202,8 +209,6 @@ export function LicensingIntelligencePage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('Governance & Finance')}
-        title={t('Licences & Trade')}
-        description={t('The licensing regime behind the licence-fee revenue head - what is current, what has lapsed, how long a decision takes against the citizens\' charter, and what enforcement follows.')}
         breadcrumbs={[{ label: t('Governance & Finance') }, { label: t('Licences & Trade') }]}
         freshness={freshness}
       />
@@ -255,7 +260,27 @@ export function LicensingIntelligencePage(): React.JSX.Element {
         />
       </MetricGrid>
 
-      <div className="grid gap-4 lg:grid-cols-[1fr_1.5fr]">
+      {/* Two columns. The register itself holds the wide column; the three
+          distributions drawn from it — by category, current against lapsed,
+          and by ward — read down beside it. */}
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+        <div className="min-w-0 xl:col-span-8">
+          <Card flush>
+            <CardHeader
+              bordered
+              icon={<ScrollText className="h-4 w-4" />}
+              title={t('Licence register by ward and category')}
+              description={t('Within your authorised ward scope.')}
+            />
+            {filtered.length === 0 ? (
+              <EmptyState title={t('No licence registers match the current filters')} detail="Clear a filter to widen the register." />
+            ) : (
+              <DataTable rows={filtered} columns={columns} rowKey={(r) => r.id} pageSize={15} />
+            )}
+          </Card>
+        </div>
+
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
         <Card className="flex flex-col">
           <p className="label-institutional mb-2">{t('Current licences by category')}</p>
           <div style={{ height: 210 }}>
@@ -288,7 +313,6 @@ export function LicensingIntelligencePage(): React.JSX.Element {
             />
           </div>
         </Card>
-      </div>
 
       <Card flush>
         <CardHeader
@@ -301,20 +325,8 @@ export function LicensingIntelligencePage(): React.JSX.Element {
           <RankedBarChart data={lapseByWard.map((w) => ({ label: wardShortName(w.wardId), value: w.lapsePct }))} unit="%" />
         </div>
       </Card>
-
-      <Card flush>
-        <CardHeader
-          bordered
-          icon={<ScrollText className="h-4 w-4" />}
-          title={t('Licence register by ward and category')}
-          description={t('Within your authorised ward scope.')}
-        />
-        {filtered.length === 0 ? (
-          <EmptyState title={t('No licence registers match the current filters')} detail="Clear a filter to widen the register." />
-        ) : (
-          <DataTable rows={filtered} columns={columns} rowKey={(r) => r.id} pageSize={15} />
-        )}
-      </Card>
+        </div>
+      </div>
     </PageBody>
   )
 }

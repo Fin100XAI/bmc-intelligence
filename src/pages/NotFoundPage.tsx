@@ -39,7 +39,7 @@ export function NotFoundPage(): React.JSX.Element {
         </span>
         <h2 className="text-base font-semibold text-ink-900">{t('This screen is not available')}</h2>
         <p className="mx-auto mt-1.5 max-w-md text-[0.8125rem] leading-relaxed text-ink-600">
-          {t('The path')}{' '}<span className="font-mono text-ink-800">{location.pathname}</span>{' '}{t('does not correspond to a registered instrument in this deployment, or falls outside the modules authorised for')}{' '}
+          {t('The path')}{' '}<span className="font-mono break-words text-ink-800">{location.pathname}</span>{' '}{t('does not correspond to a registered instrument in this deployment, or falls outside the modules authorised for')}{' '}
           {role ? role.name : 'the current principal'}{t('. No content has been withheld silently: routing outcomes of this kind are recorded like any other access decision.')}
         </p>
         <p className="mx-auto mt-3 max-w-md text-[0.6875rem] leading-relaxed text-ink-400">

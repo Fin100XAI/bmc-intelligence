@@ -21,6 +21,7 @@ import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { housingService } from '@/services'
 import { useFilterStore } from '@/stores/ui.store'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { wardName, wardShortName } from '@/data/reference'
 import {
   REDEVELOPMENT_STAGE_LABEL,
@@ -68,6 +69,11 @@ const SERVICE_THRESHOLD = 50
 export function HousingIntelligencePage(): React.JSX.Element {
   const filters = useFilterStore((s) => s.filters)
 
+  usePageMasthead(
+    t('Slum & Housing Intelligence'),
+    t('Service adequacy in the city\'s informal settlements, and the rehousing schemes running against them. A corporation\'s duty to provide water, sanitation and collection does not depend on how the land beneath a settlement is held.'),
+  )
+
   const settlementsQuery = useServiceQuery(queryKeys.housing('settlements'), (u) => housingService.settlements(u))
   const schemesQuery = useServiceQuery(queryKeys.housing('schemes'), (u) => housingService.schemes(u))
 
@@ -90,7 +96,7 @@ export function HousingIntelligencePage(): React.JSX.Element {
   if (settlementsQuery.isLoading || schemesQuery.isLoading) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('City Intelligence')} title={t('Slum & Housing Intelligence')} breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Slum & Housing Intelligence') }]} />
+        <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Slum & Housing Intelligence') }]} />
         <LoadingState variant="metrics" />
         <LoadingState variant="table" rows={8} />
       </PageBody>
@@ -99,7 +105,7 @@ export function HousingIntelligencePage(): React.JSX.Element {
   if (settlementsQuery.error || schemesQuery.error) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('City Intelligence')} title={t('Slum & Housing Intelligence')} breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Slum & Housing Intelligence') }]} />
+        <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Slum & Housing Intelligence') }]} />
         <ErrorState
           detail={(settlementsQuery.error ?? schemesQuery.error)?.message}
           onRetry={() => { void settlementsQuery.refetch(); void schemesQuery.refetch() }}
@@ -224,23 +230,11 @@ export function HousingIntelligencePage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('City Intelligence')}
-        title={t('Slum & Housing Intelligence')}
-        description={t('Service adequacy in the city\'s informal settlements, and the rehousing schemes running against them. A corporation\'s duty to provide water, sanitation and collection does not depend on how the land beneath a settlement is held.')}
         breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Slum & Housing Intelligence') }]}
         freshness={freshness}
       />
 
       <DemonstrationNotice />
-
-      <Card tone="info" className="flex items-start gap-3">
-        <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-govt-600" aria-hidden />
-        <div className="min-w-0">
-          <p className="text-[0.8125rem] font-semibold text-govt-800">{t('This page holds places, never people')}</p>
-          <p className="mt-1 text-xs leading-relaxed text-ink-600">
-            {t('Every figure here describes a settlement and the service it receives - water points, toilet seats, collection rounds, lighting. Nothing describes a resident. There is no household register, no name and no eligibility determination anywhere behind this page, and the service exposes no method that could return one. The recognition status shown is a service-entitlement classification used for planning delivery; it is not a finding about tenure, legality or anyone&apos;s rights.')}
-          </p>
-        </div>
-      </Card>
 
       <FilterBar show={['ward', 'search']} searchPlaceholder="Search settlements" />
 
@@ -268,83 +262,101 @@ export function HousingIntelligencePage(): React.JSX.Element {
         />
       </MetricGrid>
 
-      <div className="grid gap-4 lg:grid-cols-[1fr_1.4fr]">
-        <Card className="flex flex-col">
-          <p className="label-institutional mb-2">{t('Recognition status')}</p>
-          <div style={{ height: 200 }}>
-            <DonutChart
-              data={byRecognition.map((r) => ({
-                label: SETTLEMENT_RECOGNITION_LABEL[r.kind],
-                value: r.count,
-                colour: RECOGNITION_COLOUR[r.kind],
-              }))}
-              centreValue={String(filtered.length)}
-              centreLabel="settlements"
+      {/* Two columns. What the corporation serves, and what it has delivered
+          against, read down the wide column in that order. The standing note
+          on what this page is not, the ranking of least-served settlements and
+          the recognition mix stand beside them. */}
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
+          <Card flush>
+            <CardHeader
+              bordered
+              icon={<Home className="h-4 w-4" />}
+              title={t('Settlement register')}
+              description={t('Service coverage by settlement, within your authorised ward scope.')}
             />
-          </div>
-          <p className="mt-2 text-[0.6875rem] leading-relaxed text-ink-500">
-            {t('Recognition determines which delivery programmes a settlement is eligible for. It says nothing about the standing of anyone living there.')}
-          </p>
-        </Card>
+            {filtered.length === 0 ? (
+              <EmptyState title={t('No settlements match the current filters')} detail="Clear a filter to widen the register." />
+            ) : (
+              <DataTable rows={filtered} columns={settlementColumns} rowKey={(r) => r.id} pageSize={12} />
+            )}
+          </Card>
 
-        <Card flush className="flex flex-col">
-          <CardHeader
-            bordered
-            title={t('Least-served settlements')}
-            description={t('Ranked on the composite service index - water points, toilet seats, paved lanes and working lights.')}
-          />
-          <div className="px-4 pb-4" style={{ height: Math.max(210, worstServed.length * 26) }}>
-            <RankedBarChart
-              data={worstServed.map((s) => ({ label: s.name.slice(0, 22), value: s.serviceIndex }))}
-              higherIsWorse={false}
+          <MetricGrid columns={3}>
+            <MetricCard label={t('Tenements sanctioned')} value={formatNumber(tenementsSanctioned)} support={`${schemes.length} schemes`} icon={<Building className="h-4 w-4" />} />
+            <MetricCard
+              label={t('Tenements delivered')}
+              value={formatNumber(tenementsDelivered)}
+              support={tenementsSanctioned > 0 ? `${Math.round((tenementsDelivered / tenementsSanctioned) * 100)}% of sanctioned` : undefined}
+              progress={{ value: tenementsDelivered, max: Math.max(1, tenementsSanctioned) }}
             />
-          </div>
-        </Card>
+            <MetricCard
+              label={t('Households in transit')}
+              value={formatNumber(inTransit)}
+              support={t('Awaiting rehousing under a live scheme')}
+              tone={inTransit > 0 ? 'warn' : 'positive'}
+            />
+          </MetricGrid>
+
+          <Card flush>
+            <CardHeader
+              bordered
+              icon={<Building className="h-4 w-4" />}
+              title={t('Rehousing schemes')}
+              description={t('Sanctioned schemes and what has actually been delivered against them.')}
+            />
+            {schemes.length === 0 ? (
+              <EmptyState title={t('No rehousing schemes in scope')} />
+            ) : (
+              <DataTable rows={schemes} columns={schemeColumns} rowKey={(r) => r.id} pageSize={10} />
+            )}
+          </Card>
+        </div>
+
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
+          <Card tone="info" className="flex items-start gap-3">
+            <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-govt-600" aria-hidden />
+            <div className="min-w-0">
+              <p className="text-[0.8125rem] font-semibold text-govt-800">{t('This page holds places, never people')}</p>
+              <p className="mt-1 text-xs leading-relaxed text-ink-600">
+                {t('Every figure here describes a settlement and the service it receives - water points, toilet seats, collection rounds, lighting. Nothing describes a resident. There is no household register, no name and no eligibility determination anywhere behind this page, and the service exposes no method that could return one. The recognition status shown is a service-entitlement classification used for planning delivery; it is not a finding about tenure, legality or anyone&apos;s rights.')}
+              </p>
+            </div>
+          </Card>
+
+          <Card flush className="flex flex-col">
+            <CardHeader
+              bordered
+              title={t('Least-served settlements')}
+              description={t('Ranked on the composite service index - water points, toilet seats, paved lanes and working lights.')}
+            />
+            <div className="px-4 pb-4" style={{ height: Math.max(210, worstServed.length * 26) }}>
+              <RankedBarChart
+                data={worstServed.map((s) => ({ label: s.name.slice(0, 22), value: s.serviceIndex }))}
+                higherIsWorse={false}
+              />
+            </div>
+          </Card>
+
+          <Card className="flex flex-col">
+            <p className="label-institutional mb-2">{t('Recognition status')}</p>
+            <div style={{ height: 200 }}>
+              <DonutChart
+                data={byRecognition.map((r) => ({
+                  label: SETTLEMENT_RECOGNITION_LABEL[r.kind],
+                  value: r.count,
+                  colour: RECOGNITION_COLOUR[r.kind],
+                }))}
+                centreValue={String(filtered.length)}
+                centreLabel="settlements"
+              />
+            </div>
+            <p className="mt-2 text-[0.6875rem] leading-relaxed text-ink-500">
+              {t('Recognition determines which delivery programmes a settlement is eligible for. It says nothing about the standing of anyone living there.')}
+            </p>
+          </Card>
+        </div>
       </div>
-
-      <Card flush>
-        <CardHeader
-          bordered
-          icon={<Home className="h-4 w-4" />}
-          title={t('Settlement register')}
-          description={t('Service coverage by settlement, within your authorised ward scope.')}
-        />
-        {filtered.length === 0 ? (
-          <EmptyState title={t('No settlements match the current filters')} detail="Clear a filter to widen the register." />
-        ) : (
-          <DataTable rows={filtered} columns={settlementColumns} rowKey={(r) => r.id} pageSize={12} />
-        )}
-      </Card>
-
-      <MetricGrid columns={3}>
-        <MetricCard label={t('Tenements sanctioned')} value={formatNumber(tenementsSanctioned)} support={`${schemes.length} schemes`} icon={<Building className="h-4 w-4" />} />
-        <MetricCard
-          label={t('Tenements delivered')}
-          value={formatNumber(tenementsDelivered)}
-          support={tenementsSanctioned > 0 ? `${Math.round((tenementsDelivered / tenementsSanctioned) * 100)}% of sanctioned` : undefined}
-          progress={{ value: tenementsDelivered, max: Math.max(1, tenementsSanctioned) }}
-        />
-        <MetricCard
-          label={t('Households in transit')}
-          value={formatNumber(inTransit)}
-          support={t('Awaiting rehousing under a live scheme')}
-          tone={inTransit > 0 ? 'warn' : 'positive'}
-        />
-      </MetricGrid>
-
-      <Card flush>
-        <CardHeader
-          bordered
-          icon={<Building className="h-4 w-4" />}
-          title={t('Rehousing schemes')}
-          description={t('Sanctioned schemes and what has actually been delivered against them.')}
-        />
-        {schemes.length === 0 ? (
-          <EmptyState title={t('No rehousing schemes in scope')} />
-        ) : (
-          <DataTable rows={schemes} columns={schemeColumns} rowKey={(r) => r.id} pageSize={10} />
-        )}
-      </Card>
     </PageBody>
   )
 }

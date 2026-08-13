@@ -42,6 +42,7 @@ import { ChartFrame, ContributionBars, CategoryBarChart, HeatmapMatrix, MiniBar,
 import { CityMap } from '@/components/map/CityMap'
 import { useServiceQuery, useQueryParamState, useBoundedSelection } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { wardService } from '@/services'
 import type { ComparisonRow } from '@/services'
 import { WARD_INDEX_WEIGHTS } from '@/domains'
@@ -104,28 +105,58 @@ function resolveWardId(
 }
 
 export function WardIntelligencePage(): React.JSX.Element {
+  usePageMasthead(
+    t('Ward Intelligence'),
+    t('A coherent operational picture of every ward - citizen services, infrastructure condition, public health signal and capital delivery - together with an explainable composite risk index and a side-by-side comparison across wards.'),
+  )
+
   const user = useCurrentUser()
   const [tab, setTab] = useState<WardTab>('overview')
   const [wardParam, setWardParam] = useQueryParamState('ward', '')
   const contextWardId = useContextStore((s) => s.wardId)
   const setContextWard = useContextStore((s) => s.setWard)
 
+  /**
+   * Which shared selection the `?ward=` parameter was recorded against.
+   *
+   * The parameter outranks the shared selection so a link reopens in the
+   * context it was sent in - but this page WRITES that parameter itself on
+   * every render pass. Once written, it outranked the command bar for the rest
+   * of the session: changing the ward context at the top of the shell moved
+   * `useContextStore.wardId` and the screen carried on rendering the ward the
+   * page had stamped into the URL, identically for all wards.
+   *
+   * Recording the selection the parameter belongs to makes the two compose the
+   * same way the water drilldown does: the parameter governs while the shared
+   * selection it was taken against still stands, and a new selection in the
+   * command bar supersedes it.
+   */
+  const [wardParamContext, setWardParamContext] = useState<string | null>(contextWardId)
+  const wardParamIsCurrent = wardParamContext === contextWardId
+
   const wardsQuery = useServiceQuery(queryKeys.wards(), (u) => wardService.list(u))
   const wards = wardsQuery.data ?? []
-  const { id: resolvedWardId, chosen: wardWasChosen } = resolveWardId(wardParam, contextWardId, user?.wardId, wards)
+  const { id: resolvedWardId, chosen: wardWasChosen } = resolveWardId(
+    wardParamIsCurrent ? wardParam : '',
+    contextWardId,
+    user?.wardId,
+    wards,
+  )
 
   useEffect(() => {
     if (!resolvedWardId) return
+    if (wardParamContext !== contextWardId) setWardParamContext(contextWardId)
     if (wardParam !== resolvedWardId) setWardParam(resolvedWardId)
     // Only a ward somebody asked for is published to the shared selection.
     // The fallback ward this screen opens on is a presentation default, and
     // publishing it would filter every other page in the platform to a ward
     // the operator never chose.
     if (wardWasChosen && contextWardId !== resolvedWardId) setContextWard(resolvedWardId)
-  }, [resolvedWardId, wardWasChosen, wardParam, contextWardId, setWardParam, setContextWard])
+  }, [resolvedWardId, wardWasChosen, wardParam, wardParamContext, contextWardId, setWardParam, setContextWard])
 
   function selectWard(id: string): void {
     setWardParam(id)
+    setWardParamContext(id)
     setContextWard(id)
   }
 
@@ -142,7 +173,7 @@ export function WardIntelligencePage(): React.JSX.Element {
   if (wardsQuery.isLoading) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('City Intelligence')} title={t('Ward Intelligence')} breadcrumbs={breadcrumbs} />
+        <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={breadcrumbs} />
         <LoadingState variant="metrics" />
         <LoadingState variant="block" />
       </PageBody>
@@ -151,7 +182,7 @@ export function WardIntelligencePage(): React.JSX.Element {
   if (wardsQuery.error) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('City Intelligence')} title={t('Ward Intelligence')} breadcrumbs={breadcrumbs} />
+        <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={breadcrumbs} />
         <ErrorState detail={wardsQuery.error.message} onRetry={() => wardsQuery.refetch()} />
       </PageBody>
     )
@@ -159,7 +190,7 @@ export function WardIntelligencePage(): React.JSX.Element {
   if (wards.length === 0) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('City Intelligence')} title={t('Ward Intelligence')} breadcrumbs={breadcrumbs} />
+        <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={breadcrumbs} />
         <EmptyState
           title={t('No authorised wards')}
           detail="Your assigned role does not currently hold view access to any ward. Contact Access Governance if this is unexpected."
@@ -175,8 +206,6 @@ export function WardIntelligencePage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('City Intelligence')}
-        title={t('Ward Intelligence')}
-        description={t('A coherent operational picture of every ward - citizen services, infrastructure condition, public health signal and capital delivery - together with an explainable composite risk index and a side-by-side comparison across wards.')}
         breadcrumbs={breadcrumbs}
         freshness={freshness}
         controls={
@@ -280,7 +309,7 @@ function WardOverviewTab({
             <ScoreDial score={profile.healthScore} label="/100" caption={t('Operational health')} />
             <ScoreDial score={profile.riskScore} label="/100" caption={t('Composite risk')} higherIsBetter={false} />
           </div>
-          <MetricGrid columns={4} className="flex-1">
+          <MetricGrid columns={4} className="min-w-0 flex-1">
             <MetricCard
               label={t('Open complaints')}
               value={profile.services.complaints.open}
@@ -311,358 +340,367 @@ function WardOverviewTab({
         </div>
       </Card>
 
-      {/* Citizen Services -------------------------------------------------- */}
-      <Card>
-        <CardHeader
-          icon={<Users className="h-4 w-4" />}
-          title={t('Citizen Services')}
-          description={t('Complaint volumes, SLA compliance and repeat-complaint rate by service category.')}
-        />
-        <MetricGrid columns={4} className="mt-3">
-          <MetricCard size="sm" label={t('Open')} value={profile.services.complaints.open} />
-          <MetricCard
-            size="sm"
-            label={t('SLA-breached')}
-            value={profile.services.complaints.slaBreached}
-            tone={profile.services.complaints.slaBreached > 0 ? 'critical' : 'default'}
+      {/* Two columns, read downward. Services, infrastructure and delivery —
+          what the ward officer answers for — carry the width; where the ward
+          sits, what is open against it now and its health signal read down
+          the column beside. */}
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
+        {/* Citizen Services -------------------------------------------------- */}
+        <Card>
+          <CardHeader
+            icon={<Users className="h-4 w-4" />}
+            title={t('Citizen Services')}
+            description={t('Complaint volumes, SLA compliance and repeat-complaint rate by service category.')}
           />
-          <MetricCard size="sm" label={t('Resolved rate')} value={formatPercent(profile.services.complaints.resolvedRate)} />
-          <MetricCard
-            size="sm"
-            label={t('Repeat rate')}
-            value={formatPercent(profile.services.complaints.repeatRate)}
-            tone={profile.services.complaints.repeatRate > 15 ? 'warn' : 'default'}
-          />
-        </MetricGrid>
-        {profile.services.byCategory.length > 0 ? (
-          <div className="mt-4">
-            <ChartFrame
-              title={t('SLA compliance by category')}
-              unit={t('%, higher is better')}
-              timeframe="Current reporting period"
-              height={Math.max(120, profile.services.byCategory.length * 28)}
-            >
-              <RankedBarChart
-                data={profile.services.byCategory.map((c) => ({
-                  label: COMPLAINT_CATEGORY_LABEL[c.category],
-                  value: c.slaCompliancePct,
-                }))}
-                unit="%"
-                higherIsWorse={false}
-              />
-            </ChartFrame>
-          </div>
-        ) : null}
-        {profile.services.worstCategory ? (
-          <p className="mt-3 rounded-md border border-warn-200 bg-warn-50/60 px-3 py-2 text-xs leading-relaxed text-warn-700">
-            {t('Weakest category:')}{' '}<span className="font-semibold">{COMPLAINT_CATEGORY_LABEL[profile.services.worstCategory.category]}</span>{' '}
-            at {formatPercent(profile.services.worstCategory.slaCompliancePct)}{' '}{t('SLA compliance,')}{' '}{profile.services.worstCategory.open}{' '}{t('open, average resolution')}{' '}{formatDuration(profile.services.worstCategory.avgResolutionHours)}.
-          </p>
-        ) : null}
-        {profile.recentComplaints.length > 0 ? (
-          <div className="mt-4 border-t border-ink-100 pt-3">
-            <p className="label-institutional mb-1.5">{t('Recent complaints')}</p>
-            <ul className="divide-y divide-ink-50">
-              {profile.recentComplaints.slice(0, 6).map((c) => (
-                <li key={c.id} className="flex flex-wrap items-center justify-between gap-2 py-1.5 text-xs">
-                  <span className="min-w-0 truncate text-ink-700">
-                    <span className="font-mono text-ink-400">{c.reference}</span> {c.summary}
-                  </span>
-                  <span className="flex shrink-0 items-center gap-1.5">
-                    <SeverityBadge severity={c.severity} />
-                    {c.slaBreached ? <Badge tone="critical">{t('SLA breached')}</Badge> : <Badge tone="muted">{titleCase(c.status)}</Badge>}
-                    <span className="text-ink-400">{formatRelative(c.raisedAt)}</span>
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ) : null}
-      </Card>
-
-      {/* Infrastructure ------------------------------------------------------ */}
-      <Card>
-        <CardHeader
-          icon={<Droplets className="h-4 w-4" />}
-          title={t('Infrastructure')}
-          description={t('Water supply, solid waste, road condition, drainage readiness and municipal asset condition.')}
-        />
-        <div className="mt-3 grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <div className="rounded-lg border border-ink-100 p-3">
-            <p className="label-institutional mb-2 flex items-center gap-1.5">
-              <Droplets className="h-3.5 w-3.5" />{' '}{t('Water supply')}{profile.water ? ` · ${profile.water.zoneName}` : ''}
-            </p>
-            {profile.water ? (
-              <>
-                <MetricGrid columns={2}>
-                  <MetricCard
-                    size="sm"
-                    label={t('Supply vs demand')}
-                    value={formatNumber(profile.water.supplyMld)}
-                    unit="MLD"
-                    support={t('of {0} MLD demand', formatNumber(profile.water.demandMld))}
-                  />
-                  <MetricCard size="sm" label={t('Reliability')} value={profile.water.reliabilityScore} unit="/100" />
-                </MetricGrid>
-                <DefinitionList className="mt-2">
-                  <DefinitionRow label={t('Pressure')}>{profile.water.pressureM} m</DefinitionRow>
-                  <DefinitionRow label={t('Supply hours')}>{t('{0} h/day', profile.water.supplyHours)}</DefinitionRow>
-                  <DefinitionRow label={t('Non-revenue water')}>{formatPercent(profile.water.nrwPct)}</DefinitionRow>
-                  <DefinitionRow label={t('Quality compliance')}>{formatPercent(profile.water.qualityCompliancePct)}</DefinitionRow>
-                  <DefinitionRow label={t('Tanker trips/day')}>{profile.water.tankerTripsPerDay}</DefinitionRow>
-                </DefinitionList>
-                {profile.water.anomalies.length > 0 ? (
-                  <p className="mt-2 text-[0.6875rem] leading-relaxed text-warn-700">{profile.water.anomalies.join(' · ')}</p>
-                ) : null}
-              </>
-            ) : (
-              <EmptyState compact title={t('No water zone mapped')} detail="This ward is not currently mapped to a water distribution zone record." />
-            )}
-          </div>
-
-          <div className="rounded-lg border border-ink-100 p-3">
-            <p className="label-institutional mb-2 flex items-center gap-1.5">
-              <Trash2 className="h-3.5 w-3.5" />{' '}{t('Solid waste')}
-            </p>
-            {profile.waste ? (
-              <DefinitionList>
-                <DefinitionRow label={t('Coverage')}>{formatPercent(profile.waste.coveragePct)}</DefinitionRow>
-                <DefinitionRow label={t('Segregation at source')}>{formatPercent(profile.waste.segregationPct)}</DefinitionRow>
-                <DefinitionRow label={t('Missed collections (7d)')}>{profile.waste.missedCollections7d}</DefinitionRow>
-                <DefinitionRow label={t('Hotspots')}>{profile.waste.hotspots}</DefinitionRow>
-                <DefinitionRow label={t('Vehicles deployed')}>{profile.waste.vehiclesDeployed}</DefinitionRow>
-                <DefinitionRow label={t('State')}>
-                  <StateBadge state={profile.waste.state} />
-                </DefinitionRow>
-              </DefinitionList>
-            ) : (
-              <EmptyState compact title={t('No waste performance record')} detail="No solid waste performance record is mapped to this ward." />
-            )}
-          </div>
-
-          <div className="rounded-lg border border-ink-100 p-3">
-            <p className="label-institutional mb-2">{t('Road network')}</p>
-            <div className="flex items-baseline gap-2">
-              <span className={cn('numeric text-2xl font-semibold', SCORE_TONE_TEXT[toneForScore(profile.roads.conditionIndex)])}>
-                {profile.roads.conditionIndex}
-              </span>
-              <span className="text-xs text-ink-500">/100 condition index · {profile.roads.openDefects}{' '}{t('high-priority defects')}</span>
-            </div>
-            {profile.roads.topDefects.length > 0 ? (
-              <ul className="mt-2.5 space-y-1.5">
-                {profile.roads.topDefects.slice(0, 4).map((d) => (
-                  <li key={d.id} className="flex items-center justify-between gap-2 text-[0.6875rem]">
-                    <span className="truncate text-ink-600">
-                      {titleCase(d.type)} · {titleCase(d.status)}
-                    </span>
-                    <SeverityBadge severity={d.severity} />
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="mt-2 text-[0.6875rem] text-ink-400">{t('No high-priority defects currently recorded.')}</p>
-            )}
-          </div>
-
-          <div className="rounded-lg border border-ink-100 p-3">
-            <p className="label-institutional mb-2 flex items-center gap-1.5">
-              <Waves className="h-3.5 w-3.5" />{' '}{t('Drainage & flood readiness')}
-            </p>
-            <DefinitionList>
-              <DefinitionRow label={t('Blockage risk')}>{profile.drainage.riskScore}/100</DefinitionRow>
-              <DefinitionRow label={t('Monsoon readiness')}>{profile.drainage.readinessScore}/100</DefinitionRow>
-              <DefinitionRow label={t('Desilting completion')}>{formatPercent(profile.drainage.desiltingPct)}</DefinitionRow>
-              <DefinitionRow label={t('Pump readiness')}>{formatPercent(profile.drainage.pumpReadiness)}</DefinitionRow>
-              <DefinitionRow label={t('Chronic flood spots')}>{profile.drainage.floodSpots}</DefinitionRow>
-            </DefinitionList>
-            {profile.drainage.gaps.length > 0 ? (
-              <ul className="mt-2 space-y-1">
-                {profile.drainage.gaps.map((g, i) => (
-                  <li key={i} className="flex items-start gap-1.5 text-[0.6875rem] leading-relaxed text-warn-700">
-                    <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
-                    {g}
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-          </div>
-        </div>
-
-        <div className="mt-4 border-t border-ink-100 pt-3">
-          <p className="label-institutional mb-2">{t('Municipal assets')}</p>
-          <MetricGrid columns={4}>
-            <MetricCard size="sm" label={t('Total assets')} value={profile.assets.total} />
-            <MetricCard size="sm" label={t('Poor condition')} value={profile.assets.poorCondition} tone={profile.assets.poorCondition > 0 ? 'warn' : 'default'} />
-            <MetricCard size="sm" label={t('Past design life')} value={profile.assets.pastDesignLife} />
+          <MetricGrid columns={4} className="mt-3">
+            <MetricCard size="sm" label={t('Open')} value={profile.services.complaints.open} />
             <MetricCard
               size="sm"
-              label={t('Inspections overdue')}
-              value={profile.assets.inspectionsOverdue}
-              tone={profile.assets.inspectionsOverdue > 0 ? 'critical' : 'default'}
+              label={t('SLA-breached')}
+              value={profile.services.complaints.slaBreached}
+              tone={profile.services.complaints.slaBreached > 0 ? 'critical' : 'default'}
+            />
+            <MetricCard size="sm" label={t('Resolved rate')} value={formatPercent(profile.services.complaints.resolvedRate)} />
+            <MetricCard
+              size="sm"
+              label={t('Repeat rate')}
+              value={formatPercent(profile.services.complaints.repeatRate)}
+              tone={profile.services.complaints.repeatRate > 15 ? 'warn' : 'default'}
             />
           </MetricGrid>
-          <p className="mt-2 text-[0.6875rem] text-ink-500">{t('Replacement value at risk: {0}', formatCrore(profile.assets.replacementValueCrore))}</p>
-          {profile.assets.items.length > 0 ? (
-            <ul className="mt-2 divide-y divide-ink-50">
-              {profile.assets.items.slice(0, 5).map((a) => (
-                <li key={a.id} className="flex flex-wrap items-center justify-between gap-2 py-1.5 text-xs">
-                  <span className="min-w-0 truncate text-ink-700">
-                    {a.name} <span className="text-ink-400">· {ASSET_CATEGORY_LABEL[a.category]}</span>
-                  </span>
-                  <span className="flex shrink-0 items-center gap-1.5">
-                    <MiniBar value={a.conditionIndex} width={44} />
-                    <span className="numeric font-semibold text-ink-700">{a.conditionIndex}</span>
-                    <StateBadge state={a.state} />
-                  </span>
-                </li>
-              ))}
-            </ul>
+          {profile.services.byCategory.length > 0 ? (
+            <div className="mt-4">
+              <ChartFrame
+                title={t('SLA compliance by category')}
+                unit={t('%, higher is better')}
+                timeframe="Current reporting period"
+                height={Math.max(120, profile.services.byCategory.length * 28)}
+              >
+                <RankedBarChart
+                  data={profile.services.byCategory.map((c) => ({
+                    label: COMPLAINT_CATEGORY_LABEL[c.category],
+                    value: c.slaCompliancePct,
+                  }))}
+                  unit="%"
+                  higherIsWorse={false}
+                />
+              </ChartFrame>
+            </div>
           ) : null}
-        </div>
-      </Card>
-
-      {/* Health & Environment -------------------------------------------- */}
-      <Card>
-        <CardHeader
-          icon={<HeartPulse className="h-4 w-4" />}
-          title={t('Health & Environment')}
-          description={t('Aggregate outbreak signal strength by disease indicator. No patient-level data of any kind is modelled.')}
-        />
-        {profile.health.topSignals.length === 0 ? (
-          <EmptyState compact className="mt-3" title={t('No elevated signals')} detail="No outbreak signal above the reporting threshold is currently recorded for this ward." />
-        ) : (
-          <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
-            {profile.health.topSignals.map((sig) => (
-              <div key={sig.id} className="rounded-lg border border-ink-100 p-3">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs font-semibold text-ink-800">{DISEASE_LABEL[sig.disease]}</span>
-                  <ConfidenceBadge confidence={sig.confidence} />
-                </div>
-                <p className={cn('numeric mt-1.5 text-xl font-semibold', SCORE_TONE_TEXT[toneForScore(sig.outbreakSignal, false)])}>
-                  {sig.outbreakSignal}
-                  <span className="ml-0.5 text-xs font-normal text-ink-400">/100</span>
-                </p>
-                <p className="mt-0.5 text-[0.6875rem] text-ink-500">
-                  {t('{0} cases this period · {1} vs prior', sig.casesReported, formatDelta(sig.changePct))}
-                </p>
-                {sig.correlates.length > 0 ? (
-                  <p className="mt-1.5 text-[0.6875rem] leading-relaxed text-ink-400">{t('Correlates observed: {0}', sig.correlates.join(', '))}</p>
-                ) : null}
-              </div>
-            ))}
-          </div>
-        )}
-      </Card>
-
-      {/* Delivery & Finance ------------------------------------------------ */}
-      <Card>
-        <CardHeader
-          icon={<Banknote className="h-4 w-4" />}
-          title={t('Delivery & Finance')}
-          description={t('Capital works portfolio, revenue realisation and budget utilisation for the ward.')}
-        />
-        <MetricGrid columns={4} className="mt-3">
-          <MetricCard size="sm" label={t('Sanctioned')} value={formatCrore(profile.projects.sanctionedCrore)} />
-          <MetricCard size="sm" label={t('Paid to date')} value={formatCrore(profile.projects.paidCrore)} />
-          <MetricCard size="sm" label={t('Collection efficiency')} value={formatPercent(profile.finance.collectionEfficiencyPct)} />
-          <MetricCard size="sm" label={t('Budget utilisation')} value={formatPercent(profile.finance.budgetUtilisationPct)} />
-        </MetricGrid>
-        <DefinitionList className="mt-3">
-          <DefinitionRow label={t('Revenue target vs collected')}>
-            {formatCrore(profile.finance.revenueCollectedCrore)} of {formatCrore(profile.finance.revenueTargetCrore)}
-          </DefinitionRow>
-          <DefinitionRow label={t('Arrears')}>{formatCrore(profile.finance.arrearsCrore)}</DefinitionRow>
-          <DefinitionRow label={t('Capital budget')}>
-            {t('{0} spent of {1} allocated', formatCrore(profile.finance.budgetSpentCrore), formatCrore(profile.finance.budgetAllocatedCrore))}
-          </DefinitionRow>
-        </DefinitionList>
-        {profile.projects.items.length > 0 ? (
-          <div className="mt-4 border-t border-ink-100 pt-3">
-            <p className="label-institutional mb-2">
-              {t('Capital works - {0} delayed, {1} at risk of {2}', profile.projects.delayed, profile.projects.atRisk, profile.projects.total)}
+          {profile.services.worstCategory ? (
+            <p className="mt-3 rounded-md border border-warn-200 bg-warn-50/60 px-3 py-2 text-xs leading-relaxed text-warn-700">
+              {t('Weakest category:')}{' '}<span className="font-semibold">{COMPLAINT_CATEGORY_LABEL[profile.services.worstCategory.category]}</span>{' '}
+              at {formatPercent(profile.services.worstCategory.slaCompliancePct)}{' '}{t('SLA compliance,')}{' '}{profile.services.worstCategory.open}{' '}{t('open, average resolution')}{' '}{formatDuration(profile.services.worstCategory.avgResolutionHours)}.
             </p>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-              {profile.projects.items.slice(0, 4).map((p) => (
-                <ProjectCard key={p.id} project={p} />
-              ))}
+          ) : null}
+          {profile.recentComplaints.length > 0 ? (
+            <div className="mt-4 border-t border-ink-100 pt-3">
+              <p className="label-institutional mb-1.5">{t('Recent complaints')}</p>
+              <ul className="divide-y divide-ink-50">
+                {profile.recentComplaints.slice(0, 6).map((c) => (
+                  <li key={c.id} className="flex flex-wrap items-center justify-between gap-2 py-1.5 text-xs">
+                    <span className="min-w-0 truncate text-ink-700">
+                      <span className="font-mono text-ink-400">{c.reference}</span> {c.summary}
+                    </span>
+                    <span className="flex shrink-0 items-center gap-1.5">
+                      <SeverityBadge severity={c.severity} />
+                      {c.slaBreached ? <Badge tone="critical">{t('SLA breached')}</Badge> : <Badge tone="muted">{titleCase(c.status)}</Badge>}
+                      <span className="text-ink-400">{formatRelative(c.raisedAt)}</span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+        </Card>
+
+        {/* Infrastructure ------------------------------------------------------ */}
+        <Card>
+          <CardHeader
+            icon={<Droplets className="h-4 w-4" />}
+            title={t('Infrastructure')}
+            description={t('Water supply, solid waste, road condition, drainage readiness and municipal asset condition.')}
+          />
+          <div className="mt-3 grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <div className="rounded-lg border border-ink-100 p-3">
+              <p className="label-institutional mb-2 flex items-center gap-1.5">
+                <Droplets className="h-3.5 w-3.5" />{' '}{t('Water supply')}{profile.water ? ` · ${profile.water.zoneName}` : ''}
+              </p>
+              {profile.water ? (
+                <>
+                  <MetricGrid columns={2}>
+                    <MetricCard
+                      size="sm"
+                      label={t('Supply vs demand')}
+                      value={formatNumber(profile.water.supplyMld)}
+                      unit="MLD"
+                      support={t('of {0} MLD demand', formatNumber(profile.water.demandMld))}
+                    />
+                    <MetricCard size="sm" label={t('Reliability')} value={profile.water.reliabilityScore} unit="/100" />
+                  </MetricGrid>
+                  <DefinitionList className="mt-2">
+                    <DefinitionRow label={t('Pressure')}>{profile.water.pressureM} m</DefinitionRow>
+                    <DefinitionRow label={t('Supply hours')}>{t('{0} h/day', profile.water.supplyHours)}</DefinitionRow>
+                    <DefinitionRow label={t('Non-revenue water')}>{formatPercent(profile.water.nrwPct)}</DefinitionRow>
+                    <DefinitionRow label={t('Quality compliance')}>{formatPercent(profile.water.qualityCompliancePct)}</DefinitionRow>
+                    <DefinitionRow label={t('Tanker trips/day')}>{profile.water.tankerTripsPerDay}</DefinitionRow>
+                  </DefinitionList>
+                  {profile.water.anomalies.length > 0 ? (
+                    <p className="mt-2 text-[0.6875rem] leading-relaxed text-warn-700">{profile.water.anomalies.join(' · ')}</p>
+                  ) : null}
+                </>
+              ) : (
+                <EmptyState compact title={t('No water zone mapped')} detail="This ward is not currently mapped to a water distribution zone record." />
+              )}
+            </div>
+
+            <div className="rounded-lg border border-ink-100 p-3">
+              <p className="label-institutional mb-2 flex items-center gap-1.5">
+                <Trash2 className="h-3.5 w-3.5" />{' '}{t('Solid waste')}
+              </p>
+              {profile.waste ? (
+                <DefinitionList>
+                  <DefinitionRow label={t('Coverage')}>{formatPercent(profile.waste.coveragePct)}</DefinitionRow>
+                  <DefinitionRow label={t('Segregation at source')}>{formatPercent(profile.waste.segregationPct)}</DefinitionRow>
+                  <DefinitionRow label={t('Missed collections (7d)')}>{profile.waste.missedCollections7d}</DefinitionRow>
+                  <DefinitionRow label={t('Hotspots')}>{profile.waste.hotspots}</DefinitionRow>
+                  <DefinitionRow label={t('Vehicles deployed')}>{profile.waste.vehiclesDeployed}</DefinitionRow>
+                  <DefinitionRow label={t('State')}>
+                    <StateBadge state={profile.waste.state} />
+                  </DefinitionRow>
+                </DefinitionList>
+              ) : (
+                <EmptyState compact title={t('No waste performance record')} detail="No solid waste performance record is mapped to this ward." />
+              )}
+            </div>
+
+            <div className="rounded-lg border border-ink-100 p-3">
+              <p className="label-institutional mb-2">{t('Road network')}</p>
+              <div className="flex items-baseline gap-2">
+                <span className={cn('numeric text-2xl font-semibold', SCORE_TONE_TEXT[toneForScore(profile.roads.conditionIndex)])}>
+                  {profile.roads.conditionIndex}
+                </span>
+                <span className="text-xs text-ink-500">/100 condition index · {profile.roads.openDefects}{' '}{t('high-priority defects')}</span>
+              </div>
+              {profile.roads.topDefects.length > 0 ? (
+                <ul className="mt-2.5 space-y-1.5">
+                  {profile.roads.topDefects.slice(0, 4).map((d) => (
+                    <li key={d.id} className="flex items-center justify-between gap-2 text-[0.6875rem]">
+                      <span className="truncate text-ink-600">
+                        {titleCase(d.type)} · {titleCase(d.status)}
+                      </span>
+                      <SeverityBadge severity={d.severity} />
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-2 text-[0.6875rem] text-ink-400">{t('No high-priority defects currently recorded.')}</p>
+              )}
+            </div>
+
+            <div className="rounded-lg border border-ink-100 p-3">
+              <p className="label-institutional mb-2 flex items-center gap-1.5">
+                <Waves className="h-3.5 w-3.5" />{' '}{t('Drainage & flood readiness')}
+              </p>
+              <DefinitionList>
+                <DefinitionRow label={t('Blockage risk')}>{profile.drainage.riskScore}/100</DefinitionRow>
+                <DefinitionRow label={t('Monsoon readiness')}>{profile.drainage.readinessScore}/100</DefinitionRow>
+                <DefinitionRow label={t('Desilting completion')}>{formatPercent(profile.drainage.desiltingPct)}</DefinitionRow>
+                <DefinitionRow label={t('Pump readiness')}>{formatPercent(profile.drainage.pumpReadiness)}</DefinitionRow>
+                <DefinitionRow label={t('Chronic flood spots')}>{profile.drainage.floodSpots}</DefinitionRow>
+              </DefinitionList>
+              {profile.drainage.gaps.length > 0 ? (
+                <ul className="mt-2 space-y-1">
+                  {profile.drainage.gaps.map((g, i) => (
+                    <li key={i} className="flex items-start gap-1.5 text-[0.6875rem] leading-relaxed text-warn-700">
+                      <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
+                      {g}
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
             </div>
           </div>
-        ) : null}
-        {profile.workforce.length > 0 || profile.contractors.length > 0 ? (
-          <div className="mt-4 grid grid-cols-1 gap-4 border-t border-ink-100 pt-3 lg:grid-cols-2">
-            {profile.workforce.length > 0 ? (
-              <div>
-                <p className="label-institutional mb-1.5">{t('Workforce')}</p>
-                <ul className="divide-y divide-ink-50">
-                  {profile.workforce.slice(0, 5).map((w) => (
-                    <li key={w.id} className="flex items-center justify-between gap-2 py-1.5 text-xs">
-                      <span className="text-ink-700">{w.cadre}</span>
-                      <span className="numeric text-ink-500">
-                        {w.deployed}/{w.sanctioned}{' '}{t('deployed ·')}{' '}{formatPercent(w.vacancyPct)} vacant
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
-            {profile.contractors.length > 0 ? (
-              <div>
-                <p className="label-institutional mb-1.5">{t('Contractors active in ward')}</p>
-                <ul className="divide-y divide-ink-50">
-                  {profile.contractors.slice(0, 5).map((c) => (
-                    <li key={c.id} className="flex items-center justify-between gap-2 py-1.5 text-xs">
-                      <span className="min-w-0 truncate text-ink-700">{c.name}</span>
-                      <span className="numeric shrink-0 text-ink-500">
-                        {t('{0} contract(s) · perf. {1}/100', c.activeContracts, c.performanceIndex)}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
-          </div>
-        ) : null}
-      </Card>
 
-      {/* Map, incidents ----------------------------------------------------- */}
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <Card>
-          <CardHeader title={t('Ward location')} description={t('Illustrative spatial position within the city; shading shows composite risk across all wards. Click another ward to change context.')} />
-          <div className="mt-3">
-            <CityMap
-              layers={[{ id: 'risk', label: t('Composite Risk'), valueFor: (id) => wards.find((w) => w.id === id)?.riskScore, higherIsWorse: true, unit: '/100' }]}
-              selectedWardId={wardId}
-              onWardSelect={onSelectWard}
-              height={320}
-            />
+          <div className="mt-4 border-t border-ink-100 pt-3">
+            <p className="label-institutional mb-2">{t('Municipal assets')}</p>
+            <MetricGrid columns={4}>
+              <MetricCard size="sm" label={t('Total assets')} value={profile.assets.total} />
+              <MetricCard size="sm" label={t('Poor condition')} value={profile.assets.poorCondition} tone={profile.assets.poorCondition > 0 ? 'warn' : 'default'} />
+              <MetricCard size="sm" label={t('Past design life')} value={profile.assets.pastDesignLife} />
+              <MetricCard
+                size="sm"
+                label={t('Inspections overdue')}
+                value={profile.assets.inspectionsOverdue}
+                tone={profile.assets.inspectionsOverdue > 0 ? 'critical' : 'default'}
+              />
+            </MetricGrid>
+            <p className="mt-2 text-[0.6875rem] text-ink-500">{t('Replacement value at risk: {0}', formatCrore(profile.assets.replacementValueCrore))}</p>
+            {profile.assets.items.length > 0 ? (
+              <ul className="mt-2 divide-y divide-ink-50">
+                {profile.assets.items.slice(0, 5).map((a) => (
+                  <li key={a.id} className="flex flex-wrap items-center justify-between gap-2 py-1.5 text-xs">
+                    <span className="min-w-0 truncate text-ink-700">
+                      {a.name} <span className="text-ink-400">· {ASSET_CATEGORY_LABEL[a.category]}</span>
+                    </span>
+                    <span className="flex shrink-0 items-center gap-1.5">
+                      <MiniBar value={a.conditionIndex} width={44} />
+                      <span className="numeric font-semibold text-ink-700">{a.conditionIndex}</span>
+                      <StateBadge state={a.state} />
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
           </div>
         </Card>
+
+        {/* Delivery & Finance ------------------------------------------------ */}
+        <Card>
+          <CardHeader
+            icon={<Banknote className="h-4 w-4" />}
+            title={t('Delivery & Finance')}
+            description={t('Capital works portfolio, revenue realisation and budget utilisation for the ward.')}
+          />
+          <MetricGrid columns={4} className="mt-3">
+            <MetricCard size="sm" label={t('Sanctioned')} value={formatCrore(profile.projects.sanctionedCrore)} />
+            <MetricCard size="sm" label={t('Paid to date')} value={formatCrore(profile.projects.paidCrore)} />
+            <MetricCard size="sm" label={t('Collection efficiency')} value={formatPercent(profile.finance.collectionEfficiencyPct)} />
+            <MetricCard size="sm" label={t('Budget utilisation')} value={formatPercent(profile.finance.budgetUtilisationPct)} />
+          </MetricGrid>
+          <DefinitionList className="mt-3">
+            <DefinitionRow label={t('Revenue target vs collected')}>
+              {formatCrore(profile.finance.revenueCollectedCrore)} of {formatCrore(profile.finance.revenueTargetCrore)}
+            </DefinitionRow>
+            <DefinitionRow label={t('Arrears')}>{formatCrore(profile.finance.arrearsCrore)}</DefinitionRow>
+            <DefinitionRow label={t('Capital budget')}>
+              {t('{0} spent of {1} allocated', formatCrore(profile.finance.budgetSpentCrore), formatCrore(profile.finance.budgetAllocatedCrore))}
+            </DefinitionRow>
+          </DefinitionList>
+          {profile.projects.items.length > 0 ? (
+            <div className="mt-4 border-t border-ink-100 pt-3">
+              <p className="label-institutional mb-2">
+                {t('Capital works - {0} delayed, {1} at risk of {2}', profile.projects.delayed, profile.projects.atRisk, profile.projects.total)}
+              </p>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {profile.projects.items.slice(0, 4).map((p) => (
+                  <ProjectCard key={p.id} project={p} />
+                ))}
+              </div>
+            </div>
+          ) : null}
+          {profile.workforce.length > 0 || profile.contractors.length > 0 ? (
+            <div className="mt-4 grid grid-cols-1 gap-4 border-t border-ink-100 pt-3 lg:grid-cols-2">
+              {profile.workforce.length > 0 ? (
+                <div>
+                  <p className="label-institutional mb-1.5">{t('Workforce')}</p>
+                  <ul className="divide-y divide-ink-50">
+                    {profile.workforce.slice(0, 5).map((w) => (
+                      <li key={w.id} className="flex items-center justify-between gap-2 py-1.5 text-xs">
+                        <span className="text-ink-700">{w.cadre}</span>
+                        <span className="numeric text-ink-500">
+                          {w.deployed}/{w.sanctioned}{' '}{t('deployed ·')}{' '}{formatPercent(w.vacancyPct)} vacant
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+              {profile.contractors.length > 0 ? (
+                <div>
+                  <p className="label-institutional mb-1.5">{t('Contractors active in ward')}</p>
+                  <ul className="divide-y divide-ink-50">
+                    {profile.contractors.slice(0, 5).map((c) => (
+                      <li key={c.id} className="flex items-center justify-between gap-2 py-1.5 text-xs">
+                        <span className="min-w-0 truncate text-ink-700">{c.name}</span>
+                        <span className="numeric shrink-0 text-ink-500">
+                          {t('{0} contract(s) · perf. {1}/100', c.activeContracts, c.performanceIndex)}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+        </Card>
+
         <Card flush>
-          <CardHeader className="px-4 pt-4 pb-3" title={t('Open incidents')} description={t('Incidents recorded against this ward not yet resolved or reviewed.')} />
-          {profile.incidents.length === 0 ? (
-            <EmptyState compact className="mx-4 mb-4" title={t('No open incidents')} detail="No unresolved incident is currently recorded for this ward." />
+          <CardHeader className="px-4 pt-4 pb-3" title={t('Open intelligence')} description={t('Active intelligence items raised against this ward, across every domain.')} />
+          {profile.openIntelligence.length === 0 ? (
+            <EmptyState compact className="mx-4 mb-4" title={t('No open intelligence')} detail="No open intelligence item is currently recorded for this ward." />
           ) : (
-            <div className="scrollbar-slim max-h-80 space-y-2 overflow-y-auto p-4 pt-0">
-              {profile.incidents.map((i) => (
-                <IncidentCard key={i.id} incident={i} onClick={() => openDrawer({ kind: 'incident', id: i.id })} />
+            <div className="grid grid-cols-1 gap-2 p-4 pt-0 sm:grid-cols-2">
+              {profile.openIntelligence.map((item) => (
+                <IntelligenceCard key={item.id} item={item} compact onClick={() => openDrawer({ kind: 'intelligence', id: item.id })} />
               ))}
             </div>
           )}
         </Card>
-      </div>
+        </div>
 
-      <Card flush>
-        <CardHeader className="px-4 pt-4 pb-3" title={t('Open intelligence')} description={t('Active intelligence items raised against this ward, across every domain.')} />
-        {profile.openIntelligence.length === 0 ? (
-          <EmptyState compact className="mx-4 mb-4" title={t('No open intelligence')} detail="No open intelligence item is currently recorded for this ward." />
-        ) : (
-          <div className="grid grid-cols-1 gap-2 p-4 pt-0 sm:grid-cols-2">
-            {profile.openIntelligence.map((item) => (
-              <IntelligenceCard key={item.id} item={item} compact onClick={() => openDrawer({ kind: 'intelligence', id: item.id })} />
-            ))}
-          </div>
-        )}
-      </Card>
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
+        {/* Map, incidents ----------------------------------------------------- */}
+          <Card>
+            <CardHeader title={t('Ward location')} description={t('Illustrative spatial position within the city; shading shows composite risk across all wards. Click another ward to change context.')} />
+            <div className="mt-3">
+              <CityMap
+                layers={[{ id: 'risk', label: t('Composite Risk'), valueFor: (id) => wards.find((w) => w.id === id)?.riskScore, higherIsWorse: true, unit: '/100' }]}
+                selectedWardId={wardId}
+                onWardSelect={onSelectWard}
+                height={320}
+              />
+            </div>
+          </Card>
+
+          <Card flush>
+            <CardHeader className="px-4 pt-4 pb-3" title={t('Open incidents')} description={t('Incidents recorded against this ward not yet resolved or reviewed.')} />
+            {profile.incidents.length === 0 ? (
+              <EmptyState compact className="mx-4 mb-4" title={t('No open incidents')} detail="No unresolved incident is currently recorded for this ward." />
+            ) : (
+              <div className="scrollbar-slim max-h-80 space-y-2 overflow-y-auto p-4 pt-0">
+                {profile.incidents.map((i) => (
+                  <IncidentCard key={i.id} incident={i} onClick={() => openDrawer({ kind: 'incident', id: i.id })} />
+                ))}
+              </div>
+            )}
+          </Card>
+
+        {/* Health & Environment -------------------------------------------- */}
+        <Card>
+          <CardHeader
+            icon={<HeartPulse className="h-4 w-4" />}
+            title={t('Health & Environment')}
+            description={t('Aggregate outbreak signal strength by disease indicator. No patient-level data of any kind is modelled.')}
+          />
+          {profile.health.topSignals.length === 0 ? (
+            <EmptyState compact className="mt-3" title={t('No elevated signals')} detail="No outbreak signal above the reporting threshold is currently recorded for this ward." />
+          ) : (
+            <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3 xl:grid-cols-1">
+              {profile.health.topSignals.map((sig) => (
+                <div key={sig.id} className="rounded-lg border border-ink-100 p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-semibold text-ink-800">{DISEASE_LABEL[sig.disease]}</span>
+                    <ConfidenceBadge confidence={sig.confidence} />
+                  </div>
+                  <p className={cn('numeric mt-1.5 text-xl font-semibold', SCORE_TONE_TEXT[toneForScore(sig.outbreakSignal, false)])}>
+                    {sig.outbreakSignal}
+                    <span className="ml-0.5 text-xs font-normal text-ink-400">/100</span>
+                  </p>
+                  <p className="mt-0.5 text-[0.6875rem] text-ink-500">
+                    {t('{0} cases this period · {1} vs prior', sig.casesReported, formatDelta(sig.changePct))}
+                  </p>
+                  {sig.correlates.length > 0 ? (
+                    <p className="mt-1.5 text-[0.6875rem] leading-relaxed text-ink-400">{t('Correlates observed: {0}', sig.correlates.join(', '))}</p>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+        </div>
+      </div>
     </div>
   )
 }
@@ -756,55 +794,63 @@ function RiskIndexTab({ wardId, wardLabel }: { wardId: string; wardLabel: string
         </div>
       </Card>
 
-      <Card>
-        <CardHeader title={t('Component contribution')} description={t('Each component\'s raw score (0–100, higher is worse), its published weight and its resulting contribution to the composite.')} />
-        <ContributionBars
-          className="mt-3"
-          items={riskIndex.components.map((c) => ({ id: c.id, label: c.label, contribution: c.contribution, weight: c.weight, rawScore: c.score, explanation: c.explanation }))}
-        />
-        <div className="mt-4 space-y-2 border-t border-ink-100 pt-3">
-          {riskIndex.components.map((c) => {
-            const evId = evidenceForComponent(c.id, profile?.openIntelligence ?? [])
-            return (
-              <div key={c.id} className="flex flex-wrap items-center justify-between gap-2">
-                <span className="text-xs text-ink-600">
-                  {c.label} <span className="text-ink-400">{t('· {0} period movement, tracking ward health trend', formatDelta(c.trendPct))}</span>
-                </span>
-                {evId ? (
-                  <Button size="xs" variant="outline" icon={<FileSearch className="h-3 w-3" />} onClick={() => openDrawer({ kind: 'evidence', id: evId })}>
-                    {t('Evidence')}
-                  </Button>
-                ) : (
-                  <span className="text-[0.6875rem] text-ink-400">{t('No linked evidence record')}</span>
-                )}
-              </div>
-            )
-          })}
+      {/* The composite and its arithmetic read down the wide column; the
+          reasons it is moving and the published weighting stand beside. */}
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
+        <Card>
+          <CardHeader title={t('Component contribution')} description={t('Each component\'s raw score (0–100, higher is worse), its published weight and its resulting contribution to the composite.')} />
+          <ContributionBars
+            className="mt-3"
+            items={riskIndex.components.map((c) => ({ id: c.id, label: c.label, contribution: c.contribution, weight: c.weight, rawScore: c.score, explanation: c.explanation }))}
+          />
+          <div className="mt-4 space-y-2 border-t border-ink-100 pt-3">
+            {riskIndex.components.map((c) => {
+              const evId = evidenceForComponent(c.id, profile?.openIntelligence ?? [])
+              return (
+                <div key={c.id} className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-xs text-ink-600">
+                    {c.label} <span className="text-ink-400">{t('· {0} period movement, tracking ward health trend', formatDelta(c.trendPct))}</span>
+                  </span>
+                  {evId ? (
+                    <Button size="xs" variant="outline" icon={<FileSearch className="h-3 w-3" />} onClick={() => openDrawer({ kind: 'evidence', id: evId })}>
+                      {t('Evidence')}
+                    </Button>
+                  ) : (
+                    <span className="text-[0.6875rem] text-ink-400">{t('No linked evidence record')}</span>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </Card>
         </div>
-      </Card>
 
-      <Card tone="warn">
-        <CardHeader icon={<AlertTriangle className="h-4 w-4" />} title={t('Why this ward is deteriorating')} description={t('Institutional explanation of the components currently exceeding their attention threshold.')} />
-        <ul className="mt-2 space-y-2">
-          {riskIndex.deteriorationReasons.map((r, i) => (
-            <li key={i} className="flex items-start gap-2 text-xs leading-relaxed text-ink-700">
-              <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-warn-500" aria-hidden />
-              {r}
-            </li>
-          ))}
-        </ul>
-      </Card>
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
+        <Card tone="warn">
+          <CardHeader icon={<AlertTriangle className="h-4 w-4" />} title={t('Why this ward is deteriorating')} description={t('Institutional explanation of the components currently exceeding their attention threshold.')} />
+          <ul className="mt-2 space-y-2">
+            {riskIndex.deteriorationReasons.map((r, i) => (
+              <li key={i} className="flex items-start gap-2 text-xs leading-relaxed text-ink-700">
+                <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-warn-500" aria-hidden />
+                {r}
+              </li>
+            ))}
+          </ul>
+        </Card>
 
-      <Card>
-        <CardHeader title={t('Index methodology')} description={t('The composite weighting is fixed and identical for every ward, published here for transparency.')} />
-        <DefinitionList className="mt-2">
-          {(Object.keys(WARD_INDEX_WEIGHTS) as Array<keyof typeof WARD_INDEX_WEIGHTS>).map((key) => (
-            <DefinitionRow key={key} label={WARD_INDEX_LABELS[key]}>
-              {formatPercent(WARD_INDEX_WEIGHTS[key] * 100, 0)} weight
-            </DefinitionRow>
-          ))}
-        </DefinitionList>
-      </Card>
+        <Card>
+          <CardHeader title={t('Index methodology')} description={t('The composite weighting is fixed and identical for every ward, published here for transparency.')} />
+          <DefinitionList className="mt-2">
+            {(Object.keys(WARD_INDEX_WEIGHTS) as Array<keyof typeof WARD_INDEX_WEIGHTS>).map((key) => (
+              <DefinitionRow key={key} label={WARD_INDEX_LABELS[key]}>
+                {formatPercent(WARD_INDEX_WEIGHTS[key] * 100, 0)} weight
+              </DefinitionRow>
+            ))}
+          </DefinitionList>
+        </Card>
+        </div>
+      </div>
     </div>
   )
 }
@@ -904,102 +950,110 @@ function CompareTab({ wards }: { wards: Ward[] }): React.JSX.Element {
     <div className="space-y-4">
       {selectorPanel}
 
-      <Card flush>
-        <CardHeader
-          className="px-4 pt-4 pb-3"
-          title={t('Comparison table')}
-          description={t('The best figure per row is shown in positive tone, the worst in critical tone, respecting whether higher is better for that metric.')}
-        />
-        <div className="scrollbar-slim overflow-x-auto">
-          <table className="w-full min-w-[640px] border-collapse text-left text-xs">
-            <thead>
-              <tr className="border-b border-ink-100 bg-surface-sunken">
-                <th className="label-institutional px-3 py-2">{t('Metric')}</th>
-                {selectedWards.map((w) => (
-                  <th key={w.id} className="label-institutional px-3 py-2 text-right">
-                    {w.code}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-ink-50">
-              {rows.map((row) => {
-                const values = selectedWards.map((w) => row.values[w.id] ?? 0)
-                const best = row.higherIsBetter ? Math.max(...values) : Math.min(...values)
-                const worst = row.higherIsBetter ? Math.min(...values) : Math.max(...values)
-                const spread = best !== worst
-                return (
-                  <tr key={row.id}>
-                    <td className="px-3 py-2 font-medium whitespace-nowrap text-ink-700">{row.label}</td>
-                    {selectedWards.map((w) => {
-                      const v = row.values[w.id] ?? 0
-                      const isBest = spread && v === best
-                      const isWorst = spread && v === worst
-                      return (
-                        <td
-                          key={w.id}
-                          className={cn(
-                            'numeric px-3 py-2 text-right font-semibold',
-                            isBest && 'text-ok-700',
-                            isWorst && 'text-crit-700',
-                            !isBest && !isWorst && 'text-ink-700',
-                          )}
-                        >
-                          {formatNumber(v, v % 1 === 0 ? 0 : 1)}
-                          {row.unit}
-                        </td>
-                      )
-                    })}
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
-      </Card>
-
-      <Card>
-        <CardHeader
-          title={t('Relative standing')}
-          description={t('Each cell shows relative standing across the selected wards on a 0–100 scale, normalised per metric (100 = best performer for that metric). See the table above for exact figures.')}
-        />
-        <div className="mt-3" style={{ height: Math.max(260, rows.length * 26) }}>
-          <HeatmapMatrix
-            rows={rows.map((r) => ({ id: r.id, label: r.label }))}
-            columns={selectedWards.map((w) => ({ id: w.id, label: w.code }))}
-            higherIsBetter
-            values={heatmapValues}
+      {/* The exact figures carry the width; the normalised standing and the
+          single-metric comparison read beside them. */}
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
+        <Card flush>
+          <CardHeader
+            className="px-4 pt-4 pb-3"
+            title={t('Comparison table')}
+            description={t('The best figure per row is shown in positive tone, the worst in critical tone, respecting whether higher is better for that metric.')}
           />
-        </div>
-      </Card>
-
-      <Card>
-        <CardHeader
-          title={t('Grouped comparison')}
-          description={t('Compare a single metric across the selected wards.')}
-          actions={
-            <Select
-              value={chartMetric}
-              onChange={(e) => setChartMetric(e.target.value)}
-              options={rows.map((r) => ({ value: r.id, label: r.label }))}
-              className="w-auto min-w-[13rem]"
-              aria-label={t('Metric to chart')}
-            />
-          }
-        />
-        {chartRow ? (
-          <div className="mt-3">
-            <ChartFrame title={chartRow.label} unit={chartRow.unit || 'value'} timeframe="Current reporting period" height={240}>
-              <CategoryBarChart
-                data={selectedWards.map((w) => ({ label: w.code, value: chartRow.values[w.id] ?? 0 }))}
-                series={[{ key: 'value', label: chartRow.label, colour: CHART_COLOURS.primary }]}
-                layout="vertical"
-                unit={chartRow.unit}
-              />
-            </ChartFrame>
+          <div className="scrollbar-slim overflow-x-auto">
+            <table className="w-full min-w-[640px] border-collapse text-left text-xs">
+              <thead>
+                <tr className="border-b border-ink-100 bg-surface-sunken">
+                  <th className="label-institutional px-3 py-2">{t('Metric')}</th>
+                  {selectedWards.map((w) => (
+                    <th key={w.id} className="label-institutional px-3 py-2 text-right">
+                      {w.code}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-ink-50">
+                {rows.map((row) => {
+                  const values = selectedWards.map((w) => row.values[w.id] ?? 0)
+                  const best = row.higherIsBetter ? Math.max(...values) : Math.min(...values)
+                  const worst = row.higherIsBetter ? Math.min(...values) : Math.max(...values)
+                  const spread = best !== worst
+                  return (
+                    <tr key={row.id}>
+                      <td className="px-3 py-2 font-medium whitespace-nowrap text-ink-700">{row.label}</td>
+                      {selectedWards.map((w) => {
+                        const v = row.values[w.id] ?? 0
+                        const isBest = spread && v === best
+                        const isWorst = spread && v === worst
+                        return (
+                          <td
+                            key={w.id}
+                            className={cn(
+                              'numeric px-3 py-2 text-right font-semibold',
+                              isBest && 'text-ok-700',
+                              isWorst && 'text-crit-700',
+                              !isBest && !isWorst && 'text-ink-700',
+                            )}
+                          >
+                            {formatNumber(v, v % 1 === 0 ? 0 : 1)}
+                            {row.unit}
+                          </td>
+                        )
+                      })}
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
           </div>
-        ) : null}
-      </Card>
+        </Card>
+        </div>
+
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
+        <Card>
+          <CardHeader
+            title={t('Relative standing')}
+            description={t('Each cell shows relative standing across the selected wards on a 0–100 scale, normalised per metric (100 = best performer for that metric). See the table above for exact figures.')}
+          />
+          <div className="mt-3" style={{ height: Math.max(260, rows.length * 26) }}>
+            <HeatmapMatrix
+              rows={rows.map((r) => ({ id: r.id, label: r.label }))}
+              columns={selectedWards.map((w) => ({ id: w.id, label: w.code }))}
+              higherIsBetter
+              values={heatmapValues}
+            />
+          </div>
+        </Card>
+
+        <Card>
+          <CardHeader
+            title={t('Grouped comparison')}
+            description={t('Compare a single metric across the selected wards.')}
+            actions={
+              <Select
+                value={chartMetric}
+                onChange={(e) => setChartMetric(e.target.value)}
+                options={rows.map((r) => ({ value: r.id, label: r.label }))}
+                className="w-auto min-w-[13rem]"
+                aria-label={t('Metric to chart')}
+              />
+            }
+          />
+          {chartRow ? (
+            <div className="mt-3">
+              <ChartFrame title={chartRow.label} unit={chartRow.unit || 'value'} timeframe="Current reporting period" height={240}>
+                <CategoryBarChart
+                  data={selectedWards.map((w) => ({ label: w.code, value: chartRow.values[w.id] ?? 0 }))}
+                  series={[{ key: 'value', label: chartRow.label, colour: CHART_COLOURS.primary }]}
+                  layout="vertical"
+                  unit={chartRow.unit}
+                />
+              </ChartFrame>
+            </div>
+          ) : null}
+        </Card>
+        </div>
+      </div>
     </div>
   )
 }

@@ -25,8 +25,9 @@ import { CityMap, jitteredWardPoint, type MapMarker } from '@/components/map/Cit
 import { useServiceAction, useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { healthService, incidentService, monsoonService, roadsService, wardService } from '@/services'
-import { useLayoutStore, useSituationStore, type SituationMode } from '@/stores/ui.store'
+import { useContextStore, useLayoutStore, useSituationStore, type SituationMode } from '@/stores/ui.store'
 import { useCurrentUser } from '@/stores/auth.store'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { allowed } from '@/security'
 import { ROUTES } from '@/config/navigation'
 import { formatCompact, formatDateTime, formatRelative, sanitiseText } from '@/utils/format'
@@ -102,6 +103,17 @@ interface ManualLogEntry {
 
 export function SituationRoomPage(): React.JSX.Element {
   const user = useCurrentUser()
+  /**
+   * The ward selected in the command bar governs this screen, not only the
+   * breadcrumb above it. It was read nowhere here, so an operator who narrowed
+   * the shell to one ward went on commanding the whole city underneath - the
+   * register, the severity counts, the map markers and the asset readiness all
+   * stayed corporation-wide. The selection now reaches the incident query
+   * itself (and its query key, so a ward is never served another ward's cached
+   * page); ward scoping still runs through `filterByScope` inside the service,
+   * so this narrows what is shown and never widens what may be read.
+   */
+  const contextWardId = useContextStore((s) => s.wardId)
   const mode = useSituationStore((s) => s.mode)
   const setMode = useSituationStore((s) => s.setMode)
   const selectedIncidentId = useSituationStore((s) => s.selectedIncidentId)
@@ -140,7 +152,10 @@ export function SituationRoomPage(): React.JSX.Element {
     return () => window.removeEventListener('keydown', onKey)
   }, [situationMode, setSituationMode])
 
-  const incidentsQuery = useServiceQuery(queryKeys.incidents('situation-room'), (u) => incidentService.list(u, { pageSize: 300 }))
+  const incidentsKey = queryKeys.incidents({ scope: 'situation-room', wardId: contextWardId })
+  const incidentsQuery = useServiceQuery(incidentsKey, (u) =>
+    incidentService.list(u, { wardId: contextWardId ?? undefined, pageSize: 300 }),
+  )
   const situationLogQuery = useServiceQuery(queryKeys.incidents('situation-log'), (u) => incidentService.situationLog(u, 60))
   const wardsQuery = useServiceQuery(queryKeys.wards(), (u) => wardService.list(u))
   const pumpingQuery = useServiceQuery(queryKeys.monsoon('pumping'), (u) => monsoonService.pumpingStations(u))
@@ -150,7 +165,7 @@ export function SituationRoomPage(): React.JSX.Element {
   const emergencyStationsQuery = useServiceQuery(queryKeys.health('emergency-stations'), (u) => healthService.emergencyStations(u))
   const roadSegmentsQuery = useServiceQuery(queryKeys.roads('segments'), (u) => roadsService.segments(u))
 
-  const INCIDENT_KEYS = [queryKeys.incidents('situation-room'), queryKeys.incidents('situation-log'), queryKeys.incidents('active')]
+  const INCIDENT_KEYS = [incidentsKey, queryKeys.incidents('situation-log'), queryKeys.incidents('active')]
   const doTransition = useServiceAction((u, id: string, to: IncidentStatus, reason?: string) => incidentService.transition(u, id, to, reason), INCIDENT_KEYS)
   const doAddNote = useServiceAction((u, id: string, body: string) => incidentService.addNote(u, id, body), INCIDENT_KEYS)
   const doDeployTeam = useServiceAction(
@@ -161,6 +176,9 @@ export function SituationRoomPage(): React.JSX.Element {
   const canEditIncident = allowed(user, 'incident', 'edit')
 
   const config = MODE_CONFIG[mode]
+
+  // The shell renders the masthead; this page states what it should say.
+  usePageMasthead(t('Situation Room'), config.description)
 
   const incidents = useMemo(() => incidentsQuery.data?.items ?? [], [incidentsQuery.data])
 
@@ -178,14 +196,18 @@ export function SituationRoomPage(): React.JSX.Element {
     return sorted
   }, [incidents, mode, config.emphasisTypes])
 
+  // An incident that has fallen out of scope - because the ward changed under
+  // it - must not stay under command. The first incident now in scope takes
+  // over, so the detail column always describes something the operator can see
+  // in the register beside it.
   useEffect(() => {
-    if (!selectedIncidentId && visibleIncidents.length > 0) {
-      const first = visibleIncidents[0]
-      if (first) selectIncident(first.id)
-    }
+    if (visibleIncidents.length === 0) return
+    if (visibleIncidents.some((i) => i.id === selectedIncidentId)) return
+    const first = visibleIncidents[0]
+    if (first) selectIncident(first.id)
   }, [visibleIncidents, selectedIncidentId, selectIncident])
 
-  const selectedIncident = incidents.find((i) => i.id === selectedIncidentId) ?? null
+  const selectedIncident = visibleIncidents.find((i) => i.id === selectedIncidentId) ?? null
 
   const severitySummary = useMemo(() => {
     const counts: Record<Severity, number> = { critical: 0, high: 0, medium: 0, low: 0, info: 0 }
@@ -214,6 +236,18 @@ export function SituationRoomPage(): React.JSX.Element {
     for (const [wardId, entry] of totals) map.set(wardId, entry.sum / Math.max(1, entry.count))
     return map
   }, [roadSegmentsQuery.data])
+
+  // Readiness answers to the same selection as the register: when a ward is in
+  // effect, the assets reported are the ones standing in it.
+  const assetData = useMemo<AssetStatusData>(() => {
+    const inWard = <T extends { wardId: string }>(rows: T[]): T[] => (contextWardId ? rows.filter((r) => r.wardId === contextWardId) : rows)
+    return {
+      pumping: inWard(pumpingQuery.data ?? []),
+      hospitals: inWard(hospitalsQuery.data ?? []),
+      emergencyStations: inWard(emergencyStationsQuery.data ?? []),
+      roadSegments: inWard(roadSegmentsQuery.data ?? []),
+    }
+  }, [contextWardId, pumpingQuery.data, hospitalsQuery.data, emergencyStationsQuery.data, roadSegmentsQuery.data])
 
   const mapMarkers = useMemo<MapMarker[]>(() => {
     const byWardCount = new Map<string, number>()
@@ -302,8 +336,6 @@ export function SituationRoomPage(): React.JSX.Element {
     <PageBody width="full" className="space-y-3 p-3 sm:p-4">
       <PageHeader
         eyebrow={t('Command')}
-        title={t('Situation Room')}
-        description={config.description}
         actions={
           <>
             <Button
@@ -324,12 +356,14 @@ export function SituationRoomPage(): React.JSX.Element {
           </>
         }
         controls={
-          <SegmentedControl
-            ariaLabel="Situation Room mode"
-            value={mode}
-            onChange={setMode}
-            options={(Object.keys(MODE_CONFIG) as SituationMode[]).map((m) => ({ value: m, label: MODE_CONFIG[m].label }))}
-          />
+          <div className="scrollbar-slim max-w-full min-w-0 overflow-x-auto">
+            <SegmentedControl
+              ariaLabel="Situation Room mode"
+              value={mode}
+              onChange={setMode}
+              options={(Object.keys(MODE_CONFIG) as SituationMode[]).map((m) => ({ value: m, label: MODE_CONFIG[m].label }))}
+            />
+          </div>
         }
       />
 
@@ -349,225 +383,231 @@ export function SituationRoomPage(): React.JSX.Element {
         <MetricPill label={t('Population affected (est.)')} value={formatCompact(populationEstimate)} tone="warn" />
       </div>
 
-      <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.7fr_1fr]">
-        <Card flush>
-          <div className="p-3">
-            <CityMap
-              layers={[
-                { id: 'risk', label: t('Ward Risk'), valueFor: (id) => wardById.get(id)?.riskScore, higherIsWorse: true, unit: '/100' },
-                { id: 'monsoon', label: t('Flood Risk'), valueFor: (id) => { const r = readinessByWard.get(id); return r === undefined ? undefined : 100 - r }, higherIsWorse: true, unit: '/100' },
-                { id: 'health', label: t('Outbreak Signal'), valueFor: (id) => outbreakByWard.get(id), higherIsWorse: true, unit: '/100' },
-                { id: 'roads', label: t('Road Condition Deficit'), valueFor: (id) => { const c = roadConditionByWard.get(id); return c === undefined ? undefined : 100 - c }, higherIsWorse: true, unit: '/100' },
-              ]}
-              activeLayerId={config.mapLayer}
-              selectedWardId={selectedIncident?.wardId ?? null}
-              markers={mapMarkers}
-              height={420}
-              compact
-            />
-          </div>
-        </Card>
-
-        <Card flush>
-          <CardHeader bordered title={t('Active incidents')} description={t('{0} in scope for this mode', visibleIncidents.length)} />
-          <div className="max-h-[440px] divide-y divide-ink-50 overflow-y-auto">
-            {visibleIncidents.length === 0 ? (
-              <EmptyState compact title={t('No active incidents')} detail="Nothing currently open matches this mode." />
-            ) : (
-              visibleIncidents.map((incident) => {
-                const active = incident.id === selectedIncidentId
-                return (
-                  <button
-                    key={incident.id}
-                    type="button"
-                    onClick={() => selectIncident(incident.id)}
-                    className={cn('flex w-full items-start gap-2.5 p-3 text-left transition-colors hover:bg-govt-50/40', active && 'bg-govt-50')}
-                  >
-                    <SeverityBadge severity={incident.severity} className="mt-0.5 shrink-0" />
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-[0.8125rem] font-medium text-ink-800">{incident.title}</p>
-                      <p className="mt-0.5 text-[0.6875rem] text-ink-400">
-                        {INCIDENT_TYPE_LABEL[incident.type]} · {incident.locationName} · {formatRelative(incident.detectedAt)}
-                      </p>
-                    </div>
-                    <Badge tone="muted">{INCIDENT_STATUS_LABEL[incident.status]}</Badge>
-                  </button>
-                )
-              })
-            )}
-          </div>
-        </Card>
-      </div>
-
-      {selectedIncident ? (
-        <>
-          <Card className="flex flex-wrap items-center justify-between gap-3">
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-1.5">
-                <SeverityBadge severity={selectedIncident.severity} />
-                <Badge tone="muted">{INCIDENT_TYPE_LABEL[selectedIncident.type]}</Badge>
-                <Badge tone="neutral">{INCIDENT_STATUS_LABEL[selectedIncident.status]}</Badge>
-                <span className="text-[0.6875rem] text-ink-400">{selectedIncident.reference}</span>
-              </div>
-              <h3 className="mt-1.5 text-[0.9375rem] font-semibold text-ink-900">{selectedIncident.title}</h3>
-              <p className="mt-0.5 text-xs text-ink-500">{t('{0} · {1} affected (estimate)', selectedIncident.locationName, formatCompact(selectedIncident.affectedPopulation))}</p>
+      {/* ── Two columns ──────────────────────────────────────────────
+          An operator reads the city first and the registers second. The wide
+          column carries the map and whichever incident is under command; the
+          narrow one carries what is open and what has just been recorded, so
+          neither has to be hunted for further down the page. */}
+      <div className="grid grid-cols-1 gap-3 xl:grid-cols-12">
+        {/* Column 1 — the operational picture ---------------------- */}
+        <div className="flex min-w-0 flex-col gap-3 xl:col-span-8">
+          <Card flush>
+            <div className="p-3">
+              <CityMap
+                layers={[
+                  { id: 'risk', label: t('Ward Risk'), valueFor: (id) => wardById.get(id)?.riskScore, higherIsWorse: true, unit: '/100' },
+                  { id: 'monsoon', label: t('Flood Risk'), valueFor: (id) => { const r = readinessByWard.get(id); return r === undefined ? undefined : 100 - r }, higherIsWorse: true, unit: '/100' },
+                  { id: 'health', label: t('Outbreak Signal'), valueFor: (id) => outbreakByWard.get(id), higherIsWorse: true, unit: '/100' },
+                  { id: 'roads', label: t('Road Condition Deficit'), valueFor: (id) => { const c = roadConditionByWard.get(id); return c === undefined ? undefined : 100 - c }, higherIsWorse: true, unit: '/100' },
+                ]}
+                activeLayerId={config.mapLayer}
+                selectedWardId={selectedIncident?.wardId ?? contextWardId}
+                markers={mapMarkers}
+                height={420}
+                compact
+              />
             </div>
-            {nextStatus ? (
-              <Button
-                size="sm"
-                variant="primary"
-                disabled={!canEditIncident}
-                title={canEditIncident ? undefined : 'Your role does not hold incident:edit'}
-                icon={<ArrowRight className="h-3.5 w-3.5" />}
-                onClick={() => setConfirmAdvance({ incident: selectedIncident, to: nextStatus })}
-              >
-                {t('Advance to {0}', INCIDENT_STATUS_LABEL[nextStatus])}
-              </Button>
-            ) : (
-              <Badge tone="positive" icon={<CheckCircle2 className="h-3 w-3" />}>{t('Fully reviewed')}</Badge>
-            )}
           </Card>
 
-          <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
-            <Card>
-              <CardHeader icon={<Radio className="h-4 w-4" />} title={config.assetLabel} description={t('Readiness relevant to the current mode.')} />
-              <div className="mt-2.5">
-                {renderAssetStatus(mode, {
-                  pumping: pumpingQuery.data ?? [],
-                  hospitals: hospitalsQuery.data ?? [],
-                  emergencyStations: emergencyStationsQuery.data ?? [],
-                  roadSegments: roadSegmentsQuery.data ?? [],
-                })}
-              </div>
-            </Card>
-
-            <Card>
-              <CardHeader icon={<Users className="h-4 w-4" />} title={t('Response teams')} description={t('{0} deployed to this incident', selectedIncident.responseTeams.length)} actions={
-                <Button size="xs" variant="outline" disabled={!canEditIncident} title={canEditIncident ? undefined : 'Your role does not hold incident:edit'} onClick={() => setDeployOpen((v) => !v)}>
-                  {deployOpen ? 'Cancel' : 'Deploy team'}
-                </Button>
-              } />
-              <div className="mt-2.5 space-y-1.5">
-                {selectedIncident.responseTeams.length === 0 ? (
-                  <p className="text-xs text-ink-400">{t('No teams deployed yet.')}</p>
-                ) : (
-                  selectedIncident.responseTeams.map((team) => (
-                    <div key={team.id} className="flex items-center justify-between gap-2 rounded-md bg-surface-sunken px-2.5 py-1.5 text-xs">
-                      <span className="truncate text-ink-700">{team.name} · {team.type.replace('-', ' ')}</span>
-                      <span className="flex items-center gap-1.5 shrink-0">
-                        <span className="numeric text-ink-500">{team.strength}</span>
-                        <Badge tone={team.status === 'deployed' ? 'positive' : team.status === 'en-route' ? 'warn' : 'neutral'}>{team.status.replace('-', ' ')}</Badge>
-                      </span>
-                    </div>
-                  ))
-                )}
-              </div>
-              {deployOpen ? (
-                <div className="mt-3 space-y-2 border-t border-ink-100 pt-3">
-                  <Input value={deployName} onChange={(e) => setDeployName(e.target.value)} placeholder={t('Team name')} />
-                  <div className="grid grid-cols-2 gap-2">
-                    <Select value={deployType} onChange={(e) => setDeployType(e.target.value as ResponseTeam['type'])} options={RESPONSE_TEAM_TYPES.map((entry) => ({ value: entry.value, label: entry.label }))} />
-                    <Input type="number" min={1} value={deployStrength} onChange={(e) => setDeployStrength(e.target.value)} placeholder={t('Strength')} />
+          {selectedIncident ? (
+            <>
+              <Card className="flex flex-wrap items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <SeverityBadge severity={selectedIncident.severity} />
+                    <Badge tone="muted">{INCIDENT_TYPE_LABEL[selectedIncident.type]}</Badge>
+                    <Badge tone="neutral">{INCIDENT_STATUS_LABEL[selectedIncident.status]}</Badge>
+                    <span className="text-[0.6875rem] text-ink-400">{selectedIncident.reference}</span>
                   </div>
-                  <Button size="xs" variant="primary" block disabled={!deployName.trim()} onClick={submitDeploy}>
-                    {t('Confirm deployment')}
+                  <h3 className="mt-1.5 text-[0.9375rem] font-semibold text-ink-900">{selectedIncident.title}</h3>
+                  <p className="mt-0.5 text-xs text-ink-500">{t('{0} · {1} affected (estimate)', selectedIncident.locationName, formatCompact(selectedIncident.affectedPopulation))}</p>
+                </div>
+                {nextStatus ? (
+                  <Button
+                    size="sm"
+                    variant="primary"
+                    disabled={!canEditIncident}
+                    title={canEditIncident ? undefined : 'Your role does not hold incident:edit'}
+                    icon={<ArrowRight className="h-3.5 w-3.5" />}
+                    onClick={() => setConfirmAdvance({ incident: selectedIncident, to: nextStatus })}
+                  >
+                    {t('Advance to {0}', INCIDENT_STATUS_LABEL[nextStatus])}
                   </Button>
-                </div>
-              ) : null}
-            </Card>
-
-            <Card className="space-y-3">
-              <div>
-                <CardHeader icon={<Route className="h-4 w-4" />} title={t('Road impact')} />
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  {selectedIncident.roadsImpacted.length === 0 ? (
-                    <p className="text-xs text-ink-400">{t('No roads recorded as impacted.')}</p>
-                  ) : (
-                    selectedIncident.roadsImpacted.map((r) => <Badge key={r} tone="warn">{r}</Badge>)
-                  )}
-                </div>
-              </div>
-              <div className="border-t border-ink-100 pt-3">
-                <CardHeader icon={<Hospital className="h-4 w-4" />} title={t('Hospital accessibility')} />
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  {selectedIncident.hospitalsImpacted.length === 0 ? (
-                    <p className="text-xs text-ink-400">{t('No hospitals recorded as impacted.')}</p>
-                  ) : (
-                    selectedIncident.hospitalsImpacted.map((h) => <Badge key={h} tone="critical">{h}</Badge>)
-                  )}
-                </div>
-              </div>
-            </Card>
-          </div>
-
-          <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-            <Card>
-              <CardHeader title={t('Timeline')} description={t('This incident\'s own record, oldest first.')} />
-              <ol className="mt-2.5 max-h-72 space-y-2.5 overflow-y-auto">
-                {[...selectedIncident.timeline].sort((a, b) => (a.at < b.at ? -1 : 1)).map((event) => (
-                  <li key={event.id} className="flex gap-2.5 text-xs">
-                    <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-govt-400" />
-                    <div className="min-w-0">
-                      <p className="text-ink-700"><span className="font-semibold text-ink-900">{event.title}</span> - {event.detail}</p>
-                      <p className="mt-0.5 text-[0.6875rem] text-ink-400">{event.actor} · {formatDateTime(event.at)}</p>
-                    </div>
-                  </li>
-                ))}
-              </ol>
-            </Card>
-
-            <Card>
-              <CardHeader title={t('Field updates')} description={t('Notes recorded against this incident.')} />
-              <div className="mt-2.5 max-h-48 space-y-1.5 overflow-y-auto">
-                {selectedIncident.notes.length === 0 ? (
-                  <p className="text-xs text-ink-400">{t('No field updates recorded yet.')}</p>
                 ) : (
-                  selectedIncident.notes.map((n) => (
-                    <p key={n.id} className="rounded-md bg-surface-sunken p-2 text-[0.6875rem] leading-relaxed text-ink-600">
-                      <span className="font-semibold text-ink-800">{n.authorName}</span> · {formatRelative(n.createdAt)} - {n.body}
-                    </p>
-                  ))
+                  <Badge tone="positive" icon={<CheckCircle2 className="h-3 w-3" />}>{t('Fully reviewed')}</Badge>
                 )}
+              </Card>
+
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2 2xl:grid-cols-3">
+                <Card>
+                  <CardHeader icon={<Radio className="h-4 w-4" />} title={config.assetLabel} description={t('Readiness relevant to the current mode.')} />
+                  <div className="mt-2.5">
+                    {renderAssetStatus(mode, assetData)}
+                  </div>
+                </Card>
+
+                <Card>
+                  <CardHeader icon={<Users className="h-4 w-4" />} title={t('Response teams')} description={t('{0} deployed to this incident', selectedIncident.responseTeams.length)} actions={
+                    <Button size="xs" variant="outline" disabled={!canEditIncident} title={canEditIncident ? undefined : 'Your role does not hold incident:edit'} onClick={() => setDeployOpen((v) => !v)}>
+                      {deployOpen ? 'Cancel' : 'Deploy team'}
+                    </Button>
+                  } />
+                  <div className="mt-2.5 space-y-1.5">
+                    {selectedIncident.responseTeams.length === 0 ? (
+                      <p className="text-xs text-ink-400">{t('No teams deployed yet.')}</p>
+                    ) : (
+                      selectedIncident.responseTeams.map((team) => (
+                        <div key={team.id} className="flex items-center justify-between gap-2 rounded-md bg-surface-sunken px-2.5 py-1.5 text-xs">
+                          <span className="truncate text-ink-700">{team.name} · {team.type.replace('-', ' ')}</span>
+                          <span className="flex items-center gap-1.5 shrink-0">
+                            <span className="numeric text-ink-500">{team.strength}</span>
+                            <Badge tone={team.status === 'deployed' ? 'positive' : team.status === 'en-route' ? 'warn' : 'neutral'}>{team.status.replace('-', ' ')}</Badge>
+                          </span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                  {deployOpen ? (
+                    <div className="mt-3 space-y-2 border-t border-ink-100 pt-3">
+                      <Input value={deployName} onChange={(e) => setDeployName(e.target.value)} placeholder={t('Team name')} />
+                      <div className="grid grid-cols-2 gap-2">
+                        <Select value={deployType} onChange={(e) => setDeployType(e.target.value as ResponseTeam['type'])} options={RESPONSE_TEAM_TYPES.map((entry) => ({ value: entry.value, label: entry.label }))} />
+                        <Input type="number" min={1} value={deployStrength} onChange={(e) => setDeployStrength(e.target.value)} placeholder={t('Strength')} />
+                      </div>
+                      <Button size="xs" variant="primary" block disabled={!deployName.trim()} onClick={submitDeploy}>
+                        {t('Confirm deployment')}
+                      </Button>
+                    </div>
+                  ) : null}
+                </Card>
+
+                <Card className="space-y-3">
+                  <div>
+                    <CardHeader icon={<Route className="h-4 w-4" />} title={t('Road impact')} />
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {selectedIncident.roadsImpacted.length === 0 ? (
+                        <p className="text-xs text-ink-400">{t('No roads recorded as impacted.')}</p>
+                      ) : (
+                        selectedIncident.roadsImpacted.map((r) => <Badge key={r} tone="warn">{r}</Badge>)
+                      )}
+                    </div>
+                  </div>
+                  <div className="border-t border-ink-100 pt-3">
+                    <CardHeader icon={<Hospital className="h-4 w-4" />} title={t('Hospital accessibility')} />
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {selectedIncident.hospitalsImpacted.length === 0 ? (
+                        <p className="text-xs text-ink-400">{t('No hospitals recorded as impacted.')}</p>
+                      ) : (
+                        selectedIncident.hospitalsImpacted.map((h) => <Badge key={h} tone="critical">{h}</Badge>)
+                      )}
+                    </div>
+                  </div>
+                </Card>
               </div>
-              <div className="mt-2.5 flex items-start gap-1.5">
-                <Textarea rows={2} value={noteDraft} onChange={(e) => setNoteDraft(e.target.value)} placeholder={t('Add a field update.')} className="flex-1" />
-                <Button size="xs" variant="outline" disabled={!noteDraft.trim() || !canEditIncident} onClick={submitNote}>
+
+              <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+                <Card>
+                  <CardHeader title={t('Timeline')} description={t('This incident\'s own record, oldest first.')} />
+                  <ol className="mt-2.5 max-h-72 space-y-2.5 overflow-y-auto">
+                    {[...selectedIncident.timeline].sort((a, b) => (a.at < b.at ? -1 : 1)).map((event) => (
+                      <li key={event.id} className="flex gap-2.5 text-xs">
+                        <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-govt-400" />
+                        <div className="min-w-0">
+                          <p className="text-ink-700"><span className="font-semibold text-ink-900">{event.title}</span> - {event.detail}</p>
+                          <p className="mt-0.5 text-[0.6875rem] text-ink-400">{event.actor} · {formatDateTime(event.at)}</p>
+                        </div>
+                      </li>
+                    ))}
+                  </ol>
+                </Card>
+
+                <Card>
+                  <CardHeader title={t('Field updates')} description={t('Notes recorded against this incident.')} />
+                  <div className="mt-2.5 max-h-48 space-y-1.5 overflow-y-auto">
+                    {selectedIncident.notes.length === 0 ? (
+                      <p className="text-xs text-ink-400">{t('No field updates recorded yet.')}</p>
+                    ) : (
+                      selectedIncident.notes.map((n) => (
+                        <p key={n.id} className="rounded-md bg-surface-sunken p-2 text-[0.6875rem] leading-relaxed text-ink-600">
+                          <span className="font-semibold text-ink-800">{n.authorName}</span> · {formatRelative(n.createdAt)} - {n.body}
+                        </p>
+                      ))
+                    )}
+                  </div>
+                  <div className="mt-2.5 flex items-start gap-1.5">
+                    <Textarea rows={2} value={noteDraft} onChange={(e) => setNoteDraft(e.target.value)} placeholder={t('Add a field update.')} className="flex-1" />
+                    <Button size="xs" variant="outline" disabled={!noteDraft.trim() || !canEditIncident} onClick={submitNote}>
+                      {t('Post')}
+                    </Button>
+                  </div>
+                </Card>
+              </div>
+            </>
+          ) : (
+            <EmptyState title={t('No incident selected')} detail="Select an incident from the map or the active list to see its detail." />
+          )}
+        </div>
+
+        {/* Column 2 — the registers ------------------------------- */}
+        <div className="flex min-w-0 flex-col gap-3 xl:col-span-4">
+          <Card flush>
+            <CardHeader bordered title={t('Active incidents')} description={t('{0} in scope for this mode', visibleIncidents.length)} />
+            <div className="max-h-[440px] divide-y divide-ink-50 overflow-y-auto">
+              {visibleIncidents.length === 0 ? (
+                <EmptyState compact title={t('No active incidents')} detail="Nothing currently open matches this mode." />
+              ) : (
+                visibleIncidents.map((incident) => {
+                  const active = incident.id === selectedIncidentId
+                  return (
+                    <button
+                      key={incident.id}
+                      type="button"
+                      onClick={() => selectIncident(incident.id)}
+                      className={cn('flex w-full items-start gap-2.5 p-3 text-left transition-colors hover:bg-govt-50/40', active && 'bg-govt-50')}
+                    >
+                      <SeverityBadge severity={incident.severity} className="mt-0.5 shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-[0.8125rem] font-medium text-ink-800">{incident.title}</p>
+                        <p className="mt-0.5 text-[0.6875rem] text-ink-400">
+                          {INCIDENT_TYPE_LABEL[incident.type]} · {incident.locationName} · {formatRelative(incident.detectedAt)}
+                        </p>
+                      </div>
+                      <Badge tone="muted">{INCIDENT_STATUS_LABEL[incident.status]}</Badge>
+                    </button>
+                  )
+                })
+              )}
+            </div>
+          </Card>
+
+          <Card flush>
+            <CardHeader bordered icon={<Siren className="h-4 w-4" />} title={t('Command log')} description={t('City-wide chronological record - automatic entries from incident actions, plus entries you post directly.')} />
+            <div className="p-3">
+              <div className="flex items-start gap-1.5">
+                <Textarea rows={2} value={logDraft} onChange={(e) => setLogDraft(e.target.value)} placeholder={t('Post a command log entry.')} className="flex-1" />
+                <Button size="sm" variant="primary" disabled={!logDraft.trim()} onClick={submitLog} icon={<Send className="h-3.5 w-3.5" />}>
                   {t('Post')}
                 </Button>
               </div>
-            </Card>
-          </div>
-        </>
-      ) : (
-        <EmptyState title={t('No incident selected')} detail="Select an incident from the map or the active list to see its detail." />
-      )}
-
-      <Card flush>
-        <CardHeader bordered icon={<Siren className="h-4 w-4" />} title={t('Command log')} description={t('City-wide chronological record - automatic entries from incident actions, plus entries you post directly.')} />
-        <div className="p-3">
-          <div className="flex items-start gap-1.5">
-            <Textarea rows={2} value={logDraft} onChange={(e) => setLogDraft(e.target.value)} placeholder={t('Post a command log entry.')} className="flex-1" />
-            <Button size="sm" variant="primary" disabled={!logDraft.trim()} onClick={submitLog} icon={<Send className="h-3.5 w-3.5" />}>
-              {t('Post')}
-            </Button>
-          </div>
-          <ol className="mt-3 max-h-72 space-y-2 overflow-y-auto">
-            {combinedLog.length === 0 ? (
-              <p className="text-xs text-ink-400">{t('No entries yet this session.')}</p>
-            ) : (
-              combinedLog.map((entry) => (
-                <li key={entry.id} className="flex items-start gap-2.5 text-xs">
-                  <Badge tone={entry.origin === 'operator' ? 'info' : 'muted'} className="mt-0.5 shrink-0">{entry.origin === 'operator' ? 'Operator' : 'System'}</Badge>
-                  <div className="min-w-0">
-                    <p className="text-ink-700">{entry.text}</p>
-                    <p className="mt-0.5 text-[0.6875rem] text-ink-400">{entry.actor} · {formatDateTime(entry.at)}</p>
-                  </div>
-                </li>
-              ))
-            )}
-          </ol>
+              <ol className="mt-3 max-h-72 space-y-2 overflow-y-auto">
+                {combinedLog.length === 0 ? (
+                  <p className="text-xs text-ink-400">{t('No entries yet this session.')}</p>
+                ) : (
+                  combinedLog.map((entry) => (
+                    <li key={entry.id} className="flex items-start gap-2.5 text-xs">
+                      <Badge tone={entry.origin === 'operator' ? 'info' : 'muted'} className="mt-0.5 shrink-0">{entry.origin === 'operator' ? 'Operator' : 'System'}</Badge>
+                      <div className="min-w-0">
+                        <p className="text-ink-700">{entry.text}</p>
+                        <p className="mt-0.5 text-[0.6875rem] text-ink-400">{entry.actor} · {formatDateTime(entry.at)}</p>
+                      </div>
+                    </li>
+                  ))
+                )}
+              </ol>
+            </div>
+          </Card>
         </div>
-      </Card>
+      </div>
 
       <ConfirmDialog
         open={confirmAdvance !== null}

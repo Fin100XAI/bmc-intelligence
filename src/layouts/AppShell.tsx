@@ -13,6 +13,8 @@ import { useApplyLocale } from '@/stores/locale.store'
 import { DEMO_NOW } from '@/utils/deterministic'
 import { useActiveVersion } from '@/data/runtime'
 import { cn } from '@/utils/cn'
+import { AppMasthead } from '@/components/layout/AppMasthead'
+import { MenuBar } from '@/components/layout/MenuBar'
 import { Sidebar, type SidebarBadges } from '@/components/layout/Sidebar'
 import { ContextBar, Topbar, type TopbarStatus } from '@/components/layout/Topbar'
 import { CommandPalette } from '@/components/layout/CommandPalette'
@@ -129,11 +131,20 @@ export function AppShell(): React.JSX.Element {
        command bar, footer and every open surface are redrawn in it together.
        A partial change - a translated page under an English navigation - is
        worse than either language on its own. */
-    <div key={locale} className="flex min-h-screen w-full bg-canvas">
-      {!reduced ? <Sidebar badges={badges} /> : null}
+    <div key={locale} className="flex min-h-screen w-full flex-col bg-canvas">
+      {/* Mobile only. Primary navigation on wide screens is the horizontal
+          MenuBar below the top bar; a vertical rail behind the Topbar's
+          hamburger is still the right shape on a phone. */}
+      {!reduced ? <Sidebar badges={badges} desktop={false} /> : null}
 
       <div className="flex min-w-0 flex-1 flex-col">
+        {/* The corporation's identity comes first, above the working surfaces.
+            It scrolls away with the page; the top bar beneath it is what stays
+            pinned, because search and status are what an officer reaches for
+            mid-task, not the letterhead. */}
+        {!reduced ? <AppMasthead /> : null}
         <Topbar status={status} />
+        {!reduced ? <MenuBar badges={badges} /> : null}
         {!reduced ? <ContextBar /> : null}
 
         <main

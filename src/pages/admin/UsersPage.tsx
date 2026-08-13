@@ -19,6 +19,7 @@ import { MiniBar } from '@/components/charts/charts'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { adminService } from '@/services'
+import { usePageMasthead } from '@/stores/masthead.store'
 import {
   ACTION_LABEL,
   RESOURCE_LABEL,
@@ -169,6 +170,12 @@ export function UsersPage(): React.JSX.Element {
   const [mfaFilter, setMfaFilter] = useState<'' | 'enrolled' | 'not-enrolled'>('')
   const [statusFilter, setStatusFilter] = useState<User['status'] | ''>('')
 
+  // The shell renders the masthead; this page states what it should say.
+  usePageMasthead(
+    t('Users & Roles'),
+    t('Every principal provisioned in this demonstration environment, and the role catalogue that decides what each of them may reach. Permissions are listed in full against every role - there is no implicit or inherited grant anywhere in the platform - and no password, token or credential material is modelled.'),
+  )
+
   const users = usersQuery.data ?? []
   const roles = rolesQuery.data ?? []
 
@@ -316,8 +323,6 @@ export function UsersPage(): React.JSX.Element {
   const header = (
     <PageHeader
       eyebrow={t('Administration')}
-      title={t('Users & Roles')}
-      description={t('Every principal provisioned in this demonstration environment, and the role catalogue that decides what each of them may reach. Permissions are listed in full against every role - there is no implicit or inherited grant anywhere in the platform - and no password, token or credential material is modelled.')}
       breadcrumbs={[{ label: t('Administration') }, { label: t('Users & Roles') }]}
       controls={
         <Tabs

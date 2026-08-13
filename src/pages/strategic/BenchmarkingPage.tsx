@@ -21,6 +21,7 @@ import { RankedBarChart } from '@/components/charts'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { benchmarkService } from '@/services'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { activeCorporation } from '@/config/municipality.config'
 import {
   BENCHMARK_BASIS_LABEL,
@@ -87,6 +88,12 @@ export function BenchmarkingPage(): React.JSX.Element {
   const [metricId, setMetricId] = useState('collection-efficiency')
   const [band, setBand] = useState<PopulationBand | 'all'>('all')
 
+  // The shell's masthead states the screen's name; the page states the wording.
+  usePageMasthead(
+    t('State Benchmarking'),
+    t('Where this corporation stands on Maharashtra\'s published municipal indicators. A figure on its own cannot be judged - a figure beside its peers can.'),
+  )
+
   const metricsQuery = useServiceQuery(queryKeys.benchmark('metrics'), (u) => benchmarkService.metrics(u))
   const allQuery = useServiceQuery(queryKeys.benchmark('all'), (u) => benchmarkService.all(u))
 
@@ -133,7 +140,6 @@ export function BenchmarkingPage(): React.JSX.Element {
       <PageBody>
         <PageHeader
           eyebrow={t('Strategic Intelligence')}
-          title={t('State Benchmarking')}
           breadcrumbs={[{ label: t('Strategic Intelligence') }, { label: t('State Benchmarking') }]}
         />
         <LoadingState variant="metrics" />
@@ -147,7 +153,6 @@ export function BenchmarkingPage(): React.JSX.Element {
       <PageBody>
         <PageHeader
           eyebrow={t('Strategic Intelligence')}
-          title={t('State Benchmarking')}
           breadcrumbs={[{ label: t('Strategic Intelligence') }, { label: t('State Benchmarking') }]}
         />
         <ErrorState
@@ -277,23 +282,9 @@ export function BenchmarkingPage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('Strategic Intelligence')}
-        title={t('State Benchmarking')}
-        description={t('Where this corporation stands on Maharashtra\'s published municipal indicators. A figure on its own cannot be judged - a figure beside its peers can.')}
         breadcrumbs={[{ label: t('Strategic Intelligence') }, { label: t('State Benchmarking') }]}
         freshness={freshness}
       />
-
-      <DemonstrationNotice />
-
-      <Card tone="info" className="flex items-start gap-3">
-        <Scale className="mt-0.5 h-4 w-4 shrink-0 text-govt-600" aria-hidden />
-        <div className="min-w-0">
-          <p className="text-[0.8125rem] font-semibold text-govt-800">{t('Two kinds of figure appear here')}</p>
-          <p className="mt-1 text-xs leading-relaxed text-ink-600">
-            <strong>{t('Published')}</strong>{' '}{t('indicators (')}{publishedCount} of {metrics.length}{t(') are arithmetic on figures the corporations themselves publish - budget outlay, census population, sanctioned water supply, notified area. They are as reliable as their sources.')}{' '}<strong>{t('Modelled')}</strong>{' '}{t('indicators are generated for this demonstration, because no comparable state-wide operational return exists in the public domain. Every metric carries its basis, and the two are never combined into a single composite score - a ranking that mixed them would look authoritative and mean nothing.')}
-          </p>
-        </div>
-      </Card>
 
       <Card className="flex flex-wrap items-end gap-3">
         <div className="min-w-[16rem] flex-1">
@@ -308,9 +299,9 @@ export function BenchmarkingPage(): React.JSX.Element {
             }))}
           />
         </div>
-        <div>
+        <div className="min-w-0">
           <Label htmlFor="band-control">{t('Peer group')}</Label>
-          <div id="band-control">
+          <div id="band-control" className="scrollbar-slim overflow-x-auto">
             <SegmentedControl<PopulationBand | 'all'>
               value={band}
               onChange={setBand}
@@ -321,114 +312,140 @@ export function BenchmarkingPage(): React.JSX.Element {
         </div>
       </Card>
 
-      {!metric ? (
-        <EmptyState title={t('No indicator selected')} detail="Choose an indicator to compare." />
-      ) : ranked.length === 0 ? (
-        <EmptyState
-          title={t('No corporation in this peer group publishes this indicator')}
-          detail="Widen the peer group, or choose a different indicator."
-        />
-      ) : (
-        <>
-          <Card tone="default" className="flex items-start gap-3">
-            <div className="min-w-0">
-              <p className="text-[0.8125rem] font-semibold text-ink-900">
-                {metric.label}{' '}
-                <Badge tone={metric.basis === 'published' ? 'positive' : 'info'} size="sm">
-                  {BENCHMARK_BASIS_LABEL[metric.basis]}
-                </Badge>
-              </p>
-              <p className="mt-1 text-xs leading-relaxed text-ink-600">{metric.description}</p>
-              {metric.derivation ? (
-                <p className="mt-1.5 text-[0.6875rem] text-ink-500">
-                  <span className="label-institutional">{t('Derivation')}</span> · {metric.derivation}
-                </p>
-              ) : null}
-            </div>
-          </Card>
+      {/* ── Two columns ─────────────────────────────────────────────
+          The comparison itself — what the indicator means, who leads on it,
+          and the full league — reads down the wide column. The corporation's
+          own standing and the disclosure of what kind of figure this is sit
+          beside it, where they can be checked against the table without
+          scrolling the table away. */}
+      <div className="grid grid-cols-1 gap-3 xl:grid-cols-12">
+        <div className="flex min-w-0 flex-col gap-3 xl:col-span-8">
+          {!metric ? (
+            <EmptyState title={t('No indicator selected')} detail="Choose an indicator to compare." />
+          ) : ranked.length === 0 ? (
+            <EmptyState
+              title={t('No corporation in this peer group publishes this indicator')}
+              detail="Widen the peer group, or choose a different indicator."
+            />
+          ) : (
+            <>
+              <Card tone="default" className="flex items-start gap-3">
+                <div className="min-w-0">
+                  <p className="text-[0.8125rem] font-semibold text-ink-900">
+                    {metric.label}{' '}
+                    <Badge tone={metric.basis === 'published' ? 'positive' : 'info'} size="sm">
+                      {BENCHMARK_BASIS_LABEL[metric.basis]}
+                    </Badge>
+                  </p>
+                  <p className="mt-1 text-xs leading-relaxed text-ink-600">{metric.description}</p>
+                  {metric.derivation ? (
+                    <p className="mt-1.5 text-[0.6875rem] text-ink-500">
+                      <span className="label-institutional">{t('Derivation')}</span> · {metric.derivation}
+                    </p>
+                  ) : null}
+                </div>
+              </Card>
 
-          <MetricGrid columns={4}>
-            <MetricCard
-              label={`${activeCorporation.shortName} position`}
-              value={subject && subjectIndex >= 0 ? `${subjectIndex + 1}` : '-'}
-              support={subject ? `of ${ranked.length} in this peer group` : 'Not ranked in this peer group'}
-              tone={
-                subjectIndex < 0
-                  ? 'default'
-                  : subjectIndex < ranked.length / 3
-                    ? 'positive'
-                    : subjectIndex > (ranked.length * 2) / 3
-                      ? 'critical'
-                      : 'warn'
-              }
-              icon={<Award className="h-4 w-4" />}
-              origin="demonstration"
-            />
-            <MetricCard
-              label={`${activeCorporation.shortName} value`}
-              value={formatValue(subjectValue, metric)}
-              support={metric.label}
-              icon={<TrendingUp className="h-4 w-4" />}
-            />
-            <MetricCard
-              label={t('Peer group median')}
-              value={cohortMedian === null ? '-' : formatValue(Number(cohortMedian.toFixed(metric.decimals)), metric)}
-              support={t('Across {0} corporations', ranked.length)}
-              icon={<Users2 className="h-4 w-4" />}
-            />
-            <MetricCard
-              label={t('Best in peer group')}
-              value={best && metric ? formatValue(best.values[metric.id]?.value ?? null, metric) : '-'}
-              support={best ? `${best.shortName} · ${best.city}` : undefined}
-              tone="positive"
-            />
-          </MetricGrid>
+              <Card flush className="flex flex-col">
+                <CardHeader
+                  icon={<Award className="h-4 w-4" />}
+                  title={t('Leaders · {0}', metric.shortLabel)}
+                  description={
+                    metric.higherIsBetter
+                      ? 'Highest performers in the selected peer group.'
+                      : 'Lowest - and therefore best - performers in the selected peer group.'
+                  }
+                  bordered
+                />
+                <div className="px-4 py-4" style={{ height: Math.max(200, Math.min(ranked.length, 12) * 26) }}>
+                  <RankedBarChart
+                    data={ranked.slice(0, 12).map((r) => ({
+                      // The operator's own corporation is marked in the label -
+                      // this chart colours by value, not by row, so the bar itself
+                      // cannot carry the distinction.
+                      label: r.corporationId === activeCorporation.id ? `${r.shortName} ◂ you` : r.shortName,
+                      value: r.values[metric.id]!.value!,
+                    }))}
+                    unit={metric.unit === '₹' ? '' : metric.unit}
+                    higherIsWorse={!metric.higherIsBetter}
+                  />
+                </div>
+              </Card>
 
-          <Card flush className="flex flex-col">
-            <CardHeader
-              icon={<Award className="h-4 w-4" />}
-              title={t('Leaders · {0}', metric.shortLabel)}
-              description={
-                metric.higherIsBetter
-                  ? 'Highest performers in the selected peer group.'
-                  : 'Lowest - and therefore best - performers in the selected peer group.'
-              }
-              bordered
-            />
-            <div className="px-4 py-4" style={{ height: Math.max(200, Math.min(ranked.length, 12) * 26) }}>
-              <RankedBarChart
-                data={ranked.slice(0, 12).map((r) => ({
-                  // The operator's own corporation is marked in the label -
-                  // this chart colours by value, not by row, so the bar itself
-                  // cannot carry the distinction.
-                  label: r.corporationId === activeCorporation.id ? `${r.shortName} ◂ you` : r.shortName,
-                  value: r.values[metric.id]!.value!,
-                }))}
-                unit={metric.unit === '₹' ? '' : metric.unit}
-                higherIsWorse={!metric.higherIsBetter}
+              <Card flush>
+                <CardHeader
+                  icon={<Scale className="h-4 w-4" />}
+                  title={t('League table')}
+                  description={t('All {0} corporations in the selected peer group, ranked on {1}.', ranked.length, metric.label.toLowerCase())}
+                  bordered
+                />
+                <DataTable
+                  rows={ranked}
+                  columns={columns}
+                  rowKey={(r) => r.corporationId}
+                  searchable
+                  searchPlaceholder="Search corporation, city or district"
+                  activeRowKey={activeCorporation.id}
+                  pageSize={15}
+                />
+              </Card>
+            </>
+          )}
+        </div>
+
+        <div className="flex min-w-0 flex-col gap-3 xl:col-span-4">
+          {metric && ranked.length > 0 ? (
+            <MetricGrid columns={2}>
+              <MetricCard
+                label={`${activeCorporation.shortName} position`}
+                value={subject && subjectIndex >= 0 ? `${subjectIndex + 1}` : '-'}
+                support={subject ? `of ${ranked.length} in this peer group` : 'Not ranked in this peer group'}
+                tone={
+                  subjectIndex < 0
+                    ? 'default'
+                    : subjectIndex < ranked.length / 3
+                      ? 'positive'
+                      : subjectIndex > (ranked.length * 2) / 3
+                        ? 'critical'
+                        : 'warn'
+                }
+                icon={<Award className="h-4 w-4" />}
+                origin="demonstration"
               />
+              <MetricCard
+                label={`${activeCorporation.shortName} value`}
+                value={formatValue(subjectValue, metric)}
+                support={metric.label}
+                icon={<TrendingUp className="h-4 w-4" />}
+              />
+              <MetricCard
+                label={t('Peer group median')}
+                value={cohortMedian === null ? '-' : formatValue(Number(cohortMedian.toFixed(metric.decimals)), metric)}
+                support={t('Across {0} corporations', ranked.length)}
+                icon={<Users2 className="h-4 w-4" />}
+              />
+              <MetricCard
+                label={t('Best in peer group')}
+                value={best && metric ? formatValue(best.values[metric.id]?.value ?? null, metric) : '-'}
+                support={best ? `${best.shortName} · ${best.city}` : undefined}
+                tone="positive"
+              />
+            </MetricGrid>
+          ) : null}
+
+          <Card tone="info" className="flex items-start gap-3">
+            <Scale className="mt-0.5 h-4 w-4 shrink-0 text-govt-600" aria-hidden />
+            <div className="min-w-0">
+              <p className="text-[0.8125rem] font-semibold text-govt-800">{t('Two kinds of figure appear here')}</p>
+              <p className="mt-1 text-xs leading-relaxed text-ink-600">
+                <strong>{t('Published')}</strong>{' '}{t('indicators (')}{publishedCount} of {metrics.length}{t(') are arithmetic on figures the corporations themselves publish - budget outlay, census population, sanctioned water supply, notified area. They are as reliable as their sources.')}{' '}<strong>{t('Modelled')}</strong>{' '}{t('indicators are generated for this demonstration, because no comparable state-wide operational return exists in the public domain. Every metric carries its basis, and the two are never combined into a single composite score - a ranking that mixed them would look authoritative and mean nothing.')}
+              </p>
             </div>
           </Card>
 
-          <Card flush>
-            <CardHeader
-              icon={<Scale className="h-4 w-4" />}
-              title={t('League table')}
-              description={t('All {0} corporations in the selected peer group, ranked on {1}.', ranked.length, metric.label.toLowerCase())}
-              bordered
-            />
-            <DataTable
-              rows={ranked}
-              columns={columns}
-              rowKey={(r) => r.corporationId}
-              searchable
-              searchPlaceholder="Search corporation, city or district"
-              activeRowKey={activeCorporation.id}
-              pageSize={15}
-            />
-          </Card>
-        </>
-      )}
+          <DemonstrationNotice />
+        </div>
+      </div>
     </PageBody>
   )
 }

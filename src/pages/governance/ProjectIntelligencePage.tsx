@@ -6,6 +6,7 @@ import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { projectService, wardService } from '@/services'
 import { useDrawerStore } from '@/stores/ui.store'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { ROUTES } from '@/config/navigation'
 import {
   PROJECT_CATEGORY_LABEL,
@@ -88,6 +89,12 @@ const RISK_BAND_TONE: Record<RiskBand, 'positive' | 'warn' | 'risk' | 'critical'
 const ACTIVE_STATUSES: ProjectStatus[] = ['planned', 'tendered', 'awarded', 'in-progress', 'delayed', 'on-hold']
 
 export function ProjectIntelligencePage(): React.JSX.Element {
+  // The shell's masthead carries the screen's name; the page states the wording.
+  usePageMasthead(
+    t('Project Intelligence'),
+    t('Capital project delivery across every category, with the explainable Project Risk Engine driving prioritisation. Every risk score is the transparent, published sum of seven weighted delivery-risk drivers - never a judgement of any person or organisation.'),
+  )
+
   const [searchParams] = useSearchParams()
   const openDrawer = useDrawerStore((s) => s.open)
 
@@ -343,8 +350,6 @@ export function ProjectIntelligencePage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('Governance & Finance')}
-        title={t('Project Intelligence')}
-        description={t('Capital project delivery across every category, with the explainable Project Risk Engine driving prioritisation. Every risk score is the transparent, published sum of seven weighted delivery-risk drivers - never a judgement of any person or organisation.')}
         breadcrumbs={[{ label: t('Governance & Finance') }, { label: t('Project Intelligence') }]}
         freshness={FRESHNESS}
         actions={
@@ -426,6 +431,12 @@ export function ProjectIntelligencePage(): React.JSX.Element {
             </MetricGrid>
           </Card>
 
+          {/* Two columns. The portfolio is the record and holds the wide
+              column; the engine's breakdown for the selected project sits
+              beside it — a score read next to the row that produced it — with
+              the four portfolio distributions beneath. */}
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+          <div className="min-w-0 xl:col-span-8">
           <Card flush>
             <CardHeader
               bordered
@@ -475,8 +486,10 @@ export function ProjectIntelligencePage(): React.JSX.Element {
               </div>
             )}
           </Card>
+          </div>
 
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
+          <div className="order-2 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-1">
             <Card>
               <ChartFrame title={t('Status composition')} unit="projects" timeframe="Current scope" freshness={FRESHNESS} height={220}>
                 <DonutChart data={statusComposition} unit="projects" centreValue={formatNumber(rows.length)} centreLabel="Projects" />
@@ -525,7 +538,7 @@ export function ProjectIntelligencePage(): React.JSX.Element {
             </Card>
           </div>
 
-          <Card>
+          <Card className="order-1">
             <CardHeader
               title={t('Project Risk Engine')}
               description={t('A published, deterministic composite: seven delivery-risk drivers, each independently weighted and explained. The score identifies delivery risk requiring management attention - it is not a finding against any person or organisation.')}
@@ -556,6 +569,8 @@ export function ProjectIntelligencePage(): React.JSX.Element {
               </div>
             )}
           </Card>
+          </div>
+          </div>
         </>
       ) : null}
 

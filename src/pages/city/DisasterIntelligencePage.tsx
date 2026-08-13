@@ -42,6 +42,7 @@ import { queryKeys } from '@/app/queryClient'
 import { incidentService, type IncidentCreateInput } from '@/services/incident.service'
 import { useCurrentUser } from '@/stores/auth.store'
 import { useDrawerStore, useFilterStore } from '@/stores/ui.store'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { allowed } from '@/security'
 import { WARDS, WARD_BY_ID, departmentName, officerDisplayName, wardName } from '@/data/reference'
 import type { DataFreshness, Severity } from '@/types/common'
@@ -141,6 +142,11 @@ export function DisasterIntelligencePage(): React.JSX.Element {
   const filters = useFilterStore((s) => s.filters)
   const [searchParams, setSearchParams] = useSearchParams()
 
+  usePageMasthead(
+    t('Disaster Intelligence - Unified Incident Register'),
+    t('Every flood, fire, structural, infrastructure, weather, public health, road and utility incident recorded by the platform, in one register. Each record carries a declared lifecycle, a named accountable owner and an evidence trail from detection through to post-incident review.'),
+  )
+
   const [view, setView] = useState<'table' | 'cards'>('table')
   const [statusTab, setStatusTab] = useState<'all' | IncidentStatus>('all')
   const [typeFilter, setTypeFilter] = useState<'all' | IncidentType>('all')
@@ -183,7 +189,7 @@ export function DisasterIntelligencePage(): React.JSX.Element {
   if (incidentsQuery.isLoading) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('City Intelligence')} title={t('Disaster Intelligence')} breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Disaster Intelligence') }]} />
+        <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Disaster Intelligence') }]} />
         <LoadingState variant="metrics" />
         <LoadingState variant="table" rows={6} />
       </PageBody>
@@ -192,7 +198,7 @@ export function DisasterIntelligencePage(): React.JSX.Element {
   if (incidentsQuery.error) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('City Intelligence')} title={t('Disaster Intelligence')} breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Disaster Intelligence') }]} />
+        <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Disaster Intelligence') }]} />
         <ErrorState detail={incidentsQuery.error.message} onRetry={() => incidentsQuery.refetch()} />
       </PageBody>
     )
@@ -407,8 +413,6 @@ export function DisasterIntelligencePage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('City Intelligence')}
-        title={t('Disaster Intelligence - Unified Incident Register')}
-        description={t('Every flood, fire, structural, infrastructure, weather, public health, road and utility incident recorded by the platform, in one register. Each record carries a declared lifecycle, a named accountable owner and an evidence trail from detection through to post-incident review.')}
         breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Disaster Intelligence') }]}
         freshness={freshness}
         actions={
@@ -417,7 +421,6 @@ export function DisasterIntelligencePage(): React.JSX.Element {
             icon={<Plus className="h-3.5 w-3.5" />}
             onClick={() => setCreateOpen(true)}
             disabled={!canCreate}
-            title={canCreate ? undefined : 'Your assigned role does not hold incident:create. Contact the Disaster Management Cell to raise this report.'}
           >
             {t('Report Incident')}
           </Button>
@@ -479,26 +482,11 @@ export function DisasterIntelligencePage(): React.JSX.Element {
         />
       </MetricGrid>
 
-      <Card>
-        <CardHeader title={t('Incident map')} description={t('Markers reflect the incidents currently visible under the filters below; ward shading reflects the full open-incident register.')} />
-        <div className="mt-3">
-          <CityMap
-            layers={[
-              {
-                id: 'open-load',
-                label: t('Open Incident Load'),
-                valueFor: (wardId) => Math.min(100, (openLoadByWard.get(wardId) ?? 0) * 20),
-                higherIsWorse: true,
-                unit: ' open incident(s), scaled',
-                description: t('Count of currently open incidents recorded against the ward across the full register, independent of the filters applied below.'),
-              },
-            ]}
-            markers={markers}
-            height={380}
-          />
-        </div>
-      </Card>
-
+      {/* The register is the working surface and takes the width; the map is
+          the locator that qualifies it and reads beside, not above — a
+          full-width map pushed the register itself below the fold. */}
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
       <Card flush>
         <CardHeader
           className="px-4 pt-4 pb-3"
@@ -566,13 +554,37 @@ export function DisasterIntelligencePage(): React.JSX.Element {
             />
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 2xl:grid-cols-3">
             {filtered.map((incident) => (
               <IncidentCard key={incident.id} incident={incident} onClick={() => openDrawer({ kind: 'incident', id: incident.id })} />
             ))}
           </div>
         )}
       </Card>
+        </div>
+
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
+          <Card>
+            <CardHeader title={t('Incident map')} description={t('Markers reflect the incidents currently visible under the filters below; ward shading reflects the full open-incident register.')} />
+            <div className="mt-3">
+              <CityMap
+                layers={[
+                  {
+                    id: 'open-load',
+                    label: t('Open Incident Load'),
+                    valueFor: (wardId) => Math.min(100, (openLoadByWard.get(wardId) ?? 0) * 20),
+                    higherIsWorse: true,
+                    unit: ' open incident(s), scaled',
+                    description: t('Count of currently open incidents recorded against the ward across the full register, independent of the filters applied below.'),
+                  },
+                ]}
+                markers={markers}
+                height={380}
+              />
+            </div>
+          </Card>
+        </div>
+      </div>
 
       <Modal
         open={createOpen}

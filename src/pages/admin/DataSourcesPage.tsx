@@ -43,6 +43,7 @@ import {
   useDataSourceStore,
   type SyncResult,
 } from '@/stores/data-source.store'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { DEPARTMENTS_ORDERED, departmentName, officerDisplayName } from '@/data/reference'
 import { municipality } from '@/config/municipality.config'
 import { DEMO_NOW, det, isoFromAnchor } from '@/utils/deterministic'
@@ -210,6 +211,12 @@ export function DataSourcesPage(): React.JSX.Element {
   const [editTarget, setEditTarget] = useState<DataSource | null>(null)
   const [editDraft, setEditDraft] = useState<EditDraft | null>(null)
   const [exportNote, setExportNote] = useState<string | null>(null)
+
+  // The shell renders the masthead; this page states what it should say.
+  usePageMasthead(
+    t('Data Sources'),
+    t('The operational ingestion register — every upstream feed the Urban Intelligence Core draws on, with the schema it ingests, the purpose it is held for, the retention it sits under and the metrics downstream of it. Enable or pause a source, change its cadence, classification or retention, run a sync, open it in full, add or remove one; changes apply immediately for this session. No source is connected to a live {0} system and every sync is simulated.', municipality.shortName),
+  )
 
   // Filters
   const [categoryFilter, setCategoryFilter] = useState<DataSourceCategory | ''>('')
@@ -531,8 +538,6 @@ export function DataSourcesPage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('Administration')}
-        title={t('Data Sources')}
-        description={t('The operational ingestion register — every upstream feed the Urban Intelligence Core draws on, with the schema it ingests, the purpose it is held for, the retention it sits under and the metrics downstream of it. Enable or pause a source, change its cadence, classification or retention, run a sync, open it in full, add or remove one; changes apply immediately for this session. No source is connected to a live {0} system and every sync is simulated.', municipality.shortName)}
         breadcrumbs={[{ label: t('Administration') }, { label: t('Data Sources') }]}
         actions={
           <div className="flex flex-wrap items-center gap-2">
@@ -570,77 +575,89 @@ export function DataSourcesPage(): React.JSX.Element {
         </Card>
       ) : null}
 
-      <MetricGrid columns={4}>
-        <Card>
-          <p className="label-institutional">{t('Registered sources')}</p>
-          <p className="numeric mt-2 text-metric font-semibold text-ink-900">{metrics.total}</p>
-          <p className="mt-0.5 text-[0.6875rem] text-ink-500">{t('{0} enabled · {1} paused', metrics.enabled, metrics.paused)}</p>
-        </Card>
-        <Card tone={metrics.needingAttention > 0 ? 'warn' : 'default'}>
-          <p className="label-institutional">{t('Needing attention')}</p>
-          <p className="numeric mt-2 text-metric font-semibold text-ink-900">{metrics.needingAttention}</p>
-          <p className="mt-0.5 text-[0.6875rem] text-ink-500">
-            {t('Degraded, stale or in error · {0} past their freshness expectation', metrics.slaBreaches)}
-          </p>
-        </Card>
-        <Card>
-          <p className="label-institutional">{t('Records ingested')}</p>
-          <p className="numeric mt-2 text-metric font-semibold text-ink-900">{formatCompact(metrics.totalRecords)}</p>
-          <p className="mt-0.5 text-[0.6875rem] text-ink-500">{t('Across all sources, simulated')}</p>
-        </Card>
-        <Card tone="info">
-          <p className="label-institutional">{t('Mean quality (enabled)')}</p>
-          <p className="numeric mt-2 text-metric font-semibold text-ink-900">
-            {metrics.avgQuality}
-            <span className="text-base text-ink-400">/100</span>
-          </p>
-          <p className="mt-0.5 text-[0.6875rem] text-ink-500">{t('Mean of five published dimensions')}</p>
-        </Card>
-      </MetricGrid>
+      {/* ── Two columns ──────────────────────────────────────────────
+          Where a data steward's attention is owed, and the standing
+          declaration beneath it, read down the wide column. The register's
+          own figures and its composition read down the narrow one, which is
+          how a return states its totals — beside the account, not above it. */}
+      <div className="grid grid-cols-1 gap-3 xl:grid-cols-12">
+        {/* Column 1 — what needs attention ------------------------- */}
+        <div className="flex min-w-0 flex-col gap-3 xl:col-span-8">
+          <Card>
+            <ChartFrame
+              title={t('Lowest quality among enabled sources')}
+              unit={t('quality score /100')}
+              timeframe="Current register"
+              description={t('Where a data steward\'s attention is best spent first. Lower is worse.')}
+              height={Math.max(200, lowestQuality.length * 26)}
+            >
+              <RankedBarChart data={lowestQuality} unit="" higherIsWorse={false} />
+            </ChartFrame>
+          </Card>
 
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_22rem]">
-        <Card>
-          <ChartFrame
-            title={t('Lowest quality among enabled sources')}
-            unit={t('quality score /100')}
-            timeframe="Current register"
-            description={t('Where a data steward\'s attention is best spent first. Lower is worse.')}
-            height={Math.max(200, lowestQuality.length * 26)}
-          >
-            <RankedBarChart data={lowestQuality} unit="" higherIsWorse={false} />
-          </ChartFrame>
-        </Card>
-        <Card>
-          <ChartFrame title={t('Sources by category')} unit="sources" timeframe="Current register" height={190}>
-            <DonutChart data={categoryComposition} centreValue={String(metrics.total)} centreLabel="sources" />
-          </ChartFrame>
-          <div className="mt-3 space-y-1.5 border-t border-ink-100 pt-3">
-            {categoryComposition.map((c) => (
-              <div key={c.label} className="flex items-center justify-between gap-2 text-[0.6875rem]">
-                <span className="inline-flex items-center gap-1.5 text-ink-600">
-                  <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: c.colour }} aria-hidden />
-                  {c.label}
-                </span>
-                <span className="numeric font-semibold text-ink-800">{c.value}</span>
+          {metrics.personalData > 0 ? (
+            <Card tone="warn">
+              <div className="flex items-start gap-2.5">
+                <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-warn-700" />
+                <p className="text-[0.8125rem] leading-relaxed text-ink-700">
+                  <span className="font-semibold text-warn-700">
+                    {t('{0} of {1} sources declare at least one personal field.', metrics.personalData, metrics.total)}
+                  </span>{' '}
+                  {t('Every such field is minimised, banded or dropped at the adapter before it enters the platform store — open a source and read its schema tab to see exactly which fields those are and what happens to each. In a production deployment each of these feeds additionally requires a completed privacy impact assessment and a signed data-sharing agreement before it may be provisioned; nothing here implies either exists.')}
+                </p>
               </div>
-            ))}
-          </div>
-        </Card>
-      </div>
+            </Card>
+          ) : null}
+        </div>
 
-      {metrics.personalData > 0 ? (
-        <Card tone="warn">
-          <div className="flex items-start gap-2.5">
-            <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-warn-700" />
-            <p className="text-[0.8125rem] leading-relaxed text-ink-700">
-              <span className="font-semibold text-warn-700">
-                {t('{0} of {1} sources declare at least one personal field.', metrics.personalData, metrics.total)}
-              </span>{' '}
-              {t('Every such field is minimised, banded or dropped at the adapter before it enters the platform store — open a source and read its schema tab to see exactly which fields those are and what happens to each. In a production deployment each of these feeds additionally requires a completed privacy impact assessment and a signed data-sharing agreement before it may be provisioned; nothing here implies either exists.')}
-            </p>
-          </div>
-        </Card>
-      ) : null}
+        {/* Column 2 — the register's own figures -------------------- */}
+        <div className="flex min-w-0 flex-col gap-3 xl:col-span-4">
+          <MetricGrid columns={2} className="xl:grid-cols-1">
+            <Card>
+              <p className="label-institutional">{t('Registered sources')}</p>
+              <p className="numeric mt-2 text-metric font-semibold text-ink-900">{metrics.total}</p>
+              <p className="mt-0.5 text-[0.6875rem] text-ink-500">{t('{0} enabled · {1} paused', metrics.enabled, metrics.paused)}</p>
+            </Card>
+            <Card tone={metrics.needingAttention > 0 ? 'warn' : 'default'}>
+              <p className="label-institutional">{t('Needing attention')}</p>
+              <p className="numeric mt-2 text-metric font-semibold text-ink-900">{metrics.needingAttention}</p>
+              <p className="mt-0.5 text-[0.6875rem] text-ink-500">
+                {t('Degraded, stale or in error · {0} past their freshness expectation', metrics.slaBreaches)}
+              </p>
+            </Card>
+            <Card>
+              <p className="label-institutional">{t('Records ingested')}</p>
+              <p className="numeric mt-2 text-metric font-semibold text-ink-900">{formatCompact(metrics.totalRecords)}</p>
+              <p className="mt-0.5 text-[0.6875rem] text-ink-500">{t('Across all sources, simulated')}</p>
+            </Card>
+            <Card tone="info">
+              <p className="label-institutional">{t('Mean quality (enabled)')}</p>
+              <p className="numeric mt-2 text-metric font-semibold text-ink-900">
+                {metrics.avgQuality}
+                <span className="text-base text-ink-400">/100</span>
+              </p>
+              <p className="mt-0.5 text-[0.6875rem] text-ink-500">{t('Mean of five published dimensions')}</p>
+            </Card>
+          </MetricGrid>
+
+          <Card>
+            <ChartFrame title={t('Sources by category')} unit="sources" timeframe="Current register" height={190}>
+              <DonutChart data={categoryComposition} centreValue={String(metrics.total)} centreLabel="sources" />
+            </ChartFrame>
+            <div className="mt-3 space-y-1.5 border-t border-ink-100 pt-3">
+              {categoryComposition.map((c) => (
+                <div key={c.label} className="flex items-center justify-between gap-2 text-[0.6875rem]">
+                  <span className="inline-flex items-center gap-1.5 text-ink-600">
+                    <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: c.colour }} aria-hidden />
+                    {c.label}
+                  </span>
+                  <span className="numeric font-semibold text-ink-800">{c.value}</span>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </div>
+      </div>
 
       <Card flush>
         <CardHeader

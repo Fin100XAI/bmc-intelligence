@@ -20,6 +20,7 @@ import { RankedBarChart, Sparkline, TrendChart } from '@/components/charts/chart
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { platformService } from '@/services'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { DOMAIN_LABEL, type SeriesPoint } from '@/types/common'
 import { DEMO_NOW, det, isoFromAnchor } from '@/utils/deterministic'
 import { formatDateTime, formatNumber, formatPercent, formatRelative, formatShortDate } from '@/utils/format'
@@ -103,6 +104,12 @@ interface JobRerun {
 }
 
 export function PlatformHealthPage(): React.JSX.Element {
+  // The shell's masthead carries the screen's name; the page states the wording.
+  usePageMasthead(
+    t('Platform Health'),
+    t('Service availability, data pipeline health, the AI gateway, connector runtime, storage and event processing - reported plainly, with every simulated component labelled as such.'),
+  )
+
   const servicesQuery = useServiceQuery(queryKeys.platform(), (u) => platformService.services(u))
   const jobsQuery = useServiceQuery(['trust-platform-health', 'jobs'], (u) => platformService.jobs(u))
   const summaryQuery = useServiceQuery(['trust-platform-health', 'summary'], (u) => platformService.summary(u))
@@ -345,8 +352,6 @@ export function PlatformHealthPage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('Trust Centre')}
-        title={t('Platform Health')}
-        description={t('Service availability, data pipeline health, the AI gateway, connector runtime, storage and event processing - reported plainly, with every simulated component labelled as such.')}
         breadcrumbs={[{ label: t('Trust Centre'), to: '/trust' }, { label: t('Platform Health') }]}
         actions={
           <div className="flex flex-wrap items-center gap-2">
@@ -394,6 +399,12 @@ export function PlatformHealthPage(): React.JSX.Element {
         </Card>
       </MetricGrid>
 
+      {/* Two columns. The two registers an operator works through — what is
+          running and what is scheduled — read down the wide column; the ranked
+          availability figures and the standing note on what is simulated sit
+          beside them. */}
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
       <Card flush>
         <CardHeader
           className="px-4 pt-4"
@@ -421,6 +432,7 @@ export function PlatformHealthPage(): React.JSX.Element {
             aria-label={t('Filter by category')}
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value as PlatformService['category'] | '')}
+            className="w-auto min-w-[9.5rem]"
             options={[
               { value: '', label: t('All categories') },
               ...CATEGORY_OPTIONS.map((c) => ({ value: c, label: CATEGORY_LABEL[c] })),
@@ -430,6 +442,7 @@ export function PlatformHealthPage(): React.JSX.Element {
             aria-label={t('Filter by origin')}
             value={originFilter}
             onChange={(e) => setOriginFilter(e.target.value as typeof originFilter)}
+            className="w-auto min-w-[9.5rem]"
             options={[
               { value: '', label: t('Simulated and direct') },
               { value: 'simulated', label: t('Simulated components only') },
@@ -450,18 +463,6 @@ export function PlatformHealthPage(): React.JSX.Element {
             emptyTitle={t('No service matches the current filters')}
           />
         </div>
-      </Card>
-
-      <Card>
-        <ChartFrame
-          title={t('Availability by service')}
-          unit="%"
-          timeframe="Last 30 days"
-          description={t('Lowest availability first.')}
-          height={Math.max(220, availabilityData.length * 26)}
-        >
-          <RankedBarChart data={availabilityData} unit="%" higherIsWorse={false} />
-        </ChartFrame>
       </Card>
 
       <Card flush>
@@ -504,6 +505,20 @@ export function PlatformHealthPage(): React.JSX.Element {
           </div>
         ) : null}
       </Card>
+        </div>
+
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
+      <Card>
+        <ChartFrame
+          title={t('Availability by service')}
+          unit="%"
+          timeframe="Last 30 days"
+          description={t('Lowest availability first.')}
+          height={Math.max(220, availabilityData.length * 26)}
+        >
+          <RankedBarChart data={availabilityData} unit="%" higherIsWorse={false} />
+        </ChartFrame>
+      </Card>
 
       <Card tone="info">
         <div className="flex items-start gap-2.5">
@@ -513,6 +528,8 @@ export function PlatformHealthPage(): React.JSX.Element {
           </p>
         </div>
       </Card>
+        </div>
+      </div>
 
       {/* Service detail ---------------------------------------------------- */}
       <Drawer

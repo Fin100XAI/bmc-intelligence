@@ -31,6 +31,7 @@ import { coastalService } from '@/services/coastal.service'
 import { monsoonService } from '@/services/monsoon.service'
 import { useActiveCorporation } from '@/stores/corporation.store'
 import { useDrawerStore, useFilterStore } from '@/stores/ui.store'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { wardName } from '@/data/reference'
 import type { CoastalSegment, TideWindow } from '@/types/city-domains'
 import type { DataFreshness } from '@/types/common'
@@ -176,8 +177,6 @@ function CoastalNotApplicable({ corporation }: { corporation: CorporationRef }):
     <PageBody>
       <PageHeader
         eyebrow={t('City Intelligence')}
-        title={t('Coastal Intelligence')}
-        description={t('Coastal zone management covers the sea shoreline and tidal creek frontage a municipal corporation is responsible for. {0} has neither within its limits, so this module states that position rather than presenting a coastline the corporation does not hold.', municipality.shortName)}
         breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Coastal Intelligence') }]}
         meta={<Badge tone="neutral">{t('Not applicable to this corporation')}</Badge>}
       />
@@ -300,6 +299,17 @@ export function CoastalIntelligencePage(): React.JSX.Element {
   // the page must not be able to render another city's coastline at all.
   const coastal = hasCoastalJurisdiction(corporation)
 
+  // Stated once, here, rather than in each branch: the not-applicable position
+  // is a different reading of the same screen, and the masthead has to carry
+  // whichever one is on show. Declaring it in the child would lose the race —
+  // child effects run before the parent's, so the parent would overwrite it.
+  usePageMasthead(
+    t('Coastal Intelligence'),
+    coastal
+      ? t('Shoreline segment-level exposure - beaches, seawalls, mangroves, creeks and promenades - read alongside tide behaviour and modelled monsoon flood exposure.')
+      : t('Coastal zone management covers the sea shoreline and tidal creek frontage a municipal corporation is responsible for. {0} has neither within its limits, so this module states that position rather than presenting a coastline the corporation does not hold.', municipality.shortName),
+  )
+
   const segmentsQuery = useServiceQuery(COASTAL_SEGMENTS_KEY, (u) => coastalService.segments(u), { enabled: coastal })
   const summaryQuery = useServiceQuery(COASTAL_SUMMARY_KEY, (u) => coastalService.coastalSummary(u), {
     enabled: coastal,
@@ -311,7 +321,7 @@ export function CoastalIntelligencePage(): React.JSX.Element {
   if (segmentsQuery.isLoading || summaryQuery.isLoading) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('City Intelligence')} title={t('Coastal Intelligence')} breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Coastal Intelligence') }]} />
+        <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Coastal Intelligence') }]} />
         <LoadingState variant="metrics" />
         <LoadingState variant="table" rows={8} />
       </PageBody>
@@ -320,7 +330,7 @@ export function CoastalIntelligencePage(): React.JSX.Element {
   if (segmentsQuery.error || summaryQuery.error) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('City Intelligence')} title={t('Coastal Intelligence')} breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Coastal Intelligence') }]} />
+        <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Coastal Intelligence') }]} />
         <ErrorState
           detail={(segmentsQuery.error ?? summaryQuery.error)?.message}
           onRetry={() => {
@@ -339,7 +349,7 @@ export function CoastalIntelligencePage(): React.JSX.Element {
   if (segments.length === 0 || !summary) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('City Intelligence')} title={t('Coastal Intelligence')} breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Coastal Intelligence') }]} />
+        <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Coastal Intelligence') }]} />
         <EmptyState title={t('No coastal segments available')} detail="No shoreline segment records are held for this corporation. This is a record availability gap, not a permission restriction." />
         <DemonstrationNotice />
       </PageBody>
@@ -447,8 +457,6 @@ export function CoastalIntelligencePage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('City Intelligence')}
-        title={t('Coastal Intelligence')}
-        description={t('Shoreline segment-level exposure - beaches, seawalls, mangroves, creeks and promenades - read alongside tide behaviour and modelled monsoon flood exposure.')}
         breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Coastal Intelligence') }]}
         freshness={freshness}
       />
@@ -462,163 +470,170 @@ export function CoastalIntelligencePage(): React.JSX.Element {
         <MetricCard label={t('Segments requiring re-survey')} value={summary.segmentsRequiringSurvey} support={t('Last surveyed over two years ago')} tone={summary.segmentsRequiringSurvey > 0 ? 'warn' : 'default'} />
       </MetricGrid>
 
-      <Card>
-        <CardHeader title={t('Protection works status')} description={t('Coastline length and segment count by protection status, with the average vulnerability index recorded within each.')} />
-        <div className="mt-3 grid grid-cols-1 gap-4 lg:grid-cols-[1fr_20rem]">
-          <div>
-            <p className="label-institutional mb-2">{t('Length by protection status')}</p>
-            <CompositionBar
-              segments={byProtection.map((p) => ({ id: p.status, label: PROTECTION_LABEL[p.status], value: p.lengthKm, colour: PROTECTION_COLOUR[p.status] }))}
+      {/* Two columns, read downward. The shoreline register and the two
+          surfaces that qualify it — where the segments sit, and what a high
+          tide does to them — carry the width. The protection standing and the
+          ranked vulnerability read beside them, not underneath. */}
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
+          <Card flush>
+            <CardHeader
+              className="px-4 pt-4 pb-3"
+              title={t('Coastal segment register')}
+              description={t('Sortable and filterable by type, protection status and ward. Select a row to open the ward profile for its primary ward.')}
             />
-          </div>
-          <div className="grid grid-cols-3 gap-2 lg:grid-cols-1">
-            {byProtection.map((p) => (
-              <div key={p.status} className="rounded-md border border-ink-100 bg-surface-sunken p-2.5">
-                <Badge tone={PROTECTION_TONE[p.status]}>{PROTECTION_LABEL[p.status]}</Badge>
-                <p className="numeric mt-1.5 text-sm font-semibold text-ink-900">
-                  {p.count} segment{p.count === 1 ? '' : 's'} <span className="font-normal text-ink-400">{t('· {0} km', p.lengthKm)}</span>
-                </p>
-                <p className="mt-0.5 text-[0.6875rem] text-ink-500">{t('Avg. vulnerability {0}/100', p.avgVulnerability)}</p>
+            <div className="flex flex-wrap items-center gap-2 px-4 pb-3">
+              <FilterBar show={['ward', 'search']} searchPlaceholder="Search segment or ward" compact />
+              <div className="flex items-center gap-1.5">
+                <Label className="mb-0 whitespace-nowrap">{t('Type')}</Label>
+                <Select
+                  value={typeFilter}
+                  onChange={(e) => setTypeFilter(e.target.value as 'all' | CoastalSegment['type'])}
+                  className="w-auto min-w-[9rem]"
+                  options={[{ value: 'all', label: t('All types') }, ...COASTAL_TYPES.map((entry) => ({ value: entry, label: COASTAL_TYPE_LABEL[entry] }))]}
+                  aria-label={t('Filter by segment type')}
+                />
               </div>
-            ))}
-          </div>
-        </div>
-      </Card>
-
-      <Card flush>
-        <CardHeader
-          className="px-4 pt-4 pb-3"
-          title={t('Coastal segment register')}
-          description={t('Sortable and filterable by type, protection status and ward. Select a row to open the ward profile for its primary ward.')}
-        />
-        <div className="flex flex-wrap items-center gap-2 px-4 pb-3">
-          <FilterBar show={['ward', 'search']} searchPlaceholder="Search segment or ward" compact />
-          <div className="flex items-center gap-1.5">
-            <Label className="mb-0 whitespace-nowrap">{t('Type')}</Label>
-            <Select
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value as 'all' | CoastalSegment['type'])}
-              className="w-auto min-w-[9rem]"
-              options={[{ value: 'all', label: t('All types') }, ...COASTAL_TYPES.map((entry) => ({ value: entry, label: COASTAL_TYPE_LABEL[entry] }))]}
-              aria-label={t('Filter by segment type')}
-            />
-          </div>
-          <div className="flex items-center gap-1.5">
-            <Label className="mb-0 whitespace-nowrap">{t('Protection')}</Label>
-            <Select
-              value={protectionFilter}
-              onChange={(e) => setProtectionFilter(e.target.value as 'all' | CoastalSegment['protectionStatus'])}
-              className="w-auto min-w-[10.5rem]"
-              options={[{ value: 'all', label: t('All protection statuses') }, ...PROTECTION_STATUSES.map((p) => ({ value: p, label: PROTECTION_LABEL[p] }))]}
-              aria-label={t('Filter by protection status')}
-            />
-          </div>
-        </div>
-        {filteredSegments.length === 0 ? (
-          <EmptyState className="m-4" title={t('No segments match the current filters')} detail="Adjust the type, protection status, ward or search term above." />
-        ) : (
-          <DataTable
-            rows={filteredSegments}
-            columns={segmentColumns}
-            rowKey={(r) => r.id}
-            onRowClick={(r) => {
-              const wardId = r.wardIds[0]
-              if (wardId) openDrawer({ kind: 'ward', id: wardId })
-            }}
-            pageSize={12}
-            searchable={false}
-            initialSort={{ columnId: 'vulnerability', direction: 'desc' }}
-            ariaLabel="Coastal segment register"
-          />
-        )}
-      </Card>
-
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <Card>
-          <CardHeader title={t('Vulnerability ranking')} description={t('Every coastal segment ranked by modelled vulnerability index.')} />
-          <div className="mt-3">
-            <ChartFrame title={t('Segment vulnerability')} unit={t('Vulnerability index (0–100)')} timeframe="Most recent survey" height={Math.max(180, segments.length * 22)}>
-              <RankedBarChart
-                data={[...segments]
-                  .sort((a, b) => b.vulnerabilityIndex - a.vulnerabilityIndex)
-                  .map((s) => ({ label: s.name.length > 22 ? `${s.name.slice(0, 20)}…` : s.name, value: s.vulnerabilityIndex }))}
-              />
-            </ChartFrame>
-          </div>
-        </Card>
-        <Card>
-          <CardHeader title={t('Coastal ward map')} description={t('Ward shading reflects the average vulnerability index of the coastal segments recorded within it; markers mark wards carrying at least one coastal segment.')} />
-          <div className="mt-3">
-            <CityMap
-              layers={[
-                {
-                  id: 'segment-vulnerability',
-                  label: t('Coastal Segment Vulnerability'),
-                  valueFor: avgWardVulnerability,
-                  higherIsWorse: true,
-                  unit: '/100',
-                  description: t('Average vulnerability index across coastal segments recorded in the ward. Wards with no coastal segment show no data.'),
-                },
-              ]}
-              markers={coastalWardIds.map((wardId) => {
-                const point = wardMapPoint(wardId)
-                const segmentCount = segments.filter((s) => s.wardIds.includes(wardId)).length
-                return {
-                  id: wardId,
-                  x: point.x,
-                  y: point.y,
-                  label: wardName(wardId),
-                  detail: t('Vulnerability {0}/100 · {1} segment{2}', avgWardVulnerability(wardId) ?? '-', segmentCount, segmentCount === 1 ? '' : 's'),
-                  kind: 'hotspot',
-                  onClick: () => openDrawer({ kind: 'ward', id: wardId }),
-                }
-              })}
-              height={340}
-              showLabels={false}
-            />
-          </div>
-        </Card>
-      </div>
-
-      <Card>
-        <CardHeader icon={<AlertTriangle className="h-4 w-4" />} title={t('Coastal vulnerability, high tide and monsoon flood exposure')} description={t('A modelled exposure relationship, not a prediction of any specific flooding event.')} />
-        <div className="mt-3 grid grid-cols-1 gap-4 lg:grid-cols-[1fr_20rem]">
-          <div>
-            {tidesQuery.isLoading ? (
-              <LoadingState variant="block" rows={3} />
-            ) : tidesQuery.error ? (
-              <ErrorState detail={tidesQuery.error.message} onRetry={() => tidesQuery.refetch()} />
-            ) : tides.length === 0 ? (
-              <EmptyState compact title={t('No tide windows available')} detail="No tide window observations are held for this corporation." />
-            ) : (
-              <DataTable rows={[...tides].sort((a, b) => (a.at < b.at ? -1 : 1))} columns={tideColumns} rowKey={(r) => r.id} searchable={false} pageSize={8} ariaLabel="Tide windows" dense />
-            )}
-          </div>
-          <div className="rounded-lg border border-ink-100 bg-surface-sunken p-3">
-            <p className="label-institutional">{t('High tide windows blocking discharge')}</p>
-            <p className="numeric mt-1 text-2xl font-semibold text-ink-900">{blockingTides.length}</p>
-            <p className="mt-0.5 text-[0.6875rem] text-ink-400">{t('of {0} recorded windows', tides.length)}</p>
-
-            <div className="mt-3 border-t border-ink-100 pt-2.5">
-              <p className="label-institutional">{t('Elevated vulnerability, not fully protected')}</p>
-              <p className="numeric mt-1 text-lg font-semibold text-ink-900">{highRiskUnprotected.length} segment{highRiskUnprotected.length === 1 ? '' : 's'}</p>
-              {highRiskUnprotected.length > 0 ? (
-                <ul className="mt-1.5 space-y-1">
-                  {highRiskUnprotected.slice(0, 5).map((s) => (
-                    <li key={s.id} className="text-[0.6875rem] leading-relaxed text-ink-600">
-                      · {s.name} <span className="text-ink-400">({s.vulnerabilityIndex}/100, {PROTECTION_LABEL[s.protectionStatus]})</span>
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
+              <div className="flex items-center gap-1.5">
+                <Label className="mb-0 whitespace-nowrap">{t('Protection')}</Label>
+                <Select
+                  value={protectionFilter}
+                  onChange={(e) => setProtectionFilter(e.target.value as 'all' | CoastalSegment['protectionStatus'])}
+                  className="w-auto min-w-[10.5rem]"
+                  options={[{ value: 'all', label: t('All protection statuses') }, ...PROTECTION_STATUSES.map((p) => ({ value: p, label: PROTECTION_LABEL[p] }))]}
+                  aria-label={t('Filter by protection status')}
+                />
+              </div>
             </div>
+            {filteredSegments.length === 0 ? (
+              <EmptyState className="m-4" title={t('No segments match the current filters')} detail="Adjust the type, protection status, ward or search term above." />
+            ) : (
+              <DataTable
+                rows={filteredSegments}
+                columns={segmentColumns}
+                rowKey={(r) => r.id}
+                onRowClick={(r) => {
+                  const wardId = r.wardIds[0]
+                  if (wardId) openDrawer({ kind: 'ward', id: wardId })
+                }}
+                pageSize={12}
+                searchable={false}
+                initialSort={{ columnId: 'vulnerability', direction: 'desc' }}
+                ariaLabel="Coastal segment register"
+              />
+            )}
+          </Card>
 
-            <p className="mt-3 border-t border-ink-100 pt-2.5 text-[0.6875rem] leading-relaxed text-ink-500">
-              {t('When a high tide coincides with monsoon rainfall, gravity discharge from storm-water outfalls near the shoreline is obstructed. Segments carrying an elevated vulnerability index that are not fully protected are structurally more exposed under this combination. This is presented as a modelled association between tide behaviour and segment vulnerability - it is')}{' '}<span className="font-medium text-ink-700">{t('not a forecast')}</span>{' '}{t('of when or where flooding will occur.')}
-            </p>
-          </div>
+          <Card>
+            <CardHeader title={t('Coastal ward map')} description={t('Ward shading reflects the average vulnerability index of the coastal segments recorded within it; markers mark wards carrying at least one coastal segment.')} />
+            <div className="mt-3">
+              <CityMap
+                layers={[
+                  {
+                    id: 'segment-vulnerability',
+                    label: t('Coastal Segment Vulnerability'),
+                    valueFor: avgWardVulnerability,
+                    higherIsWorse: true,
+                    unit: '/100',
+                    description: t('Average vulnerability index across coastal segments recorded in the ward. Wards with no coastal segment show no data.'),
+                  },
+                ]}
+                markers={coastalWardIds.map((wardId) => {
+                  const point = wardMapPoint(wardId)
+                  const segmentCount = segments.filter((s) => s.wardIds.includes(wardId)).length
+                  return {
+                    id: wardId,
+                    x: point.x,
+                    y: point.y,
+                    label: wardName(wardId),
+                    detail: t('Vulnerability {0}/100 · {1} segment{2}', avgWardVulnerability(wardId) ?? '-', segmentCount, segmentCount === 1 ? '' : 's'),
+                    kind: 'hotspot',
+                    onClick: () => openDrawer({ kind: 'ward', id: wardId }),
+                  }
+                })}
+                height={340}
+                showLabels={false}
+              />
+            </div>
+          </Card>
+
+          <Card>
+            <CardHeader icon={<AlertTriangle className="h-4 w-4" />} title={t('Coastal vulnerability, high tide and monsoon flood exposure')} description={t('A modelled exposure relationship, not a prediction of any specific flooding event.')} />
+            <div className="mt-3 grid grid-cols-1 gap-4 lg:grid-cols-[1fr_20rem]">
+              <div>
+                {tidesQuery.isLoading ? (
+                  <LoadingState variant="block" rows={3} />
+                ) : tidesQuery.error ? (
+                  <ErrorState detail={tidesQuery.error.message} onRetry={() => tidesQuery.refetch()} />
+                ) : tides.length === 0 ? (
+                  <EmptyState compact title={t('No tide windows available')} detail="No tide window observations are held for this corporation." />
+                ) : (
+                  <DataTable rows={[...tides].sort((a, b) => (a.at < b.at ? -1 : 1))} columns={tideColumns} rowKey={(r) => r.id} searchable={false} pageSize={8} ariaLabel="Tide windows" dense />
+                )}
+              </div>
+              <div className="rounded-[2px] border border-ink-100 bg-surface-sunken p-3">
+                <p className="label-institutional">{t('High tide windows blocking discharge')}</p>
+                <p className="numeric mt-1 text-2xl font-semibold text-ink-900">{blockingTides.length}</p>
+                <p className="mt-0.5 text-[0.6875rem] text-ink-400">{t('of {0} recorded windows', tides.length)}</p>
+
+                <div className="mt-3 border-t border-ink-100 pt-2.5">
+                  <p className="label-institutional">{t('Elevated vulnerability, not fully protected')}</p>
+                  <p className="numeric mt-1 text-lg font-semibold text-ink-900">{highRiskUnprotected.length} segment{highRiskUnprotected.length === 1 ? '' : 's'}</p>
+                  {highRiskUnprotected.length > 0 ? (
+                    <ul className="mt-1.5 space-y-1">
+                      {highRiskUnprotected.slice(0, 5).map((s) => (
+                        <li key={s.id} className="text-[0.6875rem] leading-relaxed text-ink-600">
+                          · {s.name} <span className="text-ink-400">({s.vulnerabilityIndex}/100, {PROTECTION_LABEL[s.protectionStatus]})</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </div>
+
+                <p className="mt-3 border-t border-ink-100 pt-2.5 text-[0.6875rem] leading-relaxed text-ink-500">
+                  {t('When a high tide coincides with monsoon rainfall, gravity discharge from storm-water outfalls near the shoreline is obstructed. Segments carrying an elevated vulnerability index that are not fully protected are structurally more exposed under this combination. This is presented as a modelled association between tide behaviour and segment vulnerability - it is')}{' '}<span className="font-medium text-ink-700">{t('not a forecast')}</span>{' '}{t('of when or where flooding will occur.')}
+                </p>
+              </div>
+            </div>
+          </Card>
         </div>
-      </Card>
+
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
+          <Card>
+            <CardHeader title={t('Protection works status')} description={t('Coastline length and segment count by protection status, with the average vulnerability index recorded within each.')} />
+            <div className="mt-3">
+              <p className="label-institutional mb-2">{t('Length by protection status')}</p>
+              <CompositionBar
+                segments={byProtection.map((p) => ({ id: p.status, label: PROTECTION_LABEL[p.status], value: p.lengthKm, colour: PROTECTION_COLOUR[p.status] }))}
+              />
+              <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3 xl:grid-cols-1">
+                {byProtection.map((p) => (
+                  <div key={p.status} className="rounded-[2px] border border-ink-100 bg-surface-sunken p-2.5">
+                    <Badge tone={PROTECTION_TONE[p.status]}>{PROTECTION_LABEL[p.status]}</Badge>
+                    <p className="numeric mt-1.5 text-sm font-semibold text-ink-900">
+                      {p.count} segment{p.count === 1 ? '' : 's'} <span className="font-normal text-ink-400">{t('· {0} km', p.lengthKm)}</span>
+                    </p>
+                    <p className="mt-0.5 text-[0.6875rem] text-ink-500">{t('Avg. vulnerability {0}/100', p.avgVulnerability)}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </Card>
+
+          <Card>
+            <CardHeader title={t('Vulnerability ranking')} description={t('Every coastal segment ranked by modelled vulnerability index.')} />
+            <div className="mt-3">
+              <ChartFrame title={t('Segment vulnerability')} unit={t('Vulnerability index (0–100)')} timeframe="Most recent survey" height={Math.max(180, segments.length * 22)}>
+                <RankedBarChart
+                  data={[...segments]
+                    .sort((a, b) => b.vulnerabilityIndex - a.vulnerabilityIndex)
+                    .map((s) => ({ label: s.name.length > 22 ? `${s.name.slice(0, 20)}…` : s.name, value: s.vulnerabilityIndex }))}
+                />
+              </ChartFrame>
+            </div>
+          </Card>
+        </div>
+      </div>
 
       <DemonstrationNotice />
     </PageBody>

@@ -353,6 +353,14 @@
      to a single blue rectangle and discarding the depth below. Setting the base
      layer instead leaves the brand in charge of the colour and the stylesheet
      in charge of the form. */
+  /* The institutional navy, `govt-*`, not the public site's `portal-*`.
+     The two ramps are not two versions of one blue: `portal` is the civic blue
+     of the public portal and only reads blue through its light and mid steps —
+     its 900 and 950 are a desaturated petrol-slate that goes green against
+     white. Anchoring this gradient there turned every page banner in the
+     platform into a teal-to-blue wash. The application's own authority colour
+     is `govt`, which stays navy the whole way down, and which the masthead
+     above these banners already carries. */
   .banner-surface {
     background:
       radial-gradient(90% 140% at 100% 0%, rgb(8 163 186 / 0.32) 0%, transparent 58%),
@@ -795,6 +803,20 @@
   }
   .scrollbar-rail::-webkit-scrollbar-thumb:hover {
     background-color: var(--color-ink-300);
+  }
+
+  /* Scrollable, but with no scrollbar of its own — for tracks that are driven
+     by their own controls, such as the menu bar's arrow buttons. The track
+     still scrolls by wheel, trackpad, touch and keyboard; only the furniture
+     is suppressed, because a horizontal scrollbar under a navigation bar reads
+     as a rendering fault rather than as an affordance. */
+  .scrollbar-none {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    width: 0;
+    height: 0;
   }
 
   .grid-backdrop {

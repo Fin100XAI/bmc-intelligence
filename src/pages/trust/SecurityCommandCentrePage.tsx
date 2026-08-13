@@ -32,6 +32,7 @@ import { securityService } from '@/services'
 import { allowed, getRole } from '@/security'
 import { useCurrentUser } from '@/stores/auth.store'
 import { useDrawerStore } from '@/stores/ui.store'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { userDisplayName } from '@/auth/demo-users'
 import { formatDate, formatDateTime, formatPercent, formatRelative } from '@/utils/format'
 import { SECURITY_EVENT_LABEL, type SecurityEvent } from '@/types/governance'
@@ -61,6 +62,12 @@ export function SecurityCommandCentrePage(): React.JSX.Element {
   const currentUser = useCurrentUser()
   const openDrawer = useDrawerStore((s) => s.open)
   const [tab, setTab] = useState<'events' | 'identity'>('events')
+
+  // The shell's masthead carries the screen's name; the page states the wording.
+  usePageMasthead(
+    t('Security Command Centre'),
+    t('Authentication and identity posture, the security event workflow and access administration for this platform. Every figure below is read from the live security service, gated by the same permission engine every other screen uses.'),
+  )
 
   const postureQuery = useServiceQuery(queryKeys.security('posture'), (user) => securityService.posture(user))
   const eventsQuery = useServiceQuery(queryKeys.security('events'), (user) => securityService.events(user))
@@ -192,8 +199,6 @@ export function SecurityCommandCentrePage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('Trust Centre - Flagship')}
-        title={t('Security Command Centre')}
-        description={t('Authentication and identity posture, the security event workflow and access administration for this platform. Every figure below is read from the live security service, gated by the same permission engine every other screen uses.')}
         breadcrumbs={[{ label: t('Trust Centre'), to: '/trust' }, { label: t('Security Command Centre') }]}
       />
 
@@ -249,7 +254,9 @@ export function SecurityCommandCentrePage(): React.JSX.Element {
         </Card>
       </MetricGrid>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      {/* Vulnerabilities, encryption and the certification note read as one
+          posture band rather than three stacked rows. */}
+      <div className="grid gap-4 lg:grid-cols-3">
         <Card>
           <CardHeader icon={<ShieldAlert className="h-4 w-4" />} title={t('Open vulnerabilities by severity')} />
           <div className="mt-3 grid grid-cols-4 gap-2">
@@ -272,14 +279,13 @@ export function SecurityCommandCentrePage(): React.JSX.Element {
             </DefinitionRow>
           </DefinitionList>
         </Card>
+        <Card tone="warn">
+          <div className="flex items-start gap-2.5">
+            <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-warn-700" />
+            <p className="text-[0.8125rem] leading-relaxed text-ink-800">{posture.certificationNote}</p>
+          </div>
+        </Card>
       </div>
-
-      <Card tone="warn">
-        <div className="flex items-start gap-2.5">
-          <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-warn-700" />
-          <p className="text-[0.8125rem] leading-relaxed text-ink-800">{posture.certificationNote}</p>
-        </div>
-      </Card>
 
       {/* ------------------------------------------------------------ Tabs */}
       <Tabs
@@ -293,7 +299,11 @@ export function SecurityCommandCentrePage(): React.JSX.Element {
       />
 
       {tab === 'events' ? (
-        <>
+        /* Two columns. The event register is the record and holds the wide
+           column; the two distributions are summaries of those same rows and
+           read beside them. */
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+          <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
           <Card>
             <CardHeader
               icon={<ShieldAlert className="h-4 w-4" />}
@@ -348,8 +358,9 @@ export function SecurityCommandCentrePage(): React.JSX.Element {
               />
             </div>
           </Card>
+          </div>
 
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
             <Card>
               <ChartFrame title={t('Events by type')} unit="events" timeframe="All recorded events" height={Math.max(200, typeChartData.length * 26)}>
                 <RankedBarChart data={typeChartData} unit="" higherIsWorse />
@@ -361,9 +372,12 @@ export function SecurityCommandCentrePage(): React.JSX.Element {
               </ChartFrame>
             </Card>
           </div>
-        </>
+        </div>
       ) : (
-        <>
+        /* Two columns. Who holds an account reads down the wide column; what
+           they are currently doing with it sits beside the register. */
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+          <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
           <Card>
             <CardHeader icon={<UsersIcon className="h-4 w-4" />} title={t('Demonstration principals')} />
             {usersQuery.isLoading ? (
@@ -442,7 +456,9 @@ export function SecurityCommandCentrePage(): React.JSX.Element {
               </div>
             )}
           </Card>
+          </div>
 
+          <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
           <Card>
             <CardHeader icon={<Fingerprint className="h-4 w-4" />} title={t('Active sessions')} description={t('Sessions established through the authentication service during this browser session.')} />
             {sessionsQuery.isLoading ? (
@@ -472,7 +488,8 @@ export function SecurityCommandCentrePage(): React.JSX.Element {
               </div>
             )}
           </Card>
-        </>
+          </div>
+        </div>
       )}
 
       <ConfirmDialog

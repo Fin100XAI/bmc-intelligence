@@ -21,6 +21,7 @@ import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { registrationService } from '@/services'
 import { useFilterStore } from '@/stores/ui.store'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { wardName, wardShortName } from '@/data/reference'
 import type { RegistrationCentre } from '@/types/civic-services'
 import type { DataFreshness } from '@/types/common'
@@ -55,6 +56,11 @@ const STATUTORY_PERIOD_DAYS = 21
 export function CitizenRegistrationPage(): React.JSX.Element {
   const filters = useFilterStore((s) => s.filters)
 
+  usePageMasthead(
+    t('Births & Deaths Registration'),
+    t('The corporation\'s statutory registration service - volumes, compliance with the twenty-one day statutory period, certificate issue times and the backlog waiting at each counter.'),
+  )
+
   const centresQuery = useServiceQuery(queryKeys.registration('centres'), (u) => registrationService.centres(u))
   const trendQuery = useServiceQuery(queryKeys.registration('trend'), (u) => registrationService.trend(u))
 
@@ -77,7 +83,7 @@ export function CitizenRegistrationPage(): React.JSX.Element {
   if (centresQuery.isLoading || trendQuery.isLoading) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('City Intelligence')} title={t('Births & Deaths Registration')} breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Births & Deaths Registration') }]} />
+        <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Births & Deaths Registration') }]} />
         <LoadingState variant="metrics" />
         <LoadingState variant="table" rows={8} />
       </PageBody>
@@ -86,7 +92,7 @@ export function CitizenRegistrationPage(): React.JSX.Element {
   if (centresQuery.error || trendQuery.error) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('City Intelligence')} title={t('Births & Deaths Registration')} breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Births & Deaths Registration') }]} />
+        <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Births & Deaths Registration') }]} />
         <ErrorState
           detail={(centresQuery.error ?? trendQuery.error)?.message}
           onRetry={() => { void centresQuery.refetch(); void trendQuery.refetch() }}
@@ -180,23 +186,11 @@ export function CitizenRegistrationPage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('City Intelligence')}
-        title={t('Births & Deaths Registration')}
-        description={t('The corporation\'s statutory registration service - volumes, compliance with the twenty-one day statutory period, certificate issue times and the backlog waiting at each counter.')}
         breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Births & Deaths Registration') }]}
         freshness={freshness}
       />
 
       <DemonstrationNotice />
-
-      <Card tone="info" className="flex items-start gap-3">
-        <FileText className="mt-0.5 h-4 w-4 shrink-0 text-govt-600" aria-hidden />
-        <div className="min-w-0">
-          <p className="text-[0.8125rem] font-semibold text-govt-800">{t('The register is not held here')}</p>
-          <p className="mt-1 text-xs leading-relaxed text-ink-600">
-            {t('This page reports on how well the statutory register is being kept - volumes, timeliness and backlog. It does not reproduce the register. No registered event, no name, no date and no certificate content appears anywhere behind this page. Vital records remain in the Registrar&apos;s statutory custody, which is where the law places them and where they should stay.')}
-          </p>
-        </div>
-      </Card>
 
       <FilterBar show={['ward', 'search']} searchPlaceholder="Search registration centres" />
 
@@ -232,51 +226,68 @@ export function CitizenRegistrationPage(): React.JSX.Element {
         />
       </MetricGrid>
 
-      <div className="grid gap-4 lg:grid-cols-[1.3fr_1fr]">
-        <Card className="flex flex-col">
-          <p className="label-institutional mb-2">{t('Monthly registrations and certificates issued')}</p>
-          <div style={{ height: 220 }}>
-            <CategoryBarChart
-              data={trend as unknown as Array<Record<string, string | number>>}
-              categoryKey="month"
-              showLegend
-              series={[
-                { key: 'births', label: t('Births'), colour: CHART_COLOURS.primary },
-                { key: 'deaths', label: t('Deaths'), colour: CHART_COLOURS.neutral },
-                { key: 'certificatesIssued', label: t('Certificates issued'), colour: CHART_COLOURS.intel },
-              ]}
+      {/* Two columns. The counter register carries the width; the standing
+          caveat about custody and the ranking of where a family waits longest
+          are read beside it. */}
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
+          <Card flush>
+            <CardHeader
+              bordered
+              icon={<Landmark className="h-4 w-4" />}
+              title={t('Registration centres')}
+              description={t('Hospital registration units and ward offices within your authorised ward scope.')}
             />
-          </div>
-          <p className="mt-2 text-[0.6875rem] leading-relaxed text-ink-500">
-            {t('Certificates exceed registrations because a single registered event is commonly certified more than once - for a school, an employer and a claim - which is why counter load is not the same as registration volume.')}
-          </p>
-        </Card>
+            {filtered.length === 0 ? (
+              <EmptyState title={t('No registration centres match the current filters')} detail="Clear a filter to widen the register." />
+            ) : (
+              <DataTable rows={filtered} columns={columns} rowKey={(r) => r.id} pageSize={12} />
+            )}
+          </Card>
 
-        <Card flush className="flex flex-col">
-          <CardHeader
-            bordered
-            title={t('Slowest certificate issue')}
-            description={t('Where a family waits longest for the document they came for.')}
-          />
-          <div className="px-4 pb-4" style={{ height: Math.max(210, slowest.length * 26) }}>
-            <RankedBarChart data={slowest.map((c) => ({ label: c.name.slice(0, 22), value: c.meanIssueDays }))} unit=" d" />
-          </div>
-        </Card>
+          <Card className="flex flex-col">
+            <p className="label-institutional mb-2">{t('Monthly registrations and certificates issued')}</p>
+            <div style={{ height: 220 }}>
+              <CategoryBarChart
+                data={trend as unknown as Array<Record<string, string | number>>}
+                categoryKey="month"
+                showLegend
+                series={[
+                  { key: 'births', label: t('Births'), colour: CHART_COLOURS.primary },
+                  { key: 'deaths', label: t('Deaths'), colour: CHART_COLOURS.neutral },
+                  { key: 'certificatesIssued', label: t('Certificates issued'), colour: CHART_COLOURS.intel },
+                ]}
+              />
+            </div>
+            <p className="mt-2 text-[0.6875rem] leading-relaxed text-ink-500">
+              {t('Certificates exceed registrations because a single registered event is commonly certified more than once - for a school, an employer and a claim - which is why counter load is not the same as registration volume.')}
+            </p>
+          </Card>
+        </div>
+
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
+          <Card tone="info" className="flex items-start gap-3">
+            <FileText className="mt-0.5 h-4 w-4 shrink-0 text-govt-600" aria-hidden />
+            <div className="min-w-0">
+              <p className="text-[0.8125rem] font-semibold text-govt-800">{t('The register is not held here')}</p>
+              <p className="mt-1 text-xs leading-relaxed text-ink-600">
+                {t('This page reports on how well the statutory register is being kept - volumes, timeliness and backlog. It does not reproduce the register. No registered event, no name, no date and no certificate content appears anywhere behind this page. Vital records remain in the Registrar&apos;s statutory custody, which is where the law places them and where they should stay.')}
+              </p>
+            </div>
+          </Card>
+
+          <Card flush className="flex flex-col">
+            <CardHeader
+              bordered
+              title={t('Slowest certificate issue')}
+              description={t('Where a family waits longest for the document they came for.')}
+            />
+            <div className="px-4 pb-4" style={{ height: Math.max(210, slowest.length * 26) }}>
+              <RankedBarChart data={slowest.map((c) => ({ label: c.name.slice(0, 22), value: c.meanIssueDays }))} unit=" d" />
+            </div>
+          </Card>
+        </div>
       </div>
-
-      <Card flush>
-        <CardHeader
-          bordered
-          icon={<Landmark className="h-4 w-4" />}
-          title={t('Registration centres')}
-          description={t('Hospital registration units and ward offices within your authorised ward scope.')}
-        />
-        {filtered.length === 0 ? (
-          <EmptyState title={t('No registration centres match the current filters')} detail="Clear a filter to widen the register." />
-        ) : (
-          <DataTable rows={filtered} columns={columns} rowKey={(r) => r.id} pageSize={12} />
-        )}
-      </Card>
     </PageBody>
   )
 }

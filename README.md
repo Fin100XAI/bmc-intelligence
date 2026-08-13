@@ -113,7 +113,24 @@ engines respond monotonically to their inputs, that the AI gateway blocks
 reserved acts before generation, and that no navigation item points at an
 undeclared route.
 
-Node 20+ is required (developed against Node 24). No environment variables are needed — the platform runs entirely on the local deterministic demonstration data services. Copy `.env.example` to `.env.local` when wiring real integrations.
+Node 20+ is required (developed against Node 24). No environment variables are needed — with none set, the platform runs entirely on the local deterministic demonstration data services.
+
+### Optional: running against MongoDB
+
+One vertical slice — users, wards, complaints and the audit trail — can run against a real MongoDB database through the API server in `server/`. This is what makes the audit trail survive a reload.
+
+```bash
+cp .env.example .env.local   # fill in MONGODB_URI and SESSION_SECRET
+npm run db:seed              # load the deterministic datasets into MongoDB
+npm run server               # API on :4000
+npm run dev                  # application on :5173
+
+npm run db:status            # what is actually in the database
+npm run db:verify            # walk the audit chain and report any break
+npm run db:import -- --collection complaints --file ./dump.json --dry-run
+```
+
+Setting `VITE_API_BASE_URL` is the switch. Leave it empty and nothing changes. **[`server/README.md`](server/README.md) is the full guide**, including Atlas setup and what is and is not migrated.
 
 ---
 
@@ -175,7 +192,9 @@ Entry is gated by a shared demonstration passphrase:
 Maha@2026
 ```
 
-**This is not a security control, and the sign-in screen says so.** It is identical for every position, verified in the browser, therefore present in the bundle and trivially bypassed. It protects nothing, because every figure behind it is modelled demonstration data. Its only purpose is to stop the demonstration being wide open to anyone who reaches the URL. No token, session secret or credential material of any kind is stored or transmitted; only the selected position identifier is persisted, so a refresh keeps the role.
+**This is not a security control, and the sign-in screen says so.** It is identical for every position and protects nothing, because every figure behind it is modelled demonstration data. Its only purpose is to stop the demonstration being wide open to anyone who reaches the URL.
+
+Where it is checked depends on the mode. Without the API it is compared in the browser, so it is present in the bundle and trivially bypassed, and no token or credential material of any kind is stored or transmitted — only the selected position identifier is persisted, so a refresh keeps the role. With the API configured it is held in the server's environment, compared there, and never sent to the client; the server replies with a signed `httpOnly` session cookie, and the permission engine runs server-side against the authoritative `User` record. That removes the "a caller can simply claim to be the Commissioner" problem. It does not make a single shared passphrase an institutional credential.
 
 Production deployment replaces this entirely with an institutional identity provider and enforced multi-factor authentication.
 
@@ -343,8 +362,24 @@ This is a **demonstration environment**. Specifically:
 
 - No connection to any municipal, state or third-party system exists.
 - All data is modelled. Figures are plausible, not actual.
-- Authentication is profile selection. No credential, token or session security exists.
-- The audit trail and workflow state are held in session. They do not survive a reload.
+- **Persistence is partial.** A MongoDB persistence layer exists for one
+  vertical slice — users, wards, complaints and the audit trail — behind the
+  API server in `server/`. It is active only when `VITE_API_BASE_URL` is set;
+  with it empty, the platform runs entirely in memory as before. See
+  [`server/README.md`](server/README.md). Workflow state, and every collection
+  outside that slice, is still held in session and does not survive a reload.
+- **Authentication differs by mode.** Without the API it is profile selection
+  with no credential, token or session security whatsoever. With the API, a
+  server-signed `httpOnly` session cookie establishes the principal and the
+  permission engine runs server-side — but the gate is still a single shared
+  passphrase with no per-officer credential, no rotation and no MFA. Neither
+  mode is an institutional identity control.
+- **The audit trail is tamper-evident, not tamper-proof.** When persisted, each
+  entry carries a digest over its own content and the previous entry's digest,
+  and `npm run db:verify` walks the chain. Anyone holding the database
+  credential could recompute the whole chain; preventing that needs an
+  append-only store outside the application's own credentials, which is not
+  built.
 - The AI layer is a deterministic local provider. No model endpoint is contacted.
 - Scenario engines are deterministic rule models labelled **Simulation — not forecast**. They are not calibrated forecasts.
 - Spatial geometry is illustrative and generated. It is **not** official GIS boundary data.

@@ -6,6 +6,7 @@ import { queryKeys } from '@/app/queryClient'
 import { procurementService } from '@/services'
 import type { CategoryConcentration } from '@/services'
 import { useDrawerStore } from '@/stores/ui.store'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { ROUTES } from '@/config/navigation'
 import {
   PROJECT_CATEGORY_LABEL,
@@ -62,6 +63,12 @@ const FRESHNESS = {
 const STAGE_ORDER: TenderStage[] = ['draft', 'published', 'bidding', 'evaluation', 'awarded', 'cancelled']
 
 export function ProcurementIntelligencePage(): React.JSX.Element {
+  // The shell's masthead carries the screen's name; the page states the wording.
+  usePageMasthead(
+    t('Procurement Intelligence'),
+    t('Tenders, contracts and vendors across every authorised procurement record. Risk indicators identify delivery and continuity exposure requiring management attention; they are never a finding against any contractor, officer or department.'),
+  )
+
   const openDrawer = useDrawerStore((s) => s.open)
   const [selectedContractId, setSelectedContractId] = useState<string | null>(null)
 
@@ -341,8 +348,6 @@ export function ProcurementIntelligencePage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('Governance & Finance')}
-        title={t('Procurement Intelligence')}
-        description={t('Tenders, contracts and vendors across every authorised procurement record. Risk indicators identify delivery and continuity exposure requiring management attention; they are never a finding against any contractor, officer or department.')}
         breadcrumbs={[{ label: t('Governance & Finance') }, { label: t('Procurement Intelligence') }]}
         freshness={FRESHNESS}
         actions={
@@ -391,6 +396,14 @@ export function ProcurementIntelligencePage(): React.JSX.Element {
             </MetricGrid>
           </Card>
 
+          {/* Two columns. The three registers an officer works through —
+              contracts, the concentration each category carries, then the
+              vendors behind both — read down the wide column; the indicator
+              breakdown for the selected contract and the two compositions
+              stand beside them, where the breakdown can be read against the
+              row that produced it. */}
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+          <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
           <Card flush>
             <CardHeader
               bordered
@@ -415,51 +428,6 @@ export function ProcurementIntelligencePage(): React.JSX.Element {
               )}
             />
           </Card>
-
-          <Card>
-            <CardHeader
-              title={t('Procurement risk indicators')}
-              description={t('Every contract\'s risk score is the weighted sum of five published indicators: category concentration, repeated extensions, unusual variation magnitude, milestone delivery delay and supplier performance deterioration. Select a contract in the table above to see its breakdown.')}
-            />
-            {!selectedContract ? (
-              <EmptyState title={t('Select a contract')} detail="Choose a contract from the table above to see its risk-indicator breakdown." compact className="mt-4" />
-            ) : (
-              <div className="mt-4">
-                <div className="mb-3 flex flex-wrap items-center gap-2">
-                  <Badge tone="neutral" className="font-mono">{selectedContract.reference}</Badge>
-                  <span className="text-sm font-semibold text-ink-800">{selectedContract.title}</span>
-                  <Badge tone={selectedContract.riskScore >= 60 ? 'critical' : selectedContract.riskScore >= 42 ? 'warn' : 'positive'}>
-                    {t('Risk indicator {0}/100', selectedContract.riskScore)}
-                  </Badge>
-                </div>
-                <ContributionBars items={selectedContract.riskIndicators} />
-                <p className="mt-3 flex items-start gap-1.5 rounded-md bg-ink-50 px-2.5 py-2 text-[0.6875rem] leading-relaxed text-ink-500">
-                  <Info className="mt-0.5 h-3 w-3 shrink-0" />
-                  {t('These indicators identify delivery and continuity risk for management attention. They are not, and must not be characterised as, a finding against the contractor or any officer involved in the award or administration of this contract.')}
-                </p>
-              </div>
-            )}
-          </Card>
-
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <Card>
-              <ChartFrame title={t('Concentration by category - value composition')} unit={t('₹ crore')} timeframe="Current contract set" freshness={FRESHNESS} height={240}>
-                <DonutChart data={categoryComposition} unit={t('₹ Cr')} centreValue={formatCrore(summary.totalValue, 0)} centreLabel="Total value" />
-              </ChartFrame>
-            </Card>
-            <Card>
-              <ChartFrame
-                title={t('Stage funnel')}
-                unit="contracts"
-                timeframe="Current contract set"
-                description={t('Contract count at each stage of the procurement lifecycle, in natural progression order.')}
-                freshness={FRESHNESS}
-                height={240}
-              >
-                <CategoryBarChart data={stageFunnel} categoryKey="label" layout="horizontal" series={[{ key: 'count', label: t('Contracts'), colour: '#2f6feb' }]} />
-              </ChartFrame>
-            </Card>
-          </div>
 
           <Card flush>
             <CardHeader
@@ -501,6 +469,53 @@ export function ProcurementIntelligencePage(): React.JSX.Element {
               searchPlaceholder="Search vendors"
             />
           </Card>
+          </div>
+
+          <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
+          <Card>
+            <CardHeader
+              title={t('Procurement risk indicators')}
+              description={t('Every contract\'s risk score is the weighted sum of five published indicators: category concentration, repeated extensions, unusual variation magnitude, milestone delivery delay and supplier performance deterioration. Select a contract in the table above to see its breakdown.')}
+            />
+            {!selectedContract ? (
+              <EmptyState title={t('Select a contract')} detail="Choose a contract from the table above to see its risk-indicator breakdown." compact className="mt-4" />
+            ) : (
+              <div className="mt-4">
+                <div className="mb-3 flex flex-wrap items-center gap-2">
+                  <Badge tone="neutral" className="font-mono">{selectedContract.reference}</Badge>
+                  <span className="text-sm font-semibold text-ink-800">{selectedContract.title}</span>
+                  <Badge tone={selectedContract.riskScore >= 60 ? 'critical' : selectedContract.riskScore >= 42 ? 'warn' : 'positive'}>
+                    {t('Risk indicator {0}/100', selectedContract.riskScore)}
+                  </Badge>
+                </div>
+                <ContributionBars items={selectedContract.riskIndicators} />
+                <p className="mt-3 flex items-start gap-1.5 rounded-md bg-ink-50 px-2.5 py-2 text-[0.6875rem] leading-relaxed text-ink-500">
+                  <Info className="mt-0.5 h-3 w-3 shrink-0" />
+                  {t('These indicators identify delivery and continuity risk for management attention. They are not, and must not be characterised as, a finding against the contractor or any officer involved in the award or administration of this contract.')}
+                </p>
+              </div>
+            )}
+          </Card>
+
+            <Card>
+              <ChartFrame title={t('Concentration by category - value composition')} unit={t('₹ crore')} timeframe="Current contract set" freshness={FRESHNESS} height={240}>
+                <DonutChart data={categoryComposition} unit={t('₹ Cr')} centreValue={formatCrore(summary.totalValue, 0)} centreLabel="Total value" />
+              </ChartFrame>
+            </Card>
+            <Card>
+              <ChartFrame
+                title={t('Stage funnel')}
+                unit="contracts"
+                timeframe="Current contract set"
+                description={t('Contract count at each stage of the procurement lifecycle, in natural progression order.')}
+                freshness={FRESHNESS}
+                height={240}
+              >
+                <CategoryBarChart data={stageFunnel} categoryKey="label" layout="horizontal" series={[{ key: 'count', label: t('Contracts'), colour: '#2f6feb' }]} />
+              </ChartFrame>
+            </Card>
+          </div>
+          </div>
         </>
       ) : null}
 

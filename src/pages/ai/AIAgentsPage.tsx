@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Bot, CircleCheck, Ban, ShieldAlert, UserCheck } from 'lucide-react'
-import { PageBody, PageHeader, SplitLayout } from '@/components/layout/PageHeader'
+import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { Badge, StateBadge } from '@/components/ui/badges'
 import { Card, CardHeader, DefinitionList, DefinitionRow, MetricGrid } from '@/components/ui/primitives'
 import { DemonstrationNotice, EmptyState, ErrorState, LoadingState } from '@/components/ui/states'
@@ -8,6 +8,7 @@ import { MetricCard } from '@/components/cards/MetricCard'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { aiService } from '@/services'
+import { usePageMasthead } from '@/stores/masthead.store'
 import type { AIAgent, AIAgentStage } from '@/types/ai'
 import { AI_MODEL_BY_ID } from '@/data/ai.data'
 import { OFFICER_BY_ID } from '@/data/reference'
@@ -77,10 +78,10 @@ function StageMeter({ stage }: { stage: AIAgentStage }): React.JSX.Element {
         const reached = i <= activeIndex
         const isHuman = s === 'human-review' || s === 'approved-action'
         return (
-          <li key={s} className="flex flex-1 items-center gap-1">
+          <li key={s} className="flex min-w-0 flex-1 items-center gap-1">
             <div
               className={cn(
-                'flex h-6 w-full items-center justify-center gap-1 rounded-md border px-1.5 text-[0.625rem] font-medium',
+                'flex h-6 w-full items-center justify-center gap-1 rounded-[2px] border px-1.5 text-[0.625rem] font-medium',
                 reached
                   ? isHuman
                     ? 'border-ok-200 bg-ok-50 text-ok-700'
@@ -99,6 +100,12 @@ function StageMeter({ stage }: { stage: AIAgentStage }): React.JSX.Element {
 }
 
 export function AIAgentsPage(): React.JSX.Element {
+  // The shell's masthead states the screen's name; the page states the wording.
+  usePageMasthead(
+    t('Controlled AI Agents'),
+    t('Every agent is advisory only and operates within one lifecycle: draft, AI analysis, human review, approved action. The transition to an approved action is always a named officer\'s act - no agent approves its own output, and every agent is barred from a fixed set of government acts.'),
+  )
+
   const query = useServiceQuery(queryKeys.ai('agents'), (u) => aiService.agents(u))
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
@@ -120,62 +127,62 @@ export function AIAgentsPage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('AI & Automation')}
-        title={t('Controlled AI Agents')}
-        description={t('Every agent is advisory only and operates within one lifecycle: draft, AI analysis, human review, approved action. The transition to an approved action is always a named officer\'s act - no agent approves its own output, and every agent is barred from a fixed set of government acts.')}
         breadcrumbs={[{ label: t('AI & Automation') }, { label: t('AI Agents') }]}
         freshness={FRESHNESS}
       />
 
-      <DemonstrationNotice />
-
-      {/* The lifecycle every agent obeys ------------------------------ */}
-      <Card tone="sunken">
-        <div className="flex items-start gap-3">
-          <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-govt-600" aria-hidden />
-          <div className="min-w-0 flex-1">
-            <p className="text-[0.8125rem] font-semibold text-ink-800">{t('The lifecycle is the control')}</p>
-            <p className="mt-1 text-xs leading-relaxed text-ink-600">
-              {t('An agent may draft and analyse autonomously. It cannot cross into an approved action on its own - that step is reserved to a named officer and is enforced technically, not merely by policy. The same boundary the AI gateway enforces on every request is expressed here per agent.')}
-            </p>
-            <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
-              {STAGES.map((s, i) => (
-                <div
-                  key={s}
-                  className={cn(
-                    'rounded-md border p-2',
-                    s === 'approved-action' ? 'border-ok-200 bg-ok-50/50' : 'border-ink-100 bg-surface',
-                  )}
-                >
-                  <p className="text-[0.625rem] font-semibold text-ink-400">{t('Stage {0}', i + 1)}</p>
-                  <p className="text-[0.8125rem] font-semibold text-ink-800">{STAGE_LABEL[s]}</p>
-                  <p className="mt-0.5 text-[0.625rem] leading-relaxed text-ink-500">{STAGE_DESCRIPTION[s]}</p>
+      {/* ── Two columns ─────────────────────────────────────────────
+          The control that governs every agent, the standing figures and the
+          registry itself read down the wide column, in that order. The agent
+          an officer has opened stands pinned beside the register, so its
+          reserved acts can be read against the row that led to it. */}
+      <div className="grid grid-cols-1 gap-3 xl:grid-cols-12">
+        <div className="flex min-w-0 flex-col gap-3 xl:col-span-8">
+          {/* The lifecycle every agent obeys ------------------------------ */}
+          <Card tone="sunken">
+            <div className="flex items-start gap-3">
+              <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-govt-600" aria-hidden />
+              <div className="min-w-0 flex-1">
+                <p className="text-[0.8125rem] font-semibold text-ink-800">{t('The lifecycle is the control')}</p>
+                <p className="mt-1 text-xs leading-relaxed text-ink-600">
+                  {t('An agent may draft and analyse autonomously. It cannot cross into an approved action on its own - that step is reserved to a named officer and is enforced technically, not merely by policy. The same boundary the AI gateway enforces on every request is expressed here per agent.')}
+                </p>
+                <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  {STAGES.map((s, i) => (
+                    <div
+                      key={s}
+                      className={cn(
+                        'rounded-[2px] border p-2',
+                        s === 'approved-action' ? 'border-ok-200 bg-ok-50/50' : 'border-ink-100 bg-surface',
+                      )}
+                    >
+                      <p className="text-[0.625rem] font-semibold text-ink-400">{t('Stage {0}', i + 1)}</p>
+                      <p className="text-[0.8125rem] font-semibold text-ink-800">{STAGE_LABEL[s]}</p>
+                      <p className="mt-0.5 text-[0.625rem] leading-relaxed text-ink-500">{STAGE_DESCRIPTION[s]}</p>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
             </div>
-          </div>
-        </div>
-      </Card>
+          </Card>
 
-      <MetricGrid columns={3}>
-        <MetricCard label={t('Agents registered')} value={agents.length} support={`${active} active`} icon={<Bot className="h-4 w-4" />} />
-        <MetricCard
-          label={t('Awaiting human review')}
-          value={atHumanReview}
-          tone={atHumanReview > 0 ? 'warn' : 'default'}
-          support={t('Cycles held for a named officer')}
-          icon={<UserCheck className="h-4 w-4" />}
-        />
-        <MetricCard
-          label={t('Mean human approval rate')}
-          value={formatPercent(meanApproval)}
-          support={t('Across all agents, last 30 days')}
-          icon={<CircleCheck className="h-4 w-4" />}
-        />
-      </MetricGrid>
+          <MetricGrid columns={3}>
+            <MetricCard label={t('Agents registered')} value={agents.length} support={`${active} active`} icon={<Bot className="h-4 w-4" />} />
+            <MetricCard
+              label={t('Awaiting human review')}
+              value={atHumanReview}
+              tone={atHumanReview > 0 ? 'warn' : 'default'}
+              support={t('Cycles held for a named officer')}
+              icon={<UserCheck className="h-4 w-4" />}
+            />
+            <MetricCard
+              label={t('Mean human approval rate')}
+              value={formatPercent(meanApproval)}
+              support={t('Across all agents, last 30 days')}
+              icon={<CircleCheck className="h-4 w-4" />}
+            />
+          </MetricGrid>
 
-      <SplitLayout
-        asideWidth="lg"
-        main={
           <Card flush>
             <CardHeader bordered title={t('Agent registry')} description={t('Each agent, its current lifecycle stage and 30-day activity.')} />
             <ul className="divide-y divide-ink-50">
@@ -211,9 +218,18 @@ export function AIAgentsPage(): React.JSX.Element {
               ))}
             </ul>
           </Card>
-        }
-        aside={selected ? <AgentDetail agent={selected} /> : <Card><EmptyState title={t('No agent selected')} detail="Select an agent to read its detail." /></Card>}
-      />
+        </div>
+
+        {/* The whole column pins, not one panel of it: a `sticky` element stays
+            in flow, so a panel below a pinned one would slide up underneath it. */}
+        <div className="xl:col-span-4">
+          <div className="scrollbar-rail flex flex-col gap-3 xl:sticky xl:top-[3.75rem] xl:max-h-[calc(100vh-4.5rem)] xl:overflow-y-auto">
+            {selected ? <AgentDetail agent={selected} /> : <Card><EmptyState title={t('No agent selected')} detail="Select an agent to read its detail." /></Card>}
+
+            <DemonstrationNotice />
+          </div>
+        </div>
+      </div>
     </PageBody>
   )
 }
@@ -251,7 +267,7 @@ function AgentDetail({ agent }: { agent: AIAgent }): React.JSX.Element {
         />
         <ul className="mt-3 space-y-1.5">
           {agent.reservedActs.map((act) => (
-            <li key={act} className="flex items-start gap-2 rounded-md border border-crit-100 bg-crit-50/40 px-2.5 py-1.5">
+            <li key={act} className="flex items-start gap-2 rounded-[2px] border border-crit-100 bg-crit-50/40 px-2.5 py-1.5">
               <Ban className="mt-0.5 h-3 w-3 shrink-0 text-crit-500" aria-hidden />
               <span className="text-[0.6875rem] leading-relaxed text-ink-700">{act}</span>
             </li>

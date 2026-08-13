@@ -29,7 +29,22 @@ export interface SidebarBadges {
  * is a convenience only - the route guard and every data service re-evaluate
  * the same permission independently.
  */
-export function Sidebar({ badges }: { badges: SidebarBadges }): React.JSX.Element {
+export function Sidebar({
+  badges,
+  desktop = true,
+}: {
+  badges: SidebarBadges
+  /**
+   * Whether to render the pinned desktop rail.
+   *
+   * `false` leaves only the mobile overlay, which is how the shell uses this
+   * component now that `MenuBar` carries primary navigation on wide screens.
+   * The overlay stays here rather than being duplicated into the bar: a
+   * horizontal menu of sixteen sections is unusable on a phone, and a vertical
+   * rail behind a hamburger is already the right answer at that width.
+   */
+  desktop?: boolean
+}): React.JSX.Element {
   const user = useCurrentUser()
   const location = useLocation()
   const collapsed = useLayoutStore((s) => s.sidebarCollapsed)
@@ -294,7 +309,9 @@ export function Sidebar({ badges }: { badges: SidebarBadges }): React.JSX.Elemen
   return (
     <>
       {/* Desktop - pinned to the viewport; only the workspace scrolls. */}
-      <div className="sticky top-0 hidden h-screen shrink-0 self-start lg:block">{content}</div>
+      {desktop ? (
+        <div className="sticky top-0 hidden h-screen shrink-0 self-start lg:block">{content}</div>
+      ) : null}
 
       {/* Mobile / tablet overlay */}
       {sidebarOpen ? (

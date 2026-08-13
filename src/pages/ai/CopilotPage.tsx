@@ -48,6 +48,7 @@ import {
 } from '@/services'
 import { useCurrentUser } from '@/stores/auth.store'
 import { useActiveCorporation } from '@/stores/corporation.store'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { useDrawerStore } from '@/stores/ui.store'
 import { useCopilotStore, type CopilotMessage, type MessageActionState } from '@/stores/copilot.store'
 import { classificationCeiling, describeScope, getRole } from '@/security'
@@ -360,6 +361,14 @@ export function CopilotPage(): React.JSX.Element {
   const corporation = useActiveCorporation()
   const openDrawer = useDrawerStore((s) => s.open)
 
+  // The shell's masthead states the screen's name; the page states the wording.
+  // Declared here, above the unauthenticated guard, because a hook cannot sit
+  // behind an early return.
+  usePageMasthead(
+    t('{0} Municipal Copilot', corporation.city),
+    t('A governed intelligence assistant grounded in the platform\'s own operational records. Every answer states its evidence, its confidence and its limitations.'),
+  )
+
   // The thread, the ledger and the composer live in the session store, not in
   // this component. An operator who opens a decision case raised from an answer
   // and comes back must find the conversation still here — losing it discards
@@ -435,7 +444,6 @@ export function CopilotPage(): React.JSX.Element {
       <PageBody>
         <PageHeader
           eyebrow={t('AI & Automation')}
-          title={t('{0} Municipal Copilot', corporation.city)}
           breadcrumbs={[{ label: t('AI & Automation') }, { label: t('Copilot') }]}
         />
         <Card>{t('No authenticated principal is available.')}</Card>
@@ -515,8 +523,6 @@ export function CopilotPage(): React.JSX.Element {
     <PageBody width="full">
       <PageHeader
         eyebrow={t('AI & Automation')}
-        title={t('{0} Municipal Copilot', corporation.city)}
-        description={t('A governed intelligence assistant grounded in the platform\'s own operational records. Every answer states its evidence, its confidence and its limitations.')}
         breadcrumbs={[{ label: t('AI & Automation') }, { label: t('{0} Municipal Copilot', corporation.city) }]}
         actions={
           <div className="flex flex-wrap items-center gap-2">
@@ -537,7 +543,7 @@ export function CopilotPage(): React.JSX.Element {
         {/* ---------------------------------------------- Conversation */}
         <Card
           flush
-          className="relative flex min-h-[36rem] min-w-0 flex-col overflow-hidden rounded-2xl shadow-raised xl:h-[calc(100vh-14rem)]"
+          className="relative flex min-h-[36rem] min-w-0 flex-col overflow-hidden rounded-[2px] shadow-raised xl:h-[calc(100vh-14rem)]"
         >
           {/* A single hairline of institutional colour along the top edge. */}
           <span
@@ -584,7 +590,7 @@ export function CopilotPage(): React.JSX.Element {
             >
               <div
                 className={cn(
-                  'rounded-2xl border border-ink-200 bg-surface p-2 shadow-card transition-all',
+                  'rounded-[2px] border border-ink-200 bg-surface p-2 shadow-card transition-all',
                   'focus-within:border-govt-300 focus-within:ring-4 focus-within:ring-govt-500/10',
                 )}
               >
@@ -638,7 +644,7 @@ export function CopilotPage(): React.JSX.Element {
 
         {/* ---------------------------------------------------- Inspector */}
         <div className="min-w-0 space-y-4 xl:sticky xl:top-4 xl:self-start">
-          <Card className="rounded-2xl">
+          <Card className="rounded-[2px]">
             <CardHeader
               icon={<ShieldAlert className="h-4 w-4" />}
               title={t('Your authority')}
@@ -659,7 +665,7 @@ export function CopilotPage(): React.JSX.Element {
           </Card>
 
           {messages.length > 0 ? (
-            <Card className="rounded-2xl">
+            <Card className="rounded-[2px]">
               <CardHeader icon={<Sparkles className="h-4 w-4" />} title={t('Ask next')} />
               <div className="mt-3 flex flex-col gap-1.5">
                 {prompts.map((p) => (
@@ -669,7 +675,7 @@ export function CopilotPage(): React.JSX.Element {
                     disabled={busy}
                     onClick={() => void ask(p.question)}
                     className={cn(
-                      'flex items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs leading-snug text-ink-600 transition-colors',
+                      'flex items-center gap-2 rounded-[2px] px-2 py-1.5 text-left text-xs leading-snug text-ink-600 transition-colors',
                       'hover:bg-govt-50/70 hover:text-govt-800 focus-visible:ring-2 focus-visible:ring-govt-500/30 focus-visible:outline-none',
                       'disabled:cursor-not-allowed disabled:opacity-50',
                     )}
@@ -685,7 +691,7 @@ export function CopilotPage(): React.JSX.Element {
           {sessionLedger.decisions + sessionLedger.tasks + sessionLedger.briefs > 0 ||
           escalations.length > 0 ||
           situationRoom.length > 0 ? (
-            <Card className="rounded-2xl">
+            <Card className="rounded-[2px]">
               <CardHeader
                 icon={<ClipboardPlus className="h-4 w-4" />}
                 title={t('Raised from this session')}
@@ -704,7 +710,7 @@ export function CopilotPage(): React.JSX.Element {
                   </p>
                   <ul className="space-y-1.5">
                     {escalations.map((e) => (
-                      <li key={`${e.id}-${e.at}`} className="rounded-lg border border-warn-200 bg-warn-50/40 p-2.5 text-xs">
+                      <li key={`${e.id}-${e.at}`} className="rounded-[2px] border border-warn-200 bg-warn-50/40 p-2.5 text-xs">
                         <p className="font-medium text-ink-800">{e.title}</p>
                         <p className="mt-0.5 leading-relaxed text-ink-600">{e.reason}</p>
                         <p className="mt-1 text-[0.625rem] text-ink-400">{formatRelative(e.at)}</p>
@@ -724,7 +730,7 @@ export function CopilotPage(): React.JSX.Element {
                   </p>
                   <ul className="space-y-1.5">
                     {situationRoom.map((s) => (
-                      <li key={`${s.id}-${s.at}`} className="rounded-lg border border-govt-200 bg-govt-50/40 p-2.5 text-xs">
+                      <li key={`${s.id}-${s.at}`} className="rounded-[2px] border border-govt-200 bg-govt-50/40 p-2.5 text-xs">
                         <p className="font-medium text-ink-800">{s.title}</p>
                         <p className="mt-1 text-[0.625rem] text-ink-400">{formatRelative(s.at)}</p>
                       </li>
@@ -781,7 +787,7 @@ function RailRow({ label, value }: { label: string; value: ReactNode }): React.J
 
 function LedgerStat({ label, value }: { label: string; value: number }): React.JSX.Element {
   return (
-    <div className="rounded-lg bg-surface-sunken px-2 py-2">
+    <div className="rounded-[2px] bg-surface-sunken px-2 py-2">
       <p className="numeric text-lg font-semibold text-ink-900">{value}</p>
       <p className="mt-px text-[0.625rem] text-ink-500">{label}</p>
     </div>
@@ -809,9 +815,9 @@ function Hero({
       <span className="relative flex h-14 w-14 items-center justify-center">
         <span
           aria-hidden
-          className="absolute inset-0 rounded-2xl bg-gradient-to-br from-intel-400/30 to-govt-500/30 blur-lg"
+          className="absolute inset-0 rounded-[2px] bg-gradient-to-br from-intel-400/30 to-govt-500/30 blur-lg"
         />
-        <span className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-surface shadow-card ring-1 ring-ink-100">
+        <span className="relative flex h-14 w-14 items-center justify-center rounded-[2px] bg-surface shadow-card ring-1 ring-ink-100">
           <Bot className="h-6 w-6 text-govt-600" />
         </span>
       </span>
@@ -828,11 +834,11 @@ function Hero({
             type="button"
             onClick={() => onAsk(p.question)}
             className={cn(
-              'lift-on-hover group flex items-start gap-3 rounded-xl border border-ink-100 bg-surface p-3.5 text-left shadow-xs transition-all',
+              'lift-on-hover group flex items-start gap-3 rounded-[2px] border border-ink-100 bg-surface p-3.5 text-left shadow-xs transition-all',
               'hover:border-govt-200 hover:shadow-card focus-visible:ring-2 focus-visible:ring-govt-500/30 focus-visible:outline-none',
             )}
           >
-            <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-govt-50 text-govt-600 ring-1 ring-govt-100 transition-colors group-hover:bg-govt-100">
+            <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-[2px] bg-govt-50 text-govt-600 ring-1 ring-govt-100 transition-colors group-hover:bg-govt-100">
               {p.icon}
             </span>
             <span className="min-w-0">
@@ -848,7 +854,7 @@ function Hero({
         onClick={() => onAsk(BLOCKED_EXAMPLE.question)}
         title={t('Demonstrates the AI gateway\'s prohibited-intent policy.')}
         className={cn(
-          'mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-warn-300/80 bg-warn-50/30 px-3.5 py-2.5 text-xs text-warn-700 transition-colors',
+          'mt-3 flex w-full items-center justify-center gap-2 rounded-[2px] border border-dashed border-warn-300/80 bg-warn-50/30 px-3.5 py-2.5 text-xs text-warn-700 transition-colors',
           'hover:bg-warn-50/70 focus-visible:ring-2 focus-visible:ring-warn-500/30 focus-visible:outline-none',
         )}
       >
@@ -893,7 +899,7 @@ function Turn({
     <div className="animate-in-rise space-y-3.5">
       {/* The operator's turn — the only saturated surface on the page. */}
       <div className="flex justify-end">
-        <div className="max-w-[38rem] rounded-2xl rounded-br-md bg-gradient-to-b from-govt-600 to-govt-700 px-4 py-3 text-[0.875rem] leading-6 text-white shadow-[0_1px_3px_0_rgb(26_63_175/0.35)]">
+        <div className="max-w-[38rem] rounded-[2px] bg-gradient-to-b from-govt-600 to-govt-700 px-4 py-3 text-[0.875rem] leading-6 text-white shadow-[0_1px_3px_0_rgb(26_63_175/0.35)]">
           <p className="whitespace-pre-wrap">{message.question}</p>
         </div>
       </div>
@@ -902,7 +908,7 @@ function Turn({
       {message.status === 'loading' ? <ThinkingRail question={message.question} /> : null}
 
       {message.status === 'error' ? (
-        <div className="flex items-start gap-3 rounded-2xl border border-crit-200 bg-crit-50/40 p-4">
+        <div className="flex items-start gap-3 rounded-[2px] border border-crit-200 bg-crit-50/40 p-4">
           <AlertOctagon className="mt-0.5 h-4 w-4 shrink-0 text-crit-600" />
           <div className="min-w-0 flex-1">
             <p className="text-[0.875rem] font-semibold text-crit-700">{t('The Copilot could not answer this request')}</p>
@@ -952,7 +958,7 @@ function ThinkingRail({ question }: { question: string }): React.JSX.Element {
   const gate = evaluateGatewayPolicy(question)
   return (
     <div
-      className="rounded-2xl border border-ink-100 bg-surface-sunken/70 p-4"
+      className="rounded-[2px] border border-ink-100 bg-surface-sunken/70 p-4"
       role="status"
       aria-live="polite"
     >
@@ -1076,7 +1082,7 @@ function AnswerPanel({
   return (
     <div
       className={cn(
-        'min-w-0 overflow-hidden rounded-2xl border bg-surface shadow-card',
+        'min-w-0 overflow-hidden rounded-[2px] border bg-surface shadow-card',
         blocked ? 'border-warn-200' : 'border-ink-100',
       )}
     >
@@ -1089,7 +1095,7 @@ function AnswerPanel({
       >
         <span
           className={cn(
-            'flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ring-1 ring-inset',
+            'flex h-7 w-7 shrink-0 items-center justify-center rounded-[2px] ring-1 ring-inset',
             blocked ? 'bg-warn-100/70 text-warn-700 ring-warn-200' : 'bg-surface text-govt-600 ring-ink-100',
           )}
         >
@@ -1177,7 +1183,7 @@ function AnswerPanel({
             {response.supportingTable ? (
               <section>
                 <p className="label-institutional mb-2.5">{response.supportingTable.caption}</p>
-                <div className="scrollbar-slim overflow-x-auto rounded-xl border border-ink-100">
+                <div className="scrollbar-slim overflow-x-auto rounded-[2px] border border-ink-100">
                   <table className="w-full min-w-[28rem] border-collapse text-left text-xs">
                     <thead>
                       <tr className="border-b border-ink-100 bg-surface-sunken">
@@ -1210,7 +1216,7 @@ function AnswerPanel({
             ) : null}
 
             {response.risksAndLimitations.length > 0 ? (
-              <section className="rounded-xl border border-warn-200/60 bg-warn-50/25 p-4">
+              <section className="rounded-[2px] border border-warn-200/60 bg-warn-50/25 p-4">
                 <p className="label-institutional mb-2.5 text-warn-700">{t('Risks and limitations')}</p>
                 <ul className="space-y-2">
                   {response.risksAndLimitations.map((r) => (
@@ -1228,7 +1234,7 @@ function AnswerPanel({
         {tab === 'evidence' ? (
           <div className="space-y-3">
             {response.evidence.length === 0 ? (
-              <p className="rounded-xl border border-ink-100 bg-surface-sunken p-4 text-[0.8125rem] leading-6 text-ink-600">
+              <p className="rounded-[2px] border border-ink-100 bg-surface-sunken p-4 text-[0.8125rem] leading-6 text-ink-600">
                 {t('This response drew on no authorised evidence record. That is stated rather than concealed — an answer without evidence is general reasoning, and its confidence is set accordingly.')}
               </p>
             ) : (
@@ -1243,7 +1249,7 @@ function AnswerPanel({
                         type="button"
                         disabled={!citation.evidenceId}
                         onClick={() => onOpenEvidence(citation)}
-                        className="flex w-full items-start gap-3 rounded-xl border border-ink-100 bg-surface-sunken/70 p-3 text-left transition-colors enabled:hover:border-govt-200 enabled:hover:bg-govt-50/40 disabled:cursor-not-allowed disabled:opacity-60"
+                        className="flex w-full items-start gap-3 rounded-[2px] border border-ink-100 bg-surface-sunken/70 p-3 text-left transition-colors enabled:hover:border-govt-200 enabled:hover:bg-govt-50/40 disabled:cursor-not-allowed disabled:opacity-60"
                       >
                         <FileSearch className="mt-0.5 h-4 w-4 shrink-0 text-ink-400" />
                         <span className="min-w-0 flex-1">
@@ -1265,7 +1271,7 @@ function AnswerPanel({
         {tab === 'actions' ? (
           <div className="space-y-4">
             {response.recommendedActions.length === 0 ? (
-              <p className="rounded-xl border border-ink-100 bg-surface-sunken p-4 text-[0.8125rem] leading-6 text-ink-600">
+              <p className="rounded-[2px] border border-ink-100 bg-surface-sunken p-4 text-[0.8125rem] leading-6 text-ink-600">
                 {t('No action is recommended for this request. The Copilot does not manufacture a next step where the records do not support one.')}
               </p>
             ) : (
@@ -1489,7 +1495,7 @@ function InterpretationStrip({
               <span
                 key={`${entity.kind}-${entity.id ?? entity.label}-${entity.matchedText}`}
                 title={t('Bound from "{0}" in your question', entity.matchedText)}
-                className="inline-flex max-w-full items-center gap-1.5 rounded-md border border-ink-200 bg-surface px-2 py-1 text-[0.6875rem]"
+                className="inline-flex max-w-full items-center gap-1.5 rounded-[2px] border border-ink-200 bg-surface px-2 py-1 text-[0.6875rem]"
               >
                 <span className="shrink-0 text-ink-400" aria-hidden>
                   {kind.icon}
@@ -1517,7 +1523,7 @@ function InterpretationStrip({
           plausible one, so it is given a surface of its own rather than being
           folded into the prose below. */}
       {interpretation.note ? (
-        <p className="mt-2.5 flex items-start gap-2 rounded-lg border border-warn-200 bg-warn-50/70 px-2.5 py-2 text-[0.75rem] leading-relaxed text-warn-700">
+        <p className="mt-2.5 flex items-start gap-2 rounded-[2px] border border-warn-200 bg-warn-50/70 px-2.5 py-2 text-[0.75rem] leading-relaxed text-warn-700">
           <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
           <span className="min-w-0">{interpretation.note}</span>
         </p>
@@ -1538,7 +1544,7 @@ function InterpretationStrip({
                 onClick={() => onAsk(alt.question)}
                 title={alt.question}
                 className={cn(
-                  'flex min-w-0 max-w-full flex-col items-start gap-0.5 rounded-lg border border-ink-200 bg-surface px-2.5 py-1.5 text-left transition-colors',
+                  'flex min-w-0 max-w-full flex-col items-start gap-0.5 rounded-[2px] border border-ink-200 bg-surface px-2.5 py-1.5 text-left transition-colors',
                   'enabled:hover:border-govt-300 enabled:hover:bg-govt-50/60',
                   'focus-visible:ring-2 focus-visible:ring-govt-500/30 focus-visible:outline-none',
                   'disabled:cursor-not-allowed disabled:opacity-50',

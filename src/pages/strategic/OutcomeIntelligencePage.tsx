@@ -21,6 +21,7 @@ import {
 } from '@/components/ui'
 import { MetricCard } from '@/components/cards'
 import { ChartFrame, RankedBarChart, TrendChart } from '@/components/charts'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { t } from '@/i18n'
 
 /**
@@ -90,6 +91,12 @@ function trendPointsFor(pipeline: Pick<OutcomePipeline, 'baselinePct' | 'achieve
 }
 
 export function OutcomeIntelligencePage(): React.JSX.Element {
+  // The shell's masthead states the screen's name; the page states the wording.
+  usePageMasthead(
+    t('Outcome Intelligence'),
+    t('Input, activity, output and outcome for every programme this platform can assemble end to end from its own operational records - the citizen-facing effect a programme was meant to produce, not merely the work completed on the way to it.'),
+  )
+
   const projectsQuery = useServiceQuery(queryKeys.projects({ scope: 'outcomes' }), (u) => projectService.list(u, { pageSize: 300 }))
   const roadsQuery = useServiceQuery(queryKeys.roads('outcomes'), (u) => roadsService.segments(u))
   const wasteQuery = useServiceQuery(queryKeys.waste('outcomes'), (u) => wasteService.wardPerformance(u))
@@ -271,18 +278,9 @@ export function OutcomeIntelligencePage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('Strategic Urban Intelligence')}
-        title={t('Outcome Intelligence')}
-        description={t('Input, activity, output and outcome for every programme this platform can assemble end to end from its own operational records - the citizen-facing effect a programme was meant to produce, not merely the work completed on the way to it.')}
         breadcrumbs={[{ label: t('Strategic Urban Intelligence') }, { label: t('Outcome Intelligence') }]}
         freshness={FRESHNESS}
       />
-
-      <Card tone="info">
-        <p className="flex items-start gap-2 text-xs leading-relaxed text-ink-700">
-          <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-govt-600" />
-          {t('Operational KPIs are not outcomes. Coverage achieved, kilometres resurfaced or works completed are outputs - what was done. An outcome is what that output changed for a resident - whether a corridor stays passable, a ward stops flooding, a signal is contained. This platform tracks both, and reports the outcome without adjustment, including where an intervention has demonstrably not been effective.')}
-        </p>
-      </Card>
 
       {anyLoading ? <LoadingState variant="metrics" /> : null}
       {anyError ? (
@@ -300,25 +298,26 @@ export function OutcomeIntelligencePage(): React.JSX.Element {
         />
       ) : null}
 
-      {!anyLoading && !anyError ? (
-        <>
-          <Card>
-            <CardHeader icon={<Trophy className="h-4 w-4" />} title={t('Portfolio summary')} description={t('Every programme classified against its own target, not a uniform bar.')} />
-            <MetricGrid columns={3} className="mt-3">
-              <MetricCard label={t('On track')} value={onTrack.length} tone="positive" support={t('Within 5 points of target')} />
-              <MetricCard label={t('Developing')} value={developing.length} tone="warn" support={t('Between on-track and materially behind')} />
-              <MetricCard label={t('Behind target')} value={behind.length} tone={behind.length > 0 ? 'critical' : 'default'} support={t('More than 20 points short')} />
-            </MetricGrid>
-          </Card>
+      {/* ── Two columns ─────────────────────────────────────────────
+          The programme chains are the record and read down the wide column,
+          one under the next, so a reader compares the same four stages in the
+          same four places. What ranks and qualifies them — the portfolio
+          classification, the gap ordering, and the standing caution that an
+          output is not an outcome — sits alongside. */}
+      <div className="grid grid-cols-1 gap-3 xl:grid-cols-12">
+        <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
+          {!anyLoading && !anyError ? (
+            <>
+              <Card>
+                <CardHeader icon={<Trophy className="h-4 w-4" />} title={t('Portfolio summary')} description={t('Every programme classified against its own target, not a uniform bar.')} />
+                <MetricGrid columns={3} className="mt-3">
+                  <MetricCard label={t('On track')} value={onTrack.length} tone="positive" support={t('Within 5 points of target')} />
+                  <MetricCard label={t('Developing')} value={developing.length} tone="warn" support={t('Between on-track and materially behind')} />
+                  <MetricCard label={t('Behind target')} value={behind.length} tone={behind.length > 0 ? 'critical' : 'default'} support={t('More than 20 points short')} />
+                </MetricGrid>
+              </Card>
 
-          <Card>
-            <ChartFrame title={t('Ranked gap to target')} unit={t('percentage points short')} timeframe="Current reporting position" height={Math.max(180, pipelines.length * 26)}>
-              <RankedBarChart data={rankedGaps} higherIsWorse unit=" pp" />
-            </ChartFrame>
-          </Card>
-
-          <div className="space-y-4">
-            {pipelines.map((p) => (
+              {pipelines.map((p) => (
               <Card key={p.id} flush>
                 <CardHeader
                   className="px-4 pt-4"
@@ -340,7 +339,7 @@ export function OutcomeIntelligencePage(): React.JSX.Element {
                     { stageName: 'Outcome', caption: p.outcomeLabel, value: formatPercent(p.achievedPct) },
                   ].map((stage, i) => (
                     <div key={stage.stageName} className="flex items-stretch">
-                      <div className={'flex w-48 shrink-0 flex-col rounded-md border p-2.5 ' + (i === 3 ? 'border-intel-300 bg-intel-50/50' : 'border-ink-100 bg-surface-sunken')}>
+                      <div className={'flex w-48 shrink-0 flex-col rounded-[2px] border p-2.5 ' + (i === 3 ? 'border-intel-300 bg-intel-50/50' : 'border-ink-100 bg-surface-sunken')}>
                         <span className={'text-[0.625rem] font-semibold tracking-wide uppercase ' + (i === 3 ? 'text-intel-700' : 'text-ink-400')}>{stage.stageName}</span>
                         <span className="numeric mt-1 text-sm font-semibold text-ink-900">{stage.value}</span>
                         <span className="mt-1 text-[0.6875rem] leading-snug text-ink-600">{stage.caption}</span>
@@ -382,16 +381,34 @@ export function OutcomeIntelligencePage(): React.JSX.Element {
                   </p>
                 ) : null}
               </Card>
-            ))}
-          </div>
+              ))}
 
-          <Badge tone="muted" className="w-fit">
-            {t('{0} programme{1} tracked end to end', pipelines.length, pipelines.length === 1 ? '' : 's')}
-          </Badge>
-        </>
-      ) : null}
+              <Badge tone="muted" className="w-fit">
+                {t('{0} programme{1} tracked end to end', pipelines.length, pipelines.length === 1 ? '' : 's')}
+              </Badge>
+            </>
+          ) : null}
+        </div>
 
-      <DemonstrationNotice />
+        <div className="flex min-w-0 flex-col gap-3 xl:col-span-4">
+          {!anyLoading && !anyError ? (
+            <Card>
+              <ChartFrame title={t('Ranked gap to target')} unit={t('percentage points short')} timeframe="Current reporting position" height={Math.max(180, pipelines.length * 26)}>
+                <RankedBarChart data={rankedGaps} higherIsWorse unit=" pp" />
+              </ChartFrame>
+            </Card>
+          ) : null}
+
+          <Card tone="info">
+            <p className="flex items-start gap-2 text-xs leading-relaxed text-ink-700">
+              <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-govt-600" />
+              {t('Operational KPIs are not outcomes. Coverage achieved, kilometres resurfaced or works completed are outputs - what was done. An outcome is what that output changed for a resident - whether a corridor stays passable, a ward stops flooding, a signal is contained. This platform tracks both, and reports the outcome without adjustment, including where an intervention has demonstrably not been effective.')}
+            </p>
+          </Card>
+
+          <DemonstrationNotice />
+        </div>
+      </div>
     </PageBody>
   )
 }

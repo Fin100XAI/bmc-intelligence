@@ -143,7 +143,17 @@ function readRouteTable() {
   }
 
   const routes = []
-  for (const m of source.matchAll(/path:\s*(?:ROUTES\.(\w+)|'([^']+)')\s*,\s*element:\s*(?:guarded\()?<(\w+)\s*\/>/g)) {
+  // Matches `element: <Page />`, `element: guarded(<Page />)` and the wrapped
+  // form `element: (<RequireAuth><Page /></RequireAuth>)`.
+  //
+  // The wrapped alternative was added after a route moved behind `RequireAuth`
+  // and silently left this sweep: the page still rendered, the suite still
+  // reported every check passing, and the total quietly dropped by one. A
+  // discovery regex that only sees some spellings of a route does not report
+  // the pages it misses — it reports a smaller, confident-looking pass.
+  for (const m of source.matchAll(
+    /path:\s*(?:ROUTES\.(\w+)|'([^']+)')\s*,\s*element:\s*\(?\s*(?:guarded\()?(?:<\w+>\s*)?<(\w+)\s*\/>/g,
+  )) {
     const [, routeKey, literalPath, component] = m
     const modulePath = modules.get(component)
     if (!modulePath) continue
@@ -197,10 +207,19 @@ try {
     path: r.literalPath && r.literalPath !== '*' ? r.literalPath : (navigation.ROUTES[r.routeKey] ?? '/'),
   }))
 
+  // Compared on DISTINCT modules, not on route entries. One page legitimately
+  // answers at more than one path — the sign-in screen serves both `/login` and
+  // the older `/login/direct`, so a bookmark minted before sign-in moved to the
+  // front door still works. Counting route entries made that look like an
+  // unrouted module, which is the opposite of what this check is for: it exists
+  // to catch a page nobody can reach, not a page reachable twice.
+  const routedModules = new Set(pages.map((p) => p.component))
+
   record(
-    pages.length === modules.size ? 'PASS' : 'FAIL',
+    routedModules.size === modules.size ? 'PASS' : 'FAIL',
     'Every lazily-imported page is routed',
-    `${modules.size} modules declared, ${pages.length} reachable through the route table`,
+    `${modules.size} modules declared, ${routedModules.size} reachable through the route table` +
+      (pages.length === routedModules.size ? '' : ` (${pages.length} route entries)`),
   )
 
   // --- 1 & 2. Transform and execute every page module ---------------------
@@ -380,28 +399,30 @@ try {
       const shown = container.textContent?.replace(/\s+/g, ' ').trim() ?? ''
       if (shown.length === 0) throw new Error('the screen rendered nothing')
 
-      // The portal front page is only ever seen by a visitor with NO session,
-      // so every module it names sits behind `RequireAuth`. Following one
-      // directly bounced the visitor straight back to the portal, which reads
-      // as a dead link rather than as "you need to sign in". Every card,
-      // column and button that names a destination inside the platform must
-      // therefore lead to the officer sign-in screen. This is the check that
-      // keeps it that way as the portal grows new links.
+      // The portal front page now sits BEHIND sign-in: an officer signs in,
+      // lands here, and enters the console from whichever surface they came
+      // for. Its destinations therefore lead straight into the platform, and
+      // the old assertion — that every one of them routed through the sign-in
+      // screen — asserted the opposite of the current design.
+      //
+      // What is still worth pinning is that the destinations are real
+      // in-application routes. A portal whose links point at `#`, at an
+      // external host, or at a stale `?next=` URL minted for the public design
+      // is a portal that looks complete and goes nowhere.
       let gatedNote = ''
       if (authPage === 'PortalLandingPage') {
         const hrefs = [...container.querySelectorAll('a[href]')].map((a) => a.getAttribute('href') ?? '')
-        const leaked = [
-          ...new Set(hrefs.filter((h) => h.startsWith('/') && !h.startsWith(navigation.ROUTES.login))),
-        ]
-        if (leaked.length > 0) {
+        const internal = [...new Set(hrefs.filter((h) => h.startsWith('/')))]
+        if (internal.length === 0) throw new Error('the portal names no in-application destination')
+
+        const stale = internal.filter((h) => h.startsWith(navigation.ROUTES.loginDirect))
+        if (stale.length > 0) {
           throw new Error(
-            `${leaked.length} portal destination(s) still lead into the platform rather than to sign-in, ` +
-              `so a signed-out visitor clicking them is bounced back to the portal: ${leaked.slice(0, 6).join(', ')}`,
+            `${stale.length} portal destination(s) still route through the sign-in screen, which now sits ` +
+              `BEFORE this page: ${stale.slice(0, 6).join(', ')}`,
           )
         }
-        const gated = hrefs.filter((h) => h.startsWith(`${navigation.ROUTES.loginDirect}?next=`))
-        if (gated.length === 0) throw new Error('no portal destination routes through the sign-in screen')
-        gatedNote = `, ${gated.length} destinations gated to sign-in`
+        gatedNote = `, ${internal.length} destinations into the platform`
       }
 
       record(

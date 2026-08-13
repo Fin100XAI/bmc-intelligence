@@ -41,8 +41,6 @@ export const MR_PART_14: Record<string, string> = {
   'Revenue collected': 'वसूल महसूल',
   'Revenue expenditure delta scales revenue-head lines by the stated percentage.':
     'महसुली खर्च फरक महसूल-शीर्षाच्या ओळी नमूद टक्केवारीनुसार कमी-अधिक करतो.',
-  'Revenue realisation and capital utilisation against the phased plan.':
-    'टप्प्याटप्प्याच्या आराखड्याच्या तुलनेत महसूल वसुली आणि भांडवली वापर.',
   'Revenue risks': 'महसूल जोखीम',
   'Revenue target vs collected': 'महसूल लक्ष्य विरुद्ध वसुली',
   'Reversible at any time': 'कधीही पूर्ववत करता येण्याजोगे',
@@ -69,7 +67,6 @@ export const MR_PART_14: Record<string, string> = {
   'Road segment register': 'रस्ता भाग नोंदवही',
   'Road-condition layer with defect markers. Click a marker to inspect its driver breakdown.':
     'दोष खुणांसह रस्ता-स्थिती स्तर. कारक विश्लेषण पाहण्यासाठी खुणेवर क्लिक करा.',
-  'Roads - top priority defects': 'रस्ते — सर्वोच्च प्राधान्याचे दोष',
   'Role catalogue': 'भूमिका सूची',
   'Role default (recommended)': 'भूमिकेनुसार मूलनिर्धारित (शिफारशीत)',
   'Role register': 'भूमिका नोंदवही',
@@ -274,7 +271,6 @@ export const MR_PART_14: Record<string, string> = {
   'Skill training centres, shelters for the urban homeless, vending plazas, self-help group federations and livelihood centres within your authorised ward scope. Condition is read off placement and bank linkage rather than off the fabric of the building.':
     'तुमच्या अधिकृत प्रभाग व्याप्तीतील कौशल्य प्रशिक्षण केंद्रे, नागरी निराधारांसाठी निवारे, विक्री संकुले, बचत गट महासंघ आणि उपजीविका केंद्रे. येथे स्थिती इमारतीच्या बांधकामावरून नव्हे, तर नोकरी नियुक्ती आणि बँक जोडणीवरून वाचली जाते.',
   'SLA compliance by category': 'श्रेणीनिहाय सेवा-हमी अनुपालन',
-  'SLA compliance by category, lowest first.': 'श्रेणीनिहाय सेवा-हमी अनुपालन, सर्वात कमी प्रथम.',
   'SLA compliance,': 'सेवा-हमी अनुपालन,',
   'SLA-breached': 'सेवा-हमी भंग झालेले',
   'SLA-breached proposals': 'सेवा-हमी भंग झालेले प्रस्ताव',
@@ -366,8 +362,6 @@ export const MR_PART_14: Record<string, string> = {
   'Statistical patterns in revenue and assessment records that require assessment. An anomaly is not a finding, and disposition here never characterises the conduct of any person or organisation.':
     'महसूल व आकारणी नोंदींतील, मूल्यमापन आवश्यक असलेले सांख्यिकीय नमुने. विसंगती म्हणजे निष्कर्ष नव्हे, आणि येथील निर्णय कोणत्याही व्यक्तीच्या किंवा संस्थेच्या वर्तनाबाबत कधीही भाष्य करत नाही.',
   'Status composition': 'स्थिती रचना',
-  'Status composition and the highest-risk capital works.':
-    'स्थिती रचना आणि सर्वाधिक जोखमीची भांडवली कामे.',
   'status.': 'स्थिती.',
   'Step-free entrances': 'पायरीविरहित प्रवेशद्वारे',
   'Sterilisation coverage': 'निर्बीजीकरण व्याप्ती',
@@ -455,8 +449,6 @@ export const MR_PART_14: Record<string, string> = {
     'जीवनचक्रातील जोखमीसाठी वापरला जाणारा भांडवली-प्रकल्प संदर्भ मालमत्तेची श्रेणी व प्रभाग यांची तुलना त्याच श्रेणीच्या चालू किंवा नियोजित प्रकल्पांशी करतो. मंचाच्या स्वतःच्या प्रकल्प माहितीत जुळणारी कार्यक्रम नोंद वरकरणी नसल्याचे तो दर्शवतो; या प्रणालीबाहेर ठेवलेला विभागीय बदली आराखडा नाही, याची तो पुष्टी करत नाही.',
   'The chain this graph is built to make traceable, ward to measured outcome.':
     'हा आलेख ज्या साखळीचा माग काढता यावा म्हणून उभारला आहे ती साखळी, प्रभागापासून मोजलेल्या निष्कर्षापर्यंत.',
-  'The city-level operational position across every domain - composite health, ward risk, emerging signals and financial and infrastructure standing - closing with an evidence-backed executive brief that a named officer can act on.':
-    'प्रत्येक क्षेत्रातील शहरस्तरीय कामकाजाची स्थिती — एकत्रित स्थिती, प्रभाग जोखीम, उदयोन्मुख संकेत आणि आर्थिक व पायाभूत सुविधांची स्थिती — आणि शेवटी, नामनिर्देशित अधिकारी ज्यावर कृती करू शकेल असे पुराव्याधारित कार्यकारी टिपण.',
   "The city's capacity to absorb a shock and keep functioning, scored across the {0} hazards {1} plans against. Every score measures preparedness, not the likelihood of the hazard - a strong flood score does not forecast a mild monsoon.":
     'धक्का पचवून कार्यरत राहण्याची शहराची क्षमता, {1} ज्या {0} धोक्यांसाठी नियोजन करते त्या सर्वांवर गुणांकित. प्रत्येक गुण सज्जता मोजतो, धोक्याची शक्यता नव्हे — पुराचा चांगला गुण म्हणजे सौम्य पावसाळ्याचा अंदाज नव्हे.',
   'The comparison is drawn across {0} {1}': 'ही तुलना {0} {1} यांवर काढली आहे',

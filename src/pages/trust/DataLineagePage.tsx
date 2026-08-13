@@ -18,6 +18,7 @@ import { Drawer } from '@/components/ui/overlays'
 import { DemonstrationNotice, EmptyState, ErrorState, LoadingState } from '@/components/ui/states'
 import { useServiceQuery } from '@/hooks'
 import { governanceService } from '@/services'
+import { usePageMasthead } from '@/stores/masthead.store'
 import { DOMAIN_LABEL, type IntelligenceDomain } from '@/types/common'
 import { LINEAGE_STAGE_LABEL, type LineageGraph, type LineageStage } from '@/types/governance'
 import { formatDate, formatRelative } from '@/utils/format'
@@ -90,6 +91,12 @@ const STAGE_IMPACT: Record<LineageStage['kind'], string> = {
 }
 
 export function DataLineagePage(): React.JSX.Element {
+  // The shell's masthead carries the screen's name; the page states the wording.
+  usePageMasthead(
+    t('Data Lineage'),
+    t('Every derived metric this platform presents publishes the full pipeline that produced it, from the departmental source through to the decision it can inform. A metric whose lineage has not been recently validated is not presented as evidence.'),
+  )
+
   const lineageQuery = useServiceQuery(['trust-data-lineage', 'all-graphs'], (u) => governanceService.lineageGraphs(u))
 
   const [view, setView] = useState<'graph' | 'catalogue'>('graph')
@@ -226,8 +233,6 @@ export function DataLineagePage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('Trust Centre')}
-        title={t('Data Lineage')}
-        description={t('Every derived metric this platform presents publishes the full pipeline that produced it, from the departmental source through to the decision it can inform. A metric whose lineage has not been recently validated is not presented as evidence.')}
         breadcrumbs={[{ label: t('Trust Centre'), to: '/trust' }, { label: t('Data Lineage') }]}
         controls={
           <div className="flex w-full flex-wrap items-center gap-2">
@@ -364,9 +369,9 @@ export function DataLineagePage(): React.JSX.Element {
               }
             />
 
-            <div className="mt-4 flex flex-col gap-0 overflow-x-auto lg:flex-row lg:items-stretch lg:gap-0">
+            <div className="scrollbar-slim mt-4 flex flex-col gap-0 overflow-x-auto lg:flex-row lg:items-stretch lg:gap-0">
               {selected.stages.map((stage, i) => (
-                <div key={stage.id} className="flex flex-col items-stretch lg:flex-row lg:items-center">
+                <div key={stage.id} className="flex flex-col items-stretch lg:shrink-0 lg:flex-row lg:items-center">
                   <button
                     type="button"
                     onClick={() => setOpenStage(stage)}

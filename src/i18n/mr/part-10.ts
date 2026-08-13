@@ -40,7 +40,6 @@ export const MR_PART_10: Record<string, string> = {
     'प्रभागात सध्या प्रलंबित असलेल्या नागरिकांच्या तक्रारी, लोकसंख्येच्या तुलनेतील दर म्हणून नव्हे तर कायम कार्यभार म्हणून मोजलेल्या.',
   'Citizen grievance escalation': 'नागरिक तक्रार उन्नयन',
   'Citizen service delivery': 'नागरिक सेवा वितरण',
-  'Citizen services': 'नागरिक सेवा',
   'City': 'शहर',
   'City adequacy': 'शहर पर्याप्तता',
   'City assessment position': 'शहर आकारणी स्थिती',
@@ -49,13 +48,11 @@ export const MR_PART_10: Record<string, string> = {
   'City flood risk': 'शहर पूर जोखीम',
   'City map': 'शहर नकाशा',
   'City median': 'शहर मध्यक',
-  'City operational trend': 'शहर कामकाज कल',
   'City Operations': 'शहर कामकाज',
   'City position': 'शहर स्थिती',
   'City revenue command centre across property tax, water charges, development charges, licence fees, advertisement, rentals, octroi compensation and other receipts. All collection and variance figures are year-to-date against a pro-rated phased target - the financial year is approximately 31% elapsed at this reporting date.':
     'मालमत्ता कर, पाणीपट्टी, विकास शुल्क, परवाना शुल्क, जाहिरात, भाडे, जकात भरपाई आणि इतर जमा यांवरील शहर महसूल नियंत्रण केंद्र. सर्व वसुली व फरक आकडे टप्प्याटप्प्याच्या प्रमाणित लक्ष्याच्या तुलनेत वर्षारंभापासूनचे आहेत - या अहवाल दिनांकास आर्थिक वर्ष अंदाजे 31% पूर्ण झाले आहे.',
   'City revenue position': 'शहर महसूल स्थिती',
-  'City risk map': 'शहर जोखीम नकाशा',
   'City signals become intelligence, decisions, field actions and measured outcomes — one connected operating chain.':
     'शहरातील संकेतांचे बुद्धिमत्ता, निर्णय, क्षेत्रीय कृती आणि मोजलेल्या निष्पत्तींमध्ये रूपांतर होते — एक जोडलेली कार्यसाखळी.',
   'City Water Position': 'शहर पाणी स्थिती',
@@ -266,7 +263,6 @@ export const MR_PART_10: Record<string, string> = {
   'Coverage map': 'व्याप्ती नकाशा',
   'Crack': 'तडा',
   'Create decision': 'निर्णय तयार करा',
-  'Create decision from this section': 'या विभागातून निर्णय तयार करा',
   'Create incident': 'घटना नोंदवा',
   'Create incident from this scenario': 'या परिस्थितीतून घटना नोंदवा',
   'Creek': 'खाडी',
@@ -405,7 +401,6 @@ export const MR_PART_10: Record<string, string> = {
   'Drain-risk and pumping-station-readiness layers, with pumping station markers. Switch layers with the control above the map.':
     'गटार-जोखीम आणि उपसा केंद्र-सज्जता स्तर, उपसा केंद्रांच्या खुणांसह. नकाशावरील नियंत्रणाने स्तर बदला.',
   'Drainage & flood readiness': 'जलनिस्सारण व पूर सज्जता',
-  'Drainage &amp; monsoon': 'जलनिस्सारण &amp; पावसाळा',
   'Drilldown - City → Ward → Zone → Asset': 'तपशीलवेध - शहर → प्रभाग → झोन → मालमत्ता',
   'Drilled': 'सराव झाला',
   'Driver breakdown': 'चालक घटकांची विभागणी',
