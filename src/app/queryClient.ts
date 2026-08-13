@@ -104,4 +104,15 @@ export const queryKeys = {
   wardCommitments: (scope?: string) => ['bmc-mii', 'ward-commitments', scope ?? 'all'] as const,
   wardPerformance: (scope?: string) => ['bmc-mii', 'ward-performance', scope ?? 'all'] as const,
   council: (scope?: string) => ['bmc-mii', 'council', scope ?? 'all'] as const,
+  // Institutional functions previously unrepresented anywhere in the platform.
+  wardGovernance: (scope?: string) => ['bmc-mii', 'ward-governance', scope ?? 'all'] as const,
+  correspondence: (scope?: string) => ['bmc-mii', 'correspondence', scope ?? 'all'] as const,
+  legal: (scope?: string) => ['bmc-mii', 'legal', scope ?? 'all'] as const,
+  enforcement: (scope?: string) => ['bmc-mii', 'enforcement', scope ?? 'all'] as const,
+  infraCoordination: (scope?: string) => ['bmc-mii', 'infra-coordination', scope ?? 'all'] as const,
+  developmentPlan: (scope?: string) => ['bmc-mii', 'development-plan', scope ?? 'all'] as const,
+  heritage: (scope?: string) => ['bmc-mii', 'heritage', scope ?? 'all'] as const,
+  civicParticipation: (scope?: string) => ['bmc-mii', 'civic-participation', scope ?? 'all'] as const,
+  buildings: (scope?: string) => ['bmc-mii', 'buildings', scope ?? 'all'] as const,
+  transparency: (scope?: string) => ['bmc-mii', 'transparency', scope ?? 'all'] as const,
 } as const

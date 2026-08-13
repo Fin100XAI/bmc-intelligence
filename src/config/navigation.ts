@@ -13,6 +13,7 @@ import {
   Brain,
   Building,
   Building2,
+  Castle,
   CircleParking,
   CircuitBoard,
   ClipboardCheck,
@@ -24,6 +25,8 @@ import {
   Crosshair,
   Database,
   Droplets,
+  Layers3,
+  Megaphone,
   FileSearch,
   FileStack,
   FileText,
@@ -35,6 +38,7 @@ import {
   GitBranch,
   Globe2,
   GraduationCap,
+  Hammer,
   HandCoins,
   Handshake,
   HardHat,
@@ -44,6 +48,7 @@ import {
   Home,
   Hospital,
   KeyRound,
+  LandPlot,
   Landmark,
   LayoutDashboard,
   LifeBuoy,
@@ -60,6 +65,7 @@ import {
   Recycle,
   Route,
   Scale,
+  Scale3d,
   ScrollText,
   Settings,
   ShieldAlert,
@@ -72,10 +78,13 @@ import {
   Store,
   Target,
   TrafficCone,
+  TrainFront,
   Trees,
   TrendingDown,
   Trophy,
   Users,
+  Users2,
+  FileSignature,
   Wallet,
   Waves,
   Workflow,
@@ -113,6 +122,11 @@ export const ROUTES = {
    * by the time they are on screen the principal is already established.
    */
   portal: '/portal',
+  /**
+   * The one genuinely public route in the platform - no session, no
+   * `RequireAuth`, no `AppShell`. See `src/pages/public/TransparencyPortalPage.tsx`.
+   */
+  transparency: '/transparency',
 
   // Command
   executive: '/command/executive',
@@ -161,6 +175,14 @@ export const ROUTES = {
 
   // Council - the deliberative wing
   councilResolutions: '/council/resolutions',
+  wardCommittees: '/council/ward-committees',
+  correspondence: '/council/correspondence',
+  legal: '/council/legal',
+
+  // City intelligence, continued - domains added after the initial section
+  // above was written.
+  heritage: '/city/heritage-tourism',
+  civicParticipation: '/city/civic-participation',
 
   // Governance & finance
   property: '/governance/property',
@@ -177,10 +199,14 @@ export const ROUTES = {
   assets: '/governance/assets',
   workforce: '/governance/workforce',
   licensing: '/governance/licensing',
+  enforcement: '/governance/enforcement',
+  infraCoordination: '/governance/infrastructure-coordination',
+  buildingEntity: '/governance/building-entity',
 
   // Strategic
   benchmarking: '/strategic/benchmarking',
   planning: '/strategic/planning',
+  developmentPlan: '/strategic/development-plan-2034',
   digitalTwin: '/strategic/digital-twin',
   knowledgeGraph: '/strategic/knowledge-graph',
   infrastructureGraph: '/strategic/infrastructure-graph',
@@ -673,6 +699,15 @@ function build$NAV_SECTIONS(): NavSection[] {
         domain: 'amenities',
         description: t('Parking, public conveniences, bus shelters and the residents-per-facility ratio.'),
       },
+      {
+        id: 'heritage',
+        label: t('Heritage & Tourism'),
+        to: ROUTES.heritage,
+        icon: Castle,
+        requires: { resource: 'intelligence', action: 'view' },
+        domain: 'heritage',
+        description: t('Listed heritage structures and precincts, museums, the zoo and the tourism-facing public realm.'),
+      },
     ],
   },
   {
@@ -690,6 +725,15 @@ function build$NAV_SECTIONS(): NavSection[] {
         requires: { resource: 'intelligence', action: 'view' },
         domain: 'citizen-services',
         description: t('Recurring complaints, root-cause association and SLA position.'),
+      },
+      {
+        id: 'civic-participation',
+        label: t('Civic Participation'),
+        to: ROUTES.civicParticipation,
+        icon: Megaphone,
+        requires: { resource: 'intelligence', action: 'view' },
+        domain: 'civic-participation',
+        description: t('Consultations, suggestion schemes and public feedback the Corporation has run.'),
       },
       {
         id: 'housing',
@@ -753,12 +797,39 @@ function build$NAV_SECTIONS(): NavSection[] {
         description: t('Structural audits, dilapidation and development control.'),
       },
       {
+        id: 'building-entity',
+        label: t('Building Entity'),
+        to: ROUTES.buildingEntity,
+        icon: Layers3,
+        requires: { resource: 'intelligence', action: 'view' },
+        domain: 'buildings',
+        description: t('One building read against its ward’s property, licensing and enforcement position.'),
+      },
+      {
         id: 'digital-twin',
         label: t('Urban Digital Twin'),
         to: ROUTES.digitalTwin,
         icon: Network,
         requires: { resource: 'intelligence', action: 'view' },
         description: t('Layered spatial view of every municipal entity class.'),
+      },
+      {
+        id: 'development-plan',
+        label: t('Development Plan 2034'),
+        to: ROUTES.developmentPlan,
+        icon: LandPlot,
+        requires: { resource: 'intelligence', action: 'view' },
+        domain: 'planning',
+        description: t('Sanctioned land-use zoning, FSI and TDR position, and reservation status ward by ward.'),
+      },
+      {
+        id: 'enforcement',
+        label: t('Encroachment & Enforcement'),
+        to: ROUTES.enforcement,
+        icon: Hammer,
+        requires: { resource: 'intelligence', action: 'view' },
+        domain: 'enforcement',
+        description: t('Notices issued under the MMC Act and MRTP Act, and what became of each one.'),
       },
     ],
   },
@@ -887,6 +958,15 @@ function build$NAV_SECTIONS(): NavSection[] {
         domain: 'assets',
         description: t('Asset register, condition and lifecycle exposure.'),
       },
+      {
+        id: 'infra-coordination',
+        label: t('Infrastructure Coordination'),
+        to: ROUTES.infraCoordination,
+        icon: TrainFront,
+        requires: { resource: 'project', action: 'view' },
+        domain: 'projects',
+        description: t('Metro, Coastal Road and other agency-led works, and what the Corporation owes each one.'),
+      },
     ],
   },
   {
@@ -903,6 +983,33 @@ function build$NAV_SECTIONS(): NavSection[] {
         icon: Gavel,
         requires: { resource: 'decision', action: 'view' },
         description: t('Resolutions, committee business and the deliberative record.'),
+      },
+      {
+        id: 'ward-committees',
+        label: t('Ward Committees'),
+        to: ROUTES.wardCommittees,
+        icon: Users2,
+        requires: { resource: 'ward', action: 'view' },
+        domain: 'wards',
+        description: t('The statutory ward committees, their sittings, and corporator casework distinct from the house.'),
+      },
+      {
+        id: 'correspondence',
+        label: t('Government Correspondence'),
+        to: ROUTES.correspondence,
+        icon: FileSignature,
+        requires: { resource: 'intelligence', action: 'view' },
+        domain: 'correspondence',
+        description: t('Government Resolutions, circulars and state directives, and their implementation status.'),
+      },
+      {
+        id: 'legal',
+        label: t('Legal & Litigation'),
+        to: ROUTES.legal,
+        icon: Scale3d,
+        requires: { resource: 'intelligence', action: 'view' },
+        domain: 'legal',
+        description: t('Court matters, RTI applications and contractor arbitration the Corporation is party to.'),
       },
       {
         id: 'workforce',

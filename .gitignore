@@ -15,6 +15,9 @@ vite.config.ts.timestamp-*
 .vscode/
 *.swp
 
+# Claude Code local session config
+.claude/
+
 # Local environment
 .env
 .env.*

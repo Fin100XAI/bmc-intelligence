@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://maha-ai.example/schema/canonical/building.json",
+  "title": "CanonicalBuilding",
+  "description": "TARGET schema, not yet satisfied by anything in the codebase. See docs/architecture/02-canonical-data-model.md, migration step 3. BuildingRecord (src/types/city-domains.ts) has no propertyIds field today, and PropertySegment/LicenceRegister are ward-aggregate, not per-building - this schema is the shape those three would need to converge on for Building Entity (src/pages/governance/BuildingEntityPage.tsx) to join precisely instead of at ward level.",
+  "type": "object",
+  "required": ["id", "tenantId", "wardId", "name"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^bld-[a-z0-9-]+$", "description": "The canonical BuildingId. Does not exist as a concept anywhere in the codebase today - BuildingRecord.id is a per-record demo id, not a stable cross-domain key." },
+    "tenantId": { "type": "string" },
+    "wardId": { "type": "string" },
+    "name": { "type": "string" },
+    "propertyIds": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "One building can carry several property-tax assessments (multiple flats/units). Does not exist today - PropertySegment is ward-and-segment aggregate only, with no per-parcel record for a propertyId to identify."
+    },
+    "licenceIds": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Trade/shop licences held against premises within this building. Does not exist today - LicenceRegister is ward-and-category aggregate only."
+    }
+  }
+}

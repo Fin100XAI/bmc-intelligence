@@ -259,6 +259,11 @@ const UNIVERSAL_MODULES: IntelligenceDomain[] = [
   'registration',
   'gardens',
   'council',
+  'legal',
+  'enforcement',
+  'correspondence',
+  'heritage',
+  'civic-participation',
 ]
 
 /** True where the corporation has a sea shoreline or a tidal creek frontage. */

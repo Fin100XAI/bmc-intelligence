@@ -135,6 +135,12 @@ registerLayer(() => {
     'wards', 'water', 'sewerage', 'stormwater', 'waste', 'roads', 'health',
     'citizen-services', 'monsoon', 'assets', 'projects', 'executive',
     'education', 'housing', 'street-lighting', 'licensing', 'registration', 'gardens', 'council',
+    // The ward officer is who a Removal of Encroachments squad coordinates
+    // with on the ground, so the register is in the ward officer's own sight.
+    'enforcement',
+    // Heritage sites and locally-run consultations are both ward-level
+    // field responsibilities.
+    'heritage', 'civic-participation',
   ]
 
   DEMO_USERS = [
@@ -343,6 +349,11 @@ registerLayer(() => {
           'council', 'wards', 'executive', 'water', 'sewerage', 'stormwater', 'waste', 'roads',
           'health', 'citizen-services', 'education', 'housing', 'street-lighting', 'gardens',
           'registration', 'licensing', 'monsoon', 'projects',
+          // A corporator's own casework and the state directives bearing on
+          // their ward are squarely within an elected member's sight; the
+          // Corporation's litigation strategy is not, which is why `legal`
+          // stays off this list.
+          'enforcement', 'correspondence', 'heritage', 'civic-participation',
         ],
       },
       mfaEnrolled: false,

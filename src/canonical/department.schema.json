@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://maha-ai.example/schema/canonical/department.json",
+  "title": "CanonicalDepartment",
+  "description": "Pilot canonical entity. See docs/architecture/02-canonical-data-model.md.",
+  "type": "object",
+  "required": ["id", "tenantId", "name", "shortName", "domain"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^dept-[a-z0-9-]+$" },
+    "tenantId": { "type": "string" },
+    "name": { "type": "string" },
+    "shortName": { "type": "string" },
+    "domain": { "type": "string", "description": "Primary IntelligenceDomain this department owns - see src/types/common.ts." },
+    "headOfficerId": { "type": "string" }
+  }
+}

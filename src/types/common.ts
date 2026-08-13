@@ -238,6 +238,36 @@ export type IntelligenceDomain =
   // The deliberative wing. Distinct from `executive`: the Commissioner
   // administers, the Corporation in session decides.
   | 'council'
+  // Institutional functions the platform previously left unrepresented
+  // entirely - not thin coverage of an existing wing, but domains with no
+  // page anywhere in the platform until now.
+  //
+  // `legal`: the Law Department's own docket - writ petitions, PILs, civil
+  // appeals, consumer and tribunal matters, and contractor arbitration.
+  // Distinct from `decision` (the Decision Centre's executive cases) because
+  // a court case is not initiated or closed by an officer's decision; it is
+  // initiated by a litigant or the Corporation's own counsel and closed by a
+  // court.
+  | 'legal'
+  // `enforcement`: removal of encroachment and action against unauthorised
+  // development under the MMC Act, 1888 and the MRTP Act, 1966 - a function
+  // several domain pages (buildings, coastal, gardens, markets, livelihoods)
+  // could each flag a symptom of but none could resolve, because no register
+  // held the notice, the statute it was issued under and what became of it.
+  | 'enforcement'
+  // `correspondence`: Government Resolutions, circulars and notifications the
+  // state issues to the Corporation - the paper trail that authorises or
+  // directs a great deal of what the platform's other screens show as
+  // already-decided fact.
+  | 'correspondence'
+  // `heritage`: listed heritage structures and precincts, museums, the zoo
+  // and the tourism-facing public realm - conservation responsibility the
+  // Corporation carries regardless of who manages a given site.
+  | 'heritage'
+  // `civic-participation`: consultations, suggestions and public feedback
+  // the Corporation has invited or received - aggregate engagement, never
+  // a citizen record.
+  | 'civic-participation'
 
 function build$DOMAIN_LABEL(): Record<IntelligenceDomain, string> {
   return {
@@ -282,6 +312,11 @@ function build$DOMAIN_LABEL(): Record<IntelligenceDomain, string> {
   welfare: t('Social Welfare'),
   amenities: t('Parking & Amenities'),
   council: t('Council & Committees'),
+  legal: t('Legal & Litigation'),
+  enforcement: t('Encroachment & Enforcement'),
+  correspondence: t('Government Correspondence'),
+  heritage: t('Heritage & Tourism'),
+  'civic-participation': t('Civic Participation'),
 }
 }
 export let DOMAIN_LABEL: Record<IntelligenceDomain, string> = build$DOMAIN_LABEL()
