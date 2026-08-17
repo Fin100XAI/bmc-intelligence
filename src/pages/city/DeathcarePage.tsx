@@ -4,7 +4,6 @@ import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import {
   Badge,
   Card,
-  CardHeader,
   DataTable,
   DemonstrationNotice,
   EmptyState,
@@ -15,6 +14,7 @@ import {
   type Column,
 } from '@/components/ui'
 import { MetricCard } from '@/components/cards'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { CategoryBarChart, CHART_COLOURS, RankedBarChart } from '@/components/charts'
 import { FilterBar } from '@/components/filters/FilterBar'
 import { useServiceQuery } from '@/hooks'
@@ -22,6 +22,7 @@ import { queryKeys } from '@/app/queryClient'
 import { deathcareService } from '@/services'
 import { useFilterStore } from '@/stores/ui.store'
 import { usePageMasthead } from '@/stores/masthead.store'
+import { activeCorporation } from '@/config/municipality.config'
 import { wardName, wardShortName } from '@/data/reference'
 import {
   BURIAL_GROUND_COMMUNITY_LABEL,
@@ -70,10 +71,7 @@ const PLANNING_HORIZON_YEARS = 10
 export function DeathcarePage(): React.JSX.Element {
   const filters = useFilterStore((s) => s.filters)
 
-  usePageMasthead(
-    t('Cemeteries & Crematoria'),
-    t('The corporation\'s burial grounds, cemeteries and crematoria - the ground each has left, the years that ground represents at the current rate, and the hours a family waits at the gate.'),
-  )
+  usePageMasthead(t('Cemeteries & Crematoria'))
 
   const facilitiesQuery = useServiceQuery(queryKeys.deathcare('facilities'), (u) => deathcareService.facilities(u))
   const trendQuery = useServiceQuery(queryKeys.deathcare('trend'), (u) => deathcareService.trend(u))
@@ -297,6 +295,14 @@ export function DeathcarePage(): React.JSX.Element {
           support={t('{0} hectares of ground · {1} rites in 30 days', formatNumber(groundHectares), formatNumber(rites))}
           icon={<Landmark className="h-4 w-4" />}
           origin="demonstration"
+          background="red"
+          footer={
+            activeCorporation.id === 'bmc' && activeCorporation.shamshanBhoomiCount ? (
+              <span className="text-[0.625rem] leading-snug text-ink-400">
+                {t('For context: contemporary reporting counts {0} Hindu Shamshan-bhoomi (cremation grounds) citywide, separately from 10 electric and 18 gas crematoria as a technology category within that estate. No single official citywide inventory document was found.', activeCorporation.shamshanBhoomiCount)}
+              </span>
+            ) : undefined
+          }
         />
         <MetricCard
           label={t('Approaching exhaustion')}
@@ -304,6 +310,7 @@ export function DeathcarePage(): React.JSX.Element {
           support={t('Under {0}% of ground left · {1} inside the {2}-year acquisition horizon', EXHAUSTION_THRESHOLD_PCT, formatNumber(withinHorizon.length), PLANNING_HORIZON_YEARS)}
           tone={exhausting.length > 0 ? 'critical' : 'positive'}
           icon={<TriangleAlert className="h-4 w-4" />}
+          background="amber"
         />
         <MetricCard
           label={t('Mean family wait')}
@@ -312,6 +319,7 @@ export function DeathcarePage(): React.JSX.Element {
           support={t('Arrival at the gate to commencement of the rite, weighted by the volume each facility carries')}
           tone={meanWait > 3 ? 'critical' : meanWait > 1.5 ? 'warn' : 'positive'}
           icon={<Clock3 className="h-4 w-4" />}
+          background="green"
         />
         <MetricCard
           label={t('Electric or gas cremation')}
@@ -328,13 +336,10 @@ export function DeathcarePage(): React.JSX.Element {
           land and the ranking of which sites run out first read beside it. */}
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
         <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
-          <Card flush>
-            <CardHeader
-              bordered
-              icon={<Landmark className="h-4 w-4" />}
-              title={t('Burial grounds, cemeteries and crematoria')}
-              description={t('Every facility within your authorised ward scope, with the ground it has left and the wait a family meets at its gate.')}
-            />
+          <GovPanel title={t('Burial grounds, cemeteries and crematoria')} tone="amber" dense>
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+              {t('Every facility within your authorised ward scope, with the ground it has left and the wait a family meets at its gate.')}
+            </p>
             {filtered.length === 0 ? (
               <EmptyState
                 title={t('No facilities match the current filters')}
@@ -343,7 +348,7 @@ export function DeathcarePage(): React.JSX.Element {
             ) : (
               <DataTable rows={filtered} columns={columns} rowKey={(f) => f.id} pageSize={12} />
             )}
-          </Card>
+          </GovPanel>
 
           <Card className="flex min-w-0 flex-col">
             <p className="label-institutional mb-2">{t('Monthly cremations and burials')}</p>
@@ -375,13 +380,11 @@ export function DeathcarePage(): React.JSX.Element {
             </div>
           </Card>
 
-          <Card flush className="flex min-w-0 flex-col">
-            <CardHeader
-              bordered
-              title={t('Shortest planning horizon')}
-              description={t('Years of use left at the current rate. A replacement site takes years to acquire, so anything here is already a decision due.')}
-            />
-            <div className="px-4 pb-4" style={{ height: Math.max(210, shortestHorizon.length * 26) }}>
+          <GovPanel title={t('Shortest planning horizon')} tone="red" dense className="flex min-w-0 flex-col">
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+              {t('Years of use left at the current rate. A replacement site takes years to acquire, so anything here is already a decision due.')}
+            </p>
+            <div className="px-3 pb-3" style={{ height: Math.max(210, shortestHorizon.length * 26) }}>
               {shortestHorizon.length === 0 ? (
                 <EmptyState compact title={t('No facilities in scope')} detail="Clear a filter to widen the estate." />
               ) : (
@@ -392,7 +395,7 @@ export function DeathcarePage(): React.JSX.Element {
                 />
               )}
             </div>
-          </Card>
+          </GovPanel>
         </div>
       </div>
     </PageBody>

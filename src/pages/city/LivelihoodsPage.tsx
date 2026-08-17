@@ -1,10 +1,9 @@
 import { useMemo } from 'react'
-import { BadgeCheck, GraduationCap, HandCoins, Scale, Store, Users } from 'lucide-react'
+import { BadgeCheck, GraduationCap, HandCoins, Scale, Users } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import {
   Badge,
   Card,
-  CardHeader,
   DataTable,
   DemonstrationNotice,
   EmptyState,
@@ -15,6 +14,7 @@ import {
   type Column,
 } from '@/components/ui'
 import { MetricCard } from '@/components/cards'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { CategoryBarChart, CHART_COLOURS, RankedBarChart } from '@/components/charts'
 import { FilterBar } from '@/components/filters/FilterBar'
 import { useServiceQuery } from '@/hooks'
@@ -80,10 +80,7 @@ const KIND_TONE: Record<LivelihoodCentre['kind'], 'neutral' | 'info' | 'intel' |
 export function LivelihoodsPage(): React.JSX.Element {
   const filters = useFilterStore((s) => s.filters)
 
-  usePageMasthead(
-    TITLE,
-    t('The corporation\'s obligation under function 11 of the Twelfth Schedule - skill training and placement under DAY-NULM, self-help group formation and bank linkage, shelters for the urban homeless, and the vending register held under the Street Vendors Act, 2014.'),
-  )
+  usePageMasthead(TITLE)
 
   const centresQuery = useServiceQuery(queryKeys.livelihoods('centres'), (u) => livelihoodsService.centres(u))
   const zonesQuery = useServiceQuery(queryKeys.livelihoods('vendor-zones'), (u) => livelihoodsService.vendorZones(u))
@@ -383,6 +380,7 @@ export function LivelihoodsPage(): React.JSX.Element {
           support={t('{0} sanctioned places across {1} premises', formatNumber(capacity), formatNumber(filteredCentres.length))}
           icon={<Users className="h-4 w-4" />}
           origin="demonstration"
+          background="red"
         />
         <MetricCard
           label={t('Self-help groups bank linked')}
@@ -391,6 +389,7 @@ export function LivelihoodsPage(): React.JSX.Element {
           support={t('{0} of {1} groups holding a live credit linkage', formatNumber(groupsBankLinked), formatNumber(groups))}
           tone={bankLinkage < 70 ? 'warn' : 'positive'}
           icon={<HandCoins className="h-4 w-4" />}
+          background="amber"
         />
         <MetricCard
           label={t('In work after training')}
@@ -399,6 +398,7 @@ export function LivelihoodsPage(): React.JSX.Element {
           support={t('{0} in work of {1} trained in twelve months', formatNumber(placed), formatNumber(trained))}
           tone={placementRate < 40 ? 'critical' : placementRate < 55 ? 'warn' : 'positive'}
           icon={<GraduationCap className="h-4 w-4" />}
+          background="green"
         />
         <MetricCard
           label={t('Certificates of vending issued')}
@@ -415,13 +415,10 @@ export function LivelihoodsPage(): React.JSX.Element {
           shortfall stand beside them. */}
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
         <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
-      <Card flush>
-        <CardHeader
-          bordered
-          icon={<Store className="h-4 w-4" />}
-          title={t('Vending zones')}
-          description={t('Held under the Street Vendors Act, 2014. {0} zones await the statutory survey and {1} have no Town Vending Committee constituted - both are preconditions the corporation has to meet before a certificate can lawfully issue.', formatNumber(zonesAwaitingSurvey), formatNumber(zonesWithoutCommittee))}
-        />
+      <GovPanel title={t('Vending zones')} tone="amber" dense>
+        <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+          {t('Held under the Street Vendors Act, 2014. {0} zones await the statutory survey and {1} have no Town Vending Committee constituted - both are preconditions the corporation has to meet before a certificate can lawfully issue.', formatNumber(zonesAwaitingSurvey), formatNumber(zonesWithoutCommittee))}
+        </p>
         {filteredZones.length === 0 ? (
           <EmptyState
             title={t('No vending zones match the current filters')}
@@ -430,15 +427,12 @@ export function LivelihoodsPage(): React.JSX.Element {
         ) : (
           <DataTable rows={filteredZones} columns={zoneColumns} rowKey={(r) => r.id} pageSize={12} />
         )}
-      </Card>
+      </GovPanel>
 
-      <Card flush>
-        <CardHeader
-          bordered
-          icon={<GraduationCap className="h-4 w-4" />}
-          title={t('Livelihoods estate')}
-          description={t('Skill training centres, shelters for the urban homeless, vending plazas, self-help group federations and livelihood centres within your authorised ward scope. Condition is read off placement and bank linkage rather than off the fabric of the building.')}
-        />
+      <GovPanel title={t('Livelihoods estate')} tone="red" dense>
+        <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+          {t('Skill training centres, shelters for the urban homeless, vending plazas, self-help group federations and livelihood centres within your authorised ward scope. Condition is read off placement and bank linkage rather than off the fabric of the building.')}
+        </p>
         {filteredCentres.length === 0 ? (
           <EmptyState
             title={t('No premises match the current filters')}
@@ -447,7 +441,7 @@ export function LivelihoodsPage(): React.JSX.Element {
         ) : (
           <DataTable rows={filteredCentres} columns={centreColumns} rowKey={(r) => r.id} pageSize={12} />
         )}
-      </Card>
+      </GovPanel>
 
           <Card className="flex flex-col">
             <p className="label-institutional mb-2">{t('Trained and placed, by month')}</p>
@@ -482,13 +476,11 @@ export function LivelihoodsPage(): React.JSX.Element {
             </div>
           </Card>
 
-          <Card flush className="flex flex-col">
-            <CardHeader
-              bordered
-              title={t('Where the certificate shortfall falls')}
-              description={t('Registered vendors without the certificate of vending the Act entitles them to, by ward.')}
-            />
-            <div className="px-4 pb-4" style={{ height: Math.max(210, worstWards.length * 26) }}>
+          <GovPanel title={t('Where the certificate shortfall falls')} tone="green" dense>
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+              {t('Registered vendors without the certificate of vending the Act entitles them to, by ward.')}
+            </p>
+            <div className="px-3 pb-3" style={{ height: Math.max(210, worstWards.length * 26) }}>
               {worstWards.length === 0 ? (
                 <EmptyState
                   compact
@@ -499,7 +491,7 @@ export function LivelihoodsPage(): React.JSX.Element {
                 <RankedBarChart data={worstWards} unit=" vendors" />
               )}
             </div>
-          </Card>
+          </GovPanel>
         </div>
       </div>
     </PageBody>

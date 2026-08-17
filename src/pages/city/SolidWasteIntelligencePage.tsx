@@ -1,10 +1,9 @@
 import { useState } from 'react'
-import { AlertTriangle, Recycle, Route as RouteIcon, Truck } from 'lucide-react'
+import { AlertTriangle, Recycle, Truck } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import {
   Badge,
   Card,
-  CardHeader,
   DataTable,
   DemonstrationNotice,
   EmptyState,
@@ -17,6 +16,7 @@ import {
 } from '@/components/ui'
 import { SeverityBadge } from '@/components/ui/badges'
 import { MetricCard } from '@/components/cards'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { CHART_COLOURS, ChartFrame, DonutChart, MiniBar } from '@/components/charts'
 import { CityMap, jitteredWardPoint, type MapMarker, type MapPath } from '@/components/map/CityMap'
 import { FilterBar } from '@/components/filters/FilterBar'
@@ -25,6 +25,7 @@ import { queryKeys } from '@/app/queryClient'
 import { wasteService } from '@/services'
 import { useFilterStore } from '@/stores/ui.store'
 import { usePageMasthead } from '@/stores/masthead.store'
+import { activeCorporation } from '@/config/municipality.config'
 import { wardName } from '@/data/reference'
 import type { WasteFacility, WasteHotspot, WasteRoute, WasteWardPerformance } from '@/types/city-domains'
 import type { DataFreshness } from '@/types/common'
@@ -63,10 +64,7 @@ const FRESHNESS: DataFreshness = {
 }
 
 export function SolidWasteIntelligencePage(): React.JSX.Element {
-  usePageMasthead(
-    t('Solid Waste Intelligence'),
-    t('Collection coverage and segregation by ward, live route adherence, processing and disposal facility capacity, and recurring hotspots across the solid waste management network.'),
-  )
+  usePageMasthead(t('Solid Waste Intelligence'))
 
   const filters = useFilterStore((s) => s.filters)
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null)
@@ -131,6 +129,7 @@ export function SolidWasteIntelligencePage(): React.JSX.Element {
   const missedCollections7d = performance.reduce((s, p) => s + p.missedCollections7d, 0)
   const complaints30d = performance.reduce((s, p) => s + p.complaints30d, 0)
   const vehiclesDeployed = performance.reduce((s, p) => s + p.vehiclesDeployed, 0)
+  const isBmc = activeCorporation.id === 'bmc'
 
   // The page-level filter bar offers ward and free-text search, so every table
   // below it must honour both. Applying them to the route list alone would
@@ -326,9 +325,22 @@ export function SolidWasteIntelligencePage(): React.JSX.Element {
       />
 
       <MetricGrid columns={4}>
-        <MetricCard label={t('Generation')} value={formatNumber(generationTpd, 0)} unit="TPD" icon={<Recycle className="h-4 w-4" />} />
-        <MetricCard label={t('Collected')} value={formatNumber(collectedTpd, 0)} unit="TPD" support={t('{0} of generation', formatPercent(coveragePct, 0))} />
-        <MetricCard label={t('Coverage')} value={formatPercent(coveragePct, 0)} tone={coveragePct < COVERAGE_STANDARD ? 'warn' : 'positive'} progress={{ value: coveragePct, max: 100 }} />
+        <MetricCard
+          label={t('Generation')}
+          value={formatNumber(generationTpd, 0)}
+          unit="TPD"
+          icon={<Recycle className="h-4 w-4" />}
+          background="red"
+          footer={
+            isBmc && activeCorporation.solidWasteTPD ? (
+              <span className="text-[0.625rem] leading-snug text-ink-400">
+                {t('For context: BMC\'s own reporting puts the city at ~{0} tonnes of waste per day (2025, Deonar dumping ground closure plan). Other 2024-25 reports range 6,200-7,200 TPD; older 8,000-9,800 TPD figures included construction and demolition debris.', formatNumber(activeCorporation.solidWasteTPD))}
+              </span>
+            ) : undefined
+          }
+        />
+        <MetricCard label={t('Collected')} value={formatNumber(collectedTpd, 0)} unit="TPD" support={t('{0} of generation', formatPercent(coveragePct, 0))} background="amber" />
+        <MetricCard label={t('Coverage')} value={formatPercent(coveragePct, 0)} tone={coveragePct < COVERAGE_STANDARD ? 'warn' : 'positive'} progress={{ value: coveragePct, max: 100 }} background="green" />
         <MetricCard label={t('Segregation at source')} value={formatPercent(segregationPct, 0)} tone={segregationPct < 50 ? 'warn' : 'default'} />
         <MetricCard label={t('Missed collections (7d)')} value={missedCollections7d} tone={missedCollections7d > 0 ? 'warn' : 'default'} />
         <MetricCard label={t('Complaints (30d)')} value={formatNumber(complaints30d)} tone={complaints30d > 0 ? 'warn' : 'default'} />
@@ -342,8 +354,10 @@ export function SolidWasteIntelligencePage(): React.JSX.Element {
           position stand beside them. */}
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
         <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
-        <Card flush>
-            <CardHeader className="px-4 pt-4 pb-3" title={t('Ward performance')} description={t('Sortable; coverage and segregation shown as bars against the 100% standard.')} />
+        <GovPanel title={t('Ward performance')} tone="amber" dense>
+          <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+            {t('Sortable; coverage and segregation shown as bars against the 100% standard.')}
+          </p>
           <DataTable
             rows={filteredPerformance}
             columns={performanceColumns}
@@ -353,14 +367,12 @@ export function SolidWasteIntelligencePage(): React.JSX.Element {
             initialSort={{ columnId: 'coverage', direction: 'asc' }}
             ariaLabel="Ward collection performance"
           />
-        </Card>
+        </GovPanel>
 
-        <Card>
-          <CardHeader
-            icon={<RouteIcon className="h-4 w-4" />}
-            title={t('Collection routes')}
-            description={t('Route geometry on the map at left; selecting a route in the table highlights it on the map. Filter by ward to reduce map density.')}
-          />
+        <GovPanel title={t('Collection routes')} tone="red">
+          <p className="mb-3 text-xs leading-relaxed text-ink-500">
+            {t('Route geometry on the map at left; selecting a route in the table highlights it on the map. Filter by ward to reduce map density.')}
+          </p>
           <div className="mt-3 grid grid-cols-1 gap-4 2xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
             <CityMap
               layers={[
@@ -403,10 +415,12 @@ export function SolidWasteIntelligencePage(): React.JSX.Element {
               ) : null}
             </div>
           </div>
-        </Card>
+        </GovPanel>
 
-        <Card flush>
-          <CardHeader className="px-4 pt-4 pb-3" title={t('Processing, transfer and disposal facilities')} description={t('Capacity and utilisation across transfer stations, processing plants, composting units, bio-methanation and landfills. Low remaining life is flagged for landfill sites.')} />
+        <GovPanel title={t('Processing, transfer and disposal facilities')} tone="amber" dense>
+          <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+            {t('Capacity and utilisation across transfer stations, processing plants, composting units, bio-methanation and landfills. Low remaining life is flagged for landfill sites.')}
+          </p>
           <DataTable
             rows={filteredFacilities}
             columns={facilityColumns}
@@ -416,7 +430,7 @@ export function SolidWasteIntelligencePage(): React.JSX.Element {
             initialSort={{ columnId: 'utilisation', direction: 'desc' }}
             ariaLabel="Processing and disposal facilities"
           />
-        </Card>
+        </GovPanel>
         </div>
 
         <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
@@ -429,8 +443,10 @@ export function SolidWasteIntelligencePage(): React.JSX.Element {
           </Card>
         ) : null}
 
-          <Card flush>
-            <CardHeader className="px-4 pt-4 pb-3" title={t('Recurring hotspots')} description={t('Locations with repeated dumping or accumulation, ranked by recurrence count.')} />
+          <GovPanel title={t('Recurring hotspots')} tone="green" dense>
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+              {t('Locations with repeated dumping or accumulation, ranked by recurrence count.')}
+            </p>
             {filteredHotspots.length === 0 ? (
               <EmptyState className="m-4" title={t('No recurring hotspots match the current filters')} detail="No hotspot records were returned for the selected ward or search term." />
             ) : (
@@ -444,7 +460,7 @@ export function SolidWasteIntelligencePage(): React.JSX.Element {
                 ariaLabel="Recurring hotspots"
               />
             )}
-          </Card>
+          </GovPanel>
 
           <Card>
             <ChartFrame title={t('Diversion from landfill')} unit={t('Tonnes per day')} timeframe="Current modelled load" description={t('Processing, composting and bio-methanation load against landfill load. Transfer-station throughput is excluded as it passes onward to another facility.')} height={220}>

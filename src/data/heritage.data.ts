@@ -40,6 +40,8 @@ export let HERITAGE_TOURISM_POSITION: HeritageTourismPosition = {
   underRestoration: 0,
   annualFootfallTotal: 0,
   revenueCollectedLakhTotal: 0,
+  heritageStructuresCitywide: null,
+  heritagePrecinctsCitywide: null,
 }
 
 interface SiteSpec {
@@ -127,5 +129,11 @@ registerLayer(() => {
     underRestoration: HERITAGE_SITES.filter((s) => s.conservationStatus === 'under-restoration').length,
     annualFootfallTotal: HERITAGE_SITES.reduce((s, x) => s + (x.annualFootfall ?? 0), 0),
     revenueCollectedLakhTotal: Math.round(HERITAGE_SITES.reduce((s, x) => s + (x.revenueCollectedLakh ?? 0), 0) * 10) / 10,
+    // Real anchors, read straight off the active corporation's own record -
+    // not modelled, and never forced to reconcile against the curated
+    // register above. BMC publishes no per-structure list at this
+    // granularity, so it is carried only as a citywide total.
+    heritageStructuresCitywide: activeCorporation.heritageStructuresCount,
+    heritagePrecinctsCitywide: activeCorporation.heritagePrecinctsCount,
   }
 })

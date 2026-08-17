@@ -11,6 +11,11 @@ import {
   LineChart,
   Pie,
   PieChart,
+  PolarAngleAxis,
+  PolarGrid,
+  PolarRadiusAxis,
+  Radar,
+  RadarChart as RechartsRadarChart,
   ReferenceLine,
   ResponsiveContainer,
   Tooltip as RechartsTooltip,
@@ -376,6 +381,40 @@ export function DonutChart({
       ) : null}
       <span className="sr-only">{t('Total {0}', formatNumber(total))}</span>
     </div>
+  )
+}
+
+/* ==========================================================================
+   Radar - a composite's components read at once, not one row at a time
+   --------------------------------------------------------------------------
+   The shape of the polygon is the finding: a composite that is even across
+   its components draws a regular shape, one dragged down by a single weak
+   component draws a dent pointing at exactly which one. A table of the same
+   figures is more precise but has to be read row by row to notice that;
+   the radar shows it in one glance, which is what an executive scanning six
+   or seven pages of composites a morning actually needs first - the table
+   stays alongside it for the officer who wants the exact number.
+   ========================================================================== */
+
+export function RadarChart({
+  data,
+  unit,
+  colour = CHART_COLOURS.primary,
+}: {
+  data: Array<{ label: string; value: number }>
+  unit?: string
+  colour?: string
+}): React.JSX.Element {
+  return (
+    <ResponsiveContainer width="100%" height="100%">
+      <RechartsRadarChart data={data} margin={{ top: 8, right: 28, bottom: 8, left: 28 }}>
+        <PolarGrid stroke={CHART_COLOURS.grid} />
+        <PolarAngleAxis dataKey="label" tick={{ fontSize: 10, fill: CHART_COLOURS.axis }} />
+        <PolarRadiusAxis angle={90} domain={[0, 100]} tickCount={5} tick={{ fontSize: 9, fill: CHART_COLOURS.axis }} axisLine={false} />
+        <Radar dataKey="value" stroke={colour} fill={colour} fillOpacity={0.25} strokeWidth={2} />
+        <RechartsTooltip content={<TooltipShell unit={unit} />} />
+      </RechartsRadarChart>
+    </ResponsiveContainer>
   )
 }
 

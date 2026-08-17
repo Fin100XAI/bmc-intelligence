@@ -10,8 +10,6 @@ export const MR_PART_10: Record<string, string> = {
   'Category concentration': 'श्रेणी केंद्रीकरण',
   'Category concentration detail': 'श्रेणी केंद्रीकरण तपशील',
   'Category distribution': 'श्रेणी वितरण',
-  'Cattle pounds, birth control centres, shelters and anti-rabies clinics - what the corporation operates, and the dog bite rate each ward records against it.':
-    'कोंडवाडे, संतती नियमन केंद्रे, निवारे आणि रेबीजप्रतिबंधक दवाखाने - महानगरपालिका काय चालवते, आणि त्याविरुद्ध प्रत्येक प्रभाग नोंदवत असलेला श्वानदंश दर.',
   'Central Finance Commission grants to urban local bodies have carried entry conditions tied to property tax - published accounts, notified floor rates and demonstrated growth in collection. Generating the return is an audited export, not a page view, so it is produced on an explicit action.':
     'नागरी स्थानिक संस्थांना दिल्या जाणाऱ्या केंद्रीय वित्त आयोगाच्या अनुदानांना मालमत्ता कराशी निगडित प्रवेश अटी जोडलेल्या आहेत - प्रकाशित लेखे, अधिसूचित किमान दर आणि वसुलीतील सिद्ध झालेली वाढ. हे विवरणपत्र तयार करणे ही लेखापरीक्षायोग्य निर्यात आहे, केवळ पृष्ठ पाहणे नव्हे, म्हणून ते स्पष्ट कृतीवरच तयार होते.',
   'Central, state and corporation schemes administered by the welfare department, each stated against the residents entitled to it.':
@@ -24,7 +22,7 @@ export const MR_PART_10: Record<string, string> = {
   'Chain composition': 'साखळीची रचना',
   'Charter compliance': 'सनद अनुपालन',
   'children per teacher in post': 'कार्यरत शिक्षकामागे मुले',
-  'Choose between 2 and 4 wards. {0} of 4 selected.': '2 ते 4 प्रभाग निवडा. 4 पैकी {0} निवडले.',
+  'Choose between 2 and 4 wards.': '2 ते 4 प्रभाग निवडा.',
   'Chronic {0}': 'नेहमीचे {0}',
   'Chronic flood spots': 'नेहमी पूर येणारी ठिकाणे',
   'Chronic index {0}/100 · current risk {1}/100 · mitigation {2} · {3}':
@@ -50,8 +48,6 @@ export const MR_PART_10: Record<string, string> = {
   'City median': 'शहर मध्यक',
   'City Operations': 'शहर कामकाज',
   'City position': 'शहर स्थिती',
-  'City revenue command centre across property tax, water charges, development charges, licence fees, advertisement, rentals, octroi compensation and other receipts. All collection and variance figures are year-to-date against a pro-rated phased target - the financial year is approximately 31% elapsed at this reporting date.':
-    'मालमत्ता कर, पाणीपट्टी, विकास शुल्क, परवाना शुल्क, जाहिरात, भाडे, जकात भरपाई आणि इतर जमा यांवरील शहर महसूल नियंत्रण केंद्र. सर्व वसुली व फरक आकडे टप्प्याटप्प्याच्या प्रमाणित लक्ष्याच्या तुलनेत वर्षारंभापासूनचे आहेत - या अहवाल दिनांकास आर्थिक वर्ष अंदाजे 31% पूर्ण झाले आहे.',
   'City revenue position': 'शहर महसूल स्थिती',
   'City signals become intelligence, decisions, field actions and measured outcomes — one connected operating chain.':
     'शहरातील संकेतांचे बुद्धिमत्ता, निर्णय, क्षेत्रीय कृती आणि मोजलेल्या निष्पत्तींमध्ये रूपांतर होते — एक जोडलेली कार्यसाखळी.',
@@ -63,12 +59,8 @@ export const MR_PART_10: Record<string, string> = {
   'City-wide flood risk': 'शहरव्यापी पूर जोखीम',
   'City-wide position for every revenue stream, sorted and searchable.':
     'प्रत्येक महसूल प्रवाहाची शहरव्यापी स्थिती, क्रमवार आणि शोधण्याजोगी.',
-  'City-wide preparedness posture, live-observed rainfall, tide and pumping position, and a deterministic scenario tool for compound flood-event planning. Scenario output is always a simulation, never a forecast.':
-    'शहरव्यापी सज्जता स्थिती, प्रत्यक्ष निरीक्षित पर्जन्यमान, भरती व उपसा स्थिती, आणि संयुक्त पूर-घटनेच्या नियोजनासाठी निश्चित परिणामी परिस्थिती साधन. परिस्थितीचा निष्कर्ष नेहमीच नक्कल असतो, अंदाज कधीही नाही.',
   'City-wide scope': 'शहरव्यापी व्याप्ती',
   'City-wide summary': 'शहरव्यापी सारांश',
-  'City-wide supply and demand position, reservoir storage, zone-level service quality and a drilldown from the city, through ward and zone, to individual water assets.':
-    'शहरव्यापी पुरवठा व मागणी स्थिती, जलाशय साठा, झोनस्तरीय सेवा गुणवत्ता आणि शहरापासून प्रभाग व झोनमार्गे वैयक्तिक जल मालमत्तांपर्यंतचा तपशीलवेध.',
   'City-wide view ranked by estimated affected population.':
     'अंदाजित बाधित लोकसंख्येनुसार क्रमवारी लावलेले शहरव्यापी दृश्य.',
   'Citywide average: {0}.': 'शहरव्यापी सरासरी: {0}.',
@@ -93,8 +85,6 @@ export const MR_PART_10: Record<string, string> = {
   'Coastal vulnerability, high tide and monsoon flood exposure':
     'किनारी असुरक्षितता, मोठी भरती आणि पावसाळी पूर जोखीम',
   'Coastal ward map': 'किनारी प्रभाग नकाशा',
-  'Coastal zone management covers the sea shoreline and tidal creek frontage a municipal corporation is responsible for. {0} has neither within its limits, so this module states that position rather than presenting a coastline the corporation does not hold.':
-    'किनारी क्षेत्र व्यवस्थापनात महानगरपालिकेच्या जबाबदारीतील समुद्रकिनारा व भरती-खाडी किनारा येतो. {0} च्या हद्दीत यांपैकी काहीही नाही, त्यामुळे महानगरपालिकेकडे नसलेला किनारा दाखवण्याऐवजी हा विभाग ही वस्तुस्थिती नमूद करतो.',
   'Coastline length and segment count by protection status, with the average vulnerability index recorded within each.':
     'संरक्षण स्थितीनुसार किनारपट्टीची लांबी व भागांची संख्या, प्रत्येकात नोंदवलेल्या सरासरी असुरक्षितता निर्देशांकासह.',
   'Coincidence:': 'योगायोग:',
@@ -104,8 +94,6 @@ export const MR_PART_10: Record<string, string> = {
   'Collected figures are year-to-date. Variance is measured against the phased (pro-rated) target for the elapsed portion of the financial year, not the full annual target.':
     'वसुलीचे आकडे वर्षारंभापासूनचे आहेत. फरक हा संपूर्ण वार्षिक लक्ष्याच्या नव्हे, तर आर्थिक वर्षाच्या सरलेल्या भागासाठीच्या टप्प्याटप्प्याच्या (प्रमाणित) लक्ष्याच्या तुलनेत मोजला जातो.',
   'Collected to date': 'आजपर्यंत वसूल',
-  'Collection coverage and segregation by ward, live route adherence, processing and disposal facility capacity, and recurring hotspots across the solid waste management network.':
-    'प्रभागनिहाय संकलन व्याप्ती व विलगीकरण, प्रत्यक्ष मार्ग पालन, प्रक्रिया व विल्हेवाट सुविधांची क्षमता, आणि घनकचरा व्यवस्थापन जाळ्यातील पुनरावृत्त समस्याक्षेत्रे.',
   'Collection efficiency against assessed value, for the segment scope selected above.':
     'वर निवडलेल्या विभाग व्याप्तीसाठी, आकारणी मूल्याच्या तुलनेत वसुली कार्यक्षमता.',
   'Collection efficiency delta scales realised (actual) expenditure - it constrains spend rather than allocation.':
@@ -215,7 +203,6 @@ export const MR_PART_10: Record<string, string> = {
   'Contain personal data': 'वैयक्तिक माहिती असलेली',
   'Contract count at each stage of the procurement lifecycle, in natural progression order.':
     'खरेदी जीवनचक्राच्या प्रत्येक टप्प्यावरील करारांची संख्या, नैसर्गिक प्रगती क्रमाने.',
-  'Contractors active in ward': 'प्रभागात कार्यरत कंत्राटदार',
   'Contractual share': 'करारातील वाटा',
   'Contrast': 'विरोधाभास',
   'Contributing signals': 'योगदान देणारे संकेत',
@@ -240,8 +227,6 @@ export const MR_PART_10: Record<string, string> = {
     'वाहतूक कोंडीनुसार रंगछटा दिलेली मार्गिका भूरचना. मार्गिकेची ओळ किंवा ती मार्गिका जोडत असलेला प्रभाग यावर टिचकी मारून ती ठळक करा - निवड नकाशा व तक्ता यांच्यात जुळवली जाते.',
   'Corridor map': 'मार्गिका नकाशा',
   'Corridor register': 'मार्गिका नोंदवही',
-  "Corridor-level congestion, incidents and closures across the city's principal traffic corridors, read alongside the road condition and planned works in the wards each corridor serves.":
-    'शहरातील प्रमुख वाहतूक मार्गिकांवरील मार्गिकास्तरीय वाहतूक कोंडी, घटना आणि बंद रस्ते, प्रत्येक मार्गिका जोडत असलेल्या प्रभागांतील रस्ता स्थिती व नियोजित कामांसोबत वाचले जाणारे.',
   'Corridors currently carrying one or more closures, ranked by count.':
     'सध्या एक किंवा अधिक बंद रस्ते असलेल्या मार्गिका, संख्येनुसार क्रमवार.',
   'Corridors degraded': 'खालावलेल्या मार्गिका',
@@ -347,7 +332,6 @@ export const MR_PART_10: Record<string, string> = {
     'मंजूर संख्याबळाच्या तुलनेत रिक्त पदांनुसार क्रमवारी लावलेले विभाग, सर्वाधिक प्रथम.',
   'Departments whose year-to-date position diverges from the phased plan by more than 25 percentage points, with the institutional consequence stated.':
     'ज्यांची वर्षारंभापासूनची स्थिती टप्प्याटप्प्याच्या आराखड्यापासून 25 टक्केबिंदूंहून अधिक दूर आहे असे विभाग, संस्थात्मक परिणामासह.',
-  'deployed ·': 'तैनात ·',
   'Deployment line': 'तैनाती ओळ',
   'Depression': 'खचलेला भाग',
   'Derivation': 'व्युत्पत्ती',

@@ -283,7 +283,6 @@ export const MR_PART_25: Record<string, string> = {
     '{0} तक्रारी प्रलंबित · {1} सुविधागृहांत पाणी नाही',
   '{0} hectares maintained': '{0} हेक्टर देखभाल',
   '{0} hectares of ground · {1} rites in 30 days': '{0} हेक्टर भूमी · 30 दिवसांत {1} अंत्यविधी',
-  '{0} high-priority defects': '{0} उच्च-प्राधान्य दोष',
   '{0} in work of {1} trained in twelve months': 'बारा महिन्यांत प्रशिक्षित {1} पैकी {0} कामावर',
   '{0} indicative annual value': '{0} निर्देशात्मक वार्षिक मूल्य',
   '{0} kWh drawn': '{0} kWh वापर',
@@ -329,7 +328,6 @@ export const MR_PART_25: Record<string, string> = {
   '{0} resource types governed by one permission engine':
     'एकाच परवानगी यंत्रणेद्वारे नियंत्रित {0} साधन प्रकार',
   '{0} sanctioned places across {1} premises': '{1} आवारांमध्ये {0} मंजूर जागा',
-  '{0} SLA-breached': '{0} सेवा-हमी भंग',
   '{0} still open': '{0} अद्याप प्रलंबित',
   '{0} usable seats · benchmark {1}': '{0} वापरण्यायोग्य शौचकूप · मानदंड {1}',
   '{0} vendors, 0–100, higher is better': '{0} पुरवठादार, 0–100, अधिक चांगले',
@@ -416,7 +414,6 @@ export const MR_PART_25: Record<string, string> = {
   'Not yet available in this build': 'या आवृत्तीत अद्याप उपलब्ध नाही',
   'Not yet closed or rejected': 'अद्याप बंद किंवा नामंजूर नाही',
   'Observed association - not a causal claim': 'आढळलेला संबंध — कार्यकारण दावा नव्हे',
-  'of {0} active works': '{0} सुरू असलेल्या कामांपैकी',
   'of {0} approved': 'मंजूर {0} पैकी',
   'of {0} assessed · {1} sitting on their line': 'मूल्यमापन केलेल्या {0} पैकी · {1} अपेक्षारेषेवर',
   'Of {0} assessed · {1} steady': 'मूल्यमापन केलेल्या {0} पैकी · {1} स्थिर',

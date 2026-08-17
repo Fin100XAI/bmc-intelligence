@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react'
-import { Boxes, Network, Search, Waypoints } from 'lucide-react'
+import { Network, Search } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { Badge, ClassificationBadge } from '@/components/ui/badges'
-import { Card, CardHeader, DefinitionList, DefinitionRow, Input } from '@/components/ui/primitives'
+import { DefinitionList, DefinitionRow, Input } from '@/components/ui/primitives'
 import { DemonstrationNotice, EmptyState, ErrorState, LoadingState, PartialDataWarning } from '@/components/ui/states'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { useServiceQuery } from '@/hooks'
 import { useDebounced } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
@@ -69,10 +70,7 @@ const KIND_TONE: Partial<Record<GraphEntityKind, string>> = {
 
 export function InfrastructureGraphPage(): React.JSX.Element {
   // The shell's masthead states the screen's name; the page states the wording.
-  usePageMasthead(
-    t('City Infrastructure Graph'),
-    t('Trace one piece of infrastructure through everything the corporation holds about it - the ward it sits in, the department accountable, the contractor and project delivering it, the budget funding it, and the complaints and incidents attached. The accountability chain, laid out as a chain.'),
-  )
+  usePageMasthead(t('City Infrastructure Graph'))
 
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [searchInput, setSearchInput] = useState('')
@@ -132,15 +130,9 @@ export function InfrastructureGraphPage(): React.JSX.Element {
       <div className="grid grid-cols-1 gap-3 xl:grid-cols-12">
         <div className="order-2 flex min-w-0 flex-col gap-3 xl:order-1 xl:col-span-8">
           {/* The canonical chain ------------------------------------------- */}
-          <Card flush>
-            <CardHeader
-              className="px-4 pt-4"
-              icon={<Waypoints className="h-4 w-4" />}
-              eyebrow={t('Institutional methodology')}
-              title={t('The infrastructure accountability chain')}
-              description={t('The spine this graph is built to make traceable, from asset to attached incident.')}
-            />
-            <div className="scrollbar-slim flex items-center gap-1 overflow-x-auto px-4 pb-4">
+          <GovPanel dense tone="amber" title={t('The infrastructure accountability chain')} subtitle={t('Institutional methodology')}>
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">{t('The spine this graph is built to make traceable, from asset to attached incident.')}</p>
+            <div className="scrollbar-slim flex items-center gap-1 overflow-x-auto px-3 pb-3">
               {CANONICAL_CHAIN.map((step, i) => (
                 <div key={step.kind} className="flex shrink-0 items-center gap-1">
                   {i > 0 ? (
@@ -160,26 +152,26 @@ export function InfrastructureGraphPage(): React.JSX.Element {
                 </div>
               ))}
             </div>
-          </Card>
+          </GovPanel>
 
-          <Card flush>
-            <CardHeader
-              bordered
-              title={chain ? `Chain from ${chain.anchor.label}` : 'Infrastructure chain'}
-              description={
-                chain
-                  ? `${chain.nodes.length} connected entities across ${byDepth.size} hop(s) from the anchor.`
-                  : 'Select an anchor to trace its chain.'
-              }
-              actions={
-                chain ? (
-                  <Badge tone="intel">
-                    <Network className="mr-1 h-3 w-3" />
-                    {chain.edges.length} links
-                  </Badge>
-                ) : undefined
-              }
-            />
+          <GovPanel
+            dense
+            tone="red"
+            title={chain ? `Chain from ${chain.anchor.label}` : 'Infrastructure chain'}
+            actions={
+              chain ? (
+                <Badge tone="intel">
+                  <Network className="mr-1 h-3 w-3" />
+                  {chain.edges.length} links
+                </Badge>
+              ) : undefined
+            }
+          >
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+              {chain
+                ? `${chain.nodes.length} connected entities across ${byDepth.size} hop(s) from the anchor.`
+                : 'Select an anchor to trace its chain.'}
+            </p>
 
             {chainQuery.isLoading ? (
               <LoadingState variant="block" rows={5} />
@@ -189,7 +181,7 @@ export function InfrastructureGraphPage(): React.JSX.Element {
                 detail="This anchor's chain contains nothing you are authorised to read."
               />
             ) : (
-              <div className="space-y-4 p-4 pt-0">
+              <div className="space-y-4 px-3 pb-3">
                 {chain.prunedNodes > 0 ? (
                   <PartialDataWarning
                     available={chain.nodes.length}
@@ -254,16 +246,16 @@ export function InfrastructureGraphPage(): React.JSX.Element {
                 </div>
               </div>
             )}
-          </Card>
+          </GovPanel>
         </div>
 
         {/* The whole column pins, not one panel of it: a `sticky` element stays
             in flow, so a panel below a pinned one would slide up underneath it. */}
         <div className="order-1 xl:order-2 xl:col-span-4">
           <div className="scrollbar-rail flex flex-col gap-3 xl:sticky xl:top-[3.75rem] xl:max-h-[calc(100vh-4.5rem)] xl:overflow-y-auto">
-            <Card flush>
-              <CardHeader className="px-4 pt-4" title={t('Infrastructure anchors')} description={t('Ranked by how much of the city fabric each connects to.')} />
-              <div className="px-4 pb-2">
+            <GovPanel dense tone="amber" title={t('Infrastructure anchors')}>
+              <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">{t('Ranked by how much of the city fabric each connects to.')}</p>
+              <div className="px-3 pb-2">
                 <div className="relative">
                   <Search className="pointer-events-none absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2 text-ink-300" />
                   <Input
@@ -303,19 +295,18 @@ export function InfrastructureGraphPage(): React.JSX.Element {
                   ))
                 )}
               </ul>
-            </Card>
+            </GovPanel>
 
             {chain && chain.accountableDepartments.length > 0 ? (
-              <Card>
-                <CardHeader icon={<Boxes className="h-4 w-4" />} title={t('Accountable in this chain')} />
-                <DefinitionList className="mt-2">
+              <GovPanel tone="red" title={t('Accountable in this chain')}>
+                <DefinitionList>
                   <DefinitionRow label={t('Departments')}>
                     {chain.accountableDepartments.join(', ')}
                   </DefinitionRow>
                   <DefinitionRow label={t('Entities in scope')}>{chain.nodes.length}</DefinitionRow>
                   <DefinitionRow label={t('Relationships')}>{chain.edges.length}</DefinitionRow>
                 </DefinitionList>
-              </Card>
+              </GovPanel>
             ) : null}
 
             <DemonstrationNotice />

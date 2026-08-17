@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { AlertTriangle, ArrowRightLeft, Gavel, Scale } from 'lucide-react'
+import { ArrowRightLeft, Gavel, Scale } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { useServiceAction, useServiceQuery } from '@/hooks'
 import { usePageMasthead } from '@/stores/masthead.store'
@@ -29,7 +29,6 @@ import {
   Badge,
   Button,
   Card,
-  CardHeader,
   DataTable,
   DefinitionList,
   DefinitionRow,
@@ -48,6 +47,7 @@ import {
   Textarea,
   type Column,
 } from '@/components/ui'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { ConfidenceBadge, SeverityBadge } from '@/components/ui/badges'
 import { MetricCard } from '@/components/cards'
 import { t } from '@/i18n'
@@ -123,10 +123,7 @@ type PendingAction =
 
 export function RecoveryWorklistPage(): React.JSX.Element {
   // The shell's masthead carries the screen's name; the page states the wording.
-  usePageMasthead(
-    t('Assessment Recovery Worklist'),
-    t('Assessment review candidates raised where two municipal registers disagree about the same property. Each row is a candidate for verification by a named officer, not a finding - and closing one without action, with a recorded reason, is an equal outcome to revising a demand.'),
-  )
+  usePageMasthead(t('Assessment Recovery Worklist'))
 
   const [tab, setTab] = useState<WorklistTab>('worklist')
   const [wardFilter, setWardFilter] = useState('all')
@@ -279,13 +276,11 @@ export function RecoveryWorklistPage(): React.JSX.Element {
         }
       />
 
-      <Card tone="warn">
-        <CardHeader
-          icon={<AlertTriangle className="h-4 w-4" />}
-          title={t('What every row on this screen is, and what it is not')}
-          description={t('An assessment review candidate is raised where two of the corporation\'s own registers disagree about one property. It is not a finding, not an allegation, and makes no assertion that anybody has under-declared, evaded or misrepresented anything. There are lawful explanations for every rule in the catalogue; they are listed against the rule and offered as closure reasons. No demand is revised by this platform - a named officer verifies the candidate and the statutory assessment process, with notice and hearing, follows unchanged.')}
-        />
-      </Card>
+      <GovPanel title={t('What every row on this screen is, and what it is not')} tone="amber">
+        <p className="text-xs leading-relaxed text-ink-500">
+          {t('An assessment review candidate is raised where two of the corporation\'s own registers disagree about one property. It is not a finding, not an allegation, and makes no assertion that anybody has under-declared, evaded or misrepresented anything. There are lawful explanations for every rule in the catalogue; they are listed against the rule and offered as closure reasons. No demand is revised by this platform - a named officer verifies the candidate and the statutory assessment process, with notice and hearing, follows unchanged.')}
+        </p>
+      </GovPanel>
 
       {isLoading ? <LoadingState variant="metrics" /> : null}
       {error ? (
@@ -300,12 +295,11 @@ export function RecoveryWorklistPage(): React.JSX.Element {
 
       {!isLoading && !error && summary ? (
         <>
-          <Card>
-            <CardHeader
-              title={t('Recovery position')}
-              description={t('Across {0} parcels of the assessment register within your authorised scope.', formatNumber(summary.sampledParcels))}
-            />
-            <MetricGrid columns={5} className="mt-4">
+          <GovPanel title={t('Recovery position')} tone="primary">
+            <p className="mb-3 text-xs leading-relaxed text-ink-500">
+              {t('Across {0} parcels of the assessment register within your authorised scope.', formatNumber(summary.sampledParcels))}
+            </p>
+            <MetricGrid columns={5}>
               <MetricCard
                 label={t('Open on the worklist')}
                 value={formatNumber(summary.onWorklist)}
@@ -330,15 +324,13 @@ export function RecoveryWorklistPage(): React.JSX.Element {
                 explanation="Candidates that produced a revised demand, as a share of every candidate an officer has decided. Candidates closed for a lawful reason are counted in the denominator - this is a conversion rate, not a measure of whether the rule was right."
               />
             </MetricGrid>
-          </Card>
+          </GovPanel>
 
-          <Card flush>
-            <CardHeader
-              bordered
-              title={t('Candidates')}
-              description={t('Sortable, searchable and exportable. Open a row to see both source records, the published match evidence, and the actions available at this point in the lifecycle.')}
-            />
-            <div className="px-4 pt-3">
+          <GovPanel title={t('Candidates')} tone="red" dense>
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+              {t('Sortable, searchable and exportable. Open a row to see both source records, the published match evidence, and the actions available at this point in the lifecycle.')}
+            </p>
+            <div className="px-3">
               <Tabs
                 ariaLabel="Worklist sections"
                 value={tab}
@@ -352,7 +344,7 @@ export function RecoveryWorklistPage(): React.JSX.Element {
             </div>
 
             {tab === 'match-queue' ? (
-              <p className="border-b border-ink-100 bg-warn-50/50 px-4 py-3 text-xs leading-relaxed text-ink-600">
+              <p className="border-b border-ink-100 bg-warn-50/50 px-3 py-3 text-xs leading-relaxed text-ink-600">
                 {t('These records could not be matched to a parcel with enough confidence for the engine to raise a candidate on its own. Municipal registers share no common property identifier, so where the published signals do not agree strongly enough the decision belongs to an officer who knows the locality - and is recorded against their name rather than absorbed into a score.')}
               </p>
             ) : null}
@@ -385,7 +377,7 @@ export function RecoveryWorklistPage(): React.JSX.Element {
               initialSort={{ columnId: 'value', direction: 'desc' }}
               ariaLabel="Assessment review candidates"
             />
-          </Card>
+          </GovPanel>
         </>
       ) : null}
 
@@ -535,8 +527,7 @@ function CandidateDetail({ id, onClose }: { id: string | null; onClose: () => vo
           <section>
             <h3 className="text-xs font-semibold tracking-wide text-ink-600 uppercase">{t('The two records that disagree')}</h3>
             <div className="mt-2 grid grid-cols-1 gap-3 lg:grid-cols-2">
-              <Card tone="default">
-                <CardHeader title={t('Property Assessment Register')} />
+              <GovPanel title={t('Property Assessment Register')} tone="amber">
                 {data.parcel ? (
                   <DefinitionList className="mt-2">
                     <DefinitionRow label={t('Assessment no.')} mono>{data.parcel.assessmentNumber}</DefinitionRow>
@@ -558,10 +549,9 @@ function CandidateDetail({ id, onClose }: { id: string | null; onClose: () => vo
                     {t('No parcel on the assessment register matched this record above the confidence floor. That is the disagreement: the corporation is supplying a service to a property its assessment register does not appear to hold.')}
                   </p>
                 )}
-              </Card>
+              </GovPanel>
 
-              <Card tone="default">
-                <CardHeader title={REGISTRY_LABEL[data.counterpart.source]} />
+              <GovPanel title={REGISTRY_LABEL[data.counterpart.source]} tone="green">
                 <DefinitionList className="mt-2">
                   <DefinitionRow label={t('Reference')} mono>{data.counterpart.reference}</DefinitionRow>
                   <DefinitionRow label={t('Survey no.')} mono>{data.counterpart.surveyNumber ?? 'Not carried on this register'}</DefinitionRow>
@@ -574,7 +564,7 @@ function CandidateDetail({ id, onClose }: { id: string | null; onClose: () => vo
                     </DefinitionRow>
                   ))}
                 </DefinitionList>
-              </Card>
+              </GovPanel>
             </div>
           </section>
 

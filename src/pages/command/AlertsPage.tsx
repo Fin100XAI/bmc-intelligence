@@ -12,7 +12,8 @@ import {
   UserPlus,
 } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
-import { Button, Card, CardHeader, IconButton, MetricGrid, Select, SegmentedControl, Textarea } from '@/components/ui/primitives'
+import { Button, Card, IconButton, MetricGrid, Select, SegmentedControl, Textarea } from '@/components/ui/primitives'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { Badge, ConfidenceBadge, SeverityBadge, SeverityRail } from '@/components/ui/badges'
 import { DataTable, type Column } from '@/components/ui/DataTable'
 import { ConfirmDialog, Modal } from '@/components/ui/overlays'
@@ -123,10 +124,7 @@ export function AlertsPage(): React.JSX.Element {
   const [actionError, setActionError] = useState<string | null>(null)
 
   // The shell renders the masthead; this page states what it should say.
-  usePageMasthead(
-    t('Alerts & Escalations'),
-    t('Every operational alert the platform has raised, with SLA position, ownership and the escalation actions your role holds authority for. Acknowledging, assigning, escalating or closing an alert is recorded permanently against your name.'),
-  )
+  usePageMasthead(t('Alerts & Escalations'))
 
   // Honour `?severity=` as a one-time initial filter, applied once on mount.
   useEffect(() => {
@@ -507,6 +505,7 @@ export function AlertsPage(): React.JSX.Element {
             tone={sla.breached > 0 ? 'critical' : 'default'}
             icon={<AlertTriangle className="h-3.5 w-3.5" />}
             support={t('Open alerts past their SLA target')}
+            background="red"
           />
           <MetricCard
             label={t('Breaching soon (≤ 2h)')}
@@ -514,6 +513,7 @@ export function AlertsPage(): React.JSX.Element {
             tone={sla.approachingBreach > 0 ? 'warn' : 'default'}
             icon={<Siren className="h-3.5 w-3.5" />}
             support={t('Requires attention within two hours')}
+            background="amber"
           />
           <MetricCard
             label={t('Within SLA')}
@@ -521,6 +521,7 @@ export function AlertsPage(): React.JSX.Element {
             tone="positive"
             icon={<CheckCircle2 className="h-3.5 w-3.5" />}
             support={t('{0} open alert(s) tracked against SLA', sla.total)}
+            background="green"
           />
         </MetricGrid>
       ) : null}
@@ -559,15 +560,17 @@ export function AlertsPage(): React.JSX.Element {
         </Card>
       ) : null}
 
-      <Card flush>
-        <CardHeader
-          bordered
-          eyebrow={t('Alert register')}
-          title={t('{0} of {1} alert(s) shown', filtered.length, alerts.length)}
-          description={t('Sorted by SLA remaining - the most urgent position first.')}
-        />
+      <GovPanel
+        title={t('{0} of {1} alert(s) shown', filtered.length, alerts.length)}
+        subtitle={t('Alert register')}
+        tone="amber"
+        dense
+      >
+        <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+          {t('Sorted by SLA remaining - the most urgent position first.')}
+        </p>
         {filtered.length === 0 ? (
-          <EmptyState className="m-4" title={t('No alerts match the current filters')} detail="Widen the date range or clear a filter to see more results." />
+          <EmptyState className="m-3" title={t('No alerts match the current filters')} detail="Widen the date range or clear a filter to see more results." />
         ) : view === 'table' ? (
           <DataTable
             rows={filtered}
@@ -586,7 +589,7 @@ export function AlertsPage(): React.JSX.Element {
             ariaLabel="Alerts"
           />
         ) : (
-          <div className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 p-3 sm:grid-cols-2 xl:grid-cols-3">
             {filtered.map((alert) => (
               <AlertCard
                 key={alert.id}
@@ -606,7 +609,7 @@ export function AlertsPage(): React.JSX.Element {
             ))}
           </div>
         )}
-      </Card>
+      </GovPanel>
 
       <ConfirmDialog
         open={confirmAction !== null}

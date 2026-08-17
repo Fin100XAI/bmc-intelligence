@@ -1,11 +1,10 @@
 import { useMemo, useState } from 'react'
-import { AlertOctagon, CircuitBoard, Info, ListChecks, RotateCcw } from 'lucide-react'
+import { Info, ListChecks, RotateCcw } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { Badge, ClassificationBadge, StateBadge } from '@/components/ui/badges'
 import {
   Button,
   Card,
-  CardHeader,
   DefinitionList,
   DefinitionRow,
   MetricGrid,
@@ -17,6 +16,7 @@ import { Drawer } from '@/components/ui/overlays'
 import { DemonstrationNotice, EmptyState, ErrorState, LoadingState } from '@/components/ui/states'
 import { ChartFrame } from '@/components/charts/ChartFrame'
 import { DonutChart } from '@/components/charts/charts'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { connectorService } from '@/services'
@@ -125,10 +125,7 @@ registerLayer(() => {
 
 export function IntegrationHealthPage(): React.JSX.Element {
   // The shell's masthead carries the screen's name; the page states the wording.
-  usePageMasthead(
-    t('Integration Health'),
-    t('The state of every connector this deployment is capable of provisioning, and what that state actually means. No connector is connected to any live departmental system in this environment.'),
-  )
+  usePageMasthead(t('Integration Health'))
 
   const connectorsQuery = useServiceQuery(queryKeys.connectors(), (u) => connectorService.list(u))
   const healthQuery = useServiceQuery(['trust-integration-health', 'health'], (u) => connectorService.health(u))
@@ -329,30 +326,31 @@ export function IntegrationHealthPage(): React.JSX.Element {
           those two are written in sit beside them as reference. */}
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
         <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
-        <Card flush>
-          <CardHeader
-            className="px-4 pt-4"
-            icon={<CircuitBoard className="h-4 w-4" />}
-            title={t('Connector register')}
-            description={t('Select a row to open the connector; tick connectors to build a provisioning request pack for the departments that hold their next step.')}
-            actions={
-              activeFilters > 0 ? (
-                <Button
-                  variant="ghost"
-                  size="xs"
-                  icon={<RotateCcw className="h-3 w-3" />}
-                  onClick={() => {
-                    setHealthFilter('')
-                    setClassificationFilter('')
-                    setDepartmentFilter('')
-                  }}
-                >
-                  {t('Clear {0} filter{1}', activeFilters, activeFilters === 1 ? '' : 's')}
-                </Button>
-              ) : null
-            }
-          />
-          <div className="flex flex-wrap items-center gap-2 px-4 pt-3">
+        <GovPanel
+          title={t('Connector register')}
+          tone="amber"
+          dense
+          actions={
+            activeFilters > 0 ? (
+              <Button
+                variant="ghost"
+                size="xs"
+                icon={<RotateCcw className="h-3 w-3" />}
+                onClick={() => {
+                  setHealthFilter('')
+                  setClassificationFilter('')
+                  setDepartmentFilter('')
+                }}
+              >
+                {t('Clear {0} filter{1}', activeFilters, activeFilters === 1 ? '' : 's')}
+              </Button>
+            ) : null
+          }
+        >
+          <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+            {t('Select a row to open the connector; tick connectors to build a provisioning request pack for the departments that hold their next step.')}
+          </p>
+          <div className="flex flex-wrap items-center gap-2 px-3">
             <Select
               aria-label={t('Filter by state')}
               value={healthFilter}
@@ -384,7 +382,7 @@ export function IntegrationHealthPage(): React.JSX.Element {
               ]}
             />
           </div>
-          <div className="p-4">
+          <div className="p-3">
             <DataTable
               rows={filtered}
               columns={columns}
@@ -401,18 +399,16 @@ export function IntegrationHealthPage(): React.JSX.Element {
               emptyTitle={t('No connector matches the current filters')}
             />
           </div>
-        </Card>
+        </GovPanel>
 
-        <Card tone="critical">
-          <CardHeader
-            icon={<AlertOctagon className="h-4 w-4" />}
-            title={t('Requires a data-sharing agreement or security review before provisioning')}
-            description={t('These connectors cannot proceed to adapter development, or beyond it, without the named institutional step being completed first.')}
-          />
+        <GovPanel title={t('Requires a data-sharing agreement or security review before provisioning')} tone="critical">
+          <p className="mb-2 text-xs leading-relaxed text-ink-500">
+            {t('These connectors cannot proceed to adapter development, or beyond it, without the named institutional step being completed first.')}
+          </p>
           {needsAgreementOrReview.length === 0 ? (
             <EmptyState compact title={t('No connector currently requires this step')} />
           ) : (
-            <ul className="mt-2 space-y-2">
+            <ul className="space-y-2">
               {needsAgreementOrReview.map((c) => (
                 <li key={c.id} className="flex flex-wrap items-start justify-between gap-3 rounded-md bg-surface px-3 py-2">
                   <div className="min-w-0 flex-1">
@@ -432,7 +428,7 @@ export function IntegrationHealthPage(): React.JSX.Element {
               ))}
             </ul>
           )}
-        </Card>
+        </GovPanel>
         </div>
 
         <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
@@ -461,16 +457,16 @@ export function IntegrationHealthPage(): React.JSX.Element {
           </p>
         </Card>
 
-        <Card>
-          <CardHeader title={t('What each state means')} description={t('The precise, exhaustive definition of every connector state this platform ever reports.')} />
-          <DefinitionList className="mt-2">
+        <GovPanel title={t('What each state means')} tone="amber">
+          <p className="mb-3 text-xs leading-relaxed text-ink-500">{t('The precise, exhaustive definition of every connector state this platform ever reports.')}</p>
+          <DefinitionList>
             {(Object.keys(STATE_EXPLANATION) as ConnectorHealth[]).map((k) => (
               <DefinitionRow key={k} label={HEALTH_LABEL[k]}>
                 {STATE_EXPLANATION[k]}
               </DefinitionRow>
             ))}
           </DefinitionList>
-        </Card>
+        </GovPanel>
         </div>
       </div>
 
@@ -544,22 +540,17 @@ export function IntegrationHealthPage(): React.JSX.Element {
               </DefinitionRow>
             </DefinitionList>
 
-            <Card tone="info">
-              <CardHeader title={t('What "{0}" means', HEALTH_LABEL[detail.health])} />
-              <p className="mt-2 text-[0.8125rem] leading-relaxed text-ink-700">{STATE_EXPLANATION[detail.health]}</p>
-            </Card>
+            <GovPanel title={t('What "{0}" means', HEALTH_LABEL[detail.health])} tone="amber">
+              <p className="text-[0.8125rem] leading-relaxed text-ink-700">{STATE_EXPLANATION[detail.health]}</p>
+            </GovPanel>
 
-            <Card tone="warn">
-              <CardHeader
-                icon={<AlertOctagon className="h-4 w-4 text-warn-700" />}
-                title={t('Next institutional step')}
-                description={t('Held by a department or a review body — not by this platform.')}
-              />
-              <p className="mt-2 text-[0.8125rem] leading-relaxed text-ink-700">{NEXT_STEP[detail.health]}</p>
+            <GovPanel title={t('Next institutional step')} tone="red">
+              <p className="mb-2 text-xs leading-relaxed text-ink-500">{t('Held by a department or a review body — not by this platform.')}</p>
+              <p className="text-[0.8125rem] leading-relaxed text-ink-700">{NEXT_STEP[detail.health]}</p>
               <p className="mt-2 text-[0.6875rem] leading-relaxed text-ink-500">
                 {t('Nothing on this screen can complete that step, and no control here pretends to. Add the connector to a provisioning pack to export the request in a form the accountable department can act on.')}
               </p>
-            </Card>
+            </GovPanel>
           </div>
         ) : null}
       </Drawer>

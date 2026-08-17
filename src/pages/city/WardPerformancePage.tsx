@@ -1,10 +1,9 @@
 import { useMemo, useState } from 'react'
-import { Award, Layers, LifeBuoy, Ruler, Scale, Sigma } from 'lucide-react'
+import { Award, LifeBuoy, Ruler, Scale, Sigma } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import {
   Badge,
   Card,
-  CardHeader,
   DataTable,
   DemonstrationNotice,
   EmptyState,
@@ -18,6 +17,7 @@ import {
   type Column,
 } from '@/components/ui'
 import { MetricCard } from '@/components/cards'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { ContributionBars, MiniBar, RankedBarChart } from '@/components/charts'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
@@ -103,10 +103,7 @@ function signed(value: number, decimals = 1): string {
 const CHART_LIMIT = 18
 
 export function WardPerformancePage(): React.JSX.Element {
-  usePageMasthead(
-    t('Like-for-Like Ward Performance'),
-    t('Ward outcomes read against the conditions each ward was handed. A raw ranking punishes whoever holds the hardest ward; this one separates how hard a ward is from how well it is being run.'),
-  )
+  usePageMasthead(t('Like-for-Like Ward Performance'))
 
   const [cohort, setCohort] = useState<CohortFilter>('all')
 
@@ -308,6 +305,7 @@ export function WardPerformancePage(): React.JSX.Element {
               icon={<Award className="h-4 w-4" />}
               origin="demonstration"
               explanation={`A ward counts as above expectation when its residual exceeds the tolerance band of ${fit.toleranceBand.toFixed(1)} points, which is half a typical residual.`}
+              background="red"
             />
             <MetricCard
               label={t('Wards below expectation')}
@@ -315,6 +313,7 @@ export function WardPerformancePage(): React.JSX.Element {
               support={t('of {0} assessed · each one is a question, not a verdict', rows.length)}
               tone="warn"
               icon={<LifeBuoy className="h-4 w-4" />}
+              background="amber"
             />
             <MetricCard
               label={t('Furthest above its line')}
@@ -327,6 +326,7 @@ export function WardPerformancePage(): React.JSX.Element {
               }
               tone="positive"
               icon={<Sigma className="h-4 w-4" />}
+              background="green"
             />
             <MetricCard
               label={t('Furthest below its line')}
@@ -347,13 +347,10 @@ export function WardPerformancePage(): React.JSX.Element {
               the model does not claim read beside them. */}
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
             <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
-            <Card flush>
-                <CardHeader
-                  bordered
-                  icon={<Layers className="h-4 w-4" />}
-                title={t('Difficulty cohorts')}
-                description={t('Wards banded into difficulty quartiles, so each one can be read against genuine peers as well as against the line.')}
-              />
+            <GovPanel title={t('Difficulty cohorts')} tone="amber" dense>
+              <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+                {t('Wards banded into difficulty quartiles, so each one can be read against genuine peers as well as against the line.')}
+              </p>
               <div className="grid gap-3 px-4 py-4 sm:grid-cols-2 lg:grid-cols-4">
                 {cohorts.map((c) => (
                   <div key={c.quartile} className="rounded-lg border border-ink-100 bg-surface-sunken p-3">
@@ -384,7 +381,7 @@ export function WardPerformancePage(): React.JSX.Element {
               <p className="border-t border-ink-100 px-4 py-3 text-[0.6875rem] leading-relaxed text-ink-500">
                 {t('The state chip on each band describes the')}{' '}<strong>conditions</strong>{' '}{t('in that quartile, not the administration of it. A band marked critical is the hardest ground in the corporation to run, which is a statement about the ward and never about the people running it.')}
               </p>
-            </Card>
+            </GovPanel>
 
             <Card className="flex flex-wrap items-end gap-3">
               <div>
@@ -410,13 +407,10 @@ export function WardPerformancePage(): React.JSX.Element {
               />
             ) : (
               <>
-                <Card flush className="flex flex-col">
-                  <CardHeader
-                    bordered
-                    icon={<Award className="h-4 w-4" />}
-                    title={t('Residual against the expectation line')}
-                    description={t('Bars to the right of zero are wards doing better than their conditions predict. Bars to the left are wards doing worse.')}
-                  />
+                <GovPanel title={t('Residual against the expectation line')} tone="red" dense className="flex flex-col">
+                  <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+                    {t('Bars to the right of zero are wards doing better than their conditions predict. Bars to the left are wards doing worse.')}
+                  </p>
                   <div className="px-4 py-4" style={{ height: Math.max(220, chartRows.length * 26) }}>
                     <RankedBarChart
                       data={chartRows.map((r) => ({ label: r.wardCode, value: r.residual }))}
@@ -428,15 +422,12 @@ export function WardPerformancePage(): React.JSX.Element {
                       ? ` The ${filtered.length - chartRows.length} wards nearest the line are omitted from this chart - where the residual is small there is nothing to learn - and all ${filtered.length} appear in the register below.`
                       : '')}
                   </p>
-                </Card>
+                </GovPanel>
 
-                <Card flush>
-                  <CardHeader
-                    bordered
-                    icon={<Scale className="h-4 w-4" />}
-                    title={t('Ward register, adjusted for difficulty')}
-                    description={t('{0} ward{1} in your authorised scope, ordered by how far each sits from the expectation set by its own conditions.', filtered.length, filtered.length === 1 ? '' : 's')}
-                  />
+                <GovPanel title={t('Ward register, adjusted for difficulty')} tone="amber" dense>
+                  <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+                    {t('{0} ward{1} in your authorised scope, ordered by how far each sits from the expectation set by its own conditions.', filtered.length, filtered.length === 1 ? '' : 's')}
+                  </p>
                   <DataTable
                     rows={filtered}
                     columns={columns}
@@ -445,7 +436,7 @@ export function WardPerformancePage(): React.JSX.Element {
                     searchPlaceholder="Search ward, code or region"
                     pageSize={15}
                   />
-                </Card>
+                </GovPanel>
               </>
             )}
             </div>
@@ -466,13 +457,10 @@ export function WardPerformancePage(): React.JSX.Element {
               </div>
             </Card>
 
-              <Card flush className="flex flex-col">
-                <CardHeader
-                  bordered
-                  icon={<Ruler className="h-4 w-4" />}
-                  title={t('How difficulty is scored')}
-                  description={t('Four structural conditions, weighted to one hundred. None of them moves because a ward office works well or badly.')}
-                />
+              <GovPanel title={t('How difficulty is scored')} tone="amber" dense className="flex flex-col">
+                <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+                  {t('Four structural conditions, weighted to one hundred. None of them moves because a ward office works well or badly.')}
+                </p>
                 <div className="px-4 py-4">
                   <ContributionBars
                     items={modelSummary.map((c) => ({
@@ -488,15 +476,12 @@ export function WardPerformancePage(): React.JSX.Element {
                     {t('Bars show the corporation-mean score on each condition and the points it puts on the board once weighted. Each condition is placed on a fixed 0-100 band rather than on the observed spread, so a ward&apos;s difficulty does not move when a different ward is added or removed.')}
                   </p>
                 </div>
-              </Card>
+              </GovPanel>
 
-              <Card flush className="flex flex-col">
-                <CardHeader
-                  bordered
-                  icon={<Sigma className="h-4 w-4" />}
-                  title={t('How expectation is set')}
-                  description={t('A least-squares line of observed health against difficulty, fitted across the wards.')}
-                />
+              <GovPanel title={t('How expectation is set')} tone="red" dense className="flex flex-col">
+                <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+                  {t('A least-squares line of observed health against difficulty, fitted across the wards.')}
+                </p>
                 <div className="px-4 py-4">
                   <p className="text-xs leading-relaxed text-ink-600">{statement}</p>
                   <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-4">
@@ -519,7 +504,7 @@ export function WardPerformancePage(): React.JSX.Element {
                       : ' Too few wards were in view to fit a line, so every ward is being read against the mean observed score - a placeholder, not a finding.')}
                   </p>
                 </div>
-              </Card>
+              </GovPanel>
 
 
             <Card tone="warn" className="flex items-start gap-3">

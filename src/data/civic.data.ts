@@ -158,10 +158,12 @@ registerLayer(() => {
 
   /* ---------------------------------------------------------------- Schools */
 
-  // A corporation runs roughly one municipal school per eleven thousand
-  // residents. The floor keeps the smallest corporation's education board
-  // populated rather than empty.
-  const schoolCount = scaledCount(1100, scale.population, 14)
+  // Anchored to the Education Department's own published school count where
+  // the active corporation reports one (1,135 for BMC, bmceducation.in);
+  // otherwise modelled at roughly one municipal school per eleven thousand
+  // residents, with a floor that keeps the smallest corporation's education
+  // board populated rather than empty.
+  const schoolCount = corp.municipalSchoolsCount ?? scaledCount(1100, scale.population, 14)
 
   MUNICIPAL_SCHOOLS = Array.from({ length: schoolCount }, (_, i) => {
     const r = det(`school:${i}`)
@@ -214,6 +216,17 @@ registerLayer(() => {
       lastInspectedAt: isoDaysFromAnchor(-r.int(4, 240)),
     }
   })
+
+  // Anchors the city-wide enrolment total to the Education Department's own
+  // published figure (~2.93 lakh for BMC) by rescaling every school's
+  // independently-rolled enrolment proportionally. This keeps the spread
+  // between schools exactly as modelled while making the aggregate genuinely
+  // real rather than an artefact of however many schools happened to roll high.
+  if (corp.municipalSchoolsEnrolment) {
+    const generatedEnrolment = MUNICIPAL_SCHOOLS.reduce((s, x) => s + x.enrolment, 0)
+    const ratio = generatedEnrolment > 0 ? corp.municipalSchoolsEnrolment / generatedEnrolment : 1
+    MUNICIPAL_SCHOOLS = MUNICIPAL_SCHOOLS.map((s) => ({ ...s, enrolment: Math.max(1, Math.round(s.enrolment * ratio)) }))
+  }
 
   EDUCATION_WARD_SUMMARY = WARDS.map((ward) => {
     const rows = MUNICIPAL_SCHOOLS.filter((s) => s.wardId === ward.id)
@@ -579,13 +592,24 @@ registerLayer(() => {
 
   /* --------------------------------------- Gardens, open space & the trees */
 
-  const openSpaceCount = scaledCount(340, scale.area, 12)
+  // Anchored to MCGM's own Recreation Ground / Playground / Garden plot list
+  // (18 Sep 2023): `gardenPlotsCount` real plots citywide, of which
+  // `gardensCount` are gardens specifically. Traffic islands and plazas sit
+  // outside that published list, so they are carried as a small unanchored
+  // addition on top rather than folded into the cited total.
+  const openSpaceCount = scale.gardenPlotsCount + scaledCount(70, scale.area, 5)
+  const nonGardenPlots = Math.max(1, scale.gardenPlotsCount - scale.gardensCount)
+  const openSpaceKindWeights = [
+    ['garden', scale.gardensCount],
+    ['playground', Math.round((nonGardenPlots * 6) / 14)],
+    ['recreation-ground', Math.round((nonGardenPlots * 4) / 14)],
+    ['traffic-island', Math.round((nonGardenPlots * 3) / 14)],
+    ['plaza', Math.round((nonGardenPlots * 1) / 14)],
+  ] as const
   OPEN_SPACES = Array.from({ length: openSpaceCount }, (_, i) => {
     const r = det(`openspace:${i}`)
     const ward = r.pick(WARDS)
-    const kind = r.weighted([
-      ['garden', 8], ['playground', 6], ['recreation-ground', 4], ['traffic-island', 3], ['plaza', 1],
-    ] as const) as OpenSpaceKind
+    const kind = r.weighted(openSpaceKindWeights) as OpenSpaceKind
     const condition = r.round(32, 97, 0)
 
     return {
@@ -610,6 +634,14 @@ registerLayer(() => {
     }
   })
 
+  // Anchored to the corporation's own most recent official tree census
+  // (`CorporationRef.treeCensusCount` - 29,75,283 trees for Brihanmumbai's
+  // 2018 census) where one is published, distributed across wards by
+  // population share with a per-ward variance band. Where no census exists,
+  // the total falls back to Brihanmumbai's own census density per km² of
+  // ground covered - a periodic survey figure, not a live count either way.
+  const treeCensusTotal = corp.treeCensusCount ?? Math.round(4931 * scale.area)
+
   TREE_WARD_POSITIONS = WARDS.map((ward) => {
     const r = det(`trees:${ward.id}`)
     const spaces = OPEN_SPACES.filter((o) => o.wardId === ward.id)
@@ -619,10 +651,11 @@ registerLayer(() => {
     const required = Math.round(granted * r.float(1.8, 3.2))
     const completed = Math.round(required * r.float(0.32, 0.98))
     const survival = r.round(48, 94, 1)
+    const treesShare = ward.population / totalWardPopulation
 
     return {
       wardId: ward.id,
-      treesSurveyed: r.int(scaledCount(9000, scale.area, 900), scaledCount(140000, scale.area, 6000)),
+      treesSurveyed: Math.max(200, scaledCount(treeCensusTotal * treesShare, r.float(0.75, 1.35))),
       canopyCoverPct: canopy,
       openSpacePerThousandHa: Math.round((openHa / (ward.population / 1000)) * 1000) / 1000,
       fellingApplicationsPending: r.int(0, 46),
@@ -661,7 +694,10 @@ registerLayer(() => {
       tenantId: TENANT_ID,
       name: t('Standing Committee'),
       kind: 'standing',
-      seats: Math.max(8, Math.round(seats * 0.11)),
+      // BMC's own published Standing Committee membership where the roster
+      // records it - researched fact, not the 11%-of-the-house ratio every
+      // other committee below is still sized by.
+      seats: corp.standingCommitteeMembersCount ?? Math.max(8, Math.round(seats * 0.11)),
       chairDesignation: 'Chairman, Standing Committee',
       sittings12m: 44,
       meanAttendancePct: 84,

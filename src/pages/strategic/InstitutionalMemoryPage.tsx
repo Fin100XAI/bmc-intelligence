@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react'
-import { Archive, BookOpen, Lightbulb, Link2, Search } from 'lucide-react'
+import { Archive, BookOpen, Lightbulb, Search } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { Badge, SeverityBadge } from '@/components/ui/badges'
-import { Card, CardHeader, Input, MetricGrid, Select } from '@/components/ui/primitives'
+import { Input, MetricGrid, Select } from '@/components/ui/primitives'
 import { DemonstrationNotice, EmptyState, ErrorState, LoadingState } from '@/components/ui/states'
 import { MetricCard } from '@/components/cards/MetricCard'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { useServiceQuery, useDebounced } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { knowledgeService } from '@/services'
@@ -51,10 +52,7 @@ const KIND_TONE: Record<MemoryKind, string> = {
 
 export function InstitutionalMemoryPage(): React.JSX.Element {
   // The shell's masthead states the screen's name; the page states the wording.
-  usePageMasthead(
-    t('Municipal Institutional Memory'),
-    t('What the corporation has decided, faced and learned, kept as a durable record. When a situation recurs, an officer can read what was done last time and what it taught — continuity of institutional knowledge, not its rediscovery.'),
-  )
+  usePageMasthead(t('Municipal Institutional Memory'))
 
   const [kind, setKind] = useState<string>('')
   const [searchInput, setSearchInput] = useState('')
@@ -127,12 +125,13 @@ export function InstitutionalMemoryPage(): React.JSX.Element {
       <div className="grid grid-cols-1 gap-3 xl:grid-cols-12">
         <div className="flex min-w-0 flex-col gap-3 xl:col-span-8">
           <MetricGrid columns={4}>
-            <MetricCard label={t('Records held')} value={summary?.total ?? 0} support={t('Across every record kind')} icon={<Archive className="h-4 w-4" />} />
+            <MetricCard label={t('Records held')} value={summary?.total ?? 0} support={t('Across every record kind')} icon={<Archive className="h-4 w-4" />} background="red" />
             <MetricCard
               label={t('Lessons learned')}
               value={summary?.byKind.find((k) => k.kind === 'lesson')?.count ?? 0}
               support={t('Durable lessons on record')}
               icon={<Lightbulb className="h-4 w-4" />}
+              background="amber"
             />
             <MetricCard
               label={t('Decisions & interventions')}
@@ -142,6 +141,7 @@ export function InstitutionalMemoryPage(): React.JSX.Element {
               }
               support={t('With recorded outcomes')}
               icon={<BookOpen className="h-4 w-4" />}
+              background="green"
             />
             <MetricCard
               label={t('SOPs')}
@@ -150,8 +150,8 @@ export function InstitutionalMemoryPage(): React.JSX.Element {
             />
           </MetricGrid>
 
-          <Card flush>
-            <CardHeader bordered title={t('The record')} description={t('Ranked by significance, most significant first.')} />
+          <GovPanel dense tone="amber" title={t('The record')}>
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">{t('Ranked by significance, most significant first.')}</p>
             {records.length === 0 ? (
               <EmptyState title={t('No records match')} detail="Relax the filter or search to widen the set." />
             ) : (
@@ -187,7 +187,7 @@ export function InstitutionalMemoryPage(): React.JSX.Element {
                 ))}
               </ul>
             )}
-          </Card>
+          </GovPanel>
         </div>
 
         {/* The whole column pins, not one panel of it: a `sticky` element stays
@@ -196,13 +196,11 @@ export function InstitutionalMemoryPage(): React.JSX.Element {
           <div className="scrollbar-rail flex flex-col gap-3 xl:sticky xl:top-[3.75rem] xl:max-h-[calc(100vh-4.5rem)] xl:overflow-y-auto">
             {selected ? (
               <>
-                <Card>
-                  <CardHeader
-                    title={selected.title}
-                    description={`${MEMORY_KIND_LABEL[selected.kind]} · ${DOMAIN_LABEL[selected.domain]} · ${departmentName(selected.departmentId)}`}
-                    actions={<SeverityBadge severity={selected.significance} />}
-                  />
-                  <div className="mt-3 space-y-3">
+                <GovPanel tone="amber" title={selected.title} actions={<SeverityBadge severity={selected.significance} />}>
+                  <p className="mb-3 text-xs leading-relaxed text-ink-500">
+                    {`${MEMORY_KIND_LABEL[selected.kind]} · ${DOMAIN_LABEL[selected.domain]} · ${departmentName(selected.departmentId)}`}
+                  </p>
+                  <div className="space-y-3">
                     <div>
                       <p className="label-institutional mb-1">{t('Situation')}</p>
                       <p className="text-xs leading-relaxed text-ink-600">{selected.summary}</p>
@@ -225,20 +223,18 @@ export function InstitutionalMemoryPage(): React.JSX.Element {
                       </Badge>
                     ))}
                   </div>
-                </Card>
+                </GovPanel>
 
-                <Card>
-                  <CardHeader
-                    icon={<Link2 className="h-4 w-4" />}
-                    title={t('Similar past records')}
-                    description={t('What the corporation did in comparable situations — with the basis for each match.')}
-                  />
+                <GovPanel tone="red" title={t('Similar past records')}>
+                  <p className="mb-3 text-xs leading-relaxed text-ink-500">
+                    {t('What the corporation did in comparable situations — with the basis for each match.')}
+                  </p>
                   {similarQuery.isLoading ? (
-                    <LoadingState variant="inline" className="mt-2" />
+                    <LoadingState variant="inline" />
                   ) : similar.length === 0 ? (
-                    <p className="mt-2 text-xs text-ink-500">{t('No comparable record found in your scope.')}</p>
+                    <p className="text-xs text-ink-500">{t('No comparable record found in your scope.')}</p>
                   ) : (
-                    <ul className="mt-3 space-y-2.5">
+                    <ul className="space-y-2.5">
                       {similar.map((s) => (
                         <li key={s.record.id}>
                           <button
@@ -259,7 +255,7 @@ export function InstitutionalMemoryPage(): React.JSX.Element {
                       ))}
                     </ul>
                   )}
-                </Card>
+                </GovPanel>
               </>
             ) : null}
 

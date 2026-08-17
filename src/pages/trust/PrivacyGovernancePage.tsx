@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react'
-import { AlertTriangle, Database, Eye, EyeOff, FileText, Lock, ShieldCheck, Timer } from 'lucide-react'
+import { AlertTriangle, Eye, EyeOff } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { PageBody, PageHeader, SplitLayout } from '@/components/layout/PageHeader'
 import { Badge, ClassificationBadge } from '@/components/ui/badges'
-import { Card, CardHeader, DefinitionList, DefinitionRow, Input, Label, MetricGrid, Select } from '@/components/ui/primitives'
+import { Card, DefinitionList, DefinitionRow, Input, Label, MetricGrid, Select } from '@/components/ui/primitives'
 import { DataTable, type Column } from '@/components/ui/DataTable'
 import { DemonstrationNotice, EmptyState, ErrorState, LoadingState } from '@/components/ui/states'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { governanceService, securityService, type DatasetFilters } from '@/services'
 import { useServiceQuery } from '@/hooks'
 import { usePageMasthead } from '@/stores/masthead.store'
@@ -58,10 +59,7 @@ const SHARING_TONE: Record<Dataset['sharingStatus'], 'neutral' | 'info' | 'intel
 
 export function PrivacyGovernancePage(): React.JSX.Element {
   // The shell's masthead carries the screen's name; the page states the wording.
-  usePageMasthead(
-    t('Privacy & Data Governance'),
-    t('The full dataset register this platform governs - purpose, classification, retention, sensitivity, allowed roles, sharing status and the minimisation measures applied to each. No regulatory certification, accreditation or formal privacy attestation is claimed anywhere in this environment.'),
-  )
+  usePageMasthead(t('Privacy & Data Governance'))
 
   const [domainFilter, setDomainFilter] = useState<IntelligenceDomain | ''>('')
   const [classificationFilter, setClassificationFilter] = useState<DataClassification | ''>('')
@@ -245,9 +243,8 @@ export function PrivacyGovernancePage(): React.JSX.Element {
         </Card>
       ) : null}
 
-      <Card flush>
-        <CardHeader className="p-4" icon={<Database className="h-4 w-4" />} title={t('Dataset register')} />
-        <div className="flex flex-wrap items-center gap-2 px-4 pb-3">
+      <GovPanel title={t('Dataset register')} tone="amber" dense>
+        <div className="flex flex-wrap items-center gap-2 px-3 pt-3 pb-3">
           <div className="w-full max-w-56">
             <Label htmlFor="ds-search" className="sr-only">{t('Search datasets')}</Label>
             <Input id="ds-search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t('Search name, purpose or source')} />
@@ -275,10 +272,10 @@ export function PrivacyGovernancePage(): React.JSX.Element {
         </div>
 
         {datasets.length === 0 ? (
-          <EmptyState className="mx-4 mb-4" title={t('No datasets match the current filters')} detail="Widen the filters above, or this may reflect datasets withheld from your principal - see the summary above." />
+          <EmptyState className="mx-3 mb-3" title={t('No datasets match the current filters')} detail="Widen the filters above, or this may reflect datasets withheld from your principal - see the summary above." />
         ) : (
           <SplitLayout
-            className="px-4 pb-4"
+            className="px-3 pb-3"
             asideWidth="lg"
             main={
               <DataTable
@@ -356,7 +353,7 @@ export function PrivacyGovernancePage(): React.JSX.Element {
             }
           />
         )}
-      </Card>
+      </GovPanel>
 
       {/* Two columns below the register. The personal-data schedule is the
           record an officer works through; the four standing doctrines the
@@ -364,12 +361,10 @@ export function PrivacyGovernancePage(): React.JSX.Element {
           read down beside it rather than as four more rows to scroll past. */}
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
         <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
-      <Card>
-        <CardHeader
-          icon={<Eye className="h-4 w-4" />}
-          title={t('Datasets containing personal data')}
-          description={t('Every dataset carrying personal data reachable by your principal, with exactly what minimisation is applied. A dataset with no recorded measure is flagged, not hidden.')}
-        />
+      <GovPanel title={t('Datasets containing personal data')} tone="red">
+        <p className="mb-3 text-xs leading-relaxed text-ink-500">
+          {t('Every dataset carrying personal data reachable by your principal, with exactly what minimisation is applied. A dataset with no recorded measure is flagged, not hidden.')}
+        </p>
         {personalDataQuery.isLoading ? (
           <LoadingState variant="inline" />
         ) : personalDataQuery.error ? (
@@ -377,7 +372,7 @@ export function PrivacyGovernancePage(): React.JSX.Element {
         ) : personalData.length === 0 ? (
           <EmptyState compact title={t('No dataset reachable by your principal carries personal data')} />
         ) : (
-          <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
+          <div className="grid gap-2.5 sm:grid-cols-2">
             {personalData.map(({ dataset, minimisation, hasMinimisation }) => (
               <div
                 key={dataset.id}
@@ -410,39 +405,35 @@ export function PrivacyGovernancePage(): React.JSX.Element {
             ))}
           </div>
         )}
-      </Card>
+      </GovPanel>
         </div>
 
         <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
-        <Card>
-          <CardHeader icon={<FileText className="h-4 w-4" />} title={t('Purpose limitation')} />
-          <p className="mt-2 text-[0.8125rem] leading-relaxed text-ink-700">
+        <GovPanel title={t('Purpose limitation')} tone="amber">
+          <p className="text-[0.8125rem] leading-relaxed text-ink-700">
             {t('Every dataset in the register above is provisioned against a single declared purpose - the institutional reason the corporation is entitled to hold and process it')}
             {selected ? <>{' '}{t('- for example,')}{' '}{departmentName(selected.ownerDepartmentId)}{t('&apos;s')}{' '}<span className="font-medium">{selected.name}</span>{' '}{t('is held for: &quot;')}{selected.purpose}{t('&quot;')}</> : null}{t('. Intelligence, alerts and decisions derived from a source are used only within that declared purpose; there is no general-purpose data lake in this architecture that records fall into once ingested.')}
           </p>
-        </Card>
-        <Card>
-          <CardHeader icon={<Lock className="h-4 w-4" />} title={t('Minimisation')} />
-          <p className="mt-2 text-[0.8125rem] leading-relaxed text-ink-700">
+        </GovPanel>
+        <GovPanel title={t('Minimisation')} tone="red">
+          <p className="text-[0.8125rem] leading-relaxed text-ink-700">
             {t('Minimisation is applied at the connector boundary, before a record ever reaches the intelligence layer - not as a downstream redaction step. {0} in this register contain personal data; the explicit measure recorded against each - identity fields dropped at ingestion, records aggregated below individual level, or pseudonymisation before analysis - is shown per dataset above, and any gap is flagged rather than assumed.', summary ? `${summary.withPersonalData} dataset(s)` : 'Datasets')}
           </p>
-        </Card>
-        <Card>
-          <CardHeader icon={<Timer className="h-4 w-4" />} title={t('Retention')} />
-          <p className="mt-2 text-[0.8125rem] leading-relaxed text-ink-700">
+        </GovPanel>
+        <GovPanel title={t('Retention')} tone="amber">
+          <p className="text-[0.8125rem] leading-relaxed text-ink-700">
             {t('Every dataset carries a declared retention period in months - the shortest currently in the register is {0} months. This demonstration environment does not implement automated deletion at the retention boundary: the in-session store described in Evidence &amp; Audit exists for the lifetime of the browser session, not on a retention schedule. A production deployment must implement enforced deletion, not merely a documented retention figure.', summary?.shortestRetentionMonths ?? '-')}
           </p>
-        </Card>
-        <Card>
-          <CardHeader icon={<ShieldCheck className="h-4 w-4" />} title={t('Access controls')} />
+        </GovPanel>
+        <GovPanel title={t('Access controls')} tone="green">
           {policiesQuery.isLoading ? (
             <LoadingState variant="inline" />
           ) : policiesQuery.error ? (
-            <p className="mt-2 text-xs text-crit-600">{policiesQuery.error.message}</p>
+            <p className="text-xs text-crit-600">{policiesQuery.error.message}</p>
           ) : (
             <>
-              <p className="mt-2 text-[0.8125rem] leading-relaxed text-ink-700">
+              <p className="text-[0.8125rem] leading-relaxed text-ink-700">
                 {t('Every dataset read above passes both the role/attribute permission engine and its own declared allowed-role list and classification ceiling. {0} access polic{1} are additionally registered against data-sensitive resources, including:', (policiesQuery.data ?? []).length, (policiesQuery.data ?? []).length === 1 ? 'y' : 'ies')}
               </p>
               <ul className="mt-2 space-y-1.5">
@@ -460,7 +451,7 @@ export function PrivacyGovernancePage(): React.JSX.Element {
               </ul>
             </>
           )}
-        </Card>
+        </GovPanel>
       </div>
 
       <Card tone="warn">

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { AlertTriangle, ListChecks, ScrollText } from 'lucide-react'
+import { ListChecks, ScrollText } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { useServiceQuery } from '@/hooks'
 import { usePageMasthead } from '@/stores/masthead.store'
@@ -14,7 +14,6 @@ import { REGISTRY_LABEL, RULE_TIER_LABEL } from '@/types/revenue-reconciliation'
 import {
   Badge,
   Card,
-  CardHeader,
   DataTable,
   DemonstrationNotice,
   ErrorState,
@@ -25,6 +24,7 @@ import {
   Select,
   type Column,
 } from '@/components/ui'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { MetricCard } from '@/components/cards'
 import { CompositionBar } from '@/components/charts'
 import { t } from '@/i18n'
@@ -55,10 +55,7 @@ const TIER_COLOUR: Record<number, string> = { 1: '#e5484d', 2: '#f59e0b', 3: '#8
 
 export function RevenueReconciliationPage(): React.JSX.Element {
   // The shell's masthead carries the screen's name; the page states the wording.
-  usePageMasthead(
-    t('Registry Reconciliation'),
-    t('Where the corporation\'s own registers disagree about the same property. Every rule in the catalogue is published in full - its condition, why it matters, and the lawful reasons it fires on a property where nothing is wrong - because an assessment the corporation cannot explain is an assessment it cannot defend at a hearing.'),
-  )
+  usePageMasthead(t('Registry Reconciliation'))
 
   const [wardFilter, setWardFilter] = useState('all')
 
@@ -220,13 +217,11 @@ export function RevenueReconciliationPage(): React.JSX.Element {
       {!isLoading && !error && summary ? (
         <>
           {/* --- The one number, with its method attached ----------------- */}
-          <Card tone="critical">
-            <CardHeader
-              icon={<AlertTriangle className="h-4 w-4" />}
-              title={t('The corporation\'s registers disagree with each other')}
-              description={t('An extrapolation from the reconciled sample to the full assessment register. It is an indicative estimate for deciding whether this work is worth commissioning - not an amount owed by anybody, and not a figure any demand is raised from.')}
-            />
-            <div className="mt-4 flex flex-wrap items-end gap-x-10 gap-y-4">
+          <GovPanel title={t('The corporation\'s registers disagree with each other')} tone="critical">
+            <p className="mb-3 text-xs leading-relaxed text-ink-500">
+              {t('An extrapolation from the reconciled sample to the full assessment register. It is an indicative estimate for deciding whether this work is worth commissioning - not an amount owed by anybody, and not a figure any demand is raised from.')}
+            </p>
+            <div className="flex flex-wrap items-end gap-x-10 gap-y-4">
               <div>
                 <p className="text-[0.625rem] tracking-wide text-ink-500 uppercase">
                   {t('Extrapolated annual value, full register')}
@@ -254,7 +249,7 @@ export function RevenueReconciliationPage(): React.JSX.Element {
                 </p>
               </div>
             </div>
-          </Card>
+          </GovPanel>
 
           {/* Two columns. What the rules actually did — their observed
               precision, then the catalogue itself — reads down the wide
@@ -262,9 +257,9 @@ export function RevenueReconciliationPage(): React.JSX.Element {
               beside it as the running count. */}
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
           <div className="flex min-w-0 flex-col gap-4 xl:order-2 xl:col-span-4">
-          <Card>
-            <CardHeader title={t('Candidate position')} description={t('Scoped to the ward filter above.')} />
-            <MetricGrid columns={2} className="mt-4">
+          <GovPanel title={t('Candidate position')} tone="amber">
+            <p className="mb-3 text-xs leading-relaxed text-ink-500">{t('Scoped to the ward filter above.')}</p>
+            <MetricGrid columns={2}>
               <MetricCard label={t('Candidates raised')} value={formatNumber(summary.raised)} />
               <MetricCard
                 label={t('Tier 1 candidates')}
@@ -292,17 +287,15 @@ export function RevenueReconciliationPage(): React.JSX.Element {
                 <CompositionBar segments={tierSegments} />
               </div>
             ) : null}
-          </Card>
+          </GovPanel>
           </div>
 
           <div className="flex min-w-0 flex-col gap-4 xl:order-1 xl:col-span-8">
           {/* --- Observed precision -------------------------------------- */}
-          <Card flush>
-            <CardHeader
-              bordered
-              title={t('Observed rule precision')}
-              description={t('Computed from what officers actually found, not asserted. Precision counts a candidate against a rule only where the officer established that the rule was wrong about the property - a candidate correctly surfaced and then closed for a lawful reason is the engine working, not failing.')}
-            />
+          <GovPanel title={t('Observed rule precision')} tone="amber" dense>
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+              {t('Computed from what officers actually found, not asserted. Precision counts a candidate against a rule only where the officer established that the rule was wrong about the property - a candidate correctly surfaced and then closed for a lawful reason is the engine working, not failing.')}
+            </p>
             <DataTable
               rows={precision}
               columns={precisionColumns}
@@ -313,7 +306,7 @@ export function RevenueReconciliationPage(): React.JSX.Element {
               initialSort={{ columnId: 'raised', direction: 'desc' }}
               ariaLabel="Observed rule precision"
             />
-          </Card>
+          </GovPanel>
 
           {/* --- The published catalogue --------------------------------- */}
           <div>

@@ -3,8 +3,6 @@ import { Banknote, Landmark, Ticket, TriangleAlert } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import {
   Badge,
-  Card,
-  CardHeader,
   DataTable,
   DemonstrationNotice,
   EmptyState,
@@ -17,10 +15,12 @@ import {
   type Column,
 } from '@/components/ui'
 import { MetricCard } from '@/components/cards'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { heritageService } from '@/services'
 import { usePageMasthead } from '@/stores/masthead.store'
+import { activeCorporation } from '@/config/municipality.config'
 import { wardName } from '@/data/reference'
 import {
   CONSERVATION_STATUS_LABEL,
@@ -31,7 +31,7 @@ import {
   type HeritageGrade,
   type HeritageSite,
 } from '@/types/heritage'
-import { formatCompact, formatDate } from '@/utils/format'
+import { formatCompact, formatDate, formatNumber } from '@/utils/format'
 import { t } from '@/i18n'
 
 /**
@@ -57,10 +57,7 @@ export function HeritageTourismPage(): React.JSX.Element {
   const [gradeFilter, setGradeFilter] = useState<HeritageGrade | ''>('')
   const [statusFilter, setStatusFilter] = useState<ConservationStatus | ''>('')
 
-  usePageMasthead(
-    t('Heritage & Tourism'),
-    t('Listed heritage structures and precincts, museums, the zoo and the tourism-facing public realm, graded and tracked regardless of who manages each site.'),
-  )
+  usePageMasthead(t('Heritage & Tourism'))
 
   const positionQuery = useServiceQuery(queryKeys.heritage('position'), (u) => heritageService.position(u))
   const sitesQuery = useServiceQuery(queryKeys.heritage('sites'), (u) => heritageService.sites(u))
@@ -159,53 +156,89 @@ export function HeritageTourismPage(): React.JSX.Element {
       <DemonstrationNotice />
 
       <MetricGrid columns={5}>
-        <MetricCard label={t('Sites on register')} value={position?.sitesOnRegister ?? 0} icon={<Landmark className="h-4 w-4" />} />
-        <MetricCard label={t('Grade I structures')} value={position?.gradeICount ?? 0} icon={<Landmark className="h-4 w-4" />} />
+        <MetricCard
+          label={t('Sites on register')}
+          value={position?.sitesOnRegister ?? 0}
+          support={t('Notable landmarks profiled individually below')}
+          icon={<Landmark className="h-4 w-4" />}
+          background="red"
+          footer={
+            activeCorporation.id === 'bmc' && activeCorporation.heritageStructuresCount ? (
+              <span className="text-[0.625rem] leading-snug text-ink-400">
+                {t('For context: a compilation of BMC\'s own ward-by-ward heritage lists counts {0} graded structures plus {1} precincts citywide (Grade I: 51, IIA: 282, IIB: 289, III: 606). No single official MCGM document giving this aggregate total was found.', formatNumber(activeCorporation.heritageStructuresCount), activeCorporation.heritagePrecinctsCount ?? '-')}
+              </span>
+            ) : undefined
+          }
+        />
+        <MetricCard label={t('Grade I structures')} value={position?.gradeICount ?? 0} icon={<Landmark className="h-4 w-4" />} background="amber" />
         <MetricCard
           label={t('At risk or encroached')}
           value={position?.atRiskOrEncroached ?? 0}
           icon={<TriangleAlert className="h-4 w-4" />}
           tone={position && position.atRiskOrEncroached > 0 ? 'critical' : 'default'}
+          background="green"
         />
         <MetricCard label={t('Annual footfall')} value={position ? formatCompact(position.annualFootfallTotal) : '-'} icon={<Ticket className="h-4 w-4" />} />
         <MetricCard label={t('Revenue collected')} value={position ? `₹${formatCompact(position.revenueCollectedLakhTotal * 100000)}` : '-'} icon={<Banknote className="h-4 w-4" />} />
-      </MetricGrid>
-
-      <Card flush>
-        <CardHeader
-          bordered
+        <MetricCard
+          label={t('Graded heritage structures (citywide)')}
+          value={position?.heritageStructuresCitywide != null ? formatNumber(position.heritageStructuresCitywide) : '-'}
+          support={t('BMC-wide inventory, not the register above')}
           icon={<Landmark className="h-4 w-4" />}
-          title={t('Heritage & tourism register')}
-          description={t('Every listed structure, precinct, museum and tourism site the Corporation is responsible for or manages.')}
-          actions={
-            <div className="flex flex-wrap items-end gap-2">
-              <div>
-                <Label htmlFor="grade-filter">{t('Grade')}</Label>
-                <Select
-                  id="grade-filter"
-                  value={gradeFilter}
-                  onChange={(e) => setGradeFilter(e.target.value as HeritageGrade | '')}
-                  options={[{ value: '', label: t('All grades') }, ...GRADES.map((g) => ({ value: g, label: HERITAGE_GRADE_LABEL[g] }))]}
-                />
-              </div>
-              <div>
-                <Label htmlFor="heritage-status-filter">{t('Status')}</Label>
-                <Select
-                  id="heritage-status-filter"
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value as ConservationStatus | '')}
-                  options={[{ value: '', label: t('All statuses') }, ...STATUSES.map((s) => ({ value: s, label: CONSERVATION_STATUS_LABEL[s] }))]}
-                />
-              </div>
-            </div>
+          footer={
+            <span className="text-[0.625rem] leading-snug text-ink-400">
+              {t('Third-party compilation of BMC\'s own ward-by-ward heritage lists (updated 2012-2019): 1,271 graded properties (Grade I: 51, IIA: 282, IIB: 289, III: 606) - artdecomumbai.com. No single official MCGM document giving this aggregate was found.')}
+            </span>
           }
         />
+        <MetricCard
+          label={t('Heritage precincts (citywide)')}
+          value={position?.heritagePrecinctsCitywide != null ? formatNumber(position.heritagePrecinctsCitywide) : '-'}
+          icon={<Landmark className="h-4 w-4" />}
+          footer={
+            <span className="text-[0.625rem] leading-snug text-ink-400">
+              {t('44 heritage precincts, per the same ward-by-ward compilation - artdecomumbai.com.')}
+            </span>
+          }
+        />
+      </MetricGrid>
+
+      <GovPanel
+        title={t('Heritage & tourism register')}
+        tone="amber"
+        dense
+        actions={
+          <div className="flex flex-wrap items-end gap-2">
+            <div>
+              <Label htmlFor="grade-filter">{t('Grade')}</Label>
+              <Select
+                id="grade-filter"
+                value={gradeFilter}
+                onChange={(e) => setGradeFilter(e.target.value as HeritageGrade | '')}
+                options={[{ value: '', label: t('All grades') }, ...GRADES.map((g) => ({ value: g, label: HERITAGE_GRADE_LABEL[g] }))]}
+              />
+            </div>
+            <div>
+              <Label htmlFor="heritage-status-filter">{t('Status')}</Label>
+              <Select
+                id="heritage-status-filter"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as ConservationStatus | '')}
+                options={[{ value: '', label: t('All statuses') }, ...STATUSES.map((s) => ({ value: s, label: CONSERVATION_STATUS_LABEL[s] }))]}
+              />
+            </div>
+          </div>
+        }
+      >
+        <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+          {t('Every listed structure, precinct, museum and tourism site the Corporation is responsible for or manages.')}
+        </p>
         {filtered.length === 0 ? (
           <EmptyState title={t('No sites match the current filters')} detail="Clear a filter to widen the register." />
         ) : (
           <DataTable rows={filtered} columns={columns} rowKey={(s) => s.id} pageSize={12} />
         )}
-      </Card>
+      </GovPanel>
     </PageBody>
   )
 }

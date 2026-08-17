@@ -1,10 +1,9 @@
 import { useState } from 'react'
-import { CheckCircle2, KeyRound, Layers, ShieldQuestion, XCircle } from 'lucide-react'
+import { CheckCircle2, XCircle } from 'lucide-react'
 import { PageBody, PageHeader, SplitLayout } from '@/components/layout/PageHeader'
 import { Badge, ClassificationBadge } from '@/components/ui/badges'
 import {
   Card,
-  CardHeader,
   DefinitionList,
   DefinitionRow,
   Divider,
@@ -14,6 +13,7 @@ import {
 } from '@/components/ui/primitives'
 import { DataTable, type Column } from '@/components/ui/DataTable'
 import { DemonstrationNotice, EmptyState, ErrorState, LoadingState } from '@/components/ui/states'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { useServiceQuery } from '@/hooks'
 import { authService, wardService } from '@/services'
 import {
@@ -133,10 +133,7 @@ export function AccessGovernancePage(): React.JSX.Element {
   const [selectedRoleId, setSelectedRoleId] = useState<string>(ROLES_ORDERED[0]?.id ?? '')
 
   // The shell's masthead carries the screen's name; the page states the wording.
-  usePageMasthead(
-    t('Access Governance'),
-    t('Every read and write in this platform resolves through one permission engine - role-based grants combined with ward, department, domain and classification attributes. This page renders the role catalogue exactly as configured and calls that same engine live, so the decision shown below is the decision the platform itself would make.'),
-  )
+  usePageMasthead(t('Access Governance'))
 
   const profilesQuery = useServiceQuery(['trust-access-governance', 'demo-profiles'], () =>
     authService.listDemoProfiles(),
@@ -206,13 +203,10 @@ export function AccessGovernancePage(): React.JSX.Element {
           produced it without leaving the row. */}
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
         <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
-      <Card flush>
-        <CardHeader
-          className="p-4"
-          icon={<KeyRound className="h-4 w-4" />}
-          title={t('Role catalogue')}
-          description={t('Every institutional role, ordered by seniority band then classification ceiling.')}
-        />
+      <GovPanel title={t('Role catalogue')} tone="amber" dense>
+        <p className="px-4 pt-4 pb-3 text-xs leading-relaxed text-ink-500">
+          {t('Every institutional role, ordered by seniority band then classification ceiling.')}
+        </p>
         <SplitLayout
           className="px-4 pb-4"
           asideWidth="lg"
@@ -266,14 +260,12 @@ export function AccessGovernancePage(): React.JSX.Element {
             )
           }
         />
-      </Card>
+      </GovPanel>
 
-      <Card>
-        <CardHeader
-          icon={<Layers className="h-4 w-4" />}
-          title={t('Permission matrix - roles × resources')}
-          description={t('Each cell lists the action initials the role holds on that resource (V=View, C=Create, E=Edit, Ap=Approve, As=Assign, Es=Escalate, X=Export, Ad=Administer). A dash means the role holds no grant at all on that resource.')}
-        />
+      <GovPanel title={t('Permission matrix - roles × resources')} tone="red">
+        <p className="mb-3 text-xs leading-relaxed text-ink-500">
+          {t('Each cell lists the action initials the role holds on that resource (V=View, C=Create, E=Edit, Ap=Approve, As=Assign, Es=Escalate, X=Export, Ad=Administer). A dash means the role holds no grant at all on that resource.')}
+        </p>
         <div className="scrollbar-slim mt-3 max-h-[520px] overflow-auto rounded-md border border-ink-100">
           <table className="w-full border-separate border-spacing-0 text-left">
             <thead>
@@ -328,16 +320,14 @@ export function AccessGovernancePage(): React.JSX.Element {
         <p className="mt-2 text-[0.6875rem] text-ink-400">
           {t('Column key: {0}', ROLES_ORDERED.map((r) => `${roleAbbreviation(r)}=${r.name}`).join(' · '))}
         </p>
-      </Card>
+      </GovPanel>
         </div>
 
         <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
-      <Card tone="info">
-        <CardHeader
-          icon={<ShieldQuestion className="h-4 w-4" />}
-          title={t('Live permission engine tester')}
-          description={t('Selects a principal, a resource and an action, evaluates the request through the real canAccess engine and shows the resulting decision, reason and basis. No record is read or written and no audit event is produced.')}
-        />
+      <GovPanel title={t('Live permission engine tester')} tone="amber">
+        <p className="mb-3 text-xs leading-relaxed text-ink-500">
+          {t('Selects a principal, a resource and an action, evaluates the request through the real canAccess engine and shows the resulting decision, reason and basis. No record is read or written and no audit event is produced.')}
+        </p>
 
         {/* Two selects abreast at most — the tester now stands in a narrow
             column, and a four-across form there would truncate every label. */}
@@ -480,7 +470,7 @@ export function AccessGovernancePage(): React.JSX.Element {
             </Card>
           ) : null}
         </div>
-      </Card>
+      </GovPanel>
         </div>
       </div>
 

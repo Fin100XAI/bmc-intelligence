@@ -1,10 +1,9 @@
 import { useState } from 'react'
-import { Activity, AlertTriangle, Bug, Droplets, Hospital as HospitalIcon, ShieldCheck } from 'lucide-react'
+import { AlertTriangle, ShieldCheck } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import {
   Badge,
   Card,
-  CardHeader,
   ConfidenceBadge,
   DataTable,
   DemonstrationNotice,
@@ -20,6 +19,7 @@ import {
 import { TrendBadge } from '@/components/ui/badges'
 import { MetricCard } from '@/components/cards'
 import { AlertCard } from '@/components/cards/domain-cards'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { ChartFrame, HeatmapMatrix, RankedBarChart, CompositionBar } from '@/components/charts'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
@@ -113,10 +113,7 @@ export function PublicHealthPage(): React.JSX.Element {
   const corporation = useActiveCorporation()
   const [focusedId, setFocusedId] = useState<string | null>(null)
 
-  usePageMasthead(
-    t('{0} Public Health Intelligence', corporation.city),
-    t('Aggregate disease surveillance across dengue, malaria, leptospirosis, gastroenteritis, hepatitis, respiratory illness and chikungunya, read alongside hospital utilisation and environmental correlates. These are aggregate ward-level indicators; no patient-level record exists anywhere in the platform.'),
-  )
+  usePageMasthead(t('{0} Public Health Intelligence', corporation.city))
 
   const indicatorsQuery = useServiceQuery(queryKeys.health('indicators'), (u) => healthService.indicators(u))
   const outbreakQuery = useServiceQuery(queryKeys.health('outbreak-signals'), (u) => healthService.outbreakSignals(u))
@@ -143,6 +140,37 @@ export function PublicHealthPage(): React.JSX.Element {
         eyebrow={t('City Intelligence')}
         breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Public Health') }]}
       />
+
+      {/* --- Primary care network headline counts ------------------------ */}
+      {hospitalsQuery.data ? (
+        (() => {
+          const hospitals = hospitalsQuery.data
+          const dispensaries = hospitals.filter((h) => h.type === 'dispensary').length
+          const maternityHomes = hospitals.filter((h) => h.type === 'maternity').length
+          return (
+            <MetricGrid columns={3}>
+              <MetricCard
+                label={t('Health posts')}
+                value={corporation.healthPostsCount ?? 0}
+                background="red"
+                footer={<span className="text-[0.625rem] leading-snug text-ink-400">{t("BMC's Public Health Department reports 212 health posts citywide (Aug 2025) — shown here as published, not modelled.")}</span>}
+              />
+              <MetricCard
+                label={t('Dispensaries')}
+                value={dispensaries}
+                background="amber"
+                footer={<span className="text-[0.625rem] leading-snug text-ink-400">{t("BMC's Public Health Department reports 192 dispensaries citywide (Aug 2025); this register is anchored to that count.")}</span>}
+              />
+              <MetricCard
+                label={t('Maternity homes')}
+                value={maternityHomes}
+                background="green"
+                footer={<span className="text-[0.625rem] leading-snug text-ink-400">{t("BMC's Public Health Department reports 30 maternity homes citywide (Aug 2025); this register is anchored to that count.")}</span>}
+              />
+            </MetricGrid>
+          )
+        })()
+      ) : null}
 
       {/* Two columns, read downward. The surveillance record — the condition
           summary, the ward-by-condition matrix, the ranked signals and the
@@ -181,10 +209,12 @@ export function PublicHealthPage(): React.JSX.Element {
           ]
 
           return (
-            <Card flush>
-              <CardHeader className="px-4 pt-4 pb-3" icon={<Activity className="h-4 w-4" />} title={t('Disease indicator summary')} description={t('Aggregate reported cases by condition, current reporting period vs previous, across all wards.')} />
+            <GovPanel title={t('Disease indicator summary')} tone="amber" dense>
+              <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+                {t('Aggregate reported cases by condition, current reporting period vs previous, across all wards.')}
+              </p>
               <DataTable rows={summary} columns={columns} rowKey={(r) => r.disease} searchable={false} dense ariaLabel="Disease indicator summary" />
-            </Card>
+            </GovPanel>
           )
         })()
       )}
@@ -201,12 +231,11 @@ export function PublicHealthPage(): React.JSX.Element {
           const focused = indicators.find((h) => h.id === focusedId) ?? outbreakQuery.data?.[0] ?? null
 
           return (
-            <Card>
-              <CardHeader
-                title={t('Ward × disease outbreak signal')}
-                description={t('Click a cell to inspect a specific ward and condition. Colour reflects the modelled 0–100 outbreak signal, not a confirmed outbreak.')}
-              />
-              <div className="mt-3 grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]">
+            <GovPanel title={t('Ward × disease outbreak signal')} tone="red">
+              <p className="mb-3 text-xs leading-relaxed text-ink-500">
+                {t('Click a cell to inspect a specific ward and condition. Colour reflects the modelled 0–100 outbreak signal, not a confirmed outbreak.')}
+              </p>
+              <div className="grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]">
                 <div className="min-w-0" style={{ height: 460 }}>
                   <HeatmapMatrix
                     rows={WARDS.map((w) => ({ id: w.id, label: w.code }))}
@@ -263,7 +292,7 @@ export function PublicHealthPage(): React.JSX.Element {
                   )}
                 </div>
               </div>
-            </Card>
+            </GovPanel>
           )
         })()
       ) : null}
@@ -278,10 +307,9 @@ export function PublicHealthPage(): React.JSX.Element {
           const signals = outbreakQuery.data ?? []
           if (signals.length === 0) {
             return (
-              <Card>
-                <CardHeader title={t('Outbreak signal ranking')} />
+              <GovPanel title={t('Outbreak signal ranking')} tone="amber">
                 <EmptyState compact title={t('No elevated signals')} detail="No ward × condition combination currently reaches the 50/100 outbreak signal threshold." />
-              </Card>
+              </GovPanel>
             )
           }
           const columns: Array<Column<HealthIndicator>> = [
@@ -294,9 +322,11 @@ export function PublicHealthPage(): React.JSX.Element {
             { id: 'severity', header: t('Severity'), cell: (r) => <SeverityBadge severity={r.severity} />, sortValue: (r) => r.severity },
           ]
           return (
-            <Card flush>
-              <CardHeader className="px-4 pt-4" title={t('Outbreak signal ranking')} description={t('Every ward × condition combination at or above a 50/100 modelled outbreak signal, ranked by strength. This is a modelled signal for prioritising field verification, not a confirmed outbreak declaration.')} />
-              <div className="px-4 pt-2" style={{ height: 260 }}>
+            <GovPanel title={t('Outbreak signal ranking')} tone="amber" dense>
+              <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+                {t('Every ward × condition combination at or above a 50/100 modelled outbreak signal, ranked by strength. This is a modelled signal for prioritising field verification, not a confirmed outbreak declaration.')}
+              </p>
+              <div className="px-3 pt-2" style={{ height: 260 }}>
                 <ChartFrame title={t('Top signals')} unit={t('0–100 index')} timeframe="Current reporting period" height={230}>
                   <RankedBarChart
                     data={signals.slice(0, 12).map((h) => ({ label: `${wardShortName(h.wardId)} · ${DISEASE_SHORT_LABEL[h.disease]}`, value: h.outbreakSignal }))}
@@ -315,7 +345,7 @@ export function PublicHealthPage(): React.JSX.Element {
                   ariaLabel="Outbreak signal ranking"
                 />
               </div>
-            </Card>
+            </GovPanel>
           )
         })()
       )}
@@ -329,18 +359,20 @@ export function PublicHealthPage(): React.JSX.Element {
         (() => {
           const alerts = alertsQuery.data?.items ?? []
           return (
-            <Card flush>
-              <CardHeader className="px-4 pt-4 pb-3" title={t('Health alerts')} description={t('Open operational alerts raised against the public health domain.')} />
+            <GovPanel title={t('Health alerts')} tone="green" dense>
+              <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+                {t('Open operational alerts raised against the public health domain.')}
+              </p>
               {alerts.length === 0 ? (
-                <EmptyState compact className="mx-4 mb-4" title={t('No open health alerts')} detail="No alert is currently open against the public health domain." />
+                <EmptyState compact className="mx-3 mb-3" title={t('No open health alerts')} detail="No alert is currently open against the public health domain." />
               ) : (
-                <div className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 2xl:grid-cols-3">
+                <div className="grid grid-cols-1 gap-3 p-3 sm:grid-cols-2 2xl:grid-cols-3">
                   {alerts.map((alert) => (
                     <AlertCard key={alert.id} alert={alert} onClick={() => openDrawer({ kind: 'alert', id: alert.id })} />
                   ))}
                 </div>
               )}
-            </Card>
+            </GovPanel>
           )
         })()
       )}
@@ -365,22 +397,35 @@ export function PublicHealthPage(): React.JSX.Element {
           const icuOccupied = hospitals.reduce((s, h) => s + h.icuOccupied, 0)
           const icuOccupancyPct = icuTotal > 0 ? Math.round((icuOccupied / icuTotal) * 1000) / 10 : 0
           const highLoad = hospitals.filter((h) => h.emergencyLoadIndex >= 80).length
+          const isBmc = corporation.id === 'bmc'
 
           return (
-            <Card>
-              <CardHeader
-                icon={<HospitalIcon className="h-4 w-4" />}
-                title={t('Hospital utilisation summary')}
-                description={t('City-wide capacity position across major, peripheral, maternity and dispensary facilities.')}
-                actions={<LinkButton to={ROUTES.hospitals} size="xs" variant="outline">{t('Open Hospital Intelligence')}</LinkButton>}
-              />
-              <MetricGrid columns={2} className="mt-3">
-                <MetricCard label={t('Functional beds')} value={formatCompact(totalBeds)} support={`${hospitals.length} facilities`} />
+            <GovPanel
+              title={t('Hospital utilisation summary')}
+              tone="amber"
+              actions={<LinkButton to={ROUTES.hospitals} size="xs" variant="outline">{t('Open Hospital Intelligence')}</LinkButton>}
+            >
+              <p className="mb-3 text-xs leading-relaxed text-ink-500">
+                {t('City-wide capacity position across major, peripheral, maternity and dispensary facilities.')}
+              </p>
+              <MetricGrid columns={2}>
+                <MetricCard
+                  label={t('Functional beds')}
+                  value={formatCompact(totalBeds)}
+                  support={`${hospitals.length} facilities`}
+                  footer={
+                    isBmc && corporation.majorHospitalsCount ? (
+                      <span className="text-[0.625rem] leading-snug text-ink-400">
+                        {t('For context: BMC\'s own network runs {0} specialised major hospitals, {1} health posts, {2} dispensaries and {3} maternity homes.', corporation.majorHospitalsCount, corporation.healthPostsCount ?? '-', corporation.dispensariesCount ?? '-', corporation.maternityHomesCount ?? '-')}
+                      </span>
+                    ) : undefined
+                  }
+                />
                 <MetricCard label={t('Bed occupancy')} value={formatPercent(occupancyPct)} tone={occupancyPct >= 90 ? 'critical' : occupancyPct >= 78 ? 'warn' : 'default'} />
                 <MetricCard label={t('ICU occupancy')} value={formatPercent(icuOccupancyPct)} support={t('{0} of {1} beds', icuOccupied, icuTotal)} tone={icuOccupancyPct >= 92 ? 'critical' : icuOccupancyPct >= 80 ? 'warn' : 'default'} />
                 <MetricCard label={t('Facilities at high emergency load')} value={highLoad} support={t('Emergency load index ≥ 80')} tone={highLoad > 0 ? 'warn' : 'default'} />
               </MetricGrid>
-            </Card>
+            </GovPanel>
           )
         })()
       )}
@@ -401,9 +446,11 @@ export function PublicHealthPage(): React.JSX.Element {
           ).size
 
           return (
-            <Card>
-              <CardHeader icon={<Bug className="h-4 w-4" />} title={t('Vector-borne risk - monsoon season framing')} description={t('Dengue, malaria and chikungunya are mosquito-borne conditions whose breeding conditions are seasonally associated with standing water during the monsoon. This is a seasonal association, not a forecast of any individual outbreak.')} />
-              <div className="mt-3 grid grid-cols-1 gap-4">
+            <GovPanel title={t('Vector-borne risk - monsoon season framing')} tone="red">
+              <p className="mb-3 text-xs leading-relaxed text-ink-500">
+                {t('Dengue, malaria and chikungunya are mosquito-borne conditions whose breeding conditions are seasonally associated with standing water during the monsoon. This is a seasonal association, not a forecast of any individual outbreak.')}
+              </p>
+              <div className="grid grid-cols-1 gap-4">
                 <MetricGrid columns={2}>
                   <MetricCard label={t('Vector-borne cases, this period')} value={formatCompact(vectorCases)} support={t('Dengue + malaria + chikungunya')} origin="demonstration" />
                   <MetricCard label={t('Average outbreak signal')} value={vectorAvgSignal} unit="/100" tone={vectorAvgSignal >= 50 ? 'warn' : 'default'} support={t('Across vector-borne conditions')} />
@@ -427,7 +474,7 @@ export function PublicHealthPage(): React.JSX.Element {
               <p className="mt-3 border-t border-ink-100 pt-2.5 text-[0.6875rem] leading-relaxed text-ink-400">
                 {t('Wards flagged here are flood-prone wards that also carry an elevated vector-borne outbreak signal in the same period. The co-occurrence is presented as an observed association to inform vector-control prioritisation during the monsoon season; it is not a determination that flooding caused any specific case.')}
               </p>
-            </Card>
+            </GovPanel>
           )
         })()
       ) : null}
@@ -443,9 +490,11 @@ export function PublicHealthPage(): React.JSX.Element {
           const rows = Array.from(counts.entries()).sort((a, b) => b[1] - a[1])
 
           return (
-            <Card>
-              <CardHeader icon={<Droplets className="h-4 w-4" />} title={t('Sanitation and environmental correlates')} description={t('Conditions observed alongside elevated outbreak signals in the same ward and period.')} />
-              <div className="mt-2 flex items-start gap-2 rounded-md border border-warn-200 bg-warn-50/70 px-3 py-2">
+            <GovPanel title={t('Sanitation and environmental correlates')} tone="amber">
+              <p className="mb-2 text-xs leading-relaxed text-ink-500">
+                {t('Conditions observed alongside elevated outbreak signals in the same ward and period.')}
+              </p>
+              <div className="flex items-start gap-2 rounded-md border border-warn-200 bg-warn-50/70 px-3 py-2">
                 <AlertTriangle className="mt-px h-3.5 w-3.5 shrink-0 text-warn-700" aria-hidden />
                 <p className="text-xs leading-relaxed text-warn-700">
                   <span className="font-semibold">{t('Correlation does not establish causation.')}</span>{' '}{t('The observations below are co-occurrences recorded in the same ward and reporting period as an elevated outbreak signal. They are presented to inform field verification and are not a determination of cause.')}
@@ -463,7 +512,7 @@ export function PublicHealthPage(): React.JSX.Element {
                   ))}
                 </ul>
               )}
-            </Card>
+            </GovPanel>
           )
         })()
       ) : null}

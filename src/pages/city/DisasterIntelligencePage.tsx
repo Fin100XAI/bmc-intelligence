@@ -14,8 +14,6 @@ import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import {
   Badge,
   Button,
-  Card,
-  CardHeader,
   DataTable,
   DemonstrationNotice,
   EmptyState,
@@ -35,12 +33,14 @@ import {
 } from '@/components/ui'
 import { MetricCard } from '@/components/cards'
 import { IncidentCard } from '@/components/cards/domain-cards'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { CityMap, jitteredWardPoint, type MapMarker } from '@/components/map/CityMap'
 import { FilterBar } from '@/components/filters/FilterBar'
 import { useServiceQuery, useServiceAction } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { incidentService, type IncidentCreateInput } from '@/services/incident.service'
 import { useCurrentUser } from '@/stores/auth.store'
+import { useActiveCorporation } from '@/stores/corporation.store'
 import { useDrawerStore, useFilterStore } from '@/stores/ui.store'
 import { usePageMasthead } from '@/stores/masthead.store'
 import { allowed } from '@/security'
@@ -138,14 +138,12 @@ const EMPTY_FORM: CreateFormState = {
 
 export function DisasterIntelligencePage(): React.JSX.Element {
   const user = useCurrentUser()
+  const activeCorporation = useActiveCorporation()
   const openDrawer = useDrawerStore((s) => s.open)
   const filters = useFilterStore((s) => s.filters)
   const [searchParams, setSearchParams] = useSearchParams()
 
-  usePageMasthead(
-    t('Disaster Intelligence - Unified Incident Register'),
-    t('Every flood, fire, structural, infrastructure, weather, public health, road and utility incident recorded by the platform, in one register. Each record carries a declared lifecycle, a named accountable owner and an evidence trail from detection through to post-incident review.'),
-  )
+  usePageMasthead(t('Disaster Intelligence - Unified Incident Register'))
 
   const [view, setView] = useState<'table' | 'cards'>('table')
   const [statusTab, setStatusTab] = useState<'all' | IncidentStatus>('all')
@@ -427,14 +425,11 @@ export function DisasterIntelligencePage(): React.JSX.Element {
         }
       />
 
-      <Card flush>
-        <CardHeader
-          className="px-4 pt-4"
-          eyebrow={t('Institutional methodology')}
-          title={t('Incident lifecycle')}
-          description={t('Every incident in this register is expected to move through these stages. Counts below reflect incidents currently at that stage; connective stages have no discrete status of their own.')}
-        />
-        <div className="scrollbar-slim flex items-stretch gap-0 overflow-x-auto px-4 pb-4">
+      <GovPanel title={t('Incident lifecycle')} subtitle={t('Institutional methodology')} tone="amber" dense>
+        <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+          {t('Every incident in this register is expected to move through these stages. Counts below reflect incidents currently at that stage; connective stages have no discrete status of their own.')}
+        </p>
+        <div className="scrollbar-slim flex items-stretch gap-0 overflow-x-auto px-3 pb-3">
           {WORKFLOW_STAGES.map((stage, i) => {
             const count = stage.countKey?.reduce((sum, s) => sum + countsByStatus[s], 0)
             return (
@@ -457,7 +452,7 @@ export function DisasterIntelligencePage(): React.JSX.Element {
             )
           })}
         </div>
-      </Card>
+      </GovPanel>
 
       <MetricGrid columns={4}>
         <MetricCard label={t('Open incidents')} value={openIncidents.length} support={t('Not yet resolved or reviewed')} icon={<ShieldAlert className="h-4 w-4" />} />
@@ -487,26 +482,26 @@ export function DisasterIntelligencePage(): React.JSX.Element {
           full-width map pushed the register itself below the fold. */}
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
         <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
-      <Card flush>
-        <CardHeader
-          className="px-4 pt-4 pb-3"
-          title={t('Incident register')}
-          actions={
-            <SegmentedControl
-              value={view}
-              onChange={setView}
-              ariaLabel="View mode"
-              options={[
-                { value: 'table', label: t('Table'), icon: <ListChecks className="h-3.5 w-3.5" /> },
-                { value: 'cards', label: t('Cards'), icon: <LayoutGrid className="h-3.5 w-3.5" /> },
-              ]}
-            />
-          }
-        />
-        <div className="border-b border-ink-100 px-4 pb-3">
+      <GovPanel
+        title={t('Incident register')}
+        tone="amber"
+        dense
+        actions={
+          <SegmentedControl
+            value={view}
+            onChange={setView}
+            ariaLabel="View mode"
+            options={[
+              { value: 'table', label: t('Table'), icon: <ListChecks className="h-3.5 w-3.5" /> },
+              { value: 'cards', label: t('Cards'), icon: <LayoutGrid className="h-3.5 w-3.5" /> },
+            ]}
+          />
+        }
+      >
+        <div className="border-b border-ink-100 px-3 pt-3 pb-3">
           <Tabs items={tabItems} value={statusTab} onChange={(id) => setStatusTab(id as 'all' | IncidentStatus)} />
         </div>
-        <div className="flex flex-wrap items-center gap-2 px-4 pt-3">
+        <div className="flex flex-wrap items-center gap-2 px-3 pt-3">
           <FilterBar show={['ward', 'severity', 'search']} searchPlaceholder="Search title, description or location" compact />
           <div className="flex items-center gap-1.5">
             <Label className="mb-0 whitespace-nowrap">{t('Type')}</Label>
@@ -527,13 +522,13 @@ export function DisasterIntelligencePage(): React.JSX.Element {
              which is indistinguishable from a filter that did not apply. */
           selectedWard ? (
             <EmptyState
-              className="m-4"
+              className="m-3"
               title={t('No incident on record in {0}', wardName(selectedWard.id))}
               detail={t('{0} is {1} and carries {2} known waterlogging points. Nothing is currently open here; the corporation is carrying {3} open incidents elsewhere.', wardName(selectedWard.id), selectedWard.floodProne ? t('flood-prone') : t('not classified as flood-prone'), selectedWard.waterloggingSpots, items.filter((i) => i.status !== 'resolved' && i.status !== 'reviewed').length)}
             />
           ) : (
             <EmptyState
-              className="m-4"
+              className="m-3"
               title={t('No incidents match the current filters')}
               detail="Adjust the status tab, type, ward, severity or search term above to widen the result set."
             />
@@ -554,35 +549,51 @@ export function DisasterIntelligencePage(): React.JSX.Element {
             />
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 2xl:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 p-3 sm:grid-cols-2 2xl:grid-cols-3">
             {filtered.map((incident) => (
               <IncidentCard key={incident.id} incident={incident} onClick={() => openDrawer({ kind: 'incident', id: incident.id })} />
             ))}
           </div>
         )}
-      </Card>
+      </GovPanel>
         </div>
 
         <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
-          <Card>
-            <CardHeader title={t('Incident map')} description={t('Markers reflect the incidents currently visible under the filters below; ward shading reflects the full open-incident register.')} />
-            <div className="mt-3">
-              <CityMap
-                layers={[
-                  {
-                    id: 'open-load',
-                    label: t('Open Incident Load'),
-                    valueFor: (wardId) => Math.min(100, (openLoadByWard.get(wardId) ?? 0) * 20),
-                    higherIsWorse: true,
-                    unit: ' open incident(s), scaled',
-                    description: t('Count of currently open incidents recorded against the ward across the full register, independent of the filters applied below.'),
-                  },
-                ]}
-                markers={markers}
-                height={380}
-              />
-            </div>
-          </Card>
+          <GovPanel title={t('Incident map')} tone="red">
+            <p className="mb-3 text-xs leading-relaxed text-ink-500">
+              {t('Markers reflect the incidents currently visible under the filters below; ward shading reflects the full open-incident register.')}
+            </p>
+            <CityMap
+              layers={[
+                {
+                  id: 'open-load',
+                  label: t('Open Incident Load'),
+                  valueFor: (wardId) => Math.min(100, (openLoadByWard.get(wardId) ?? 0) * 20),
+                  higherIsWorse: true,
+                  unit: ' open incident(s), scaled',
+                  description: t('Count of currently open incidents recorded against the ward across the full register, independent of the filters applied below.'),
+                },
+              ]}
+              markers={markers}
+              height={380}
+            />
+          </GovPanel>
+
+          <GovPanel title={t('Known chronic waterlogging locations')} tone="amber">
+            <p className="mb-3 text-xs leading-relaxed text-ink-500">
+              {t("Named repeatedly across years of BMC monsoon reporting as the city's chronic waterlogging spots — a standing, publicly documented list, distinct from the incident register's live operational entries at left.")}
+            </p>
+            <ul className="flex flex-wrap gap-1.5">
+              {activeCorporation.form.floodProneAreas.map((area) => (
+                <li key={area}>
+                  <Badge tone="critical">{area}</Badge>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-3 text-[0.625rem] leading-snug text-ink-400">
+              {t("Hindmata sits in a natural depression and floods almost every monsoon; Sion and King's Circle flooding is tied to Mithi River overflow — named repeatedly in BMC Commissioner pre-monsoon inspection reporting, not a modelled figure.")}
+            </p>
+          </GovPanel>
         </div>
       </div>
 

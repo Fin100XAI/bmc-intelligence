@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { FileSpreadsheet, ListChecks, Target } from 'lucide-react'
+import { ListChecks, Target } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { useServiceAction, useServiceQuery } from '@/hooks'
 import { usePageMasthead } from '@/stores/masthead.store'
@@ -13,8 +13,6 @@ import type { PilotMetrics, StatutoryReturn, StatutoryReturnLine } from '@/types
 import {
   Badge,
   Button,
-  Card,
-  CardHeader,
   DataTable,
   DefinitionList,
   DefinitionRow,
@@ -28,6 +26,7 @@ import {
   Select,
   type Column,
 } from '@/components/ui'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { MetricCard } from '@/components/cards'
 import { t } from '@/i18n'
 
@@ -70,10 +69,7 @@ const generateReturn = (user: User) => reconciliationService.statutoryReturn(use
 
 export function RecoveryPilotPage(): React.JSX.Element {
   // The shell's masthead carries the screen's name; the page states the wording.
-  usePageMasthead(
-    t('Recovery Pilot & Statutory Return'),
-    t('Scope a single-ward recovery pilot on four measurable outputs, and generate the property tax return a corporation has to file against Finance Commission grant conditions. A pilot at this size sits inside the Commissioner\'s own administrative approval limit and produces the number that funds anything larger.'),
-  )
+  usePageMasthead(t('Recovery Pilot & Statutory Return'))
 
   const [wardId, setWardId] = useState<string>('')
   const [statutory, setStatutory] = useState<StatutoryReturn | null>(null)
@@ -216,13 +212,11 @@ export function RecoveryPilotPage(): React.JSX.Element {
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
         <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
       {pilot ? (
-        <Card tone="default">
-          <CardHeader
-            icon={<Target className="h-4 w-4" />}
-            title={t('Pilot scorecard - {0}', pilot.wardLabel)}
-            description={t('One ward, one revenue stream, ninety days. These four measures are the whole of the scorecard: a pilot that reports twelve numbers reports none of them.')}
-          />
-          <MetricGrid columns={4} className="mt-4">
+        <GovPanel title={t('Pilot scorecard - {0}', pilot.wardLabel)} tone="amber">
+          <p className="mb-3 text-xs leading-relaxed text-ink-500">
+            {t('One ward, one revenue stream, ninety days. These four measures are the whole of the scorecard: a pilot that reports twelve numbers reports none of them.')}
+          </p>
+          <MetricGrid columns={4}>
             <MetricCard
               label={t('Candidates raised')}
               value={formatNumber(pilot.raised)}
@@ -252,16 +246,14 @@ export function RecoveryPilotPage(): React.JSX.Element {
           <p className="mt-4 text-[0.6875rem] leading-relaxed text-ink-500">
             {t('Indicative annual value is a modelled estimate used to prioritise the queue. It is not an amount owed by anybody. Only the revised and collected figures represent demand actually raised by a named officer through the statutory assessment process.')}
           </p>
-        </Card>
+        </GovPanel>
       ) : null}
 
       {candidates.length > 0 ? (
-        <Card flush>
-          <CardHeader
-            bordered
-            title={t('Where a pilot would find the most')}
-            description={t('Every ward carrying a review candidate, ranked by indicative annual value. Row click scopes the scorecard above.')}
-          />
+        <GovPanel title={t('Where a pilot would find the most')} tone="red" dense>
+          <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+            {t('Every ward carrying a review candidate, ranked by indicative annual value. Row click scopes the scorecard above.')}
+          </p>
           <DataTable
             rows={candidates}
             columns={wardColumns}
@@ -274,24 +266,25 @@ export function RecoveryPilotPage(): React.JSX.Element {
             initialSort={{ columnId: 'indicative', direction: 'desc' }}
             ariaLabel="Pilot ward ranking"
           />
-        </Card>
+        </GovPanel>
       ) : null}
         </div>
 
         <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
       {/* --- Statutory return ------------------------------------------- */}
-      <Card flush>
-        <CardHeader
-          bordered
-          icon={<FileSpreadsheet className="h-4 w-4" />}
-          title={t('Property tax reform and collection return')}
-          description={t('Central Finance Commission grants to urban local bodies have carried entry conditions tied to property tax - published accounts, notified floor rates and demonstrated growth in collection. Generating the return is an audited export, not a page view, so it is produced on an explicit action.')}
-          actions={
-            <Button size="sm" variant="primary" onClick={() => void runGenerate()} disabled={generating}>
-              {generating ? 'Generating…' : 'Generate the return'}
-            </Button>
-          }
-        />
+      <GovPanel
+        title={t('Property tax reform and collection return')}
+        tone="amber"
+        dense
+        actions={
+          <Button size="sm" variant="primary" onClick={() => void runGenerate()} disabled={generating}>
+            {generating ? 'Generating…' : 'Generate the return'}
+          </Button>
+        }
+      >
+        <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+          {t('Central Finance Commission grants to urban local bodies have carried entry conditions tied to property tax - published accounts, notified floor rates and demonstrated growth in collection. Generating the return is an audited export, not a page view, so it is produced on an explicit action.')}
+        </p>
 
         {returnError ? (
           <div className="p-4">
@@ -331,7 +324,7 @@ export function RecoveryPilotPage(): React.JSX.Element {
             </div>
           </div>
         ) : null}
-      </Card>
+      </GovPanel>
         </div>
       </div>
 

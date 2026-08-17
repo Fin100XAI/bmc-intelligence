@@ -4,7 +4,6 @@ import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import {
   Badge,
   Card,
-  CardHeader,
   DataTable,
   DemonstrationNotice,
   EmptyState,
@@ -15,6 +14,7 @@ import {
   type Column,
 } from '@/components/ui'
 import { MetricCard } from '@/components/cards'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { CategoryBarChart, DonutChart, CHART_COLOURS, RankedBarChart } from '@/components/charts'
 import { FilterBar } from '@/components/filters/FilterBar'
 import { useServiceQuery } from '@/hooks'
@@ -65,10 +65,7 @@ const MEDIUM_COLOUR: Record<SchoolMedium, string> = {
 export function EducationIntelligencePage(): React.JSX.Element {
   const filters = useFilterStore((s) => s.filters)
 
-  usePageMasthead(
-    t('Education Intelligence'),
-    t('The corporation\'s own schools - enrolment, the teaching establishment against sanctioned strength, and the condition of the buildings children are taught in.'),
-  )
+  usePageMasthead(t('Education Intelligence'))
 
   const schoolsQuery = useServiceQuery(queryKeys.education('schools'), (u) => educationService.schools(u))
   const wardQuery = useServiceQuery(queryKeys.education('wards'), (u) => educationService.wardSummary(u))
@@ -194,8 +191,23 @@ export function EducationIntelligencePage(): React.JSX.Element {
       <FilterBar show={['ward', 'search']} searchPlaceholder="Search schools" />
 
       <MetricGrid columns={4}>
-        <MetricCard label={t('Schools')} value={filtered.length} support={t('across {0} wards', wardRows.length)} icon={<School className="h-4 w-4" />} origin="demonstration" />
-        <MetricCard label={t('Enrolment')} value={formatNumber(enrolment)} support={t('Children on the roll')} icon={<GraduationCap className="h-4 w-4" />} />
+        <MetricCard
+          label={t('Schools')}
+          value={filtered.length}
+          support={t('across {0} wards', wardRows.length)}
+          icon={<School className="h-4 w-4" />}
+          origin="demonstration"
+          background="red"
+          footer={<span className="text-[0.625rem] leading-snug text-ink-400">{t("BMC's Education Department reports 1,135 municipal schools citywide (bmceducation.in, undated); this register is anchored to that count.")}</span>}
+        />
+        <MetricCard
+          label={t('Enrolment')}
+          value={formatNumber(enrolment)}
+          support={t('Children on the roll')}
+          icon={<GraduationCap className="h-4 w-4" />}
+          background="amber"
+          footer={<span className="text-[0.625rem] leading-snug text-ink-400">{t("BMC's Education Department reports approximately 2.93 lakh (293,000) students enrolled citywide (bmceducation.in, undated); enrolment above is scaled to that total.")}</span>}
+        />
         <MetricCard
           label={t('Teacher vacancy')}
           value={vacancyPct}
@@ -203,6 +215,7 @@ export function EducationIntelligencePage(): React.JSX.Element {
           support={t('{0} of {1} sanctioned posts unfilled', formatNumber(sanctioned - inPosition), formatNumber(sanctioned))}
           tone={vacancyPct > 20 ? 'critical' : vacancyPct > 10 ? 'warn' : 'positive'}
           icon={<UserRoundX className="h-4 w-4" />}
+          background="green"
         />
         <MetricCard
           label={t('Buildings below threshold')}
@@ -219,34 +232,28 @@ export function EducationIntelligencePage(): React.JSX.Element {
           down the narrower column beside them. */}
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
         <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
-          <Card flush>
-            <CardHeader
-              bordered
-              icon={<School className="h-4 w-4" />}
-              title={t('School register')}
-              description={t('Every municipal school within your authorised ward scope.')}
-            />
+          <GovPanel title={t('School register')} tone="amber" dense>
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+              {t('Every municipal school within your authorised ward scope.')}
+            </p>
             {filtered.length === 0 ? (
               <EmptyState title={t('No schools match the current filters')} detail="Clear a filter to widen the register." />
             ) : (
               <DataTable rows={filtered} columns={columns} rowKey={(r) => r.id} pageSize={15} />
             )}
-          </Card>
+          </GovPanel>
 
-          <Card flush>
-            <CardHeader
-              bordered
-              icon={<UserRoundX className="h-4 w-4" />}
-              title={t('Wards by teaching vacancy')}
-              description={t('Where the gap between sanctioned and filled teaching posts is widest. A vacancy is a class without a teacher, not a line in an establishment register.')}
-            />
-            <div className="px-4 pb-4" style={{ height: Math.max(200, worstVacancy.length * 26) }}>
+          <GovPanel title={t('Wards by teaching vacancy')} tone="red" dense>
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+              {t('Where the gap between sanctioned and filled teaching posts is widest. A vacancy is a class without a teacher, not a line in an establishment register.')}
+            </p>
+            <div className="px-3 pb-3" style={{ height: Math.max(200, worstVacancy.length * 26) }}>
               <RankedBarChart
                 data={worstVacancy.map((w) => ({ label: wardShortName(w.wardId), value: w.teacherVacancyPct }))}
                 unit="%"
               />
             </div>
-          </Card>
+          </GovPanel>
         </div>
 
         <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">

@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react'
 import { Activity, ArrowDownAZ, Clock, GitBranch, LayoutGrid, Rows3, ShieldQuestion, SlidersHorizontal } from 'lucide-react'
 import { PageBody, PageHeader, SplitLayout } from '@/components/layout/PageHeader'
-import { Card, CardHeader, MetricGrid, SegmentedControl } from '@/components/ui/primitives'
+import { MetricGrid, SegmentedControl } from '@/components/ui/primitives'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { Badge } from '@/components/ui/badges'
 import { Tabs } from '@/components/ui/overlays'
 import { DemonstrationNotice, EmptyState, ErrorState, LoadingState } from '@/components/ui/states'
@@ -97,10 +98,7 @@ export function IntelligenceFeedPage(): React.JSX.Element {
   const [typeFilter, setTypeFilter] = useState<IntelligenceType[]>([])
 
   // The shell renders the masthead; this page states what it should say.
-  usePageMasthead(
-    t('Intelligence Feed'),
-    t('Every signal the platform has raised - anomaly, risk, forecast, SLA breach, revenue exception or cross-domain correlation - with its evidence, confidence, recommended action and workflow status. Uncertainty is always stated; a correlation is never presented as a cause.'),
-  )
+  usePageMasthead(t('Intelligence Feed'))
 
   const feedQuery = useServiceQuery(queryKeys.intelligence(), (u) => intelligenceService.list(u, { pageSize: 500 }))
   const countsQuery = useServiceQuery(queryKeys.intelligence('counts'), (u) => intelligenceService.feedCounts(u))
@@ -287,13 +285,14 @@ export function IntelligenceFeedPage(): React.JSX.Element {
 
       {counts ? (
         <MetricGrid columns={4}>
-          <MetricCard label={t('Total in scope')} value={counts.total} icon={<Activity className="h-3.5 w-3.5" />} />
+          <MetricCard label={t('Total in scope')} value={counts.total} icon={<Activity className="h-3.5 w-3.5" />} background="red" />
           <MetricCard
             label={t('Critical + high')}
             value={counts.bySeverity.critical + counts.bySeverity.high}
             tone={counts.bySeverity.critical > 0 ? 'critical' : 'default'}
+            background="amber"
           />
-          <MetricCard label={t('Unassigned')} value={counts.unassigned} tone={counts.unassigned > 0 ? 'warn' : 'default'} icon={<ShieldQuestion className="h-3.5 w-3.5" />} />
+          <MetricCard label={t('Unassigned')} value={counts.unassigned} tone={counts.unassigned > 0 ? 'warn' : 'default'} icon={<ShieldQuestion className="h-3.5 w-3.5" />} background="green" />
           <MetricCard label={t('Cross-domain items')} value={items.filter((i) => i.type === 'cross-domain').length} icon={<GitBranch className="h-3.5 w-3.5" />} />
         </MetricGrid>
       ) : null}
@@ -310,9 +309,8 @@ export function IntelligenceFeedPage(): React.JSX.Element {
       <SplitLayout
         asideWidth="sm"
         main={
-          <Card flush>
-            <CardHeader bordered eyebrow={t('Feed')} title={t('{0} item(s) shown', filtered.length)} />
-            <div className="flex flex-wrap items-center gap-2 border-b border-ink-100 px-4 py-2">
+          <GovPanel title={t('{0} item(s) shown', filtered.length)} subtitle={t('Feed')} tone="amber" dense>
+            <div className="flex flex-wrap items-center gap-2 border-b border-ink-100 px-3 py-2">
               <SegmentedControl
                 ariaLabel="Sort by"
                 size="xs"
@@ -335,22 +333,22 @@ export function IntelligenceFeedPage(): React.JSX.Element {
                 ]}
               />
             </div>
-            <div className="p-4">{listBody}</div>
-          </Card>
+            <div className="p-3">{listBody}</div>
+          </GovPanel>
         }
         aside={
           <>
-            <Card>
-              <CardHeader title={t('Severity composition')} description={t('Of the items currently shown.')} />
+            <GovPanel title={t('Severity composition')} tone="amber">
+              <p className="mb-3 text-xs leading-relaxed text-ink-500">{t('Of the items currently shown.')}</p>
               {severityComposition.length > 0 ? (
-                <CompositionBar segments={severityComposition} className="mt-3" />
+                <CompositionBar segments={severityComposition} />
               ) : (
-                <p className="mt-2 text-xs text-ink-400">{t('No items to summarise.')}</p>
+                <p className="text-xs text-ink-400">{t('No items to summarise.')}</p>
               )}
-            </Card>
-            <Card>
-              <CardHeader title={t('Domain breakdown')} description={t('Top domains by item count.')} />
-              <ul className="mt-3 space-y-2">
+            </GovPanel>
+            <GovPanel title={t('Domain breakdown')} tone="red">
+              <p className="mb-3 text-xs leading-relaxed text-ink-500">{t('Top domains by item count.')}</p>
+              <ul className="space-y-2">
                 {domainBreakdown.map((d) => (
                   <li key={d.domain} className="flex items-center justify-between gap-2 text-xs">
                     <span className="min-w-0 truncate text-ink-600">{DOMAIN_LABEL[d.domain]}</span>
@@ -362,10 +360,10 @@ export function IntelligenceFeedPage(): React.JSX.Element {
                 ))}
                 {domainBreakdown.length === 0 ? <p className="text-xs text-ink-400">{t('No items to summarise.')}</p> : null}
               </ul>
-            </Card>
-            <Card>
-              <CardHeader title={t('Type distribution')} description={t('Signal type across the current filter set.')} />
-              <ul className="mt-3 space-y-2">
+            </GovPanel>
+            <GovPanel title={t('Type distribution')} tone="amber">
+              <p className="mb-3 text-xs leading-relaxed text-ink-500">{t('Signal type across the current filter set.')}</p>
+              <ul className="space-y-2">
                 {typeBreakdown.map((entry) => (
                   <li key={entry.type} className="flex items-center justify-between gap-2 text-xs">
                     <span className="min-w-0 truncate text-ink-600">{INTELLIGENCE_TYPE_LABEL[entry.type]}</span>
@@ -377,7 +375,7 @@ export function IntelligenceFeedPage(): React.JSX.Element {
                 ))}
                 {typeBreakdown.length === 0 ? <p className="text-xs text-ink-400">{t('No items to summarise.')}</p> : null}
               </ul>
-            </Card>
+            </GovPanel>
           </>
         }
       />

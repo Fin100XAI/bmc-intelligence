@@ -1,8 +1,9 @@
 import { useMemo } from 'react'
-import { AlertTriangle, Boxes, Info } from 'lucide-react'
+import { Boxes, Info } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { useServiceQuery } from '@/hooks'
 import { usePageMasthead } from '@/stores/masthead.store'
+import { useActiveCorporation } from '@/stores/corporation.store'
 import { queryKeys } from '@/app/queryClient'
 import { wardService, workforceService } from '@/services'
 import { ROUTES } from '@/config/navigation'
@@ -13,7 +14,6 @@ import { formatNumber, formatPercent } from '@/utils/format'
 import {
   Badge,
   Card,
-  CardHeader,
   DataTable,
   DemonstrationNotice,
   EmptyState,
@@ -25,6 +25,7 @@ import {
 } from '@/components/ui'
 import { StateBadge } from '@/components/ui/badges'
 import { MetricCard } from '@/components/cards'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { CategoryBarChart, ChartFrame, MiniBar, RankedBarChart } from '@/components/charts'
 import { t } from '@/i18n'
 
@@ -76,10 +77,9 @@ interface DeptWorkforceRow {
 
 export function WorkforceIntelligencePage(): React.JSX.Element {
   // The shell's masthead carries the screen's name; the page states the wording.
-  usePageMasthead(
-    t('Workforce Intelligence'),
-    t('Sanctioned and deployed strength, vacancy and workload pressure by department and cadre, with an explicit view of where high vacancy co-occurs with service-response deterioration.'),
-  )
+  usePageMasthead(t('Workforce Intelligence'))
+
+  const corporation = useActiveCorporation()
 
   const unitsQuery = useServiceQuery(queryKeys.admin('workforce'), (user) => workforceService.units(user))
   const units = useMemo(() => unitsQuery.data ?? [], [unitsQuery.data])
@@ -91,20 +91,31 @@ export function WorkforceIntelligencePage(): React.JSX.Element {
   })
 
   const summary = useMemo(() => {
-    const sanctioned = units.reduce((s, u) => s + u.sanctioned, 0)
-    const deployed = units.reduce((s, u) => s + u.deployed, 0)
+    const sanctionedFromUnits = units.reduce((s, u) => s + u.sanctioned, 0)
+    const deployedFromUnits = units.reduce((s, u) => s + u.deployed, 0)
     const contractual = units.reduce((s, u) => s + u.contractual, 0)
     const avgWorkload = units.length > 0 ? units.reduce((s, u) => s + u.workloadIndex, 0) / units.length : 0
     const aboveThreshold = units.filter((u) => u.workloadIndex >= WORKLOAD_THRESHOLD).length
+
+    // The citywide sanctioned/deployed/vacancy totals are anchored to BMC's
+    // own published establishment figures where the corporation publishes
+    // them; the department × cadre register below is not re-derived from
+    // that anchor and stays exactly as modelled from each department's
+    // `staffCount`.
+    const establishmentIsPublished = corporation.sanctionedPostsCount != null && corporation.filledPostsCount != null
+    const sanctioned = corporation.sanctionedPostsCount ?? sanctionedFromUnits
+    const deployed = corporation.filledPostsCount ?? deployedFromUnits
+
     return {
       sanctioned,
       deployed,
       vacancyPct: sanctioned > 0 ? Math.round(((sanctioned - deployed) / sanctioned) * 1000) / 10 : 0,
-      contractualSharePct: sanctioned > 0 ? Math.round((contractual / sanctioned) * 1000) / 10 : 0,
+      contractualSharePct: sanctionedFromUnits > 0 ? Math.round((contractual / sanctionedFromUnits) * 1000) / 10 : 0,
       avgWorkload: Math.round(avgWorkload * 10) / 10,
       aboveThreshold,
+      establishmentIsPublished,
     }
-  }, [units])
+  }, [units, corporation])
 
   const departmentRows: DeptWorkforceRow[] = useMemo(() => {
     const byDept = new Map<string, typeof units>()
@@ -220,28 +231,57 @@ export function WorkforceIntelligencePage(): React.JSX.Element {
            distributions drawn from that same register stand beside it. */
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
           <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
-          <Card>
-            <CardHeader title={t('Establishment summary')} />
-            <MetricGrid columns={5} className="mt-4">
-              <MetricCard label={t('Sanctioned strength')} value={formatNumber(summary.sanctioned)} />
-              <MetricCard label={t('Deployed')} value={formatNumber(summary.deployed)} support={t('{0} of sanctioned strength', formatPercent(100 - summary.vacancyPct))} />
-              <MetricCard label={t('Vacancy')} value={formatPercent(summary.vacancyPct)} tone={summary.vacancyPct >= VACANCY_CONCERN_THRESHOLD ? 'critical' : 'default'} />
+          <GovPanel title={t('Establishment summary')} tone="primary">
+            <MetricGrid columns={5}>
+              <MetricCard
+                label={t('Sanctioned strength')}
+                value={formatNumber(summary.sanctioned)}
+                footer={
+                  summary.establishmentIsPublished ? (
+                    <span className="text-[0.625rem] leading-snug text-ink-400">
+                      {t('BMC reported a sanctioned strength of {0} posts across departments (2 March 2026); the citywide total above is anchored to that figure — the department × cadre register below remains modelled.', formatNumber(summary.sanctioned))}
+                    </span>
+                  ) : undefined
+                }
+              />
+              <MetricCard
+                label={t('Deployed')}
+                value={formatNumber(summary.deployed)}
+                support={t('{0} of sanctioned strength', formatPercent(100 - summary.vacancyPct))}
+                footer={
+                  summary.establishmentIsPublished ? (
+                    <span className="text-[0.625rem] leading-snug text-ink-400">
+                      {t('BMC reported {0} posts filled against sanctioned strength (2 March 2026); the citywide total above is anchored to that figure.', formatNumber(summary.deployed))}
+                    </span>
+                  ) : undefined
+                }
+              />
+              <MetricCard
+                label={t('Vacancy')}
+                value={formatPercent(summary.vacancyPct)}
+                tone={summary.vacancyPct >= VACANCY_CONCERN_THRESHOLD ? 'critical' : 'default'}
+                footer={
+                  summary.establishmentIsPublished ? (
+                    <span className="text-[0.625rem] leading-snug text-ink-400">
+                      {t('BMC reported {0} posts vacant (2 March 2026); the citywide vacancy percentage above is anchored to that figure.', formatNumber(corporation.vacantPostsCount ?? summary.sanctioned - summary.deployed))}
+                    </span>
+                  ) : undefined
+                }
+              />
               <MetricCard label={t('Contractual share')} value={formatPercent(summary.contractualSharePct)} support={t('Of sanctioned strength')} />
               <MetricCard label={t('Average workload index')} value={String(summary.avgWorkload)} support={t('{0} cadres at or above {1}', summary.aboveThreshold, WORKLOAD_THRESHOLD)} tone={summary.aboveThreshold > 0 ? 'warn' : 'default'} />
             </MetricGrid>
-          </Card>
+          </GovPanel>
 
-          <Card flush>
-            <CardHeader bordered title={t('Department × cadre establishment')} description={t('Sortable, searchable and paginated.')} />
+          <GovPanel title={t('Department × cadre establishment')} tone="red" dense>
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">{t('Sortable, searchable and paginated.')}</p>
             <DataTable rows={units} columns={columns} rowKey={(r) => r.id} pageSize={12} stickyHeader maxHeight="30rem" searchPlaceholder="Search department or cadre" />
-          </Card>
+          </GovPanel>
 
-          <Card tone="warn">
-            <CardHeader
-              icon={<AlertTriangle className="h-4 w-4" />}
-              title={t('Vacancy and service-response - a correlation requiring assessment')}
-              description={t('Department vacancy is set against ward-level SLA compliance for the citizen-service categories that department owns. A department appearing in both columns below shows vacancy and service-response pressure occurring together - this is a correlation the platform surfaces for assessment. It is not a causal claim, and it is not a finding against any department, officer or individual.')}
-            />
+          <GovPanel title={t('Vacancy and service-response - a correlation requiring assessment')} tone="amber">
+            <p className="mb-3 text-xs leading-relaxed text-ink-500">
+              {t('Department vacancy is set against ward-level SLA compliance for the citizen-service categories that department owns. A department appearing in both columns below shows vacancy and service-response pressure occurring together - this is a correlation the platform surfaces for assessment. It is not a causal claim, and it is not a finding against any department, officer or individual.')}
+            </p>
             {serviceHealthQuery.isLoading ? (
               <p className="mt-3 text-xs text-ink-400">{t('Retrieving ward service-health position…')}</p>
             ) : serviceHealthQuery.error ? (
@@ -282,7 +322,7 @@ export function WorkforceIntelligencePage(): React.JSX.Element {
               {t('Flagged rows meet both a vacancy threshold of')}{' '}{VACANCY_CONCERN_THRESHOLD}{t('% and an SLA compliance threshold below')}{' '}
               {SLA_CONCERN_THRESHOLD}{t('%. Meeting both thresholds identifies a pattern for institutional review; it does not establish that vacancy caused the service-response position, which may share other contributing factors.')}
             </p>
-          </Card>
+          </GovPanel>
           </div>
 
           <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">

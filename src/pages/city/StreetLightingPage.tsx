@@ -4,7 +4,6 @@ import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import {
   Badge,
   Card,
-  CardHeader,
   DataTable,
   DemonstrationNotice,
   EmptyState,
@@ -16,11 +15,13 @@ import {
   type Column,
 } from '@/components/ui'
 import { MetricCard } from '@/components/cards'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { CHART_COLOURS, DonutChart, RankedBarChart } from '@/components/charts'
 import { FilterBar } from '@/components/filters/FilterBar'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { streetLightService } from '@/services'
+import { activeCorporation } from '@/config/municipality.config'
 import { useFilterStore } from '@/stores/ui.store'
 import { usePageMasthead } from '@/stores/masthead.store'
 import { wardName, wardShortName } from '@/data/reference'
@@ -60,10 +61,7 @@ const LAMP_COLOUR: Record<LampType, string> = {
 }
 
 export function StreetLightingPage(): React.JSX.Element {
-  usePageMasthead(
-    t('Street Lighting'),
-    t('Feeder circuits, working poles, energy drawn against energy billed, and the faults still open against the time the corporation commits to. The cheapest safety infrastructure the city owns.'),
-  )
+  usePageMasthead(t('Street Lighting'))
 
   const filters = useFilterStore((s) => s.filters)
 
@@ -237,8 +235,16 @@ export function StreetLightingPage(): React.JSX.Element {
           unit="%"
           support={t('{0} of {1} across {2} circuits', formatNumber(polesFunctional), formatNumber(polesTotal), filtered.length)}
           tone={functionalPct < 90 ? 'warn' : 'positive'}
+          footer={
+            activeCorporation.id === 'bmc' && activeCorporation.streetlightsLedConvertedSuburbs ? (
+              <span className="text-[0.625rem] leading-snug text-ink-400">
+                {t('For context: BMC\'s own LED-conversion project converted {0} streetlights across the western and eastern suburbs, ~97% of that project complete (30 Jan 2023). This is the suburban conversion count only - no citywide total streetlight figure (including the island city) was found.', formatNumber(activeCorporation.streetlightsLedConvertedSuburbs))}
+              </span>
+            ) : undefined
+          }
           icon={<Lightbulb className="h-4 w-4" />}
           origin="demonstration"
+          background="red"
         />
         <MetricCard
           label={t('LED conversion')}
@@ -247,12 +253,15 @@ export function StreetLightingPage(): React.JSX.Element {
           support={t('{0} poles converted', formatNumber(ledPoles))}
           progress={{ value: ledPoles, max: Math.max(1, polesTotal) }}
           icon={<Zap className="h-4 w-4" />}
+          background="amber"
+          footer={<span className="text-[0.625rem] leading-snug text-ink-400">{t('BMC reported {0} streetlights converted to LED across the western and eastern suburbs, ~97% of that conversion project complete (Jan 2023) — a suburbs-only published figure, not a citywide total; the citywide count and percentage above are modelled.', formatNumber(activeCorporation.streetlightsLedConvertedSuburbs ?? 0))}</span>}
         />
         <MetricCard
           label={t('Monthly energy')}
           value={`₹${formatNumber(Math.round(monthlyCost / 100000))} L`}
           support={t('{0} kWh drawn', formatNumber(monthlyKwh))}
           icon={<Gauge className="h-4 w-4" />}
+          background="green"
         />
         <MetricCard
           label={t('Faults past SLA')}
@@ -268,42 +277,34 @@ export function StreetLightingPage(): React.JSX.Element {
           energy bill and the burning-hours ranking stand beside them. */}
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
         <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
-        <Card flush>
-            <CardHeader
-              bordered
-              icon={<TriangleAlert className="h-4 w-4" />}
-            title={t('Open faults')}
-            description={t('Reported and assigned faults, measured against the restoration time the corporation commits to for each severity.')}
-          />
+        <GovPanel title={t('Open faults')} tone="amber" dense>
+          <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+            {t('Reported and assigned faults, measured against the restoration time the corporation commits to for each severity.')}
+          </p>
           {openFaults.length === 0 ? (
-            <EmptyState title={t('No open lighting faults')} detail="Every reported fault within your ward scope has been rectified." />
+            <EmptyState className="mx-3 mb-3" title={t('No open lighting faults')} detail="Every reported fault within your ward scope has been rectified." />
           ) : (
             <DataTable rows={openFaults} columns={faultColumns} rowKey={(r) => r.id} pageSize={10} />
           )}
-        </Card>
+        </GovPanel>
 
-        <Card flush>
-          <CardHeader
-            bordered
-            icon={<Lightbulb className="h-4 w-4" />}
-            title={t('Circuit register')}
-            description={t('Every feeder circuit within your authorised ward scope.')}
-          />
+        <GovPanel title={t('Circuit register')} tone="red" dense>
+          <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+            {t('Every feeder circuit within your authorised ward scope.')}
+          </p>
           {filtered.length === 0 ? (
-            <EmptyState title={t('No circuits match the current filters')} detail="Clear a filter to widen the register." />
+            <EmptyState className="mx-3 mb-3" title={t('No circuits match the current filters')} detail="Clear a filter to widen the register." />
           ) : (
             <DataTable rows={filtered} columns={circuitColumns} rowKey={(r) => r.id} pageSize={15} />
           )}
-        </Card>
+        </GovPanel>
         </div>
 
         <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
-          <Card flush className="flex flex-col">
-            <CardHeader
-              bordered
-              title={t('Circuits by burning-hours compliance')}
-              description={t('Hours a circuit was actually lit against the hours it should have been. A circuit dark at 21:00 is a safety matter, not a billing one.')}
-            />
+          <GovPanel title={t('Circuits by burning-hours compliance')} tone="green" dense className="flex flex-col">
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+              {t('Hours a circuit was actually lit against the hours it should have been. A circuit dark at 21:00 is a safety matter, not a billing one.')}
+            </p>
             <div className="px-4 pb-4" style={{ height: Math.max(210, worstCompliance.length * 26) }}>
               <RankedBarChart
                 data={worstCompliance.map((c) => ({ label: c.location.slice(0, 22), value: c.burningHoursCompliancePct }))}
@@ -311,7 +312,7 @@ export function StreetLightingPage(): React.JSX.Element {
                 higherIsWorse={false}
               />
             </div>
-          </Card>
+          </GovPanel>
 
 
           <Card className="flex flex-col">

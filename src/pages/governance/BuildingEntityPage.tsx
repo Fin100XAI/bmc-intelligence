@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react'
-import { AlertTriangle, Building2, Gavel, Landmark, Stamp } from 'lucide-react'
+import { Building2 } from 'lucide-react'
 import { PageBody, PageHeader, SplitLayout } from '@/components/layout/PageHeader'
+import { GovPanel } from '@/components/gov/GovPanel'
 import {
   Badge,
   Card,
-  CardHeader,
   DataTable,
   DemonstrationNotice,
   EmptyState,
@@ -44,10 +44,7 @@ import { t } from '@/i18n'
 export function BuildingEntityPage(): React.JSX.Element {
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
-  usePageMasthead(
-    t('Building Entity'),
-    t('One building, read against its ward’s property, licensing and enforcement position - the shape a canonical Building ID would eventually let this platform join precisely.'),
-  )
+  usePageMasthead(t('Building Entity'))
 
   const buildingsQuery = useServiceQuery(queryKeys.buildings('all'), (u) => buildingService.buildings(u))
   const buildings = useMemo(() => buildingsQuery.data ?? [], [buildingsQuery.data])
@@ -167,8 +164,7 @@ export function BuildingEntityPage(): React.JSX.Element {
                   </dl>
                 </Card>
 
-                <Card flush className="mt-3 flex flex-col">
-                  <CardHeader icon={<Landmark className="h-4 w-4" />} title={t('Ward property position')} bordered />
+                <GovPanel title={t('Ward property position')} tone="amber" dense className="mt-3">
                   {propertyQuery.isLoading ? (
                     <LoadingState variant="metrics" />
                   ) : (
@@ -181,10 +177,12 @@ export function BuildingEntityPage(): React.JSX.Element {
                       ))}
                     </ul>
                   )}
-                </Card>
+                </GovPanel>
 
-                <Card flush className="mt-3 flex flex-col">
-                  <CardHeader icon={<Stamp className="h-4 w-4" />} title={t('Ward licence position')} description={t('Categories plausible for this building’s use type.')} bordered />
+                <GovPanel title={t('Ward licence position')} tone="red" dense className="mt-3">
+                  <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+                    {t('Categories plausible for this building’s use type.')}
+                  </p>
                   {licenceQuery.isLoading ? (
                     <LoadingState variant="metrics" />
                   ) : (
@@ -199,10 +197,9 @@ export function BuildingEntityPage(): React.JSX.Element {
                         ))}
                     </ul>
                   )}
-                </Card>
+                </GovPanel>
 
-                <Card flush className="mt-3 flex flex-col">
-                  <CardHeader icon={<Gavel className="h-4 w-4" />} title={t('Ward unauthorised-construction notices')} bordered />
+                <GovPanel title={t('Ward unauthorised-construction notices')} tone="amber" dense className="mt-3">
                   {enforcementQuery.isLoading ? (
                     <LoadingState variant="metrics" />
                   ) : enforcement.length === 0 ? (
@@ -220,19 +217,16 @@ export function BuildingEntityPage(): React.JSX.Element {
                       ))}
                     </ul>
                   )}
-                </Card>
+                </GovPanel>
               </>
             )}
           </>
         }
         main={
-          <Card flush>
-            <CardHeader
-              bordered
-              icon={<AlertTriangle className="h-4 w-4" />}
-              title={t('Building register')}
-              description={t('Select a building to read its consolidated ward-level entity view.')}
-            />
+          <GovPanel title={t('Building register')} tone="amber" dense>
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+              {t('Select a building to read its consolidated ward-level entity view.')}
+            </p>
             {buildings.length === 0 ? (
               <EmptyState title={t('No buildings on record')} />
             ) : (
@@ -245,7 +239,7 @@ export function BuildingEntityPage(): React.JSX.Element {
                 activeRowKey={selected?.id}
               />
             )}
-          </Card>
+          </GovPanel>
         }
         reverseOnMobile
       />

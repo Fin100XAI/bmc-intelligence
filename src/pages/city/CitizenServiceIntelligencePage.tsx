@@ -2,19 +2,21 @@ import { useMemo, useState } from 'react'
 import { MessageSquareWarning, RefreshCcw, Repeat, ShieldAlert, Timer } from 'lucide-react'
 import { PageBody, PageHeader, SplitLayout } from '@/components/layout/PageHeader'
 import { Badge, SeverityBadge } from '@/components/ui/badges'
-import { Card, CardHeader, Label, MetricGrid, Select } from '@/components/ui/primitives'
+import { Card, Label, MetricGrid, Select } from '@/components/ui/primitives'
 import { DataTable, type Column } from '@/components/ui/DataTable'
 import { DemonstrationNotice, EmptyState, ErrorState, LoadingState } from '@/components/ui/states'
 import { MetricCard } from '@/components/cards/MetricCard'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { MiniBar } from '@/components/charts'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { citizenService } from '@/services'
 import type { RecurringCluster } from '@/domains/citizen-services/root-cause'
 import { usePageMasthead } from '@/stores/masthead.store'
+import { activeCorporation } from '@/config/municipality.config'
 import { WARDS } from '@/data/reference'
 import { COMPLAINT_CATEGORY_LABEL, type ComplaintCategory, type ComplaintChannel } from '@/types/operations'
-import { formatPercent } from '@/utils/format'
+import { formatNumber, formatPercent } from '@/utils/format'
 import { isoFromAnchor } from '@/utils/deterministic'
 import { t } from '@/i18n'
 import { registerLayer } from '@/data/runtime'
@@ -66,10 +68,7 @@ export function CitizenServiceIntelligencePage(): React.JSX.Element {
   const [wardId, setWardId] = useState<string>('')
   const [category, setCategory] = useState<string>('')
 
-  usePageMasthead(
-    t('Citizen Service Intelligence'),
-    t('Not how many complaints there are, but which ones keep coming back and what the corporation already holds a record of at that location. Recurrence is the signal that a service issue was closed without its cause being resolved.'),
-  )
+  usePageMasthead(t('Citizen Service Intelligence'))
 
   const filters = useMemo(
     () => ({
@@ -215,6 +214,14 @@ export function CitizenServiceIntelligencePage(): React.JSX.Element {
           value={summary?.open ?? 0}
           support={t('of {0} in your authorised scope', summary?.total ?? 0)}
           icon={<MessageSquareWarning className="h-4 w-4" />}
+          background="red"
+          footer={
+            activeCorporation.id === 'bmc' && activeCorporation.annualCivicComplaintsReported ? (
+              <span className="text-[0.625rem] leading-snug text-ink-400">
+                {t('For context: ~{0} complaints were logged via BMC\'s Central Complaint Registration System in 2024, a 70% increase since 2015, per Praja Foundation\'s RTI-based report (May 2025). That figure covers only water, waste, sewage, pollution and toilets - not every complaint category modelled on this page.', formatNumber(activeCorporation.annualCivicComplaintsReported))}
+              </span>
+            ) : undefined
+          }
         />
         <MetricCard
           label={t('Repeat reports')}
@@ -227,6 +234,7 @@ export function CitizenServiceIntelligencePage(): React.JSX.Element {
               {t('A repeat report means the same locality and service category has been reported before. It is the clearest available signal that a request was closed without its underlying cause being resolved.')}
             </span>
           }
+          background="amber"
         />
         <MetricCard
           label={t('Reopening rate')}
@@ -234,6 +242,7 @@ export function CitizenServiceIntelligencePage(): React.JSX.Element {
           tone={(summary?.reopeningPct ?? 0) >= 8 ? 'warn' : 'default'}
           support={t('{0} reopened after being marked resolved', summary?.reopened ?? 0)}
           icon={<RefreshCcw className="h-4 w-4" />}
+          background="green"
         />
         <MetricCard
           label={t('SLA compliance')}
@@ -255,15 +264,18 @@ export function CitizenServiceIntelligencePage(): React.JSX.Element {
         main={
           <>
             {/* Root cause intelligence ------------------------------- */}
-            <Card flush>
-              <CardHeader
-                bordered
-                title={t('Root Cause Intelligence')}
-                description={t('Recurring clusters associated with the infrastructure the corporation already holds a record of in that ward.')}
-                actions={<Badge tone="intel">{t('Association, not attribution')}</Badge>}
-              />
+            <GovPanel
+              title={t('Root Cause Intelligence')}
+              tone="amber"
+              dense
+              actions={<Badge tone="intel">{t('Association, not attribution')}</Badge>}
+            >
+              <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+                {t('Recurring clusters associated with the infrastructure the corporation already holds a record of in that ward.')}
+              </p>
               {associations.length === 0 ? (
                 <EmptyState
+                  className="mx-3 mb-3"
                   title={t('No recurring cluster reaches the reporting threshold')}
                   detail="A cluster needs at least three reports at one locality in one service category before it is shown."
                 />
@@ -310,17 +322,15 @@ export function CitizenServiceIntelligencePage(): React.JSX.Element {
                   ))}
                 </ul>
               )}
-            </Card>
+            </GovPanel>
 
             {/* Clusters table ---------------------------------------- */}
-            <Card flush className="mt-4">
-              <CardHeader
-                bordered
-                title={t('Recurring complaint clusters')}
-                description={t('Grouped by locality and service category - the unit a department can act on.')}
-              />
+            <GovPanel title={t('Recurring complaint clusters')} tone="red" dense className="mt-4">
+              <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+                {t('Grouped by locality and service category - the unit a department can act on.')}
+              </p>
               {clusters.length === 0 ? (
-                <EmptyState title={t('No clusters in scope')} detail="No locality reaches the reporting threshold." />
+                <EmptyState className="mx-3 mb-3" title={t('No clusters in scope')} detail="No locality reaches the reporting threshold." />
               ) : (
                 <DataTable
                   rows={clusters}
@@ -332,16 +342,15 @@ export function CitizenServiceIntelligencePage(): React.JSX.Element {
                   searchPlaceholder="Search locality, ward or service"
                 />
               )}
-            </Card>
+            </GovPanel>
           </>
         }
         aside={
           <>
-            <Card>
-              <CardHeader
-                title={t('Where service is deteriorating')}
-                description={t('By category, ranked on the share of reports that are repeats.')}
-              />
+            <GovPanel title={t('Where service is deteriorating')} tone="amber">
+              <p className="mb-3 text-xs leading-relaxed text-ink-500">
+                {t('By category, ranked on the share of reports that are repeats.')}
+              </p>
               <ul className="mt-3 space-y-2.5">
                 {postures.map((p) => (
                   <li key={p.category}>
@@ -358,13 +367,15 @@ export function CitizenServiceIntelligencePage(): React.JSX.Element {
                   </li>
                 ))}
               </ul>
-            </Card>
+              <p className="mt-3 text-[0.625rem] leading-snug text-ink-400">
+                {t('Praja Foundation\'s RTI-based analysis counted an estimated {0} complaints for water supply, solid waste, sewerage, pollution and public conveniences combined, via BMC\'s Central Complaint Registration System in 2024 — a published cross-check for those five categories only, not the total shown here across every category.', formatNumber(activeCorporation.annualCivicComplaintsReported ?? 0))}
+              </p>
+            </GovPanel>
 
-            <Card>
-              <CardHeader
-                title={t('Departmental handoff')}
-                description={t('Where the work lands, ranked by weakest SLA position.')}
-              />
+            <GovPanel title={t('Departmental handoff')} tone="green">
+              <p className="mb-3 text-xs leading-relaxed text-ink-500">
+                {t('Where the work lands, ranked by weakest SLA position.')}
+              </p>
               <ul className="mt-3 space-y-2">
                 {handoffs.map((d) => (
                   <li key={d.departmentId} className="rounded-lg border border-ink-100 p-2.5">
@@ -380,7 +391,7 @@ export function CitizenServiceIntelligencePage(): React.JSX.Element {
                   </li>
                 ))}
               </ul>
-            </Card>
+            </GovPanel>
 
             {/* --------------------------------------------------------------
                 Where complaints actually arrive.
@@ -390,11 +401,10 @@ export function CitizenServiceIntelligencePage(): React.JSX.Element {
                 where that shows.
                -------------------------------------------------------------- */}
             {channels.length > 0 ? (
-              <Card>
-                <CardHeader
-                  title={t('How complaints reached the corporation')}
-                  description={t('Volume share and SLA position for every route in use, busiest first.')}
-                />
+              <GovPanel title={t('How complaints reached the corporation')} tone="amber">
+                <p className="mb-3 text-xs leading-relaxed text-ink-500">
+                  {t('Volume share and SLA position for every route in use, busiest first.')}
+                </p>
                 <ul className="mt-3 flex flex-col gap-2.5">
                   {channels.map((c) => (
                     <li key={c.channel} className="flex flex-col gap-1">
@@ -411,7 +421,7 @@ export function CitizenServiceIntelligencePage(): React.JSX.Element {
                     </li>
                   ))}
                 </ul>
-              </Card>
+              </GovPanel>
             ) : null}
 
             <Card tone="sunken">

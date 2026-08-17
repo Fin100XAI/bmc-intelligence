@@ -4,7 +4,6 @@ import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import {
   Badge,
   Card,
-  CardHeader,
   DataTable,
   DemonstrationNotice,
   EmptyState,
@@ -17,6 +16,7 @@ import {
   type Column,
 } from '@/components/ui'
 import { MetricCard } from '@/components/cards'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { RankedBarChart } from '@/components/charts'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
@@ -89,10 +89,7 @@ export function BenchmarkingPage(): React.JSX.Element {
   const [band, setBand] = useState<PopulationBand | 'all'>('all')
 
   // The shell's masthead states the screen's name; the page states the wording.
-  usePageMasthead(
-    t('State Benchmarking'),
-    t('Where this corporation stands on Maharashtra\'s published municipal indicators. A figure on its own cannot be judged - a figure beside its peers can.'),
-  )
+  usePageMasthead(t('State Benchmarking'))
 
   const metricsQuery = useServiceQuery(queryKeys.benchmark('metrics'), (u) => benchmarkService.metrics(u))
   const allQuery = useServiceQuery(queryKeys.benchmark('all'), (u) => benchmarkService.all(u))
@@ -346,18 +343,13 @@ export function BenchmarkingPage(): React.JSX.Element {
                 </div>
               </Card>
 
-              <Card flush className="flex flex-col">
-                <CardHeader
-                  icon={<Award className="h-4 w-4" />}
-                  title={t('Leaders · {0}', metric.shortLabel)}
-                  description={
-                    metric.higherIsBetter
-                      ? 'Highest performers in the selected peer group.'
-                      : 'Lowest - and therefore best - performers in the selected peer group.'
-                  }
-                  bordered
-                />
-                <div className="px-4 py-4" style={{ height: Math.max(200, Math.min(ranked.length, 12) * 26) }}>
+              <GovPanel dense tone="amber" title={t('Leaders · {0}', metric.shortLabel)}>
+                <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+                  {metric.higherIsBetter
+                    ? 'Highest performers in the selected peer group.'
+                    : 'Lowest - and therefore best - performers in the selected peer group.'}
+                </p>
+                <div className="px-3 pb-3" style={{ height: Math.max(200, Math.min(ranked.length, 12) * 26) }}>
                   <RankedBarChart
                     data={ranked.slice(0, 12).map((r) => ({
                       // The operator's own corporation is marked in the label -
@@ -370,15 +362,12 @@ export function BenchmarkingPage(): React.JSX.Element {
                     higherIsWorse={!metric.higherIsBetter}
                   />
                 </div>
-              </Card>
+              </GovPanel>
 
-              <Card flush>
-                <CardHeader
-                  icon={<Scale className="h-4 w-4" />}
-                  title={t('League table')}
-                  description={t('All {0} corporations in the selected peer group, ranked on {1}.', ranked.length, metric.label.toLowerCase())}
-                  bordered
-                />
+              <GovPanel dense tone="red" title={t('League table')}>
+                <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+                  {t('All {0} corporations in the selected peer group, ranked on {1}.', ranked.length, metric.label.toLowerCase())}
+                </p>
                 <DataTable
                   rows={ranked}
                   columns={columns}
@@ -388,7 +377,7 @@ export function BenchmarkingPage(): React.JSX.Element {
                   activeRowKey={activeCorporation.id}
                   pageSize={15}
                 />
-              </Card>
+              </GovPanel>
             </>
           )}
         </div>

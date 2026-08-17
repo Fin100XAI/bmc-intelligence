@@ -72,6 +72,7 @@ const CouncilResolutionsPage = lazy(() => import('@/pages/council/CouncilResolut
 const WardCommitteesPage = lazy(() => import('@/pages/council/WardCommitteesPage'))
 const GovernmentCorrespondencePage = lazy(() => import('@/pages/council/GovernmentCorrespondencePage'))
 const LegalLitigationPage = lazy(() => import('@/pages/council/LegalLitigationPage'))
+const NotifiedServicesRegisterPage = lazy(() => import('@/pages/council/NotifiedServicesRegisterPage'))
 
 // --- Governance & finance --------------------------------------------------
 const PropertyIntelligencePage = lazy(() => import('@/pages/governance/PropertyIntelligencePage'))
@@ -99,6 +100,7 @@ const DevelopmentPlanPage = lazy(() => import('@/pages/strategic/DevelopmentPlan
 const DigitalTwinPage = lazy(() => import('@/pages/strategic/DigitalTwinPage'))
 const KnowledgeGraphPage = lazy(() => import('@/pages/strategic/KnowledgeGraphPage'))
 const InfrastructureGraphPage = lazy(() => import('@/pages/strategic/InfrastructureGraphPage'))
+const DataResourcesPage = lazy(() => import('@/pages/strategic/DataResourcesPage'))
 const OutcomeIntelligencePage = lazy(() => import('@/pages/strategic/OutcomeIntelligencePage'))
 const InstitutionalMemoryPage = lazy(() => import('@/pages/strategic/InstitutionalMemoryPage'))
 const ScenarioIntelligencePage = lazy(() => import('@/pages/strategic/ScenarioIntelligencePage'))
@@ -126,6 +128,7 @@ const AccessGovernancePage = lazy(() => import('@/pages/trust/AccessGovernancePa
 const IntegrationHealthPage = lazy(() => import('@/pages/trust/IntegrationHealthPage'))
 const PlatformHealthPage = lazy(() => import('@/pages/trust/PlatformHealthPage'))
 const PlatformReadinessPage = lazy(() => import('@/pages/trust/PlatformReadinessPage'))
+const TestingPage = lazy(() => import('@/pages/trust/TestingPage'))
 const ResilienceDRPage = lazy(() => import('@/pages/trust/ResilienceDRPage'))
 
 // --- Administration --------------------------------------------------------
@@ -134,6 +137,7 @@ const PoliciesPage = lazy(() => import('@/pages/admin/PoliciesPage'))
 const ConnectorsPage = lazy(() => import('@/pages/admin/ConnectorsPage'))
 const DataSourcesPage = lazy(() => import('@/pages/admin/DataSourcesPage'))
 const SettingsPage = lazy(() => import('@/pages/admin/SettingsPage'))
+const PilotDataIngestionPage = lazy(() => import('@/pages/admin/PilotDataIngestionPage'))
 
 // --- Fallback --------------------------------------------------------------
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
@@ -235,6 +239,7 @@ export const router = createBrowserRouter([
       { path: ROUTES.wardCommittees, element: guarded(<WardCommitteesPage />) },
       { path: ROUTES.correspondence, element: guarded(<GovernmentCorrespondencePage />) },
       { path: ROUTES.legal, element: guarded(<LegalLitigationPage />) },
+      { path: ROUTES.notifiedServices, element: guarded(<NotifiedServicesRegisterPage />) },
 
       // Governance & finance
       { path: ROUTES.property, element: guarded(<PropertyIntelligencePage />) },
@@ -261,6 +266,7 @@ export const router = createBrowserRouter([
       { path: ROUTES.developmentPlan, element: guarded(<DevelopmentPlanPage />) },
       { path: ROUTES.digitalTwin, element: guarded(<DigitalTwinPage />) },
       { path: ROUTES.knowledgeGraph, element: guarded(<KnowledgeGraphPage />) },
+      { path: ROUTES.dataResources, element: guarded(<DataResourcesPage />) },
       { path: ROUTES.infrastructureGraph, element: guarded(<InfrastructureGraphPage />) },
       { path: ROUTES.outcomes, element: guarded(<OutcomeIntelligencePage />) },
       { path: ROUTES.institutionalMemory, element: guarded(<InstitutionalMemoryPage />) },
@@ -289,6 +295,7 @@ export const router = createBrowserRouter([
       { path: ROUTES.integrations, element: guarded(<IntegrationHealthPage />) },
       { path: ROUTES.platformHealth, element: guarded(<PlatformHealthPage />) },
       { path: ROUTES.readiness, element: guarded(<PlatformReadinessPage />) },
+      { path: ROUTES.testing, element: guarded(<TestingPage />) },
       { path: ROUTES.resilienceDr, element: guarded(<ResilienceDRPage />) },
 
       // Administration
@@ -297,6 +304,7 @@ export const router = createBrowserRouter([
       { path: ROUTES.connectors, element: guarded(<ConnectorsPage />) },
       { path: ROUTES.dataSources, element: guarded(<DataSourcesPage />) },
       { path: ROUTES.settings, element: guarded(<SettingsPage />) },
+      { path: ROUTES.pilotIngestion, element: guarded(<PilotDataIngestionPage />) },
 
       // The role catalogue and the feature-flag register are now sections of
       // the screens above rather than screens of their own. Their former paths

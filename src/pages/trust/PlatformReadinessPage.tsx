@@ -1,11 +1,10 @@
 import { useMemo, useState } from 'react'
-import { CheckCircle2, Clock3, RotateCcw, Target } from 'lucide-react'
+import { RotateCcw, Target } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { Badge } from '@/components/ui/badges'
 import {
   Button,
   Card,
-  CardHeader,
   Input,
   MetricGrid,
   ProgressBar,
@@ -13,6 +12,7 @@ import {
   Select,
 } from '@/components/ui/primitives'
 import { DemonstrationNotice, EmptyState, ErrorState, LoadingState } from '@/components/ui/states'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { useServiceQuery } from '@/hooks'
 import { platformService } from '@/services'
 import { usePageMasthead } from '@/stores/masthead.store'
@@ -43,6 +43,7 @@ type ReadinessCategory =
   | 'ai-governance'
   | 'operations'
   | 'infrastructure'
+  | 'multi-tenant'
 
 function build$CATEGORY_LABEL(): Record<ReadinessCategory, string> {
   return {
@@ -53,6 +54,7 @@ function build$CATEGORY_LABEL(): Record<ReadinessCategory, string> {
   'ai-governance': t('AI governance'),
   operations: t('Operations'),
   infrastructure: t('Infrastructure'),
+  'multi-tenant': t('Multi-tenant / reusable engine'),
 }
 }
 let CATEGORY_LABEL: Record<ReadinessCategory, string> = build$CATEGORY_LABEL()
@@ -109,6 +111,10 @@ function build$IMPLEMENTED(): ImplementedItem[] {
   { category: 'operations', title: t('Workflow state machines'), detail: t('Intelligence, alert, incident and decision lifecycles progress only through declared transitions, several requiring a recorded reason.') },
   { category: 'data-integration', title: t('Data lineage graphs'), detail: t('Source → ingestion → validation → canonical entity → derived metric → intelligence → dashboard → decision, modelled per metric with a quality score at every stage.') },
   { category: 'data-integration', title: t('Deterministic, reproducible demonstration data'), detail: t('Every figure is generated from a fixed seed, so the same principal sees the same city on every visit - no figure moves without cause.') },
+  { category: 'multi-tenant', title: t('Corporation registry and factual-spine schema'), detail: t('A single `CorporationRef` type carries every published fact a deployment is built on - area, population, budget, water supply, sources - already shaped to hold any Maharashtra municipal corporation, not just Brihanmumbai.') },
+  { category: 'multi-tenant', title: t('Ward and zone resolution, generalised'), detail: t('`resolveWardCount` / `resolveDivisions` derive a corporation\'s administrative units from whatever it actually publishes - named divisions, administrative wards, electoral seats or zones - rather than assuming Brihanmumbai\'s own 24-ward structure.') },
+  { category: 'multi-tenant', title: t('Tenant-agnostic AI evaluation'), detail: t('Model and prompt evaluations run against the platform\'s AI gateway, not against any one corporation\'s data - a passed evaluation applies unchanged to every tenant the engine serves.') },
+  { category: 'multi-tenant', title: t('Bilingual interface, corporation-independent'), detail: t('English and Marathi coverage is a platform-wide layer, not authored per deployment - a newly onboarded corporation inherits full translation from day one.') },
 ]
 }
 let IMPLEMENTED: ImplementedItem[] = build$IMPLEMENTED()
@@ -133,6 +139,9 @@ function build$PRODUCTION_REQUIREMENTS(): RequiredItem[] {
   { category: 'ai-governance', heldBy: 'third-party', scale: 'months', title: t('Model evaluation'), detail: t('Documented evaluation of every AI model against accuracy, bias and safety criteria before production use, beyond the illustrative evaluation status shown here.') },
   { category: 'ai-governance', heldBy: 'corporation', scale: 'quarters', title: t('AI governance approvals'), detail: t('Formal sign-off from an AI governance authority for each approved use case, prompt template and risk disposition.') },
   { category: 'operations', heldBy: 'corporation', scale: 'months', title: t('Operational standard operating procedures'), detail: t('Documented runbooks for incident response, escalation, change management and on-call ownership once the platform carries real operational weight.') },
+  { category: 'multi-tenant', heldBy: 'platform-engineering', scale: 'months', title: t('A second sourced corporation record'), detail: t('Every field this build carries for Brihanmumbai - area, population, water supply, budget, each with a cited source - researched and populated for one further Maharashtra corporation, proving the roster generalises rather than asserting it.') },
+  { category: 'multi-tenant', heldBy: 'platform-engineering', scale: 'months', title: t('Geography generator validated against a second city form'), detail: t('The ward-boundary generator has been exercised only against Brihanmumbai\'s coastal shape; a landlocked or river-bisected corporation needs its own generated geography checked for the same visual honesty before that corporation goes live.') },
+  { category: 'multi-tenant', heldBy: 'corporation', scale: 'quarters', title: t('Per-corporation onboarding agreement'), detail: t('Each additional corporation the engine serves needs its own data-sharing, hosting and access agreement - the reusable engine lowers the engineering cost of a second deployment, not the institutional one.') },
 ]
 }
 let PRODUCTION_REQUIREMENTS: RequiredItem[] = build$PRODUCTION_REQUIREMENTS()
@@ -161,10 +170,7 @@ function matchesFilters(item: ImplementedItem, category: ReadinessCategory | '',
 
 export function PlatformReadinessPage(): React.JSX.Element {
   // The shell's masthead carries the screen's name; the page states the wording.
-  usePageMasthead(
-    t('Platform Readiness'),
-    t('An honest account of what this deployment implements today and what stands between it and production operation. This page exists so that credibility is earned through transparency rather than assumed.'),
-  )
+  usePageMasthead(t('Platform Readiness'))
 
   const summaryQuery = useServiceQuery(['trust-platform-readiness', 'summary'], (u) => platformService.summary(u))
 
@@ -315,12 +321,9 @@ export function PlatformReadinessPage(): React.JSX.Element {
           who holds it — reads beside them as the register's own commentary. */}
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
         <div className="flex min-w-0 flex-col gap-4 xl:order-2 xl:col-span-4">
-        <Card>
-          <CardHeader
-            title={t('Where the gap sits')}
-            description={t('Implemented against outstanding, by category. Select a bar to filter both lists.')}
-          />
-          <div className="mt-3 space-y-2.5">
+        <GovPanel title={t('Where the gap sits')} tone="amber">
+          <p className="mb-3 text-xs leading-relaxed text-ink-500">{t('Implemented against outstanding, by category. Select a bar to filter both lists.')}</p>
+          <div className="space-y-2.5">
             {byCategory.map((row) => (
               <button
                 key={row.category}
@@ -341,14 +344,11 @@ export function PlatformReadinessPage(): React.JSX.Element {
               </button>
             ))}
           </div>
-        </Card>
+        </GovPanel>
 
-        <Card>
-          <CardHeader
-            title={t('Who holds the outstanding work')}
-            description={t('The reason the right-hand column is not a sprint backlog.')}
-          />
-          <div className="mt-3 space-y-2">
+        <GovPanel title={t('Who holds the outstanding work')} tone="red">
+          <p className="mb-3 text-xs leading-relaxed text-ink-500">{t('The reason the right-hand column is not a sprint backlog.')}</p>
+          <div className="space-y-2">
             {byHolder.map((row) => (
               <button
                 key={row.holder}
@@ -369,7 +369,7 @@ export function PlatformReadinessPage(): React.JSX.Element {
           <p className="mt-3 border-t border-ink-100 pt-3 text-[0.6875rem] leading-relaxed text-ink-500">
             {t('{0} of {1} outstanding workstreams sit with platform engineering. The rest are signed agreements, completed reviews, a hosting decision and an independent assessment — none of which is shortened by writing more code, and all of which have to be true before a single live feed is provisioned.', engineeringHeld, PRODUCTION_REQUIREMENTS.length)}
           </p>
-        </Card>
+        </GovPanel>
 
         <Card tone="info">
           <div className="flex items-start gap-2.5">
@@ -384,13 +384,11 @@ export function PlatformReadinessPage(): React.JSX.Element {
         <div className="min-w-0 xl:order-1 xl:col-span-8">
       <div className={cn('grid gap-4', side === 'both' && 'lg:grid-cols-2')}>
         {side !== 'required' ? (
-          <Card tone="sunken">
-            <CardHeader
-              icon={<CheckCircle2 className="h-4 w-4 text-ok-600" />}
-              title={t('Implemented in demonstration environment')}
-              description={t('Working today, exercised by every page in this build. Showing {0} of {1}.', implemented.length, IMPLEMENTED.length)}
-            />
-            <div className="mt-3">
+          <GovPanel title={t('Implemented in demonstration environment')} tone="amber">
+            <p className="mb-3 text-xs leading-relaxed text-ink-500">
+              {t('Working today, exercised by every page in this build. Showing {0} of {1}.', implemented.length, IMPLEMENTED.length)}
+            </p>
+            <div>
               {implemented.length === 0 ? (
                 <EmptyState compact title={t('No implemented capability matches the current filters')} />
               ) : (
@@ -414,17 +412,15 @@ export function PlatformReadinessPage(): React.JSX.Element {
                 </ul>
               )}
             </div>
-          </Card>
+          </GovPanel>
         ) : null}
 
         {side !== 'implemented' ? (
-          <Card>
-            <CardHeader
-              icon={<Clock3 className="h-4 w-4 text-warn-600" />}
-              title={t('Required for production deployment')}
-              description={t('Not present in this environment. Each is a named institutional or engineering workstream, not a configuration toggle. Showing {0} of {1}.', required.length, PRODUCTION_REQUIREMENTS.length)}
-            />
-            <div className="mt-3">
+          <GovPanel title={t('Required for production deployment')} tone="green">
+            <p className="mb-3 text-xs leading-relaxed text-ink-500">
+              {t('Not present in this environment. Each is a named institutional or engineering workstream, not a configuration toggle. Showing {0} of {1}.', required.length, PRODUCTION_REQUIREMENTS.length)}
+            </p>
+            <div>
               {required.length === 0 ? (
                 <EmptyState compact title={t('No outstanding workstream matches the current filters')} />
               ) : (
@@ -454,7 +450,7 @@ export function PlatformReadinessPage(): React.JSX.Element {
                 </ul>
               )}
             </div>
-          </Card>
+          </GovPanel>
         ) : null}
       </div>
         </div>

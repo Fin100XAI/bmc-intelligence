@@ -5,18 +5,14 @@ import {
   CheckCircle2,
   Droplets,
   Flame,
-  Hospital,
   LogOut,
   Maximize2,
   Minimize2,
-  Radio,
-  Route,
   Send,
-  Siren,
-  Users,
 } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
-import { Button, Card, CardHeader, Input, LinkButton, Select, SegmentedControl, Textarea } from '@/components/ui/primitives'
+import { Button, Card, Input, LinkButton, Select, SegmentedControl, Textarea } from '@/components/ui/primitives'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { Badge, SeverityBadge } from '@/components/ui/badges'
 import { ConfirmDialog } from '@/components/ui/overlays'
 import { DemonstrationNotice, EmptyState, ErrorState, LoadingState } from '@/components/ui/states'
@@ -178,7 +174,7 @@ export function SituationRoomPage(): React.JSX.Element {
   const config = MODE_CONFIG[mode]
 
   // The shell renders the masthead; this page states what it should say.
-  usePageMasthead(t('Situation Room'), config.description)
+  usePageMasthead(t('Situation Room'))
 
   const incidents = useMemo(() => incidentsQuery.data?.items ?? [], [incidentsQuery.data])
 
@@ -439,20 +435,24 @@ export function SituationRoomPage(): React.JSX.Element {
               </Card>
 
               <div className="grid grid-cols-1 gap-3 md:grid-cols-2 2xl:grid-cols-3">
-                <Card>
-                  <CardHeader icon={<Radio className="h-4 w-4" />} title={config.assetLabel} description={t('Readiness relevant to the current mode.')} />
-                  <div className="mt-2.5">
+                <GovPanel title={config.assetLabel} tone="amber">
+                  <p className="mb-3 text-xs leading-relaxed text-ink-500">{t('Readiness relevant to the current mode.')}</p>
+                  <div>
                     {renderAssetStatus(mode, assetData)}
                   </div>
-                </Card>
+                </GovPanel>
 
-                <Card>
-                  <CardHeader icon={<Users className="h-4 w-4" />} title={t('Response teams')} description={t('{0} deployed to this incident', selectedIncident.responseTeams.length)} actions={
+                <GovPanel
+                  title={t('Response teams')}
+                  tone="red"
+                  actions={
                     <Button size="xs" variant="outline" disabled={!canEditIncident} title={canEditIncident ? undefined : 'Your role does not hold incident:edit'} onClick={() => setDeployOpen((v) => !v)}>
                       {deployOpen ? 'Cancel' : 'Deploy team'}
                     </Button>
-                  } />
-                  <div className="mt-2.5 space-y-1.5">
+                  }
+                >
+                  <p className="mb-3 text-xs leading-relaxed text-ink-500">{t('{0} deployed to this incident', selectedIncident.responseTeams.length)}</p>
+                  <div className="space-y-1.5">
                     {selectedIncident.responseTeams.length === 0 ? (
                       <p className="text-xs text-ink-400">{t('No teams deployed yet.')}</p>
                     ) : (
@@ -479,21 +479,18 @@ export function SituationRoomPage(): React.JSX.Element {
                       </Button>
                     </div>
                   ) : null}
-                </Card>
+                </GovPanel>
 
-                <Card className="space-y-3">
-                  <div>
-                    <CardHeader icon={<Route className="h-4 w-4" />} title={t('Road impact')} />
-                    <div className="mt-2 flex flex-wrap gap-1.5">
-                      {selectedIncident.roadsImpacted.length === 0 ? (
-                        <p className="text-xs text-ink-400">{t('No roads recorded as impacted.')}</p>
-                      ) : (
-                        selectedIncident.roadsImpacted.map((r) => <Badge key={r} tone="warn">{r}</Badge>)
-                      )}
-                    </div>
+                <GovPanel title={t('Road impact')} tone="amber">
+                  <div className="flex flex-wrap gap-1.5">
+                    {selectedIncident.roadsImpacted.length === 0 ? (
+                      <p className="text-xs text-ink-400">{t('No roads recorded as impacted.')}</p>
+                    ) : (
+                      selectedIncident.roadsImpacted.map((r) => <Badge key={r} tone="warn">{r}</Badge>)
+                    )}
                   </div>
-                  <div className="border-t border-ink-100 pt-3">
-                    <CardHeader icon={<Hospital className="h-4 w-4" />} title={t('Hospital accessibility')} />
+                  <div className="mt-3 border-t border-ink-100 pt-3">
+                    <h4 className="text-[0.6875rem] font-bold tracking-[0.09em] text-ink-700 uppercase">{t('Hospital accessibility')}</h4>
                     <div className="mt-2 flex flex-wrap gap-1.5">
                       {selectedIncident.hospitalsImpacted.length === 0 ? (
                         <p className="text-xs text-ink-400">{t('No hospitals recorded as impacted.')}</p>
@@ -502,13 +499,13 @@ export function SituationRoomPage(): React.JSX.Element {
                       )}
                     </div>
                   </div>
-                </Card>
+                </GovPanel>
               </div>
 
               <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-                <Card>
-                  <CardHeader title={t('Timeline')} description={t('This incident\'s own record, oldest first.')} />
-                  <ol className="mt-2.5 max-h-72 space-y-2.5 overflow-y-auto">
+                <GovPanel title={t('Timeline')} tone="green">
+                  <p className="mb-3 text-xs leading-relaxed text-ink-500">{t('This incident\'s own record, oldest first.')}</p>
+                  <ol className="max-h-72 space-y-2.5 overflow-y-auto">
                     {[...selectedIncident.timeline].sort((a, b) => (a.at < b.at ? -1 : 1)).map((event) => (
                       <li key={event.id} className="flex gap-2.5 text-xs">
                         <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-govt-400" />
@@ -519,11 +516,11 @@ export function SituationRoomPage(): React.JSX.Element {
                       </li>
                     ))}
                   </ol>
-                </Card>
+                </GovPanel>
 
-                <Card>
-                  <CardHeader title={t('Field updates')} description={t('Notes recorded against this incident.')} />
-                  <div className="mt-2.5 max-h-48 space-y-1.5 overflow-y-auto">
+                <GovPanel title={t('Field updates')} tone="amber">
+                  <p className="mb-3 text-xs leading-relaxed text-ink-500">{t('Notes recorded against this incident.')}</p>
+                  <div className="max-h-48 space-y-1.5 overflow-y-auto">
                     {selectedIncident.notes.length === 0 ? (
                       <p className="text-xs text-ink-400">{t('No field updates recorded yet.')}</p>
                     ) : (
@@ -540,7 +537,7 @@ export function SituationRoomPage(): React.JSX.Element {
                       {t('Post')}
                     </Button>
                   </div>
-                </Card>
+                </GovPanel>
               </div>
             </>
           ) : (
@@ -550,8 +547,8 @@ export function SituationRoomPage(): React.JSX.Element {
 
         {/* Column 2 — the registers ------------------------------- */}
         <div className="flex min-w-0 flex-col gap-3 xl:col-span-4">
-          <Card flush>
-            <CardHeader bordered title={t('Active incidents')} description={t('{0} in scope for this mode', visibleIncidents.length)} />
+          <GovPanel title={t('Active incidents')} tone="amber" dense>
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">{t('{0} in scope for this mode', visibleIncidents.length)}</p>
             <div className="max-h-[440px] divide-y divide-ink-50 overflow-y-auto">
               {visibleIncidents.length === 0 ? (
                 <EmptyState compact title={t('No active incidents')} detail="Nothing currently open matches this mode." />
@@ -578,11 +575,11 @@ export function SituationRoomPage(): React.JSX.Element {
                 })
               )}
             </div>
-          </Card>
+          </GovPanel>
 
-          <Card flush>
-            <CardHeader bordered icon={<Siren className="h-4 w-4" />} title={t('Command log')} description={t('City-wide chronological record - automatic entries from incident actions, plus entries you post directly.')} />
-            <div className="p-3">
+          <GovPanel title={t('Command log')} tone="red" dense>
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">{t('City-wide chronological record - automatic entries from incident actions, plus entries you post directly.')}</p>
+            <div className="px-3 pb-3">
               <div className="flex items-start gap-1.5">
                 <Textarea rows={2} value={logDraft} onChange={(e) => setLogDraft(e.target.value)} placeholder={t('Post a command log entry.')} className="flex-1" />
                 <Button size="sm" variant="primary" disabled={!logDraft.trim()} onClick={submitLog} icon={<Send className="h-3.5 w-3.5" />}>
@@ -605,7 +602,7 @@ export function SituationRoomPage(): React.JSX.Element {
                 )}
               </ol>
             </div>
-          </Card>
+          </GovPanel>
         </div>
       </div>
 

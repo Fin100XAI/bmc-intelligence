@@ -1,10 +1,9 @@
 import { useState } from 'react'
-import { CloudDrizzle, Volume2, Wind } from 'lucide-react'
+import { CloudDrizzle, Wind } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import {
   Badge,
   Card,
-  CardHeader,
   DataTable,
   DemonstrationNotice,
   EmptyState,
@@ -17,6 +16,7 @@ import {
 } from '@/components/ui'
 import { TrendBadge } from '@/components/ui/badges'
 import { MetricCard } from '@/components/cards'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { CategoryBarChart, ChartFrame, DonutChart, CHART_COLOURS } from '@/components/charts'
 import { CityMap } from '@/components/map/CityMap'
 import { FilterBar } from '@/components/filters/FilterBar'
@@ -26,6 +26,7 @@ import { healthService } from '@/services/health.service'
 import { useFilterStore } from '@/stores/ui.store'
 import { usePageMasthead } from '@/stores/masthead.store'
 import { wardName } from '@/data/reference'
+import { activeCorporation } from '@/config/municipality.config'
 import type { AirQualityStation, NoiseReading } from '@/types/city-domains'
 import type { DataFreshness, Trend } from '@/types/common'
 import { DEMO_NOW } from '@/utils/deterministic'
@@ -89,10 +90,7 @@ export function EnvironmentIntelligencePage(): React.JSX.Element {
   const filters = useFilterStore((s) => s.filters)
   const [zoneFilter, setZoneFilter] = useState<'all' | NoiseReading['zoneType']>('all')
 
-  usePageMasthead(
-    t('Environment Intelligence'),
-    t('Air quality and ambient noise across every ward, read against the standards each zone type is held to.'),
-  )
+  usePageMasthead(t('Environment Intelligence'))
 
   const aqiQuery = useServiceQuery(queryKeys.health('air-quality'), (u) => healthService.airQuality(u))
   const noiseQuery = useServiceQuery(queryKeys.health('noise'), (u) => healthService.noise(u))
@@ -117,6 +115,7 @@ export function EnvironmentIntelligencePage(): React.JSX.Element {
 
   const stations = aqiQuery.data ?? []
   const noise = noiseQuery.data ?? []
+  const isBmc = activeCorporation.id === 'bmc'
 
   const filteredStations = stations.filter((s) => {
     if (filters.wardIds.length > 0 && !filters.wardIds.includes(s.wardId)) return false
@@ -232,10 +231,35 @@ export function EnvironmentIntelligencePage(): React.JSX.Element {
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1fr_20rem]">
         <MetricGrid columns={4}>
-          <MetricCard label={t('City average AQI')} value={avgAqi} icon={<Wind className="h-4 w-4" />} origin="demonstration" />
-          <MetricCard label={t('Best reading')} value={best?.aqi ?? '-'} support={best ? wardName(best.wardId) : undefined} tone="positive" />
-          <MetricCard label={t('Worst reading')} value={worst?.aqi ?? '-'} support={worst ? wardName(worst.wardId) : undefined} tone={worst && worst.category !== 'good' && worst.category !== 'satisfactory' ? 'warn' : 'default'} />
-          <MetricCard label={t('Stations, moderate or worse')} value={moderateOrWorse} support={t('of {0} stations', stations.length)} tone={moderateOrWorse > 0 ? 'warn' : 'default'} />
+          <MetricCard
+            label={t('City average AQI')}
+            value={avgAqi}
+            icon={<Wind className="h-4 w-4" />}
+            origin="demonstration"
+            background="red"
+            footer={
+              isBmc && activeCorporation.pm25AnnualAverageUgm3 && activeCorporation.pm25AsOfYear ? (
+                <span className="text-[0.625rem] leading-snug text-ink-400">
+                  {t('For context: BMC\'s published annual PM2.5 average for {1} was {0} µg/m³ (\'Moderate\' category) — a static yearly figure, not a live reading; the AQI above is a modelled real-time snapshot.', formatNumber(activeCorporation.pm25AnnualAverageUgm3, 1), activeCorporation.pm25AsOfYear)}
+                </span>
+              ) : undefined
+            }
+          />
+          <MetricCard label={t('Best reading')} value={best?.aqi ?? '-'} support={best ? wardName(best.wardId) : undefined} tone="positive" background="amber" />
+          <MetricCard label={t('Worst reading')} value={worst?.aqi ?? '-'} support={worst ? wardName(worst.wardId) : undefined} tone={worst && worst.category !== 'good' && worst.category !== 'satisfactory' ? 'warn' : 'default'} background="green" />
+          <MetricCard
+            label={t('Stations, moderate or worse')}
+            value={moderateOrWorse}
+            support={t('of {0} stations', stations.length)}
+            tone={moderateOrWorse > 0 ? 'warn' : 'default'}
+            footer={
+              isBmc && activeCorporation.caaqmsStationsCount ? (
+                <span className="text-[0.625rem] leading-snug text-ink-400">
+                  {t('BMC\'s real monitoring network runs {0} Continuous Ambient Air Quality Monitoring Stations across Mumbai — MPCB 14, IITM/SAFAR 9, BMC 5 — with 5 more BMC stations being added toward 33; this register models one reference station per ward for demonstration.', activeCorporation.caaqmsStationsCount)}
+                </span>
+              ) : undefined
+            }
+          />
         </MetricGrid>
         <Card className="flex flex-col">
           <p className="label-institutional mb-2">{t('Category distribution')}</p>
@@ -263,21 +287,23 @@ export function EnvironmentIntelligencePage(): React.JSX.Element {
           them from the column beside. */}
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
         <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
-          <Card flush>
-            <CardHeader className="px-4 pt-4 pb-3" title={t('Monitoring station register')} description={t('Sortable; filter by ward using the controls below.')} />
-            <div className="px-4 pb-3">
+          <GovPanel title={t('Monitoring station register')} tone="amber" dense>
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">{t('Sortable; filter by ward using the controls below.')}</p>
+            <div className="px-3 pb-3">
               <FilterBar show={['ward', 'search']} searchPlaceholder="Search station or ward" compact />
             </div>
             {filteredStations.length === 0 ? (
-              <EmptyState className="m-4" title={t('No stations match the current filters')} detail="Adjust the ward or search term above." />
+              <EmptyState className="m-3" title={t('No stations match the current filters')} detail="Adjust the ward or search term above." />
             ) : (
               <DataTable rows={filteredStations} columns={aqiColumns} rowKey={(r) => r.id} pageSize={12} searchable={false} initialSort={{ columnId: 'aqi', direction: 'desc' }} ariaLabel="Air quality monitoring stations" />
             )}
-          </Card>
+          </GovPanel>
 
-          <Card flush>
-            <CardHeader className="px-4 pt-4 pb-3" icon={<Volume2 className="h-4 w-4" />} title={t('Noise readings by zone type')} description={t('Measured against day and night limits for silence, residential, commercial and industrial zones.')} />
-            <div className="flex flex-wrap items-center gap-2 px-4 pb-3">
+          <GovPanel title={t('Noise readings by zone type')} tone="red" dense>
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+              {t('Measured against day and night limits for silence, residential, commercial and industrial zones.')}
+            </p>
+            <div className="flex flex-wrap items-center gap-2 px-3 pb-3">
               <FilterBar show={['ward', 'search']} searchPlaceholder="Search location or ward" compact />
               <div className="flex items-center gap-1.5">
                 <Label className="mb-0 whitespace-nowrap">{t('Zone type')}</Label>
@@ -290,17 +316,17 @@ export function EnvironmentIntelligencePage(): React.JSX.Element {
                 />
               </div>
             </div>
-            <MetricGrid columns={4} className="px-4 pb-3">
+            <MetricGrid columns={4} className="px-3 pb-3">
               {noiseByZone.map((z) => (
                 <MetricCard key={z.label} label={z.label} value={`${formatNumber((z.exceeding / Math.max(1, z.total)) * 100, 0)}%`} support={t('{0} of {1} readings exceed limit', z.exceeding, z.total)} tone={z.exceeding > 0 ? 'warn' : 'default'} size="sm" />
               ))}
             </MetricGrid>
             {filteredNoise.length === 0 ? (
-              <EmptyState className="m-4" title={t('No readings match the current filters')} detail="Adjust the zone type, ward or search term above." />
+              <EmptyState className="m-3" title={t('No readings match the current filters')} detail="Adjust the zone type, ward or search term above." />
             ) : (
               <DataTable rows={filteredNoise} columns={noiseColumns} rowKey={(r) => r.id} pageSize={12} searchable={false} initialSort={{ columnId: 'exceedance', direction: 'desc' }} ariaLabel="Noise readings" />
             )}
-          </Card>
+          </GovPanel>
         </div>
 
         <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
@@ -314,28 +340,26 @@ export function EnvironmentIntelligencePage(): React.JSX.Element {
             </div>
           </Card>
 
-          <Card>
-            <CardHeader title={t('AQI by ward')} description={t('Ward shading reflects the reading from the station within that ward.')} />
-            <div className="mt-3">
-              <CityMap
-                layers={[
-                  {
-                    id: 'aqi',
-                    label: t('Air Quality Index'),
-                    valueFor: (wardId) => {
-                      const s = stations.find((st) => st.wardId === wardId)
-                      if (!s) return undefined
-                      return Math.min(100, Math.round((s.aqi / 200) * 100))
-                    },
-                    higherIsWorse: true,
-                    unit: ' AQI (scaled; 200 = 100)',
-                    description: t('Reporting station AQI for the ward, scaled 0–100 against the moderate-category upper bound for visual contrast.'),
+          <GovPanel title={t('AQI by ward')} tone="amber">
+            <p className="mb-3 text-xs leading-relaxed text-ink-500">{t('Ward shading reflects the reading from the station within that ward.')}</p>
+            <CityMap
+              layers={[
+                {
+                  id: 'aqi',
+                  label: t('Air Quality Index'),
+                  valueFor: (wardId) => {
+                    const s = stations.find((st) => st.wardId === wardId)
+                    if (!s) return undefined
+                    return Math.min(100, Math.round((s.aqi / 200) * 100))
                   },
-                ]}
-                height={380}
-              />
-            </div>
-          </Card>
+                  higherIsWorse: true,
+                  unit: ' AQI (scaled; 200 = 100)',
+                  description: t('Reporting station AQI for the ward, scaled 0–100 against the moderate-category upper bound for visual contrast.'),
+                },
+              ]}
+              height={380}
+            />
+          </GovPanel>
 
           <Card>
             <ChartFrame title={t('AQI distribution')} unit={t('Number of stations')} timeframe="Current reporting period" description={t('Stations grouped by air-quality category.')}>

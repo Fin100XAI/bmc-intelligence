@@ -1,10 +1,9 @@
 import { useMemo, useState } from 'react'
-import { AlertTriangle, ArrowDownUp, Award, ListOrdered, Scale, Users2 } from 'lucide-react'
+import { AlertTriangle, ArrowDownUp, Award, Scale, Users2 } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import {
   Badge,
   Card,
-  CardHeader,
   DataTable,
   DemonstrationNotice,
   EmptyState,
@@ -17,6 +16,7 @@ import {
   type Column,
 } from '@/components/ui'
 import { MetricCard } from '@/components/cards'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { RankedBarChart } from '@/components/charts'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
@@ -161,10 +161,7 @@ function formatValue(value: number, metric: LeagueMetric): string {
 }
 
 export function WardLeaguePage(): React.JSX.Element {
-  usePageMasthead(
-    t('Ward League Table'),
-    t('Every ward on one indicator, in one order. Ward Intelligence answers how a ward is doing; this page answers which ward to attend to first.'),
-  )
+  usePageMasthead(t('Ward League Table'))
 
   const [metricId, setMetricId] = useState<WardRankMetric>('risk')
   const openDrawer = useDrawerStore((s) => s.open)
@@ -403,6 +400,7 @@ export function WardLeaguePage(): React.JSX.Element {
               tone="positive"
               icon={<Award className="h-4 w-4" />}
               origin="demonstration"
+              background="red"
             />
             <MetricCard
               label={t('Worst ward')}
@@ -410,12 +408,14 @@ export function WardLeaguePage(): React.JSX.Element {
               support={stats.worst.label}
               tone="critical"
               icon={<AlertTriangle className="h-4 w-4" />}
+              background="amber"
             />
             <MetricCard
               label={t('City median')}
               value={formatValue(Math.round(stats.median * 10) / 10, metric)}
               support={t('Across {0} wards in scope', formatNumber(stats.count))}
               icon={<Users2 className="h-4 w-4" />}
+              background="green"
             />
             <MetricCard
               label={t('Spread, best to worst')}
@@ -437,13 +437,10 @@ export function WardLeaguePage(): React.JSX.Element {
               bars and the standing note on how to read them run beside it. */}
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
             <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
-            <Card flush>
-              <CardHeader
-                bordered
-                icon={<Scale className="h-4 w-4" />}
-                title={t('League table')}
-                description={t('Position one is the ward most in need of attention on the selected indicator, not the leader. Sort on any column to read it the other way round. Select a ward to open its full profile.')}
-              />
+            <GovPanel title={t('League table')} tone="amber" dense>
+              <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+                {t('Position one is the ward most in need of attention on the selected indicator, not the leader. Sort on any column to read it the other way round. Select a ward to open its full profile.')}
+              </p>
               <DataTable
                 rows={rows}
                 columns={columns}
@@ -455,7 +452,7 @@ export function WardLeaguePage(): React.JSX.Element {
                 exportName={`ward-league-${metric.id}`}
                 exportFilters={{ Indicator: metric.label, Order: 'Worst first' }}
               />
-            </Card>
+            </GovPanel>
             </div>
 
             <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
@@ -477,13 +474,10 @@ export function WardLeaguePage(): React.JSX.Element {
               </div>
             </Card>
 
-            <Card flush className="flex flex-col">
-              <CardHeader
-                bordered
-                icon={<ListOrdered className="h-4 w-4" />}
-                title={t('Every ward · {0}', metric.shortLabel)}
-                description={t('All {0} wards in scope, worst first. {1}', formatNumber(stats.count), metric.merit)}
-              />
+            <GovPanel title={t('Every ward · {0}', metric.shortLabel)} tone="red" dense className="flex flex-col">
+              <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+                {t('All {0} wards in scope, worst first. {1}', formatNumber(stats.count), metric.merit)}
+              </p>
               <div className="px-4 py-4" style={{ height: Math.max(240, rows.length * 24) }}>
                 <RankedBarChart
                   data={rows.map((r) => ({ label: r.label.slice(0, 22), value: r.value }))}
@@ -496,7 +490,7 @@ export function WardLeaguePage(): React.JSX.Element {
                   {t('Bar colour is banded for 0-100 indices, so on a raw complaint count the bars carry length only. Read the order and the length, not the hue.')}
                 </p>
               ) : null}
-            </Card>
+            </GovPanel>
 
             <Card tone="info" className="flex items-start gap-3">
               <Scale className="mt-0.5 h-4 w-4 shrink-0 text-govt-600" aria-hidden />

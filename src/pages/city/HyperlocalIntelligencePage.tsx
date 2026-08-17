@@ -2,9 +2,10 @@ import { useMemo, useState } from 'react'
 import { Layers3, MapPin, ShieldAlert, Sigma } from 'lucide-react'
 import { PageBody, PageHeader, SplitLayout } from '@/components/layout/PageHeader'
 import { Badge, SeverityBadge } from '@/components/ui/badges'
-import { Card, CardHeader, Label, MetricGrid, ProgressBar, Select } from '@/components/ui/primitives'
+import { Card, Label, MetricGrid, ProgressBar, Select } from '@/components/ui/primitives'
 import { DemonstrationNotice, EmptyState, ErrorState, LoadingState } from '@/components/ui/states'
 import { MetricCard } from '@/components/cards/MetricCard'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { CityMap } from '@/components/map/CityMap'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
@@ -65,10 +66,7 @@ export function HyperlocalIntelligencePage(): React.JSX.Element {
   const [minTypes, setMinTypes] = useState<string>('')
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
-  usePageMasthead(
-    t('Hyperlocal Intelligence'),
-    t('Where several different problems are stacking up in one locality at once. A ward that reads acceptable on average can contain a street where drainage, waste and road failure are happening together - that street is what this screen finds.'),
-  )
+  usePageMasthead(t('Hyperlocal Intelligence'))
 
   const filters = useMemo(
     () => ({
@@ -153,6 +151,7 @@ export function HyperlocalIntelligencePage(): React.JSX.Element {
           value={summary?.localities ?? 0}
           support={t('With at least two reports on record')}
           icon={<MapPin className="h-4 w-4" />}
+          background="red"
         />
         <MetricCard
           label={t('Critical localities')}
@@ -160,6 +159,7 @@ export function HyperlocalIntelligencePage(): React.JSX.Element {
           tone={(summary?.criticalLocalities ?? 0) > 0 ? 'critical' : 'positive'}
           support={t('Composite score at or above 78')}
           icon={<ShieldAlert className="h-4 w-4" />}
+          background="amber"
         />
         <MetricCard
           label={t('Stacked localities')}
@@ -167,6 +167,7 @@ export function HyperlocalIntelligencePage(): React.JSX.Element {
           tone={(summary?.stackedLocalities ?? 0) > 0 ? 'warn' : 'default'}
           support={t('Four or more distinct signal types in one place')}
           icon={<Layers3 className="h-4 w-4" />}
+          background="green"
         />
         <MetricCard
           label={t('Open reports')}
@@ -180,13 +181,11 @@ export function HyperlocalIntelligencePage(): React.JSX.Element {
         asideWidth="lg"
         main={
           <>
-            <Card flush>
-              <CardHeader
-                bordered
-                title={t('Ward composite')}
-                description={t('Fill shows the worst locality composite in each ward. Illustrative spatial representation.')}
-              />
-              <div className="p-4 pt-0">
+            <GovPanel title={t('Ward composite')} tone="amber" dense>
+              <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+                {t('Fill shows the worst locality composite in each ward. Illustrative spatial representation.')}
+              </p>
+              <div className="px-3 pb-3">
                 <CityMap
                   height={320}
                   layers={[
@@ -210,14 +209,12 @@ export function HyperlocalIntelligencePage(): React.JSX.Element {
                   caption={t('Ward boundaries are illustrative and not survey-accurate.')}
                 />
               </div>
-            </Card>
+            </GovPanel>
 
-            <Card flush className="mt-4">
-              <CardHeader
-                bordered
-                title={t('Localities by composite signal load')}
-                description={t('Ranked by how many distinct problems are stacking, weighted by the published signal weights.')}
-              />
+            <GovPanel title={t('Localities by composite signal load')} tone="red" dense className="mt-4">
+              <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+                {t('Ranked by how many distinct problems are stacking, weighted by the published signal weights.')}
+              </p>
               {cells.length === 0 ? (
                 <EmptyState
                   title={t('No locality reaches the reporting threshold')}
@@ -256,19 +253,15 @@ export function HyperlocalIntelligencePage(): React.JSX.Element {
                   ))}
                 </ul>
               )}
-            </Card>
+            </GovPanel>
           </>
         }
         aside={
           selected ? (
             <>
-              <Card>
-                <CardHeader
-                  title={selected.localityName}
-                  description={selected.wardLabel}
-                  actions={<SeverityBadge severity={selected.severity} />}
-                />
-                <div className="mt-3">
+              <GovPanel title={selected.localityName} tone="amber" actions={<SeverityBadge severity={selected.severity} />}>
+                <p className="mb-3 text-xs leading-relaxed text-ink-500">{selected.wardLabel}</p>
+                <div>
                   <div className="flex items-baseline justify-between">
                     <span className="label-institutional">{t('Composite signal load')}</span>
                     <span className="numeric text-metric-sm font-semibold text-ink-900">
@@ -279,14 +272,13 @@ export function HyperlocalIntelligencePage(): React.JSX.Element {
                   <ProgressBar value={selected.compositeScore} className="mt-2" />
                 </div>
                 <p className="mt-3 text-xs leading-relaxed text-ink-600">{selected.explanation}</p>
-              </Card>
+              </GovPanel>
 
-              <Card>
-                <CardHeader
-                  title={t('Signals present')}
-                  description={t('Each signal the platform holds a record of at this locality or in its ward.')}
-                />
-                <ul className="mt-3 space-y-2">
+              <GovPanel title={t('Signals present')} tone="green">
+                <p className="mb-3 text-xs leading-relaxed text-ink-500">
+                  {t('Each signal the platform holds a record of at this locality or in its ward.')}
+                </p>
+                <ul className="space-y-2">
                   {selected.signals.map((s, i) => (
                     <li
                       key={`${selected.id}-${s.kind}-${i}`}
@@ -306,7 +298,7 @@ export function HyperlocalIntelligencePage(): React.JSX.Element {
                     </li>
                   ))}
                 </ul>
-              </Card>
+              </GovPanel>
 
               <Card tone="sunken">
                 <div className="flex items-start gap-2.5">

@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { ChevronRight, Info, Target, Trophy } from 'lucide-react'
+import { ChevronRight, Info, Target } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
@@ -10,7 +10,6 @@ import type { ConfidenceLevel, OperationalState, SeriesPoint } from '@/types/com
 import {
   Badge,
   Card,
-  CardHeader,
   ConfidenceBadge,
   DemonstrationNotice,
   ErrorState,
@@ -20,6 +19,7 @@ import {
   StateBadge,
 } from '@/components/ui'
 import { MetricCard } from '@/components/cards'
+import { GovPanel, panelToneForIndex } from '@/components/gov/GovPanel'
 import { ChartFrame, RankedBarChart, TrendChart } from '@/components/charts'
 import { usePageMasthead } from '@/stores/masthead.store'
 import { t } from '@/i18n'
@@ -92,10 +92,7 @@ function trendPointsFor(pipeline: Pick<OutcomePipeline, 'baselinePct' | 'achieve
 
 export function OutcomeIntelligencePage(): React.JSX.Element {
   // The shell's masthead states the screen's name; the page states the wording.
-  usePageMasthead(
-    t('Outcome Intelligence'),
-    t('Input, activity, output and outcome for every programme this platform can assemble end to end from its own operational records - the citizen-facing effect a programme was meant to produce, not merely the work completed on the way to it.'),
-  )
+  usePageMasthead(t('Outcome Intelligence'))
 
   const projectsQuery = useServiceQuery(queryKeys.projects({ scope: 'outcomes' }), (u) => projectService.list(u, { pageSize: 300 }))
   const roadsQuery = useServiceQuery(queryKeys.roads('outcomes'), (u) => roadsService.segments(u))
@@ -308,29 +305,29 @@ export function OutcomeIntelligencePage(): React.JSX.Element {
         <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
           {!anyLoading && !anyError ? (
             <>
-              <Card>
-                <CardHeader icon={<Trophy className="h-4 w-4" />} title={t('Portfolio summary')} description={t('Every programme classified against its own target, not a uniform bar.')} />
+              <GovPanel title={t('Portfolio summary')} tone="amber">
+                <p className="mb-3 text-xs leading-relaxed text-ink-500">{t('Every programme classified against its own target, not a uniform bar.')}</p>
                 <MetricGrid columns={3} className="mt-3">
                   <MetricCard label={t('On track')} value={onTrack.length} tone="positive" support={t('Within 5 points of target')} />
                   <MetricCard label={t('Developing')} value={developing.length} tone="warn" support={t('Between on-track and materially behind')} />
                   <MetricCard label={t('Behind target')} value={behind.length} tone={behind.length > 0 ? 'critical' : 'default'} support={t('More than 20 points short')} />
                 </MetricGrid>
-              </Card>
+              </GovPanel>
 
-              {pipelines.map((p) => (
-              <Card key={p.id} flush>
-                <CardHeader
-                  className="px-4 pt-4"
-                  eyebrow={p.domain}
-                  title={p.title}
-                  actions={
-                    <div className="flex items-center gap-1.5">
-                      <ConfidenceBadge confidence={p.confidence} />
-                      <StateBadge state={p.state} />
-                    </div>
-                  }
-                />
-
+              {pipelines.map((p, index) => (
+              <GovPanel
+                key={p.id}
+                title={p.title}
+                subtitle={p.domain}
+                tone={panelToneForIndex(index + 1)}
+                dense
+                actions={
+                  <div className="flex items-center gap-1.5">
+                    <ConfidenceBadge confidence={p.confidence} />
+                    <StateBadge state={p.state} />
+                  </div>
+                }
+              >
                 <div className="scrollbar-slim flex items-stretch gap-0 overflow-x-auto px-4 py-3">
                   {[
                     { stageName: 'Input', caption: p.input.label, value: p.input.value },
@@ -380,7 +377,7 @@ export function OutcomeIntelligencePage(): React.JSX.Element {
                     {t('This outcome is materially behind target. The gap is reported here without adjustment - it does not indicate that no intervention has been made, only that the measured effect has not yet moved the outcome to the target position.')}
                   </p>
                 ) : null}
-              </Card>
+              </GovPanel>
               ))}
 
               <Badge tone="muted" className="w-fit">

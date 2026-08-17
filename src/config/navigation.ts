@@ -8,6 +8,7 @@ import {
   Award,
   BadgeCheck,
   Banknote,
+  BookMarked,
   Bot,
   Boxes,
   Brain,
@@ -27,6 +28,7 @@ import {
   Droplets,
   Layers3,
   Megaphone,
+  FileCheck2,
   FileSearch,
   FileStack,
   FileText,
@@ -77,11 +79,13 @@ import {
   Stamp,
   Store,
   Target,
+  TestTube,
   TrafficCone,
   TrainFront,
   Trees,
   TrendingDown,
   Trophy,
+  UploadCloud,
   Users,
   Users2,
   FileSignature,
@@ -178,6 +182,7 @@ export const ROUTES = {
   wardCommittees: '/council/ward-committees',
   correspondence: '/council/correspondence',
   legal: '/council/legal',
+  notifiedServices: '/council/notified-services',
 
   // City intelligence, continued - domains added after the initial section
   // above was written.
@@ -214,6 +219,7 @@ export const ROUTES = {
   institutionalMemory: '/strategic/institutional-memory',
   resilience: '/strategic/resilience',
   scenarios: '/strategic/scenarios',
+  dataResources: '/strategic/data-resources',
 
   // AI
   copilot: '/ai/copilot',
@@ -237,6 +243,7 @@ export const ROUTES = {
   integrations: '/trust/integrations',
   platformHealth: '/trust/platform',
   readiness: '/trust/readiness',
+  testing: '/trust/testing',
   resilienceDr: '/trust/resilience-dr',
 
   // Administration.
@@ -251,6 +258,7 @@ export const ROUTES = {
   connectors: '/admin/connectors',
   dataSources: '/admin/data-sources',
   settings: '/admin/settings',
+  pilotIngestion: '/admin/pilot-ingestion',
 } as const
 
 export type RoutePath = (typeof ROUTES)[keyof typeof ROUTES]
@@ -994,6 +1002,14 @@ function build$NAV_SECTIONS(): NavSection[] {
         description: t('The statutory ward committees, their sittings, and corporator casework distinct from the house.'),
       },
       {
+        id: 'notified-services',
+        label: t('Notified Services Register'),
+        to: ROUTES.notifiedServices,
+        icon: FileCheck2,
+        requires: { resource: 'intelligence', action: 'view' },
+        description: t('Every statutory certificate, licence and permit measured against its published turnaround, across every department.'),
+      },
+      {
         id: 'correspondence',
         label: t('Government Correspondence'),
         to: ROUTES.correspondence,
@@ -1079,6 +1095,15 @@ function build$NAV_SECTIONS(): NavSection[] {
         icon: GitBranch,
         requires: { resource: 'intelligence', action: 'view' },
         description: t('Explore how wards, works, contracts and decisions connect.'),
+      },
+      {
+        id: 'data-resources',
+        label: t('Data & Resources'),
+        to: ROUTES.dataResources,
+        icon: BookMarked,
+        requires: { resource: 'intelligence', action: 'view' },
+        domain: 'executive',
+        description: t('The citation register behind this platform\'s factual spine - every published figure, and exactly where it was read.'),
       },
     ],
   },
@@ -1284,6 +1309,15 @@ function build$NAV_SECTIONS(): NavSection[] {
         description: t('What is implemented here versus required for production.'),
       },
       {
+        id: 'testing',
+        label: t('Testing & Quality Assurance'),
+        to: ROUTES.testing,
+        icon: TestTube,
+        requires: { resource: 'platform', action: 'view' },
+        domain: 'platform',
+        description: t('What has actually been verified against this build, how, and what has not - stated plainly.'),
+      },
+      {
         id: 'users',
         label: t('Users & Roles'),
         to: ROUTES.users,
@@ -1314,6 +1348,14 @@ function build$NAV_SECTIONS(): NavSection[] {
         icon: Database,
         requires: { resource: 'administration', action: 'view' },
         description: t('Operational ingestion register — enable, pause, sync and manage feeds.'),
+      },
+      {
+        id: 'pilot-ingestion',
+        label: t('Pilot Data Ingestion'),
+        to: ROUTES.pilotIngestion,
+        icon: UploadCloud,
+        requires: { resource: 'connector', action: 'view' },
+        description: t('Upload a real property-tax CSV export and see it rendered - the one connector in this platform that is not demonstration data.'),
       },
       {
         id: 'settings',

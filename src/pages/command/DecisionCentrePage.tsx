@@ -9,12 +9,11 @@ import {
   FileSearch,
   Landmark,
   ScrollText,
-  Trophy,
   UserCheck,
-  Workflow,
 } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
-import { Button, Card, CardHeader, Input, Label, MetricGrid, Textarea } from '@/components/ui/primitives'
+import { Button, Input, Label, MetricGrid, Textarea } from '@/components/ui/primitives'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { Badge, ClassificationBadge, SeverityBadge } from '@/components/ui/badges'
 import { Modal, Tabs } from '@/components/ui/overlays'
 import { DemonstrationNotice, EmptyState, ErrorState, LoadingState } from '@/components/ui/states'
@@ -128,10 +127,7 @@ export function DecisionCentrePage(): React.JSX.Element {
   const fromIntelligenceId = searchParams.get('from')
 
   // The shell renders the masthead; this page states what it should say.
-  usePageMasthead(
-    t('Decision Centre'),
-    t('Every decision case from problem statement to measured outcome. Platform analysis is advisory; the human decision, its rationale and its accountable officer are what the record retains.'),
-  )
+  usePageMasthead(t('Decision Centre'))
 
   useEffect(() => {
     if (caseIdParam) openDrawer({ kind: 'decision', id: caseIdParam })
@@ -281,9 +277,8 @@ export function DecisionCentrePage(): React.JSX.Element {
       {/* The procedure the whole page is about, stated once across the full
           width. It reads left to right by nature — a stage rail forced into a
           column would have to be scrolled to be understood at all. */}
-      <Card>
-        <CardHeader eyebrow={t('How a decision case moves')} title={t('Intelligence to accountable outcome')} icon={<Workflow className="h-4 w-4" />} />
-        <div className="scrollbar-slim mt-3 flex items-center gap-1 overflow-x-auto pb-1">
+      <GovPanel title={t('Intelligence to accountable outcome')} subtitle={t('How a decision case moves')} tone="amber">
+        <div className="scrollbar-slim flex items-center gap-1 overflow-x-auto pb-1">
           {WORKFLOW_RAIL.map((step, i) => (
             <div key={step} className="flex shrink-0 items-center gap-1">
               <span className="inline-flex h-7 items-center rounded-md border border-ink-200 bg-surface-sunken px-2.5 text-xs font-medium whitespace-nowrap text-ink-700">
@@ -293,7 +288,7 @@ export function DecisionCentrePage(): React.JSX.Element {
             </div>
           ))}
         </div>
-      </Card>
+      </GovPanel>
 
       {/* ── Two columns ──────────────────────────────────────────────
           The board of cases is what the officer works in, so it takes the
@@ -331,15 +326,12 @@ export function DecisionCentrePage(): React.JSX.Element {
           </MetricGrid>
 
           {effectivenessSegments.length > 0 ? (
-            <Card>
-              <CardHeader
-                eyebrow={t('Outcome evaluation')}
-                title={t('Outcome effectiveness distribution')}
-                description={t('{0} case(s) with a recorded outcome.', summary.withOutcomeCount)}
-                icon={<Trophy className="h-4 w-4" />}
-              />
-              <CompositionBar segments={effectivenessSegments} className="mt-3" />
-            </Card>
+            <GovPanel title={t('Outcome effectiveness distribution')} subtitle={t('Outcome evaluation')} tone="green">
+              <p className="mb-3 text-xs leading-relaxed text-ink-500">
+                {t('{0} case(s) with a recorded outcome.', summary.withOutcomeCount)}
+              </p>
+              <CompositionBar segments={effectivenessSegments} />
+            </GovPanel>
           ) : null}
         </div>
       </div>

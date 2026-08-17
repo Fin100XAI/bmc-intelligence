@@ -332,7 +332,6 @@ export const MR_PART_08: Record<string, string> = {
   '{0} categories below SLA threshold': 'सेवा-हमी मर्यादेखालील {0} श्रेणी',
   '{0} City Intelligence Index': '{0} शहर बुद्धिमत्ता निर्देशांक',
   '{0} closure(s)': '{0} बंदी',
-  '{0} contract(s) · perf. {1}/100': '{0} करार · कामगिरी {1}/100',
   '{0} control{1} could not be exercised on this role.':
     'या भूमिकेवर {0} नियंत्रण{1} तपासता आले नाही.',
   '{0} critical, {1} high': '{0} अतितीव्र, {1} उच्च',

@@ -4,7 +4,6 @@ import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import {
   Badge,
   Card,
-  CardHeader,
   DataTable,
   DemonstrationNotice,
   EmptyState,
@@ -18,6 +17,7 @@ import {
   type Column,
 } from '@/components/ui'
 import { MetricCard } from '@/components/cards'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { RankedBarChart } from '@/components/charts'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
@@ -92,10 +92,7 @@ registerLayer(() => {
 })
 
 export function WardCommitmentsPage(): React.JSX.Element {
-  usePageMasthead(
-    t('Ward Commitments Ledger'),
-    t('Everything the corporation has committed to a named ward - resolutions the house has carried, capital works sanctioned, decision cases taken and the ward\'s own capital allocation - held as one record with one standing, so the question a corporator actually asks can be answered from a single screen.'),
-  )
+  usePageMasthead(t('Ward Commitments Ledger'))
 
   const [scope, setScope] = useState<string>(CITY_SCOPE)
   const [kindFilter, setKindFilter] = useState<CommitmentKind | ''>('')
@@ -323,6 +320,7 @@ export function WardCommitmentsPage(): React.JSX.Element {
               support={t('{0} of {1} delivered · {2} under way', summary.delivered, summary.made, summary.inProgress)}
               icon={<ClipboardList className="h-4 w-4" />}
               origin="derived-metric"
+              background="red"
             />
             <MetricCard
               label={t('Unactioned')}
@@ -335,6 +333,7 @@ export function WardCommitmentsPage(): React.JSX.Element {
               tone={summary.unactioned > 0 ? 'critical' : 'positive'}
               icon={<Gavel className="h-4 w-4" />}
               explanation={`Carried or sanctioned, the time in which something should have begun has passed, and nothing has begun at all. Held apart from "overdue", where work did start and is simply late. For a resolution the administrative window is ${RESOLUTION_ACTION_WINDOW_DAYS} days from the date the house decided.`}
+              background="amber"
             />
             <MetricCard
               label={t('Committed, not delivered')}
@@ -342,6 +341,7 @@ export function WardCommitmentsPage(): React.JSX.Element {
               support={t('{0} delivered of {1} committed', formatCrore(summary.valueDeliveredCrore), formatCrore(summary.valueCommittedCrore))}
               tone={summary.valueOutstandingCrore > summary.valueDeliveredCrore ? 'warn' : 'positive'}
               icon={<HandCoins className="h-4 w-4" />}
+              background="green"
             />
             <MetricCard
               label={t('Oldest unactioned')}
@@ -368,42 +368,44 @@ export function WardCommitmentsPage(): React.JSX.Element {
               which is the order a corporator asks the question in. */}
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
             <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
-            <Card flush>
-                <CardHeader
-                  bordered
-                  icon={<Gavel className="h-4 w-4" />}
-                  title={t('Commitment ledger')}
-                description={t('Every commitment naming this scope, longest-standing failure first. Each row states the register it came from and the basis on which its standing was derived.')}
-                actions={
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Select
-                      value={kindFilter}
-                      onChange={(e) => setKindFilter(e.target.value as CommitmentKind | '')}
-                      options={[
-                        { value: '', label: t('All registers') },
-                        ...(Object.keys(COMMITMENT_KIND_LABEL) as CommitmentKind[]).map((k) => ({
-                          value: k,
-                          label: COMMITMENT_KIND_LABEL[k],
-                        })),
-                      ]}
-                      className="w-auto"
-                      aria-label={t('Filter by register')}
-                    />
-                    <Select
-                      value={standingFilter}
-                      onChange={(e) => setStandingFilter(e.target.value as CommitmentStanding | '')}
-                      options={[
-                        { value: '', label: t('All standings') },
-                        ...STANDINGS.map((s) => ({ value: s, label: COMMITMENT_STANDING_LABEL[s] })),
-                      ]}
-                      className="w-auto"
-                      aria-label={t('Filter by standing')}
-                    />
-                  </div>
-                }
-              />
+            <GovPanel
+              title={t('Commitment ledger')}
+              tone="amber"
+              dense
+              actions={
+                <div className="flex flex-wrap items-center gap-2">
+                  <Select
+                    value={kindFilter}
+                    onChange={(e) => setKindFilter(e.target.value as CommitmentKind | '')}
+                    options={[
+                      { value: '', label: t('All registers') },
+                      ...(Object.keys(COMMITMENT_KIND_LABEL) as CommitmentKind[]).map((k) => ({
+                        value: k,
+                        label: COMMITMENT_KIND_LABEL[k],
+                      })),
+                    ]}
+                    className="w-auto"
+                    aria-label={t('Filter by register')}
+                  />
+                  <Select
+                    value={standingFilter}
+                    onChange={(e) => setStandingFilter(e.target.value as CommitmentStanding | '')}
+                    options={[
+                      { value: '', label: t('All standings') },
+                      ...STANDINGS.map((s) => ({ value: s, label: COMMITMENT_STANDING_LABEL[s] })),
+                    ]}
+                    className="w-auto"
+                    aria-label={t('Filter by standing')}
+                  />
+                </div>
+              }
+            >
+              <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+                {t('Every commitment naming this scope, longest-standing failure first. Each row states the register it came from and the basis on which its standing was derived.')}
+              </p>
               {filtered.length === 0 ? (
                 <EmptyState
+                  className="mx-3 mb-3"
                   title={t('No commitments match the current filters')}
                   detail="Clear a filter to widen the ledger."
                 />
@@ -424,30 +426,33 @@ export function WardCommitmentsPage(): React.JSX.Element {
                   ariaLabel="Ward commitments ledger"
                 />
               )}
-            </Card>
+            </GovPanel>
             </div>
 
             <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
-              <Card flush className="flex min-w-0 flex-col">
-                <CardHeader
-                  bordered
-                  icon={<ClipboardList className="h-4 w-4" />}
-                  title={rankMetric === 'unactioned' ? 'Wards by unactioned commitments' : 'Wards by value undelivered'}
-                  description={t('Ranked across every ward within your authorised scope, whichever ward is selected above.')}
-                  actions={
-                    <SegmentedControl<RankMetric>
-                      value={rankMetric}
-                      onChange={setRankMetric}
-                      ariaLabel="Rank wards by"
-                      options={[
-                        { value: 'unactioned', label: t('Unactioned') },
-                        { value: 'outstanding', label: t('Value undelivered') },
-                      ]}
-                    />
-                  }
-                />
+              <GovPanel
+                title={rankMetric === 'unactioned' ? 'Wards by unactioned commitments' : 'Wards by value undelivered'}
+                tone="red"
+                dense
+                className="flex min-w-0 flex-col"
+                actions={
+                  <SegmentedControl<RankMetric>
+                    value={rankMetric}
+                    onChange={setRankMetric}
+                    ariaLabel="Rank wards by"
+                    options={[
+                      { value: 'unactioned', label: t('Unactioned') },
+                      { value: 'outstanding', label: t('Value undelivered') },
+                    ]}
+                  />
+                }
+              >
+                <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+                  {t('Ranked across every ward within your authorised scope, whichever ward is selected above.')}
+                </p>
                 {ranked.length === 0 ? (
                   <EmptyState
+                    className="mx-3 mb-3"
                     title={rankMetric === 'unactioned' ? 'No ward carries an unactioned commitment' : 'Nothing committed stands undelivered'}
                     detail="Every commitment naming a ward within your authorised scope has either been delivered or is running within its expected period."
                   />
@@ -462,15 +467,12 @@ export function WardCommitmentsPage(): React.JSX.Element {
                     />
                   </div>
                 )}
-              </Card>
+              </GovPanel>
 
-              <Card flush className="flex min-w-0 flex-col">
-                <CardHeader
-                  bordered
-                  icon={<Scale className="h-4 w-4" />}
-                  title={t('What became of them')}
-                  description={t('Every commitment on this reading, by standing. {0}.', summary.wardLabel)}
-                />
+              <GovPanel title={t('What became of them')} tone="amber" dense className="flex min-w-0 flex-col">
+                <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+                  {t('Every commitment on this reading, by standing. {0}.', summary.wardLabel)}
+                </p>
                 <ul className="divide-y divide-ink-100">
                   {STANDINGS.map((standing) => {
                     const count =
@@ -505,7 +507,7 @@ export function WardCommitmentsPage(): React.JSX.Element {
                 <p className="border-t border-ink-100 px-4 py-3 text-[0.6875rem] leading-relaxed text-ink-500">
                   {t('A resolution carries no commencement signal of its own, so it can only stand as delivered, within its administrative window, or unactioned. Capital works and decision cases carry a start and a due date, and are the only registers here that can be shown as overdue.')}
                 </p>
-              </Card>
+              </GovPanel>
 
             </div>
           </div>

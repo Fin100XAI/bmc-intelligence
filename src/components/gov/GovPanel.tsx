@@ -17,25 +17,86 @@ import { cn } from '@/utils/cn'
  * departmental return is read, instead of a mosaic that has to be scanned.
  */
 
-type PanelTone = 'default' | 'primary' | 'critical' | 'muted'
+type PanelTone = 'default' | 'primary' | 'critical' | 'muted' | 'red' | 'amber' | 'green'
 
 /**
- * Band background and title colour, kept as separate classes.
+ * Band background, title colour and the hairline that separates the band
+ * from the body, kept as separate classes.
  *
  * The title colour has to be set on the heading ELEMENT, not inherited from
  * the band. `src/styles/index.css` carries a global `h1…h6 { color: ... }`
  * rule, and a direct element rule beats an inherited value however specific
- * the ancestor's class is — so a title relying on `text-white` from the band
- * renders in near-black ink on a navy field, which is all but invisible.
- * Anything that puts a heading on a dark surface has to state its own colour.
+ * the ancestor's class is — so a title relying on an inherited colour from
+ * the band renders in near-black ink regardless of the band's own colour.
+ * Anything that bands a heading has to state the heading's colour itself.
+ *
+ * Light tints, no outer border. A frame around every panel competes with the
+ * frame around the next one down the column; on a page carrying five or six
+ * of these the borders are what the eye notices first, before any of the
+ * figures inside them. `shadow-xs` alone lifts a panel off the canvas just
+ * enough to read as its own surface, without drawing a box the reader has
+ * to look past.
+ *
+ * Weight is reserved for genuine severity: `critical` is the one tone still
+ * a solid fill top to bottom, so an officer's eye still goes there first on
+ * a page where everything else is quiet.
  */
-const HEADER_TONE: Record<PanelTone, { band: string; title: string; support: string }> = {
-  // The institutional navy band. This is the single strongest signal that the
-  // surface belongs to an administration rather than to a product.
-  default: { band: 'bg-govt-800', title: 'text-white', support: 'text-white/80' },
-  primary: { band: 'bg-govt-900', title: 'text-white', support: 'text-white/80' },
-  critical: { band: 'bg-crit-600', title: 'text-white', support: 'text-white/80' },
-  muted: { band: 'bg-ink-100', title: 'text-ink-800', support: 'text-ink-500' },
+const HEADER_TONE: Record<PanelTone, { band: string; title: string; support: string; border: string }> = {
+  // The institutional wash. Blue was pulled from the palette entirely — not
+  // just off the cycling identity tones — because a hue that is also every
+  // browser's and every wireframe's default accent stopped reading as a
+  // considered choice once it was everywhere on the page. `default` and
+  // `primary` deliberately do NOT move to one of the three remaining Google
+  // hues either: a hero panel banded the same colour as an ordinary
+  // identity-cycle panel is the exact collision this palette exists to
+  // avoid. Neutral ink is the one wash that can never collide with red,
+  // amber or green, which is what a masthead panel needs most.
+  default: { band: 'bg-ink-50', title: 'text-ink-900', support: 'text-ink-600', border: 'border-ink-100' },
+  // A shade deeper than `default`, reserved for the one panel on a page that
+  // anchors it - a masthead among returns, not another return.
+  primary: { band: 'bg-ink-200', title: 'text-ink-900', support: 'text-ink-700', border: 'border-ink-300' },
+  // The one tone that stays a solid fill - severity earns weight the other
+  // tones deliberately give up.
+  critical: { band: 'bg-crit-600', title: 'text-white', support: 'text-white/80', border: 'border-crit-700' },
+  muted: { band: 'bg-ink-100', title: 'text-ink-800', support: 'text-ink-500', border: 'border-ink-200' },
+  // The three remaining Google brand hues, at the palest step on their ramp,
+  // for a register of panels that reads as one calm page rather than one
+  // colour: a sequence of same-navy bands is a rule book, a sequence
+  // cycling through these washes is a wall of distinct returns an officer
+  // can tell apart at a glance without any of them shouting. Reserved for
+  // section IDENTITY, not severity — `GovStripCell`/`GovRow`'s tone prop
+  // still carries the actual critical/warn/positive reading of a figure,
+  // unaffected by which of these a panel happens to be banded in.
+  red: {
+    band: 'bg-google-red-50',
+    title: 'text-google-red-900',
+    support: 'text-google-red-700',
+    border: 'border-google-red-100',
+  },
+  amber: {
+    band: 'bg-google-yellow-50',
+    title: 'text-google-yellow-900',
+    support: 'text-google-yellow-800',
+    border: 'border-google-yellow-200',
+  },
+  green: {
+    band: 'bg-google-green-50',
+    title: 'text-google-green-900',
+    support: 'text-google-green-700',
+    border: 'border-google-green-100',
+  },
+}
+
+/**
+ * Assigns the three remaining Google hues to a sequence of panels in
+ * position order, so neighbours never repeat and a colour returns only on
+ * the fourth card — exactly the discipline `.metric-cycle` already applies
+ * to metric tiles. Pass the panel's index within its visual sequence
+ * (0-based).
+ */
+export function panelToneForIndex(index: number): PanelTone {
+  const cycle: PanelTone[] = ['red', 'amber', 'green']
+  return cycle[index % cycle.length]!
 }
 
 export function GovPanel({
@@ -64,11 +125,17 @@ export function GovPanel({
         // `rounded-[2px]` rather than `rounded-none`: a true right angle reads
         // as an unstyled box on screen, while two pixels reads as a printed
         // rule. The difference is the whole effect.
-        'flex flex-col overflow-hidden rounded-[2px] border border-ink-200 bg-surface shadow-xs',
+        'flex flex-col overflow-hidden rounded-[2px] bg-surface shadow-xs',
         className,
       )}
     >
-      <header className={cn('flex items-center gap-2 px-3 py-1.5', HEADER_TONE[tone].band)}>
+      <header
+        className={cn(
+          'flex items-center gap-2 border-b px-3 py-1.5',
+          HEADER_TONE[tone].band,
+          HEADER_TONE[tone].border,
+        )}
+      >
         <h2
           className={cn(
             'min-w-0 flex-1 truncate text-[0.6875rem] font-bold tracking-[0.09em] uppercase',
@@ -230,33 +297,55 @@ export function GovMasthead({
   )
 }
 
-/** One cell of the masthead's status strip. */
+/** A strip cell's own wash, independent of `tone` — identity, not severity. */
+const STRIP_BACKGROUND: Record<'red' | 'amber' | 'green', string> = {
+  red: 'bg-google-red-50',
+  amber: 'bg-google-yellow-50',
+  green: 'bg-google-green-50',
+}
+
+/**
+ * One cell of the masthead's status strip.
+ *
+ * `icon` is optional so every existing call site keeps rendering the plain
+ * label-over-value pair unchanged; a page that wants the strip to read as an
+ * infographic rather than a returns row passes one, and the cell reserves it
+ * a fixed corner rather than letting it push the figure around. `background`
+ * is the same idea applied to the cell itself: opt in to a pale Google wash
+ * for a strip that reads as a row of distinct stat cards rather than one
+ * flat ledger bar. It is deliberately a separate prop from `tone` — tone is
+ * the figure's actual reading (critical/warn/positive), background is only
+ * which cell this is, so a critical figure still reads red on top of
+ * whichever wash the cell happens to sit on.
+ */
 export function GovStripCell({
   label,
   value,
   tone = 'default',
+  icon,
+  background,
 }: {
   label: ReactNode
   value: ReactNode
   tone?: 'default' | 'critical' | 'warn' | 'positive'
+  icon?: ReactNode
+  background?: 'red' | 'amber' | 'green'
 }): React.JSX.Element {
+  const toneClass =
+    tone === 'critical'
+      ? 'text-crit-600'
+      : tone === 'warn'
+        ? 'text-warn-700'
+        : tone === 'positive'
+          ? 'text-google-green-700'
+          : 'text-govt-900'
   return (
-    <div className="min-w-[8.5rem] flex-1 px-3 py-2">
-      <p className="text-[0.5625rem] font-bold tracking-[0.1em] text-ink-500 uppercase">{label}</p>
-      <p
-        className={cn(
-          'numeric mt-0.5 text-[0.9375rem] font-bold tabular-nums',
-          tone === 'critical'
-            ? 'text-crit-600'
-            : tone === 'warn'
-              ? 'text-warn-700'
-              : tone === 'positive'
-                ? 'text-google-green-700'
-                : 'text-govt-900',
-        )}
-      >
-        {value}
+    <div className={cn('min-w-[9.5rem] flex-1 px-4 py-3', background ? STRIP_BACKGROUND[background] : undefined)}>
+      <p className="flex items-center gap-1.5 text-[0.6875rem] font-bold tracking-[0.09em] text-ink-500 uppercase">
+        {icon ? <span className={cn('shrink-0', toneClass)}>{icon}</span> : null}
+        {label}
       </p>
+      <p className={cn('numeric mt-1 text-[1.75rem] leading-none font-bold tabular-nums', toneClass)}>{value}</p>
     </div>
   )
 }

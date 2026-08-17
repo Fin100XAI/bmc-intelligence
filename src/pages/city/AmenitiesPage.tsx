@@ -4,7 +4,6 @@ import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import {
   Badge,
   Card,
-  CardHeader,
   DataTable,
   DemonstrationNotice,
   EmptyState,
@@ -15,6 +14,7 @@ import {
   type Column,
 } from '@/components/ui'
 import { MetricCard } from '@/components/cards'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { CategoryBarChart, CHART_COLOURS, RankedBarChart } from '@/components/charts'
 import { FilterBar } from '@/components/filters/FilterBar'
 import { useServiceQuery } from '@/hooks'
@@ -22,6 +22,7 @@ import { queryKeys } from '@/app/queryClient'
 import { amenitiesService } from '@/services'
 import { useFilterStore } from '@/stores/ui.store'
 import { usePageMasthead } from '@/stores/masthead.store'
+import { activeCorporation } from '@/config/municipality.config'
 import { wardName, wardShortName } from '@/data/reference'
 import {
   AMENITY_CAPACITY_UNIT,
@@ -74,10 +75,7 @@ export function AmenitiesPage(): React.JSX.Element {
   const filters = useFilterStore((s) => s.filters)
 
   // The shell's masthead carries the screen's name; the page states the wording.
-  usePageMasthead(
-    t('Parking & Public Amenities'),
-    t('Parking lots, public conveniences, bus shelters, drinking water posts and community halls - what the corporation holds, what condition it is in, and how far it reaches the people it is meant to serve. Street lighting is reported separately.'),
-  )
+  usePageMasthead(t('Parking & Public Amenities'))
 
   const amenitiesQuery = useServiceQuery(queryKeys.amenities('estate'), (u) => amenitiesService.amenities(u))
   const gapsQuery = useServiceQuery(queryKeys.amenities('ward-gaps'), (u) => amenitiesService.wardGaps(u))
@@ -412,6 +410,14 @@ export function AmenitiesPage(): React.JSX.Element {
           support={t('{0} conveniences · {1} parking lots', formatNumber(toilets.length), formatNumber(parkingLots.length))}
           icon={<SquareParking className="h-4 w-4" />}
           origin="demonstration"
+          background="red"
+          footer={
+            activeCorporation.id === 'bmc' && activeCorporation.publicToiletBlocksCount ? (
+              <span className="text-[0.625rem] leading-snug text-ink-400">
+                {t('For context: a Praja Foundation RTI-based report (May 2024) counted {0} public toilet blocks across Mumbai\'s 24 wards - one seat per 752 males and one per 1,820 females; 69% of community blocks lack water, 60% lack electricity.', formatNumber(activeCorporation.publicToiletBlocksCount))}
+              </span>
+            ) : undefined
+          }
         />
         <MetricCard
           label={t('Residents per usable toilet seat')}
@@ -426,6 +432,8 @@ export function AmenitiesPage(): React.JSX.Element {
           }
           icon={<Toilet className="h-4 w-4" />}
           explanation="Ward residents divided by public toilet seats they could actually use - seats with a water supply and not in critical condition. Seats, not blocks: a block of four and a block of twenty are not the same amenity."
+          background="amber"
+          footer={<span className="text-[0.625rem] leading-snug text-ink-400">{t('For reference: Praja Foundation\'s RTI-based report (data as of Dec 2023) counted 7,646 public toilet blocks across Mumbai\'s 24 wards — a block count, a coarser unit than the usable-seat ratio above, which this page measures because it is the Swachh Bharat standard. The two figures are not directly comparable.')}</span>}
         />
         <MetricCard
           label={t('Accessible to persons with disabilities')}
@@ -435,6 +443,7 @@ export function AmenitiesPage(): React.JSX.Element {
           tone={accessibleSharePct < 40 ? 'critical' : accessibleSharePct < 60 ? 'warn' : 'positive'}
           icon={<Accessibility className="h-4 w-4" />}
           explanation="Step-free approach, grab rails and a usable entrance width. An amenity a wheelchair user cannot enter is not available to them, however it is counted on the asset register."
+          background="green"
         />
         <MetricCard
           label={t('Amenities needing repair')}
@@ -450,39 +459,35 @@ export function AmenitiesPage(): React.JSX.Element {
           and the two readings that qualify them stand beside, not below. */}
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
         <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
-          <Card flush>
-            <CardHeader
-              bordered
-              icon={<Droplets className="h-4 w-4" />}
-              title={t('Public amenities')}
-              description={t('Every facility within your authorised ward scope, with the condition that qualifies it. Availability alone is never reported here.')}
-            />
+          <GovPanel title={t('Public amenities')} tone="amber" dense>
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+              {t('Every facility within your authorised ward scope, with the condition that qualifies it. Availability alone is never reported here.')}
+            </p>
             {filtered.length === 0 ? (
               <EmptyState
+                className="mx-3 mb-3"
                 title={t('No amenities match the current filters')}
                 detail="Clear a filter to widen the amenity register."
               />
             ) : (
               <DataTable rows={filtered} columns={columns} rowKey={(a) => a.id} pageSize={12} />
             )}
-          </Card>
+          </GovPanel>
 
-          <Card flush>
-            <CardHeader
-              bordered
-              icon={<Wrench className="h-4 w-4" />}
-              title={t('Ward provision gap')}
-              description={t('Provision measured against the people it serves rather than against last year\'s asset register.')}
-            />
+          <GovPanel title={t('Ward provision gap')} tone="red" dense>
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+              {t('Provision measured against the people it serves rather than against last year\'s asset register.')}
+            </p>
             {filteredGaps.length === 0 ? (
               <EmptyState
+                className="mx-3 mb-3"
                 title={t('No wards match the current filters')}
                 detail="Clear the ward filter to see provision across the corporation."
               />
             ) : (
               <DataTable rows={filteredGaps} columns={gapColumns} rowKey={(g) => g.wardId} pageSize={12} />
             )}
-          </Card>
+          </GovPanel>
 
           <Card className="flex flex-col">
             <p className="label-institutional mb-2">{t('Amenity grievances raised against grievances resolved')}</p>
@@ -514,12 +519,10 @@ export function AmenitiesPage(): React.JSX.Element {
             </div>
           </Card>
 
-          <Card flush className="flex flex-col">
-            <CardHeader
-              bordered
-              title={t('Wards worst served for public conveniences')}
-              description={t('Residents for every usable toilet seat. Ranked, not averaged - the average is always survivable and the worst ward never is.')}
-            />
+          <GovPanel title={t('Wards worst served for public conveniences')} tone="amber" dense className="flex flex-col">
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+              {t('Residents for every usable toilet seat. Ranked, not averaged - the average is always survivable and the worst ward never is.')}
+            </p>
             <div className="px-4 pb-4" style={{ height: Math.max(210, worstToiletRatio.length * 26) }}>
               {worstToiletRatio.length === 0 ? (
                 <EmptyState compact title={t('No wards in scope')} detail="Widen the ward filter to rank provision." />
@@ -532,7 +535,7 @@ export function AmenitiesPage(): React.JSX.Element {
                 />
               )}
             </div>
-          </Card>
+          </GovPanel>
 
           <Card tone="default" className="flex items-start gap-3">
             <SquareParking className="mt-0.5 h-4 w-4 shrink-0 text-govt-600" aria-hidden />

@@ -1,11 +1,10 @@
 import { useMemo, useState } from 'react'
-import { ArrowDown, ArrowRight, GitBranch, Layers, ShieldAlert, Table2 } from 'lucide-react'
+import { ArrowDown, ArrowRight, GitBranch, ShieldAlert, Table2 } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { Badge, ClassificationBadge, StateBadge } from '@/components/ui/badges'
 import {
   Button,
   Card,
-  CardHeader,
   DefinitionList,
   DefinitionRow,
   MetricGrid,
@@ -16,6 +15,7 @@ import {
 import { DataTable, type Column } from '@/components/ui/DataTable'
 import { Drawer } from '@/components/ui/overlays'
 import { DemonstrationNotice, EmptyState, ErrorState, LoadingState } from '@/components/ui/states'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { useServiceQuery } from '@/hooks'
 import { governanceService } from '@/services'
 import { usePageMasthead } from '@/stores/masthead.store'
@@ -92,10 +92,7 @@ const STAGE_IMPACT: Record<LineageStage['kind'], string> = {
 
 export function DataLineagePage(): React.JSX.Element {
   // The shell's masthead carries the screen's name; the page states the wording.
-  usePageMasthead(
-    t('Data Lineage'),
-    t('Every derived metric this platform presents publishes the full pipeline that produced it, from the departmental source through to the decision it can inform. A metric whose lineage has not been recently validated is not presented as evidence.'),
-  )
+  usePageMasthead(t('Data Lineage'))
 
   const lineageQuery = useServiceQuery(['trust-data-lineage', 'all-graphs'], (u) => governanceService.lineageGraphs(u))
 
@@ -327,14 +324,11 @@ export function DataLineagePage(): React.JSX.Element {
       ) : null}
 
       {view === 'catalogue' ? (
-        <Card flush>
-          <CardHeader
-            className="px-4 pt-4"
-            icon={<Layers className="h-4 w-4" />}
-            title={t('Lineage catalogue')}
-            description={t('Every published graph, ordered by how recently its pipeline was validated. Select a row to open its pipeline.')}
-          />
-          <div className="p-4">
+        <GovPanel title={t('Lineage catalogue')} tone="amber" dense>
+          <p className="px-4 pt-4 pb-3 text-xs leading-relaxed text-ink-500">
+            {t('Every published graph, ordered by how recently its pipeline was validated. Select a row to open its pipeline.')}
+          </p>
+          <div className="p-4 pt-0">
             <DataTable
               rows={filtered}
               columns={catalogueColumns}
@@ -351,23 +345,24 @@ export function DataLineagePage(): React.JSX.Element {
               emptyTitle={t('No lineage graph matches the current filters')}
             />
           </div>
-        </Card>
+        </GovPanel>
       ) : (
         <>
-          <Card>
-            <CardHeader
-              icon={<GitBranch className="h-4 w-4" />}
-              title={selected.metricLabel}
-              description={t('{0} · lineage graph {1} · select any stage to see what it does and what fails without it', DOMAIN_LABEL[selected.domain], selected.id)}
-              actions={
-                <div className="flex items-center gap-1.5">
-                  <Badge tone={CURRENCY_TONE[selectedCurrency]} dot>
-                    {CURRENCY_LABEL[selectedCurrency]}
-                  </Badge>
-                  <ClassificationBadge classification={selected.classification} />
-                </div>
-              }
-            />
+          <GovPanel
+            title={selected.metricLabel}
+            tone="amber"
+            actions={
+              <div className="flex items-center gap-1.5">
+                <Badge tone={CURRENCY_TONE[selectedCurrency]} dot>
+                  {CURRENCY_LABEL[selectedCurrency]}
+                </Badge>
+                <ClassificationBadge classification={selected.classification} />
+              </div>
+            }
+          >
+            <p className="mb-3 text-xs leading-relaxed text-ink-500">
+              {t('{0} · lineage graph {1} · select any stage to see what it does and what fails without it', DOMAIN_LABEL[selected.domain], selected.id)}
+            </p>
 
             <div className="scrollbar-slim mt-4 flex flex-col gap-0 overflow-x-auto lg:flex-row lg:items-stretch lg:gap-0">
               {selected.stages.map((stage, i) => (
@@ -424,7 +419,7 @@ export function DataLineagePage(): React.JSX.Element {
                 {averageQuality(selected)} across {selected.stages.length}{' '}{t('stages is the more flattering number, and the one an operator should trust less.')}
               </p>
             ) : null}
-          </Card>
+          </GovPanel>
 
           <Card tone={selectedCurrency === 'stale' ? 'critical' : selectedCurrency === 'ageing' ? 'warn' : 'info'}>
             <div className="flex items-start gap-2.5">
@@ -488,8 +483,7 @@ export function DataLineagePage(): React.JSX.Element {
               </DefinitionRow>
             </DefinitionList>
 
-            <Card tone="sunken">
-              <CardHeader title={t('What this stage does to the data')} />
+            <GovPanel title={t('What this stage does to the data')} tone="amber">
               {openStage.transformations.length === 0 ? (
                 <p className="mt-2 text-[0.8125rem] leading-relaxed text-ink-600">
                   {t('This stage applies no transformation. It passes records through unchanged, which is itself worth recording — a pipeline position that transforms nothing should not silently look like one that does.')}
@@ -504,16 +498,12 @@ export function DataLineagePage(): React.JSX.Element {
                   ))}
                 </ul>
               )}
-            </Card>
+            </GovPanel>
 
-            <Card tone="warn">
-              <CardHeader
-                icon={<ShieldAlert className="h-4 w-4 text-warn-700" />}
-                title={t('If this stage stops')}
-                description={t('Impact assessment, not a hypothetical.')}
-              />
+            <GovPanel title={t('If this stage stops')} tone="amber">
+              <p className="mb-2 text-xs leading-relaxed text-ink-500">{t('Impact assessment, not a hypothetical.')}</p>
               <p className="mt-2 text-[0.8125rem] leading-relaxed text-ink-700">{STAGE_IMPACT[openStage.kind]}</p>
-            </Card>
+            </GovPanel>
           </div>
         ) : null}
       </Drawer>

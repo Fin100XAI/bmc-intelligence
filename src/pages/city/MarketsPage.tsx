@@ -4,7 +4,6 @@ import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import {
   Badge,
   Card,
-  CardHeader,
   DataTable,
   DemonstrationNotice,
   EmptyState,
@@ -15,6 +14,7 @@ import {
   type Column,
 } from '@/components/ui'
 import { MetricCard } from '@/components/cards'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { CategoryBarChart, CHART_COLOURS, RankedBarChart } from '@/components/charts'
 import { FilterBar } from '@/components/filters/FilterBar'
 import { useServiceQuery } from '@/hooks'
@@ -22,6 +22,7 @@ import { queryKeys } from '@/app/queryClient'
 import { marketsService } from '@/services'
 import { useFilterStore } from '@/stores/ui.store'
 import { usePageMasthead } from '@/stores/masthead.store'
+import { activeCorporation } from '@/config/municipality.config'
 import { wardName, wardShortName } from '@/data/reference'
 import {
   MARKET_INSPECTION_INTERVAL_DAYS,
@@ -73,10 +74,7 @@ function daysSinceInspection(iso: string): number {
 export function MarketsPage(): React.JSX.Element {
   const filters = useFilterStore((s) => s.filters)
 
-  usePageMasthead(
-    t('Markets & Slaughterhouses'),
-    t('The corporation\'s market estate and the trades it regulates inside it - stall occupancy, hygiene at the last inspection, the interval since anybody last looked, and whether trade effluent is leaving the premises lawfully.'),
-  )
+  usePageMasthead(t('Markets & Slaughterhouses'))
 
   const facilitiesQuery = useServiceQuery(queryKeys.markets('facilities'), (u) => marketsService.facilities(u))
   const trendQuery = useServiceQuery(queryKeys.markets('trend'), (u) => marketsService.trend(u))
@@ -304,6 +302,14 @@ export function MarketsPage(): React.JSX.Element {
           support={t('{0} regulated trades · {1} annual rent demand', formatNumber(regulated.length), formatCrore(annualRentCrore))}
           icon={<Store className="h-4 w-4" />}
           origin="demonstration"
+          background="red"
+          footer={
+            activeCorporation.id === 'bmc' && activeCorporation.municipalMarketsCount ? (
+              <span className="text-[0.625rem] leading-snug text-ink-400">
+                {t('For context: BMC operates {0} municipal markets citywide (2019 reporting put 92 of them in dilapidated condition); a separate 2022 count found 92 vegetable markets with 17,164 licensed vendors. No more recent citywide recount was found.', formatNumber(activeCorporation.municipalMarketsCount))}
+              </span>
+            ) : undefined
+          }
         />
         <MetricCard
           label={t('Stall occupancy')}
@@ -312,6 +318,7 @@ export function MarketsPage(): React.JSX.Element {
           support={t('{0} of {1} stalls and bays let', formatNumber(occupiedStalls), formatNumber(totalStalls))}
           tone={occupancyPct < 65 ? 'warn' : 'positive'}
           progress={{ value: occupancyPct, max: 100 }}
+          background="amber"
         />
         <MetricCard
           label={t('Mean hygiene score')}
@@ -319,6 +326,7 @@ export function MarketsPage(): React.JSX.Element {
           support={t('{0} violations open across the estate', formatNumber(openViolations))}
           tone={meanHygiene < 55 ? 'critical' : meanHygiene < 70 ? 'warn' : 'positive'}
           icon={<ShieldAlert className="h-4 w-4" />}
+          background="green"
         />
         <MetricCard
           label={t('Overdue inspections (> {0} days)', MARKET_INSPECTION_INTERVAL_DAYS)}
@@ -338,13 +346,10 @@ export function MarketsPage(): React.JSX.Element {
           worst hygiene findings are read down the column beside them. */}
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
         <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
-          <Card flush>
-            <CardHeader
-              bordered
-              icon={<Store className="h-4 w-4" />}
-              title={t('Market estate and regulated trades')}
-              description={t('Retail markets, wholesale yards, fish markets, slaughter houses and tanneries within your authorised ward scope. Premises only - no trader, licence holder or tenancy is held.')}
-            />
+          <GovPanel title={t('Market estate and regulated trades')} tone="amber" dense>
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+              {t('Retail markets, wholesale yards, fish markets, slaughter houses and tanneries within your authorised ward scope. Premises only - no trader, licence holder or tenancy is held.')}
+            </p>
             {filtered.length === 0 ? (
               <EmptyState
                 title={t('No facilities match the current filters')}
@@ -353,7 +358,7 @@ export function MarketsPage(): React.JSX.Element {
             ) : (
               <DataTable rows={filtered} columns={columns} rowKey={(r) => r.id} pageSize={12} />
             )}
-          </Card>
+          </GovPanel>
 
           <Card className="flex min-w-0 flex-col">
             <p className="label-institutional mb-2">{t('Monthly inspections, violations found and licences issued')}</p>
@@ -400,13 +405,11 @@ export function MarketsPage(): React.JSX.Element {
             </Card>
           ) : null}
 
-          <Card flush className="flex min-w-0 flex-col">
-            <CardHeader
-              bordered
-              title={t('Lowest hygiene score')}
-              description={t('Where the last inspection found the worst conditions. These are the premises a re-inspection should reach first.')}
-            />
-            <div className="px-4 pb-4" style={{ height: Math.max(210, lowestHygiene.length * 26) }}>
+          <GovPanel title={t('Lowest hygiene score')} tone="amber" dense>
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+              {t('Where the last inspection found the worst conditions. These are the premises a re-inspection should reach first.')}
+            </p>
+            <div className="px-3 pb-3" style={{ height: Math.max(210, lowestHygiene.length * 26) }}>
               {lowestHygiene.length === 0 ? (
                 <EmptyState compact title={t('No facilities in scope')} detail="Clear a filter to widen the register." />
               ) : (
@@ -416,7 +419,7 @@ export function MarketsPage(): React.JSX.Element {
                 />
               )}
             </div>
-          </Card>
+          </GovPanel>
         </div>
       </div>
     </PageBody>

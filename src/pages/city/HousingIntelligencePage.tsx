@@ -4,7 +4,6 @@ import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import {
   Badge,
   Card,
-  CardHeader,
   DataTable,
   DemonstrationNotice,
   EmptyState,
@@ -15,11 +14,13 @@ import {
   type Column,
 } from '@/components/ui'
 import { MetricCard } from '@/components/cards'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { CHART_COLOURS, DonutChart, RankedBarChart } from '@/components/charts'
 import { FilterBar } from '@/components/filters/FilterBar'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { housingService } from '@/services'
+import { activeCorporation } from '@/config/municipality.config'
 import { useFilterStore } from '@/stores/ui.store'
 import { usePageMasthead } from '@/stores/masthead.store'
 import { wardName, wardShortName } from '@/data/reference'
@@ -69,10 +70,7 @@ const SERVICE_THRESHOLD = 50
 export function HousingIntelligencePage(): React.JSX.Element {
   const filters = useFilterStore((s) => s.filters)
 
-  usePageMasthead(
-    t('Slum & Housing Intelligence'),
-    t('Service adequacy in the city\'s informal settlements, and the rehousing schemes running against them. A corporation\'s duty to provide water, sanitation and collection does not depend on how the land beneath a settlement is held.'),
-  )
+  usePageMasthead(t('Slum & Housing Intelligence'))
 
   const settlementsQuery = useServiceQuery(queryKeys.housing('settlements'), (u) => housingService.settlements(u))
   const schemesQuery = useServiceQuery(queryKeys.housing('schemes'), (u) => housingService.schemes(u))
@@ -239,13 +237,28 @@ export function HousingIntelligencePage(): React.JSX.Element {
       <FilterBar show={['ward', 'search']} searchPlaceholder="Search settlements" />
 
       <MetricGrid columns={4}>
-        <MetricCard label={t('Settlements')} value={filtered.length} support={t('{0} residents served', formatNumber(population))} icon={<Home className="h-4 w-4" />} origin="demonstration" />
+        <MetricCard
+          label={t('Settlements')}
+          value={filtered.length}
+          support={t('{0} residents served', formatNumber(population))}
+          icon={<Home className="h-4 w-4" />}
+          origin="demonstration"
+          background="red"
+          footer={
+            activeCorporation.id === 'bmc' && activeCorporation.slumPopulationPct ? (
+              <span className="text-[0.625rem] leading-snug text-ink-400">
+                {t('For context: ~{0}% of Mumbai\'s population lived in slum areas per Census of India 2011 provisional data, widely repeated in secondary reporting - the primary Census "Primary Census Abstract for Slums" table itself could not be located directly.', formatNumber(activeCorporation.slumPopulationPct, 1))}
+              </span>
+            ) : undefined
+          }
+        />
         <MetricCard
           label={t('Below service threshold')}
           value={belowThreshold.length}
           support={t('Service index under {0} of 100', SERVICE_THRESHOLD)}
           tone={belowThreshold.length > 0 ? 'critical' : 'positive'}
           icon={<Droplet className="h-4 w-4" />}
+          background="amber"
         />
         <MetricCard
           label={t('Toilet seats functional')}
@@ -253,6 +266,7 @@ export function HousingIntelligencePage(): React.JSX.Element {
           unit="%"
           support={t('{0} of {1} seats', formatNumber(seatsFunctional), formatNumber(seatsTotal))}
           tone={seatFunctionalPct < 75 ? 'warn' : 'positive'}
+          background="green"
         />
         <MetricCard
           label={t('Flood-prone settlements')}
@@ -268,19 +282,16 @@ export function HousingIntelligencePage(): React.JSX.Element {
           the recognition mix stand beside them. */}
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
         <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
-          <Card flush>
-            <CardHeader
-              bordered
-              icon={<Home className="h-4 w-4" />}
-              title={t('Settlement register')}
-              description={t('Service coverage by settlement, within your authorised ward scope.')}
-            />
+          <GovPanel title={t('Settlement register')} tone="amber" dense>
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+              {t('Service coverage by settlement, within your authorised ward scope.')}
+            </p>
             {filtered.length === 0 ? (
               <EmptyState title={t('No settlements match the current filters')} detail="Clear a filter to widen the register." />
             ) : (
               <DataTable rows={filtered} columns={settlementColumns} rowKey={(r) => r.id} pageSize={12} />
             )}
-          </Card>
+          </GovPanel>
 
           <MetricGrid columns={3}>
             <MetricCard label={t('Tenements sanctioned')} value={formatNumber(tenementsSanctioned)} support={`${schemes.length} schemes`} icon={<Building className="h-4 w-4" />} />
@@ -298,19 +309,16 @@ export function HousingIntelligencePage(): React.JSX.Element {
             />
           </MetricGrid>
 
-          <Card flush>
-            <CardHeader
-              bordered
-              icon={<Building className="h-4 w-4" />}
-              title={t('Rehousing schemes')}
-              description={t('Sanctioned schemes and what has actually been delivered against them.')}
-            />
+          <GovPanel title={t('Rehousing schemes')} tone="red" dense>
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+              {t('Sanctioned schemes and what has actually been delivered against them.')}
+            </p>
             {schemes.length === 0 ? (
               <EmptyState title={t('No rehousing schemes in scope')} />
             ) : (
               <DataTable rows={schemes} columns={schemeColumns} rowKey={(r) => r.id} pageSize={10} />
             )}
-          </Card>
+          </GovPanel>
         </div>
 
         <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
@@ -324,19 +332,17 @@ export function HousingIntelligencePage(): React.JSX.Element {
             </div>
           </Card>
 
-          <Card flush className="flex flex-col">
-            <CardHeader
-              bordered
-              title={t('Least-served settlements')}
-              description={t('Ranked on the composite service index - water points, toilet seats, paved lanes and working lights.')}
-            />
-            <div className="px-4 pb-4" style={{ height: Math.max(210, worstServed.length * 26) }}>
+          <GovPanel title={t('Least-served settlements')} tone="green" dense>
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+              {t('Ranked on the composite service index - water points, toilet seats, paved lanes and working lights.')}
+            </p>
+            <div className="px-3 pb-3" style={{ height: Math.max(210, worstServed.length * 26) }}>
               <RankedBarChart
                 data={worstServed.map((s) => ({ label: s.name.slice(0, 22), value: s.serviceIndex }))}
                 higherIsWorse={false}
               />
             </div>
-          </Card>
+          </GovPanel>
 
           <Card className="flex flex-col">
             <p className="label-institutional mb-2">{t('Recognition status')}</p>

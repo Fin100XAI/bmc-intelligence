@@ -1,8 +1,9 @@
 import { useQuery } from '@tanstack/react-query'
-import { Landmark, ScrollText, ShieldCheck, Wallet } from 'lucide-react'
+import { ScrollText, ShieldCheck, Wallet } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { Card, CardHeader, DataTable, EmptyState, ErrorState, LoadingState, type Column } from '@/components/ui'
+import { DataTable, EmptyState, ErrorState, LoadingState, type Column } from '@/components/ui'
 import { MetricCard } from '@/components/cards'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { ROUTES } from '@/config/navigation'
 import { transparencyService } from '@/services'
 import type { PublicContractAward, PublicCouncilResolution, PublicGovernmentResolution } from '@/types/transparency'
@@ -96,20 +97,20 @@ export function TransparencyPortalPage(): React.JSX.Element {
                   <MetricCard label={t('RTI applications, last 12 months')} value={data.rti.received12m} icon={<ScrollText className="h-4 w-4" />} />
                 </div>
 
-                <Card flush>
-                  <CardHeader bordered icon={<Landmark className="h-4 w-4" />} title={t('Recent contract awards')} description={t('The most recently awarded municipal works and supply contracts.')} />
+                <GovPanel dense tone="amber" title={t('Recent contract awards')}>
+                  <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">{t('The most recently awarded municipal works and supply contracts.')}</p>
                   {data.recentContracts.length === 0 ? <EmptyState title={t('No contract awards on record')} /> : <DataTable rows={data.recentContracts} columns={contractColumns} rowKey={(c) => c.reference} pageSize={10} />}
-                </Card>
+                </GovPanel>
 
-                <Card flush>
-                  <CardHeader bordered icon={<ScrollText className="h-4 w-4" />} title={t('Government Resolutions')} description={t('Recent Government Resolutions, circulars and notifications directed to the Corporation.')} />
+                <GovPanel dense tone="red" title={t('Government Resolutions')}>
+                  <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">{t('Recent Government Resolutions, circulars and notifications directed to the Corporation.')}</p>
                   {data.recentResolutions.length === 0 ? <EmptyState title={t('No resolutions on record')} /> : <DataTable rows={data.recentResolutions} columns={grColumns} rowKey={(g) => g.reference} pageSize={10} />}
-                </Card>
+                </GovPanel>
 
-                <Card flush>
-                  <CardHeader bordered icon={<Landmark className="h-4 w-4" />} title={t('Passed council resolutions')} description={t('Matters the Corporation in session has passed or implemented.')} />
+                <GovPanel dense tone="amber" title={t('Passed council resolutions')}>
+                  <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">{t('Matters the Corporation in session has passed or implemented.')}</p>
                   {data.recentCouncilResolutions.length === 0 ? <EmptyState title={t('No resolutions on record')} /> : <DataTable rows={data.recentCouncilResolutions} columns={councilColumns} rowKey={(r) => r.reference} pageSize={10} />}
-                </Card>
+                </GovPanel>
               </>
             )
           })()

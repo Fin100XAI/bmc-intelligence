@@ -2,8 +2,9 @@ import { useMemo, useState } from 'react'
 import { ShieldCheck, Waves } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { StateBadge } from '@/components/ui/badges'
-import { Card, CardHeader, DefinitionList, DefinitionRow, ProgressBar, ScoreDial } from '@/components/ui/primitives'
+import { Card, DefinitionList, DefinitionRow, ProgressBar, ScoreDial } from '@/components/ui/primitives'
 import { DemonstrationNotice, ErrorState, LoadingState } from '@/components/ui/states'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { resilienceService } from '@/services'
@@ -49,10 +50,7 @@ export function UrbanResiliencePage(): React.JSX.Element {
   // The shell's masthead states the screen's name; the page states the wording.
   // Declared above the loading guards because a hook cannot sit behind an early
   // return - `dimensions` is the same list `index.dimensions` resolves to.
-  usePageMasthead(
-    t('{0} Urban Resilience Index', corporation.city),
-    t('The city\'s capacity to absorb a shock and keep functioning, scored across the {0} hazards {1} plans against. Every score measures preparedness, not the likelihood of the hazard - a strong flood score does not forecast a mild monsoon.', dimensions.length, corporation.city),
-  )
+  usePageMasthead(t('{0} Urban Resilience Index', corporation.city))
 
   if (query.isLoading) return <LoadingState variant="metrics" />
   if (query.error) return <ErrorState detail={query.error.message} onRetry={() => query.refetch()} />
@@ -75,11 +73,10 @@ export function UrbanResiliencePage(): React.JSX.Element {
           hazard the officer has selected stands pinned beside them. */}
       <div className="grid grid-cols-1 gap-3 xl:grid-cols-12">
         <div className="flex min-w-0 flex-col gap-3 xl:col-span-8">
-          <Card>
-            <CardHeader
-              title={t('Composite resilience')}
-              description={t('Weighted across all {0} hazards assessed for this corporation.', index.dimensions.length)}
-            />
+          <GovPanel title={t('Composite resilience')} tone="amber">
+            <p className="mb-3 text-xs leading-relaxed text-ink-500">
+              {t('Weighted across all {0} hazards assessed for this corporation.', index.dimensions.length)}
+            </p>
             <div className="mt-3 flex items-center gap-4">
               <ScoreDial score={index.score} label={t('Index')} caption={`${index.score}/100`} />
               <div className="min-w-0">
@@ -87,13 +84,12 @@ export function UrbanResiliencePage(): React.JSX.Element {
                 <p className="mt-2 text-xs leading-relaxed text-ink-600">{index.narrative}</p>
               </div>
             </div>
-          </Card>
+          </GovPanel>
 
-          <Card>
-            <CardHeader
-              title={t('Preparedness by hazard')}
-              description={t('Ranked weakest first - where the corporation is least prepared to absorb a shock.')}
-            />
+          <GovPanel title={t('Preparedness by hazard')} tone="red">
+            <p className="mb-3 text-xs leading-relaxed text-ink-500">
+              {t('Ranked weakest first - where the corporation is least prepared to absorb a shock.')}
+            </p>
             <ul className="mt-2 divide-y divide-ink-50">
               {dimensions.map((dim) => (
                 <li key={dim.id}>
@@ -119,14 +115,10 @@ export function UrbanResiliencePage(): React.JSX.Element {
                 </li>
               ))}
             </ul>
-          </Card>
+          </GovPanel>
 
-          <Card flush>
-            <CardHeader
-              bordered
-              title={t('Hazard preparedness detail')}
-              description={t('Each hazard\'s score, its weight in the composite and its primary gap.')}
-            />
+          <GovPanel title={t('Hazard preparedness detail')} tone="amber" dense>
+            <p className="px-4 pt-4 pb-3 text-xs leading-relaxed text-ink-500">{t('Each hazard\'s score, its weight in the composite and its primary gap.')}</p>
             <ul className="divide-y divide-ink-50">
               {[...dimensions]
                 .sort((a, b) => b.contribution - a.contribution)
@@ -147,7 +139,7 @@ export function UrbanResiliencePage(): React.JSX.Element {
                   </li>
                 ))}
             </ul>
-          </Card>
+          </GovPanel>
 
           <Card tone="sunken">
             <p className="text-[0.6875rem] leading-relaxed text-ink-500">
@@ -163,12 +155,10 @@ export function UrbanResiliencePage(): React.JSX.Element {
           <div className="scrollbar-rail flex flex-col gap-3 xl:sticky xl:top-[3.75rem] xl:max-h-[calc(100vh-4.5rem)] xl:overflow-y-auto">
             {selected ? (
               <>
-                <Card>
-                  <CardHeader
-                    title={selected.label}
-                    description={t('Weight {0} · contributes {1} points', selected.weight.toFixed(2), selected.contribution)}
-                    actions={<StateBadge state={selected.state} />}
-                  />
+                <GovPanel title={selected.label} tone="amber" actions={<StateBadge state={selected.state} />}>
+                  <p className="mb-3 text-xs leading-relaxed text-ink-500">
+                    {t('Weight {0} · contributes {1} points', selected.weight.toFixed(2), selected.contribution)}
+                  </p>
                   <div className="mt-3">
                     <div className="flex items-baseline justify-between">
                       <span className="label-institutional">{t('Preparedness score')}</span>
@@ -180,10 +170,10 @@ export function UrbanResiliencePage(): React.JSX.Element {
                     <ProgressBar value={selected.score} className="mt-2" />
                   </div>
                   <p className="mt-3 text-xs leading-relaxed text-ink-600">{selected.explanation}</p>
-                </Card>
+                </GovPanel>
 
-                <Card>
-                  <CardHeader title={t('Drivers')} description={t('The records this hazard\'s preparedness is computed from.')} />
+                <GovPanel title={t('Drivers')} tone="red">
+                  <p className="mb-2 text-xs leading-relaxed text-ink-500">{t('The records this hazard\'s preparedness is computed from.')}</p>
                   <DefinitionList className="mt-2">
                     {selected.drivers.map((d) => (
                       <DefinitionRow key={d.label} label={d.label}>
@@ -191,7 +181,7 @@ export function UrbanResiliencePage(): React.JSX.Element {
                       </DefinitionRow>
                     ))}
                   </DefinitionList>
-                </Card>
+                </GovPanel>
 
                 <Card tone="sunken">
                   <div className="flex items-start gap-2.5">

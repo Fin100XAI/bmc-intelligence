@@ -1,11 +1,9 @@
 import { useState } from 'react'
-import { Hammer, ShieldAlert, Wrench } from 'lucide-react'
+import { ShieldAlert } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import {
   Badge,
   Button,
-  Card,
-  CardHeader,
   Checkbox,
   ConfirmDialog,
   DataTable,
@@ -21,6 +19,7 @@ import {
   type Column,
 } from '@/components/ui'
 import { MetricCard } from '@/components/cards'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { CHART_COLOURS, CompositionBar, ContributionBars, MiniBar } from '@/components/charts'
 import { CityMap, jitteredWardPoint, type MapMarker } from '@/components/map/CityMap'
 import { FilterBar } from '@/components/filters/FilterBar'
@@ -39,6 +38,7 @@ import { allowed } from '@/security'
 import { useCurrentUser } from '@/stores/auth.store'
 import { useFilterStore } from '@/stores/ui.store'
 import { usePageMasthead } from '@/stores/masthead.store'
+import { activeCorporation } from '@/config/municipality.config'
 import { wardName } from '@/data/reference'
 import type { RoadDefect, RoadSegment } from '@/types/city-domains'
 import type { DataFreshness } from '@/types/common'
@@ -148,10 +148,7 @@ export function RoadsIntelligencePage(): React.JSX.Element {
   const [emergencyOnly, setEmergencyOnly] = useState(false)
   const [pendingStatusChange, setPendingStatusChange] = useState<{ defect: RoadDefect; next: RoadDefect['status'] } | null>(null)
 
-  usePageMasthead(
-    t('Roads Intelligence'),
-    t('Network condition and the explainable Road Defect Priority Engine that directs constrained rectification capacity, together with the asset-lifecycle position behind the resurfacing programme.'),
-  )
+  usePageMasthead(t('Roads Intelligence'))
 
   const segmentsQuery = useServiceQuery(queryKeys.roads('segments'), (u) => roadsService.segments(u))
   const defectsQuery = useServiceQuery(queryKeys.roads('defects'), (u) => roadsService.defects(u, {}))
@@ -234,6 +231,7 @@ export function RoadsIntelligencePage(): React.JSX.Element {
   const openDefectsCount = wardScopedDefects.filter((d) => d.status !== 'repaired' && d.status !== 'verified-closed').length
   const emergencyBelowMinimum = filteredSegments.filter((s) => s.emergencyRoute && s.conditionIndex < EMERGENCY_CONDITION_MINIMUM)
   const complaints90d = filteredSegments.reduce((s, x) => s + x.complaints90d, 0)
+  const isBmc = activeCorporation.id === 'bmc'
 
   // --- Defect register (filtered) -------------------------------------------
   const filteredDefects = defects.filter((d) => {
@@ -379,9 +377,22 @@ export function RoadsIntelligencePage(): React.JSX.Element {
       />
 
       <MetricGrid columns={6}>
-        <MetricCard label={t('Network length')} value={formatNumber(totalLengthKm, 0)} unit="km" support={`${filteredSegments.length} segments`} />
-        <MetricCard label={t('Average condition index')} value={Math.round(avgCondition)} unit="/100" tone={avgCondition < CONDITION_THRESHOLD ? 'critical' : avgCondition < 65 ? 'warn' : 'positive'} />
-        <MetricCard label={t('Segments below threshold')} value={belowThreshold.length} support={t('of {0}, below {1}/100', filteredSegments.length, CONDITION_THRESHOLD)} tone={belowThreshold.length > 0 ? 'critical' : 'default'} />
+        <MetricCard
+          label={t('Network length')}
+          value={formatNumber(totalLengthKm, 0)}
+          unit="km"
+          support={`${filteredSegments.length} segments`}
+          background="red"
+          footer={
+            isBmc && activeCorporation.roadLengthKm ? (
+              <span className="text-[0.625rem] leading-snug text-ink-400">
+                {t('For context: BMC\'s own published road network is ~{0} km citywide. Its "Pedestrians First" enforcement drive separately cleared {1} km of encroached footpaths in 2025-26.', formatNumber(activeCorporation.roadLengthKm), activeCorporation.pedestriansFirstFootpathsClearedKm ?? '-')}
+              </span>
+            ) : undefined
+          }
+        />
+        <MetricCard label={t('Average condition index')} value={Math.round(avgCondition)} unit="/100" tone={avgCondition < CONDITION_THRESHOLD ? 'critical' : avgCondition < 65 ? 'warn' : 'positive'} background="amber" />
+        <MetricCard label={t('Segments below threshold')} value={belowThreshold.length} support={t('of {0}, below {1}/100', filteredSegments.length, CONDITION_THRESHOLD)} tone={belowThreshold.length > 0 ? 'critical' : 'default'} background="green" />
         <MetricCard label={t('Open defects')} value={openDefectsCount} support={t('of {0} recorded', defects.length)} tone={openDefectsCount > 0 ? 'warn' : 'default'} />
         <MetricCard label={t('Emergency corridors below minimum')} value={emergencyBelowMinimum.length} support={t('Condition below {0}/100', EMERGENCY_CONDITION_MINIMUM)} tone={emergencyBelowMinimum.length > 0 ? 'critical' : 'default'} />
         <MetricCard label={t('Complaints (90d)')} value={formatNumber(complaints90d)} />
@@ -394,10 +405,12 @@ export function RoadsIntelligencePage(): React.JSX.Element {
           the explanation next to the work rather than above it. */}
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
         <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
-        <Card flush>
-            <CardHeader className="px-4 pt-4 pb-3" title={t('Road segment register')} description={t('Selecting a segment focuses the ward filter across the rest of this page.')} />
+        <GovPanel title={t('Road segment register')} tone="amber" dense>
+          <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+            {t('Selecting a segment focuses the ward filter across the rest of this page.')}
+          </p>
           {filteredSegments.length === 0 ? (
-            <EmptyState className="m-4" title={t('No segments match the current filters')} detail="Adjust the ward or search term above." />
+            <EmptyState className="m-3" title={t('No segments match the current filters')} detail="Adjust the ward or search term above." />
           ) : (
             <DataTable
               rows={filteredSegments}
@@ -410,16 +423,14 @@ export function RoadsIntelligencePage(): React.JSX.Element {
               ariaLabel="Road segment register"
             />
           )}
-        </Card>
+        </GovPanel>
 
-        <Card flush>
-          <CardHeader
-            className="px-4 pt-4 pb-3"
-            title={t('Priority queue - top ranked defects')}
-            description={t('Highest-priority open defects by published score, {0}. Excludes repaired and verified-closed defects.', bandWardId ? wardName(bandWardId) : 'city-wide')}
-          />
+        <GovPanel title={t('Priority queue - top ranked defects')} tone="red" dense>
+          <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+            {t('Highest-priority open defects by published score, {0}. Excludes repaired and verified-closed defects.', bandWardId ? wardName(bandWardId) : 'city-wide')}
+          </p>
           {rankedForBand.length === 0 ? (
-            <EmptyState className="m-4" compact title={t('No open defects in the priority queue')} detail="Every defect in this scope has been repaired or verified closed." />
+            <EmptyState className="m-3" compact title={t('No open defects in the priority queue')} detail="Every defect in this scope has been repaired or verified closed." />
           ) : (
             <ol className="divide-y divide-ink-50">
               {rankedForBand.slice(0, 8).map((d, i) => (
@@ -442,28 +453,30 @@ export function RoadsIntelligencePage(): React.JSX.Element {
               ))}
             </ol>
           )}
-        </Card>
+        </GovPanel>
 
-        <Card flush>
-          <CardHeader
-            className="px-4 pt-4 pb-3"
-            title={t('Defect register')}
-            description={t('Ranked by priority score. Select a row to inspect its driver breakdown.')}
-            actions={
-              <div className="flex flex-wrap items-center gap-2">
-                <Select
-                  value={typeFilter}
-                  onChange={(e) => setTypeFilter(e.target.value as 'all' | RoadDefect['type'])}
-                  className="w-auto min-w-[9.5rem]"
-                  options={[{ value: 'all', label: t('All defect types') }, ...DEFECT_TYPES.map((entry) => ({ value: entry, label: DEFECT_TYPE_LABEL[entry] }))]}
-                  aria-label={t('Filter by defect type')}
-                />
-                <Checkbox checked={emergencyOnly} onChange={setEmergencyOnly} label={t('Emergency route only')} />
-              </div>
-            }
-          />
+        <GovPanel
+          title={t('Defect register')}
+          tone="amber"
+          dense
+          actions={
+            <div className="flex flex-wrap items-center gap-2">
+              <Select
+                value={typeFilter}
+                onChange={(e) => setTypeFilter(e.target.value as 'all' | RoadDefect['type'])}
+                className="w-auto min-w-[9.5rem]"
+                options={[{ value: 'all', label: t('All defect types') }, ...DEFECT_TYPES.map((entry) => ({ value: entry, label: DEFECT_TYPE_LABEL[entry] }))]}
+                aria-label={t('Filter by defect type')}
+              />
+              <Checkbox checked={emergencyOnly} onChange={setEmergencyOnly} label={t('Emergency route only')} />
+            </div>
+          }
+        >
+          <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+            {t('Ranked by priority score. Select a row to inspect its driver breakdown.')}
+          </p>
           {filteredDefects.length === 0 ? (
-            <EmptyState className="m-4" title={t('No defects match the current filters')} detail="Adjust the ward, type, status or emergency-route filter above." />
+            <EmptyState className="m-3" title={t('No defects match the current filters')} detail="Adjust the ward, type, status or emergency-route filter above." />
           ) : (
             <DataTable
               rows={filteredDefects}
@@ -477,11 +490,13 @@ export function RoadsIntelligencePage(): React.JSX.Element {
               ariaLabel="Road defect register"
             />
           )}
-        </Card>
+        </GovPanel>
 
-        <Card>
-          <CardHeader title={t('Network map')} description={t('Road-condition layer with defect markers. Click a marker to inspect its driver breakdown.')} />
-          <div className="mt-3">
+        <GovPanel title={t('Network map')} tone="green">
+          <p className="mb-3 text-xs leading-relaxed text-ink-500">
+            {t('Road-condition layer with defect markers. Click a marker to inspect its driver breakdown.')}
+          </p>
+          <div>
             <CityMap
               layers={[
                 {
@@ -502,18 +517,16 @@ export function RoadsIntelligencePage(): React.JSX.Element {
               {t('Showing the {0} highest-priority markers of {1} defects in the current filter.', markerSource.length, filteredDefects.length)}
             </p>
           ) : null}
-        </Card>
+        </GovPanel>
 
-        <Card>
-          <CardHeader
-            icon={<Hammer className="h-4 w-4" />}
-            title={t('Resurfacing schedule - asset lifecycle position')}
-            description={t('Segments overdue against an indicative departmental resurfacing cycle by surface type (asphalt 6 years, paver block 10 years, mastic 8 years, concrete 15 years), used here for planning purposes only.')}
-          />
+        <GovPanel title={t('Resurfacing schedule - asset lifecycle position')} tone="amber">
+          <p className="mb-3 text-xs leading-relaxed text-ink-500">
+            {t('Segments overdue against an indicative departmental resurfacing cycle by surface type (asphalt 6 years, paver block 10 years, mastic 8 years, concrete 15 years), used here for planning purposes only.')}
+          </p>
           {overdueSegments.length === 0 ? (
-            <EmptyState compact className="mt-3" title={t('No segment overdue against its indicative cycle')} detail="Every segment has been resurfaced within its indicative surface-type cycle." />
+            <EmptyState compact title={t('No segment overdue against its indicative cycle')} detail="Every segment has been resurfaced within its indicative surface-type cycle." />
           ) : (
-            <ul className="mt-3 divide-y divide-ink-50">
+            <ul className="divide-y divide-ink-50">
               {overdueSegments.slice(0, 12).map((r) => (
                 <li key={r.segment.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
                   <span className="min-w-0 truncate text-xs font-medium text-ink-800">
@@ -527,28 +540,28 @@ export function RoadsIntelligencePage(): React.JSX.Element {
               ))}
             </ul>
           )}
-        </Card>
+        </GovPanel>
         </div>
 
         <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
           {/* --- Road Defect Priority Engine --------------------------------- */}
-          <Card tone="info">
-            <CardHeader
-              icon={<Wrench className="h-4 w-4" />}
-              title={t('Road Defect Priority Engine')}
-              description={t('Constrained rectification capacity is directed strictly by a published, weighted score. The ordering is transparent so it can be defended, and so a ward receiving no treatment in a given window can be shown why.')}
-            />
-            <blockquote className="mt-3 border-l-2 border-govt-300 pl-3 text-xs leading-relaxed text-ink-700 italic">{PRIORITY_ENGINE_STATEMENT}</blockquote>
+          <GovPanel title={t('Road Defect Priority Engine')} tone="amber">
+            <p className="mb-3 text-xs leading-relaxed text-ink-500">
+              {t('Constrained rectification capacity is directed strictly by a published, weighted score. The ordering is transparent so it can be defended, and so a ward receiving no treatment in a given window can be shown why.')}
+            </p>
+            <blockquote className="border-l-2 border-govt-300 pl-3 text-xs leading-relaxed text-ink-700 italic">{PRIORITY_ENGINE_STATEMENT}</blockquote>
             <div className="mt-4">
               <p className="label-institutional mb-2">{t('Published priority weights')}</p>
               <ContributionBars items={weightItems} />
             </div>
-          </Card>
+          </GovPanel>
 
-          <Card className="min-w-0">
-            <CardHeader title={t('Selected defect - driver breakdown')} description={t('Weight, raw score and contribution behind this defect\'s priority score.')} />
+          <GovPanel title={t('Selected defect - driver breakdown')} tone="red" className="min-w-0">
+            <p className="mb-3 text-xs leading-relaxed text-ink-500">
+              {t('Weight, raw score and contribution behind this defect\'s priority score.')}
+            </p>
             {selectedDefect ? (
-              <div className="mt-3">
+              <div>
                 <div className="flex flex-wrap items-center gap-1.5">
                   <Badge tone="neutral">{DEFECT_TYPE_LABEL[selectedDefect.type]}</Badge>
                   <SeverityBadge severity={selectedDefect.severity} />
@@ -589,13 +602,13 @@ export function RoadsIntelligencePage(): React.JSX.Element {
                 ) : null}
               </div>
             ) : (
-              <EmptyState compact className="mt-3" title={t('No defect selected')} detail="Select a row in the defect register, an entry in the priority queue, or a marker on the map." />
+              <EmptyState compact title={t('No defect selected')} detail="Select a row in the defect register, an entry in the priority queue, or a marker on the map." />
             )}
-          </Card>
+          </GovPanel>
 
-          <Card>
-            <CardHeader title={t('Priority band distribution')} description={bandWardId ? `Filtered to ${wardName(bandWardId)}.` : 'City-wide, all wards.'} />
-            <div className="mt-3">
+          <GovPanel title={t('Priority band distribution')} tone="amber">
+            <p className="mb-3 text-xs leading-relaxed text-ink-500">{bandWardId ? `Filtered to ${wardName(bandWardId)}.` : 'City-wide, all wards.'}</p>
+            <div>
               <CompositionBar segments={bands.map((b) => ({ id: b.band, label: b.band, value: b.count, colour: BAND_COLOUR[b.tone] }))} />
             </div>
             <ul className="mt-3 space-y-2">
@@ -614,14 +627,14 @@ export function RoadsIntelligencePage(): React.JSX.Element {
                 </li>
               ))}
             </ul>
-          </Card>
+          </GovPanel>
 
-          <Card>
-            <CardHeader title={t('Work-order pipeline')} description={bandWardId ? `Filtered to ${wardName(bandWardId)}.` : 'City-wide, all wards.'} />
-            <div className="mt-3">
+          <GovPanel title={t('Work-order pipeline')} tone="green">
+            <p className="mb-3 text-xs leading-relaxed text-ink-500">{bandWardId ? `Filtered to ${wardName(bandWardId)}.` : 'City-wide, all wards.'}</p>
+            <div>
               <CompositionBar segments={pipeline.map((p) => ({ id: p.id, label: p.label, value: p.value, colour: PIPELINE_COLOUR[p.id as RoadDefect['status']] }))} />
             </div>
-          </Card>
+          </GovPanel>
 
         </div>
       </div>

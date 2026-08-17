@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import {
   BellRing,
-  Building2,
   CalendarDays,
   Clock,
   Compass,
@@ -9,13 +8,11 @@ import {
   FlaskConical,
   Gauge,
   Languages,
-  Globe2,
   Hash,
   Info,
   Layers,
   Lock,
   MapPin,
-  MapPinned,
   PanelLeft,
   RotateCcw,
   Rows3,
@@ -30,7 +27,6 @@ import { Badge } from '@/components/ui/badges'
 import {
   Button,
   Card,
-  CardHeader,
   Checkbox,
   DefinitionList,
   DefinitionRow,
@@ -40,6 +36,7 @@ import {
   Select,
   Switch,
 } from '@/components/ui/primitives'
+import { GovPanel, panelToneForIndex } from '@/components/gov/GovPanel'
 import { DataTable, type Column } from '@/components/ui/DataTable'
 import { DemonstrationNotice } from '@/components/ui/states'
 import { MetricCard } from '@/components/cards/MetricCard'
@@ -443,10 +440,7 @@ export function SettingsPage(): React.JSX.Element {
   const sidebarCollapsed = useLayoutStore((s) => s.sidebarCollapsed)
 
   // The shell renders the masthead; this page states what it should say.
-  usePageMasthead(
-    t('Settings'),
-    t('Your interface preferences and this deployment\'s municipal configuration, on one page. Preferences are yours to change and take effect immediately; the deployment profile, feature flags and tenancy register below are build-time artefacts of the Urban Intelligence Core, presented for inspection.'),
-  )
+  usePageMasthead(t('Settings'))
 
   // Session-local feature flag overrides. Deliberately not persisted — see the
   // notice at the head of the feature flags section.
@@ -555,13 +549,14 @@ export function SettingsPage(): React.JSX.Element {
             title={t('Interface')}
             description={t('How this platform looks and behaves for you. Held in this browser, applied the moment they are set.')}
           >
-            <Card>
-              <CardHeader
-                icon={<SlidersHorizontal className="h-4 w-4" />}
-                title={t('Interface preferences')}
-                description={t('These apply to this browser immediately and are stored on this device only — they change nothing for other operators.')}
-                actions={<GroupReset group="interface" label={t('the interface preferences')} />}
-              />
+            <GovPanel
+              title={t('Interface preferences')}
+              tone="amber"
+              actions={<GroupReset group="interface" label={t('the interface preferences')} />}
+            >
+              <p className="mb-3 text-xs leading-relaxed text-ink-500">
+                {t('These apply to this browser immediately and are stored on this device only — they change nothing for other operators.')}
+              </p>
               <div className="mt-4 divide-y divide-ink-100">
                 <PrefRow
                   icon={<Languages className="h-4 w-4" />}
@@ -646,7 +641,7 @@ export function SettingsPage(): React.JSX.Element {
                   />
                 </PrefRow>
               </div>
-            </Card>
+            </GovPanel>
 
             <Card tone="info">
               <p className="text-[0.8125rem] leading-relaxed text-ink-700">
@@ -672,13 +667,14 @@ export function SettingsPage(): React.JSX.Element {
                 squeezed until its explanation is one word per line explains
                 nothing. */}
             <div className="grid gap-4 2xl:grid-cols-[minmax(0,1fr)_20rem]">
-              <Card>
-                <CardHeader
-                  icon={<Hash className="h-4 w-4" />}
-                  title={t('Numbering, dates and tables')}
-                  description={t('How every figure in the platform is spoken. These change presentation only — no underlying value, derivation or seed moves.')}
-                  actions={<GroupReset group="presentation" label={t('the presentation preferences')} />}
-                />
+              <GovPanel
+                title={t('Numbering, dates and tables')}
+                tone="amber"
+                actions={<GroupReset group="presentation" label={t('the presentation preferences')} />}
+              >
+                <p className="mb-3 text-xs leading-relaxed text-ink-500">
+                  {t('How every figure in the platform is spoken. These change presentation only — no underlying value, derivation or seed moves.')}
+                </p>
                 <div className="mt-4 divide-y divide-ink-100">
                   <PrefRow
                     icon={<Hash className="h-4 w-4" />}
@@ -743,13 +739,12 @@ export function SettingsPage(): React.JSX.Element {
                     />
                   </PrefRow>
                 </div>
-              </Card>
+              </GovPanel>
 
-              <Card tone="sunken">
-                <CardHeader
-                  title={t('Live sample')}
-                  description={t('The same underlying values, rendered with the choices above.')}
-                />
+              <GovPanel title={t('Live sample')} tone="red">
+                <p className="mb-3 text-xs leading-relaxed text-ink-500">
+                  {t('The same underlying values, rendered with the choices above.')}
+                </p>
                 <div className="mt-3">
                   <SampleRow label={t('Property assessments')} value={formatNumber(1_84_23_940)} />
                   <SampleRow label={t('Compact form')} value={formatCompact(1_84_23_940)} />
@@ -762,7 +757,7 @@ export function SettingsPage(): React.JSX.Element {
                 <p className="mt-3 border-t border-ink-100 pt-2.5 text-[0.625rem] leading-relaxed text-ink-500">
                   {t('Monetary figures are held in INR crore throughout the platform. That unit is institutional and does not change with this preference — only its digit grouping does.')}
                 </p>
-              </Card>
+              </GovPanel>
             </div>
 
             <Card tone="info">
@@ -802,13 +797,14 @@ export function SettingsPage(): React.JSX.Element {
               </Card>
             </MetricGrid>
 
-            <Card>
-              <CardHeader
-                icon={<BellRing className="h-4 w-4" />}
-                title={t('What reaches your notification centre')}
-                description={t('A personal view filter over notifications already routed to your role. It never changes routing, escalation or who the platform holds accountable.')}
-                actions={<GroupReset group="notifications" label={t('the notification preferences')} />}
-              />
+            <GovPanel
+              title={t('What reaches your notification centre')}
+              tone="amber"
+              actions={<GroupReset group="notifications" label={t('the notification preferences')} />}
+            >
+              <p className="mb-3 text-xs leading-relaxed text-ink-500">
+                {t('A personal view filter over notifications already routed to your role. It never changes routing, escalation or who the platform holds accountable.')}
+              </p>
               <div className="mt-4 divide-y divide-ink-100">
                 <PrefRow
                   icon={<BellRing className="h-4 w-4" />}
@@ -842,7 +838,7 @@ export function SettingsPage(): React.JSX.Element {
                   ))}
                 </div>
               </div>
-            </Card>
+            </GovPanel>
 
             <Card tone="warn">
               <div className="flex items-start gap-2.5">
@@ -888,12 +884,10 @@ export function SettingsPage(): React.JSX.Element {
             </MetricGrid>
 
             <div className="grid gap-4 xl:grid-cols-2">
-              <Card>
-                <CardHeader
-                  icon={<Building2 className="h-4 w-4" />}
-                  title={t('Municipality profile')}
-                  description={t('Identity and branding configuration for this deployment.')}
-                />
+              <GovPanel title={t('Municipality profile')} tone="amber">
+                <p className="mb-3 text-xs leading-relaxed text-ink-500">
+                  {t('Identity and branding configuration for this deployment.')}
+                </p>
                 <DefinitionList className="mt-3">
                   <DefinitionRow label={t('Tenant identifier')} mono>
                     {municipality.tenantId}
@@ -913,14 +907,12 @@ export function SettingsPage(): React.JSX.Element {
                     </Badge>
                   </DefinitionRow>
                 </DefinitionList>
-              </Card>
+              </GovPanel>
 
-              <Card>
-                <CardHeader
-                  icon={<Globe2 className="h-4 w-4" />}
-                  title={t('Administrative terminology')}
-                  description={t('The same core renders different institutional vocabulary per deployment.')}
-                />
+              <GovPanel title={t('Administrative terminology')} tone="red">
+                <p className="mb-3 text-xs leading-relaxed text-ink-500">
+                  {t('The same core renders different institutional vocabulary per deployment.')}
+                </p>
                 <DefinitionList className="mt-3">
                   <DefinitionRow label={t('Primary unit')}>
                     {municipality.terminology.primaryUnitSingular} / {municipality.terminology.primaryUnitPlural}
@@ -945,14 +937,12 @@ export function SettingsPage(): React.JSX.Element {
                     </p>
                   </div>
                 </div>
-              </Card>
+              </GovPanel>
 
-              <Card>
-                <CardHeader
-                  icon={<MapPinned className="h-4 w-4" />}
-                  title={t('Map configuration')}
-                  description={t('Spatial rendering configuration. Geometry is illustrative, not surveyed GIS.')}
-                />
+              <GovPanel title={t('Map configuration')} tone="amber">
+                <p className="mb-3 text-xs leading-relaxed text-ink-500">
+                  {t('Spatial rendering configuration. Geometry is illustrative, not surveyed GIS.')}
+                </p>
                 <DefinitionList className="mt-3">
                   <DefinitionRow label={t('View box')}>
                     {municipality.mapConfiguration.viewBoxWidth} × {municipality.mapConfiguration.viewBoxHeight}
@@ -964,14 +954,12 @@ export function SettingsPage(): React.JSX.Element {
                 <p className="mt-2.5 rounded-md bg-warn-50/70 px-2.5 py-2 text-[0.6875rem] leading-relaxed text-warn-700">
                   {municipality.mapConfiguration.provenanceStatement}
                 </p>
-              </Card>
+              </GovPanel>
 
-              <Card>
-                <CardHeader
-                  icon={<Layers className="h-4 w-4" />}
-                  title={t('Enabled modules')}
-                  description={t('{0} intelligence domains enabled for this deployment.', municipality.enabledModules.length)}
-                />
+              <GovPanel title={t('Enabled modules')} tone="green">
+                <p className="mb-3 text-xs leading-relaxed text-ink-500">
+                  {t('{0} intelligence domains enabled for this deployment.', municipality.enabledModules.length)}
+                </p>
                 <div className="mt-3 flex flex-wrap gap-1.5">
                   {municipality.enabledModules.map((domain) => (
                     <Badge key={domain} tone="muted">
@@ -979,15 +967,13 @@ export function SettingsPage(): React.JSX.Element {
                     </Badge>
                   ))}
                 </div>
-              </Card>
+              </GovPanel>
             </div>
 
-            <Card>
-              <CardHeader
-                icon={<Compass className="h-4 w-4" />}
-                title={t('Platform hierarchy')}
-                description={t('Where this deployment sits within the broader Urban Intelligence Core hierarchy.')}
-              />
+            <GovPanel title={t('Platform hierarchy')} tone="amber">
+              <p className="mb-3 text-xs leading-relaxed text-ink-500">
+                {t('Where this deployment sits within the broader Urban Intelligence Core hierarchy.')}
+              </p>
               <ol className="mt-3 space-y-0">
                 {PLATFORM_HIERARCHY.map((level, i, arr) => (
                   <li key={level.id} className="relative flex items-start gap-3 pb-3 last:pb-0">
@@ -1016,7 +1002,7 @@ export function SettingsPage(): React.JSX.Element {
                   </li>
                 ))}
               </ol>
-            </Card>
+            </GovPanel>
           </Section>
 
           {/* ------------------------------------------- Feature flags */}
@@ -1051,13 +1037,14 @@ export function SettingsPage(): React.JSX.Element {
               />
             </MetricGrid>
 
-            {groupedFlags.map(([category, categoryFlags]) => (
-              <Card key={category} flush>
-                <CardHeader
-                  className="px-4 pt-4"
-                  title={CATEGORY_LABEL[category]}
-                  description={t('{0} of {1} enabled', categoryFlags.filter((f) => f.enabled).length, categoryFlags.length)}
-                />
+            {groupedFlags.map(([category, categoryFlags], i) => (
+              <GovPanel
+                key={category}
+                title={CATEGORY_LABEL[category]}
+                subtitle={t('{0} of {1} enabled', categoryFlags.filter((f) => f.enabled).length, categoryFlags.length)}
+                tone={panelToneForIndex(i)}
+                dense
+              >
                 <ul className="divide-y divide-ink-50">
                   {categoryFlags.map((flag) => (
                     <li key={flag.id} className="flex items-start justify-between gap-4 px-4 py-3">
@@ -1092,7 +1079,7 @@ export function SettingsPage(): React.JSX.Element {
                     </li>
                   ))}
                 </ul>
-              </Card>
+              </GovPanel>
             ))}
           </Section>
 
@@ -1103,22 +1090,19 @@ export function SettingsPage(): React.JSX.Element {
             title={t('Tenancy & portability')}
             description={t('How one municipal body\'s data is kept apart from every other, and which bodies this same build can be deployed against.')}
           >
-            <Card tone="info">
-              <CardHeader
-                icon={<ShieldCheck className="h-4 w-4" />}
-                title={t('Tenant isolation')}
-                description={t('How this deployment keeps one municipal body\'s data separate from every other.')}
-              />
+            <GovPanel title={t('Tenant isolation')} tone="amber">
+              <p className="mb-3 text-xs leading-relaxed text-ink-500">
+                {t('How this deployment keeps one municipal body\'s data separate from every other.')}
+              </p>
               <p className="mt-3 text-[0.8125rem] leading-relaxed text-ink-700">
                 {t('Every record produced anywhere in the platform - every ward, department, intelligence item, decision case, evidence record and audit event - carries a')}{' '}<span className="font-mono">tenantId</span>{' '}{t('field set to')}{' '}<span className="font-mono">{municipality.tenantId}</span>{' '}{t('for this deployment. Every service method in the data-access layer accepts the acting principal first and filters its source collection to that principal&apos;s own tenant before any further permission or scope check is applied. In this single-tenant demonstration build the filter is a deliberate no-op - there is only one tenant to filter to - but the enforcement point exists exactly where it would sit in a genuine multi-tenant deployment, so a second municipal body&apos;s data would be excluded at the same choke point, not left to individual screens to remember.')}
               </p>
-            </Card>
+            </GovPanel>
 
-            <Card>
-              <CardHeader
-                title={t('Municipal corporation deployments')}
-                description={t('Every municipal corporation in Maharashtra this build can be deployed against. Switch the active corporation from the deployment selector in the command bar.')}
-              />
+            <GovPanel title={t('Municipal corporation deployments')} tone="red">
+              <p className="mb-3 text-xs leading-relaxed text-ink-500">
+                {t('Every municipal corporation in Maharashtra this build can be deployed against. Switch the active corporation from the deployment selector in the command bar.')}
+              </p>
               {/* Paginated deliberately. Twenty-nine rows is long enough to
                   warrant it, and this is the one table on the same page as the
                   "Rows per table" preference - leaving it unpaginated meant an
@@ -1137,7 +1121,7 @@ export function SettingsPage(): React.JSX.Element {
               <p className="mt-3 border-t border-ink-100 pt-3 text-xs leading-relaxed text-ink-500">
                 {t('This build is configured for the Brihanmumbai Municipal Corporation and is served against its own published reference data. The deployment profile derives a')}{' '}<span className="font-mono">{t('MunicipalityConfig')}</span>{' '}{t('- its own terminology, administrative units, branding and published reference statistics - and rebuilds every intelligence layer beneath it, without any change to the intelligence, security or workflow engines themselves. Reference statistics carried against each corporation are published figures from the corporation\'s own sources; the operational figures generated on top of them are modelled demonstration data. Provisioning any of these for a real deployment would additionally require its own institutional governance, data-sharing agreements and security review; nothing here implies those are in place.')}
               </p>
-            </Card>
+            </GovPanel>
           </Section>
         </div>
       </div>

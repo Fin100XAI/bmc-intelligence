@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Globe2, Info, RotateCcw } from 'lucide-react'
+import { RotateCcw } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
@@ -22,7 +22,6 @@ import {
   Badge,
   Button,
   Card,
-  CardHeader,
   DataTable,
   DemonstrationNotice,
   EmptyState,
@@ -36,6 +35,7 @@ import {
   type Column,
 } from '@/components/ui'
 import { MetricCard } from '@/components/cards'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { CityMap } from '@/components/map/CityMap'
 import { ChartFrame, DonutChart, MiniBar, RankedBarChart } from '@/components/charts'
 import { t } from '@/i18n'
@@ -130,10 +130,7 @@ function RangeField({
 
 export function UrbanPlanningPage(): React.JSX.Element {
   // The shell's masthead states the screen's name; the page states the wording.
-  usePageMasthead(
-    t('Urban Planning'),
-    t('Population pressure, infrastructure adequacy, transport access and capital planning exposure across every ward, with a scenario engine for population growth, capital investment, transport demand and extreme rainfall frequency.'),
-  )
+  usePageMasthead(t('Urban Planning'))
 
   const wardsQuery = useServiceQuery(queryKeys.wards(), (u) => wardService.list(u))
   const segmentsQuery = useServiceQuery(queryKeys.roads('segments-planning'), (u) => roadsService.segments(u))
@@ -366,12 +363,13 @@ export function UrbanPlanningPage(): React.JSX.Element {
              beside the register they shade. */
           <div className="grid grid-cols-1 gap-3 xl:grid-cols-12">
             <div className="flex min-w-0 flex-col gap-3 xl:col-span-8">
-              <Card>
-                <CardHeader
-                  icon={<Globe2 className="h-4 w-4" />}
-                  title={isScenario ? 'City position - scenario applied' : 'City position - current'}
-                  description={isScenario ? PLANNING_SIMULATION_STATEMENT : 'Infrastructure adequacy as presently assessed, computed from the published planning scenario engine at zero adjustment.'}
-                />
+              <GovPanel
+                title={isScenario ? 'City position - scenario applied' : 'City position - current'}
+                tone="amber"
+              >
+                <p className="mb-3 text-xs leading-relaxed text-ink-500">
+                  {isScenario ? PLANNING_SIMULATION_STATEMENT : 'Infrastructure adequacy as presently assessed, computed from the published planning scenario engine at zero adjustment.'}
+                </p>
                 <MetricGrid columns={5} className="mt-3">
                   <MetricCard label={t('Mean adequacy')} value={`${position.scenarioAdequacy}/100`} support={isScenario ? `Baseline ${position.baselineAdequacy}/100` : undefined} />
                   <MetricCard label={t('Movement')} value={formatDelta(position.delta)} tone={position.delta < 0 ? 'critical' : 'default'} />
@@ -379,10 +377,10 @@ export function UrbanPlanningPage(): React.JSX.Element {
                   <MetricCard label={t('New service gaps')} value={position.newGapCount} tone={position.newGapCount > 0 ? 'warn' : 'default'} />
                   <MetricCard label={t('Projected population')} value={formatCompact(position.projectedPopulation)} />
                 </MetricGrid>
-              </Card>
+              </GovPanel>
 
-              <Card flush>
-                <CardHeader bordered title={t('Ward planning table')} description={t('Sortable and searchable. Selecting a row highlights the ward on the map.')} />
+              <GovPanel title={t('Ward planning table')} tone="red" dense>
+                <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">{t('Sortable and searchable. Selecting a row highlights the ward on the map.')}</p>
                 <DataTable
                   rows={rows}
                   columns={columns}
@@ -395,15 +393,16 @@ export function UrbanPlanningPage(): React.JSX.Element {
                   activeRowKey={selectedWardId ?? undefined}
                   initialSort={{ columnId: 'adequacy', direction: 'asc' }}
                 />
-              </Card>
+              </GovPanel>
 
-              <Card>
-                <CardHeader
-                  icon={<Globe2 className="h-4 w-4" />}
-                  title={t('Scenario modelling')}
-                  description={t('Project infrastructure adequacy under a stated change to population, capital investment, transport demand and extreme rainfall frequency. This recomputes the table, map and rankings above.')}
-                  actions={<SimulationBadge />}
-                />
+              <GovPanel
+                title={t('Scenario modelling')}
+                tone="amber"
+                actions={<SimulationBadge />}
+              >
+                <p className="mb-3 text-xs leading-relaxed text-ink-500">
+                  {t('Project infrastructure adequacy under a stated change to population, capital investment, transport demand and extreme rainfall frequency. This recomputes the table, map and rankings above.')}
+                </p>
                 <div className="mt-3 flex flex-wrap gap-1.5">
                   {PLANNING_SCENARIO_PRESETS.map((preset) => (
                     <Button key={preset.id} size="xs" variant="outline" title={preset.description} onClick={() => setScenarioInputs(preset.inputs)}>
@@ -428,12 +427,12 @@ export function UrbanPlanningPage(): React.JSX.Element {
                   ) : null}
                 </div>
                 {isScenario ? <p className="mt-3 text-xs leading-relaxed text-ink-700">{active.narrative}</p> : null}
-              </Card>
+              </GovPanel>
             </div>
 
             <div className="flex min-w-0 flex-col gap-3 xl:col-span-4">
-              <Card>
-                <CardHeader title={t('Map - adequacy and density')} description={t('Toggle the layer selector to switch between infrastructure adequacy and population density shading.')} />
+              <GovPanel title={t('Map - adequacy and density')} tone="amber">
+                <p className="mb-3 text-xs leading-relaxed text-ink-500">{t('Toggle the layer selector to switch between infrastructure adequacy and population density shading.')}</p>
                 <div className="mt-3">
                   <CityMap
                     layers={[
@@ -462,7 +461,7 @@ export function UrbanPlanningPage(): React.JSX.Element {
                     height={340}
                   />
                 </div>
-              </Card>
+              </GovPanel>
 
               <Card>
                 <ChartFrame title={t('Adequacy ranking - lowest first')} unit="/100" timeframe="Current view" height={280}>
@@ -470,12 +469,10 @@ export function UrbanPlanningPage(): React.JSX.Element {
                 </ChartFrame>
               </Card>
 
-              <Card>
-                <CardHeader
-                  icon={<Info className="h-4 w-4" />}
-                  title={t('Land composition')}
-                  description={t('Parcel-level land-use classification is not yet integrated into this service layer. These views are built from ward planning region and infrastructure-adequacy band instead.')}
-                />
+              <GovPanel title={t('Land composition')} tone="red">
+                <p className="mb-3 text-xs leading-relaxed text-ink-500">
+                  {t('Parcel-level land-use classification is not yet integrated into this service layer. These views are built from ward planning region and infrastructure-adequacy band instead.')}
+                </p>
                 <div className="mt-3 grid grid-cols-2 gap-3">
                   <div className="h-40">
                     <DonutChart data={regionComposition} centreValue={String(wards.length)} centreLabel="Wards" />
@@ -488,7 +485,7 @@ export function UrbanPlanningPage(): React.JSX.Element {
                   <span>{t('By planning region')}</span>
                   <span>{t('By adequacy band (land area)')}</span>
                 </div>
-              </Card>
+              </GovPanel>
             </div>
           </div>
         )

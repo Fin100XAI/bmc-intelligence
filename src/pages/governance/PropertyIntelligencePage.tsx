@@ -6,6 +6,7 @@ import { queryKeys } from '@/app/queryClient'
 import { revenueService } from '@/services'
 import { useContextStore, useDrawerStore } from '@/stores/ui.store'
 import { usePageMasthead } from '@/stores/masthead.store'
+import { activeCorporation } from '@/config/municipality.config'
 import { ROUTES } from '@/config/navigation'
 import type { DataFreshness } from '@/types/common'
 import type { PropertySegment } from '@/types/finance'
@@ -16,7 +17,6 @@ import {
   Badge,
   Button,
   Card,
-  CardHeader,
   DataTable,
   DemonstrationNotice,
   EmptyState,
@@ -28,6 +28,7 @@ import {
   SegmentedControl,
   type Column,
 } from '@/components/ui'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { MetricCard } from '@/components/cards'
 import {
   CATEGORICAL_SERIES,
@@ -128,10 +129,7 @@ function aggregateByWard(rows: PropertySegment[]): WardAggregate[] {
 
 export function PropertyIntelligencePage(): React.JSX.Element {
   // The shell's masthead carries the screen's name; the page states the wording.
-  usePageMasthead(
-    t('Property Intelligence'),
-    t('The property assessment base by ward and use-class segment - assessed units, assessed value, collection position and the reassessment backlog. This is the base register from which property tax realisation in Revenue Intelligence is drawn.'),
-  )
+  usePageMasthead(t('Property Intelligence'))
 
   const openDrawer = useDrawerStore((s) => s.open)
   const [segmentFilter, setSegmentFilter] = useState<'all' | SegmentKey>('all')
@@ -349,23 +347,30 @@ export function PropertyIntelligencePage(): React.JSX.Element {
 
       {!segmentsQuery.isLoading && !segmentsQuery.error && allSegments.length > 0 ? (
         <>
-          <Card>
-            <CardHeader
-              eyebrow={`${municipalityFinancialYearLabel()} · ${segmentFilter === 'all' ? 'All segments' : SEGMENT_META.find((s) => s.value === segmentFilter)?.label} · ${selectedWardId ? wardName(selectedWardId) : 'All wards'}`}
-              title={t('City assessment position')}
-              description={t('Assessed base and collection performance across the scope selected above.')}
-            />
-            <MetricGrid columns={5} className="mt-4">
+          <GovPanel
+            title={t('City assessment position')}
+            subtitle={`${municipalityFinancialYearLabel()} · ${segmentFilter === 'all' ? 'All segments' : SEGMENT_META.find((s) => s.value === segmentFilter)?.label} · ${selectedWardId ? wardName(selectedWardId) : 'All wards'}`}
+            tone="primary"
+            actions={
+              <LinkButton to={ROUTES.pilotIngestion} variant="ghost" size="xs" icon={<ExternalLink className="h-3 w-3" />}>
+                {t('Ingest a real export')}
+              </LinkButton>
+            }
+          >
+            <p className="mb-3 text-xs leading-relaxed text-ink-500">{t('Assessed base and collection performance across the scope selected above.')}</p>
+            <MetricGrid columns={5}>
               <MetricCard
                 label={t('Assessed value')}
                 value={formatCrore(cityTotals.assessedValueCrore)}
                 support={t('{0} assessed units', formatNumber(cityTotals.assessedUnits))}
                 origin="demonstration"
+                footer={<span className="text-[0.625rem] leading-snug text-ink-400">{t('BMC\'s March 2025 property-tax-hike reporting put the citywide assessed base at approximately {0} properties (~9 lakh) — a rounded figure tied to that report, not a cited exact register total; the ward-by-segment count above is modelled.', formatNumber(activeCorporation.assessedPropertiesApprox ?? 0))}</span>}
               />
               <MetricCard
                 label={t('Collected')}
                 value={formatCrore(cityTotals.collectedCrore)}
                 support={t('{0} of assessed value', formatPercent(cityTotals.efficiencyPct))}
+                footer={<span className="text-[0.625rem] leading-snug text-ink-400">{t('Mirrors the Property Tax Citizen Portal (ptaxportal.mcgm.gov.in) — a simulated feed in this demonstration.')}</span>}
               />
               <MetricCard
                 label={t('Arrears outstanding')}
@@ -384,19 +389,17 @@ export function PropertyIntelligencePage(): React.JSX.Element {
                 icon={<RefreshCw className="h-3.5 w-3.5" />}
               />
             </MetricGrid>
-          </Card>
+          </GovPanel>
 
           {/* Two columns. The ward register and the map of the same figures
               read down the wide column; the composition, the two
               distributions and the reading note stand beside them. */}
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
             <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
-            <Card flush>
-              <CardHeader
-                bordered
-                title={t('Ward assessment register')}
-                description={t('Assessed base, collection position and reassessment backlog by ward. Click a row to focus the map; use the profile action to open the ward\'s full intelligence record.')}
-              />
+            <GovPanel title={t('Ward assessment register')} tone="red" dense>
+              <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+                {t('Assessed base, collection position and reassessment backlog by ward. Click a row to focus the map; use the profile action to open the ward\'s full intelligence record.')}
+              </p>
               <DataTable
                 rows={tableRows}
                 columns={wardColumns}
@@ -418,15 +421,13 @@ export function PropertyIntelligencePage(): React.JSX.Element {
                 emptyTitle={t('No wards match the current focus')}
                 emptyDetail="Clear the ward focus above to see the full register."
               />
-            </Card>
+            </GovPanel>
 
-            <Card flush>
-              <CardHeader
-                bordered
-                title={t('Assessment efficiency - spatial view')}
-                description={t('Illustrative ward map shaded by collection efficiency for the segment scope selected above. Click a ward to focus the register above.')}
-              />
-              <div className="p-4">
+            <GovPanel title={t('Assessment efficiency - spatial view')} tone="amber" dense>
+              <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+                {t('Illustrative ward map shaded by collection efficiency for the segment scope selected above. Click a ward to focus the register above.')}
+              </p>
+              <div className="px-3 pb-3">
                 <CityMap
                   layers={[
                     {
@@ -443,16 +444,15 @@ export function PropertyIntelligencePage(): React.JSX.Element {
                   height={420}
                 />
               </div>
-            </Card>
+            </GovPanel>
             </div>
 
             <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
-            <Card>
-              <CardHeader
-                title={t('Segment composition')}
-                description={selectedWardId ? `Assessed value mix for ${wardName(selectedWardId)}` : 'City-wide assessed value mix by use-class segment'}
-              />
-              <div className="mt-3 h-56">
+            <GovPanel title={t('Segment composition')} tone="green">
+              <p className="mb-3 text-xs leading-relaxed text-ink-500">
+                {selectedWardId ? `Assessed value mix for ${wardName(selectedWardId)}` : 'City-wide assessed value mix by use-class segment'}
+              </p>
+              <div className="h-56">
                 <DonutChart data={compositionData} unit={t('₹ Cr')} centreValue={formatCrore(compositionTotal, 0)} centreLabel="Assessed value" />
               </div>
               <ul className="mt-3 space-y-1.5">
@@ -466,7 +466,7 @@ export function PropertyIntelligencePage(): React.JSX.Element {
                   </li>
                 ))}
               </ul>
-            </Card>
+            </GovPanel>
 
             <Card>
               <ChartFrame

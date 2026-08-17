@@ -1,10 +1,9 @@
 import { useMemo } from 'react'
-import { ArrowDownRight, Coins, LayoutGrid, Scale, Users } from 'lucide-react'
+import { ArrowDownRight, Coins, Scale, Users } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import {
   Badge,
   Card,
-  CardHeader,
   DataTable,
   DemonstrationNotice,
   EmptyState,
@@ -16,6 +15,7 @@ import {
   type Column,
 } from '@/components/ui'
 import { MetricCard } from '@/components/cards'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { RankedBarChart } from '@/components/charts'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
@@ -88,10 +88,7 @@ const EYEBROW = 'Wards & Localities'
 const TITLE = 'Ward Equity & Allocation'
 
 export function WardEquityPage(): React.JSX.Element {
-  usePageMasthead(
-    TITLE,
-    t('Whether the corporation\'s capital allocation follows the condition its own data records. Need is assembled from figures already held on each ward; provision is the same capital position Budget Intelligence reports, expressed per resident.'),
-  )
+  usePageMasthead(TITLE)
 
   const equityQuery = useServiceQuery(queryKeys.wardEquity('assessment'), (u) => wardEquityService.assessment(u))
 
@@ -295,6 +292,7 @@ export function WardEquityPage(): React.JSX.Element {
           icon={<Scale className="h-4 w-4" />}
           origin="demonstration"
           explanation="Wards whose need score sits at or above the cohort median while their capital allocation per resident sits below it. Both splits are cohort medians, not fixed thresholds."
+          background="red"
         />
         <MetricCard
           label={t('Widest allocation gap')}
@@ -303,6 +301,7 @@ export function WardEquityPage(): React.JSX.Element {
           tone={widestGap && widestGap.equityGap <= -15 ? 'critical' : 'warn'}
           icon={<ArrowDownRight className="h-4 w-4" />}
           explanation="The signed difference between a ward's provision percentile and its need percentile, in percentile points. Negative means the ward is served below what its own recorded condition indicates."
+          background="amber"
         />
         <MetricCard
           label={t('Spend per resident, neediest quarter')}
@@ -311,6 +310,7 @@ export function WardEquityPage(): React.JSX.Element {
           tone={quartileSpend.differencePerResident < 0 ? 'critical' : 'positive'}
           icon={<Users className="h-4 w-4" />}
           explanation={`Mean capital spend per resident across the ${quartileSpend.quartileSize} highest-need wards set against the ${quartileSpend.quartileSize} lowest-need wards. This is the headline inequity figure: if the neediest quarter receives less per head than the least needy, allocation is running against condition.`}
+          background="green"
         />
         <MetricCard
           label={t('Capital in play')}
@@ -327,13 +327,10 @@ export function WardEquityPage(): React.JSX.Element {
           read down the column beside. */}
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
         <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
-          <Card flush className="flex flex-col">
-            <CardHeader
-              bordered
-              icon={<LayoutGrid className="h-4 w-4" />}
-              title={t('Need against provision')}
-              description={t('Split on the cohort medians - need {0}/100, allocation {1} per resident - never on a fixed threshold, so the halves are true by construction.', medians.needScore, formatRupees(medians.allocatedPerResident))}
-            />
+          <GovPanel title={t('Need against provision')} tone="amber" dense className="flex flex-col">
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+              {t('Split on the cohort medians - need {0}/100, allocation {1} per resident - never on a fixed threshold, so the halves are true by construction.', medians.needScore, formatRupees(medians.allocatedPerResident))}
+            </p>
             <div className="p-4">
               <div className="mb-2.5 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-[0.6875rem] font-semibold tracking-wide text-ink-500 uppercase">
                 <span>{t('Need rises upward')}</span>
@@ -387,15 +384,12 @@ export function WardEquityPage(): React.JSX.Element {
                 {t('Provision is measured on capital')}{' '}<span className="font-semibold">allocated</span>{' '}{t('per resident rather than capital spent. Allocation is the decision the corporation makes and the thing a budget can correct; under-spend against an allocation is a delivery failure, which the utilisation column answers separately.')}
               </p>
             </div>
-          </Card>
+          </GovPanel>
 
-          <Card flush>
-            <CardHeader
-              bordered
-              icon={<Scale className="h-4 w-4" />}
-              title={t('Ward equity register')}
-            description={t('Ordered by equity gap, most under-provisioned first. Every figure is carried from the ward\'s existing record - nothing on this register is computed for this page alone.')}
-          />
+          <GovPanel title={t('Ward equity register')} tone="red" dense>
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+              {t('Ordered by equity gap, most under-provisioned first. Every figure is carried from the ward\'s existing record - nothing on this register is computed for this page alone.')}
+            </p>
           <DataTable
             rows={rows}
             columns={columns}
@@ -408,7 +402,7 @@ export function WardEquityPage(): React.JSX.Element {
             emptyTitle={t('No ward matches the current search')}
             emptyDetail="Clear the search to restore the full cohort."
           />
-        </Card>
+        </GovPanel>
         </div>
 
         <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
@@ -422,13 +416,10 @@ export function WardEquityPage(): React.JSX.Element {
           </div>
         </Card>
 
-          <Card flush className="flex flex-col">
-            <CardHeader
-              bordered
-              icon={<ArrowDownRight className="h-4 w-4" />}
-              title={t('Provision shortfall against need')}
-              description={t('Percentile points by which a ward\'s capital provision sits below its assessed need. Wards provisioned at or above their need are not shown.')}
-            />
+          <GovPanel title={t('Provision shortfall against need')} tone="green" dense className="flex flex-col">
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+              {t('Percentile points by which a ward\'s capital provision sits below its assessed need. Wards provisioned at or above their need are not shown.')}
+            </p>
             {shortfalls.length === 0 ? (
               <div className="p-4">
                 <EmptyState
@@ -442,7 +433,7 @@ export function WardEquityPage(): React.JSX.Element {
                 <RankedBarChart data={shortfalls} unit=" pp" />
               </div>
             )}
-          </Card>
+          </GovPanel>
 
 
         <Card tone="sunken">

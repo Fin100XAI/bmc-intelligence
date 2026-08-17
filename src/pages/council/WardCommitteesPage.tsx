@@ -1,10 +1,9 @@
 import { useMemo, useState } from 'react'
-import { Banknote, CalendarClock, ClipboardList, Landmark, Users2, Vote } from 'lucide-react'
+import { Banknote, CalendarClock, ClipboardList, Users2, Vote } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import {
   Badge,
   Card,
-  CardHeader,
   DataTable,
   DemonstrationNotice,
   EmptyState,
@@ -17,6 +16,7 @@ import {
   type Column,
 } from '@/components/ui'
 import { MetricCard } from '@/components/cards'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { wardGovernanceService } from '@/services'
@@ -71,10 +71,7 @@ export function WardCommitteesPage(): React.JSX.Element {
   const [wardFilter, setWardFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState<CaseworkStatus | ''>('')
 
-  usePageMasthead(
-    t('Ward Committees'),
-    t('The statutory ward committees, their sittings and local works, and the constituent casework an elected corporator carries that never needs to reach the committee floor.'),
-  )
+  usePageMasthead(t('Ward Committees'))
 
   const positionQuery = useServiceQuery(queryKeys.wardGovernance('position'), (u) => wardGovernanceService.position(u))
   const committeesQuery = useServiceQuery(queryKeys.wardGovernance('committees'), (u) => wardGovernanceService.committees(u))
@@ -283,6 +280,8 @@ export function WardCommitteesPage(): React.JSX.Element {
           value={position?.totalCorporatorSeats ?? 0}
           support={t('Across {0} ward committees', position?.committeesConstituted ?? 0)}
           icon={<Users2 className="h-4 w-4" />}
+          background="red"
+          footer={<span className="text-[0.625rem] leading-snug text-ink-400">{t("Modelled here as one committee per administrative ward, for per-ward comparability. BMC's own statutory structure groups its 24 administrative wards into just 17 Ward Committees, each covering more than one ward.")}</span>}
         />
         <MetricCard
           label={t('Mean committee attendance')}
@@ -291,12 +290,14 @@ export function WardCommitteesPage(): React.JSX.Element {
           support={t('{0} sittings held in the last twelve months', position?.sittings12m ?? 0)}
           icon={<CalendarClock className="h-4 w-4" />}
           tone={position && position.meanAttendancePct < 60 ? 'warn' : 'default'}
+          background="amber"
         />
         <MetricCard
           label={t('Local works sanctioned')}
           value={position?.localWorksSanctioned12m ?? 0}
           support={position ? formatCrore(position.localWorksValueCrore12m) : '-'}
           icon={<Banknote className="h-4 w-4" />}
+          background="green"
         />
         <MetricCard
           label={t('Casework open')}
@@ -307,61 +308,59 @@ export function WardCommitteesPage(): React.JSX.Element {
         />
       </MetricGrid>
 
-      <Card flush>
-        <CardHeader
-          bordered
-          icon={<Landmark className="h-4 w-4" />}
-          title={t('Ward committee register')}
-          description={t('One statutory committee per ward - composition, sittings, local works sanctioned within the ₹5 lakh threshold, and grievances reviewed.')}
-        />
+      <GovPanel title={t('Ward committee register')} tone="amber" dense>
+        <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+          {t('One statutory committee per ward - composition, sittings, local works sanctioned within the ₹5 lakh threshold, and grievances reviewed.')}
+        </p>
         {committees.length === 0 ? (
           <EmptyState title={t('No ward committees on record')} />
         ) : (
           <DataTable rows={committees} columns={committeeColumns} rowKey={(c) => c.wardId} pageSize={12} />
         )}
-      </Card>
+      </GovPanel>
 
-      <Card flush>
-        <CardHeader
-          bordered
-          icon={<ClipboardList className="h-4 w-4" />}
-          title={t('Corporator casework')}
-          description={t('Constituent matters an elected corporator has taken up directly - no constituent is named, only what moved and where.')}
-          actions={
-            <div className="flex flex-wrap items-end gap-2">
-              <div>
-                <Label htmlFor="ward-filter">{t('Ward')}</Label>
-                <Select
-                  id="ward-filter"
-                  value={wardFilter}
-                  onChange={(e) => setWardFilter(e.target.value)}
-                  options={[
-                    { value: '', label: t('All wards') },
-                    ...committees.map((c) => ({ value: c.wardId, label: wardName(c.wardId) })),
-                  ]}
-                />
-              </div>
-              <div>
-                <Label htmlFor="casework-status-filter">{t('Status')}</Label>
-                <Select
-                  id="casework-status-filter"
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value as CaseworkStatus | '')}
-                  options={[
-                    { value: '', label: t('All statuses') },
-                    ...CASEWORK_STATUSES.map((s) => ({ value: s, label: CASEWORK_STATUS_LABEL[s] })),
-                  ]}
-                />
-              </div>
+      <GovPanel
+        title={t('Corporator casework')}
+        tone="red"
+        dense
+        actions={
+          <div className="flex flex-wrap items-end gap-2">
+            <div>
+              <Label htmlFor="ward-filter">{t('Ward')}</Label>
+              <Select
+                id="ward-filter"
+                value={wardFilter}
+                onChange={(e) => setWardFilter(e.target.value)}
+                options={[
+                  { value: '', label: t('All wards') },
+                  ...committees.map((c) => ({ value: c.wardId, label: wardName(c.wardId) })),
+                ]}
+              />
             </div>
-          }
-        />
+            <div>
+              <Label htmlFor="casework-status-filter">{t('Status')}</Label>
+              <Select
+                id="casework-status-filter"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as CaseworkStatus | '')}
+                options={[
+                  { value: '', label: t('All statuses') },
+                  ...CASEWORK_STATUSES.map((s) => ({ value: s, label: CASEWORK_STATUS_LABEL[s] })),
+                ]}
+              />
+            </div>
+          </div>
+        }
+      >
+        <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+          {t('Constituent matters an elected corporator has taken up directly - no constituent is named, only what moved and where.')}
+        </p>
         {filteredCasework.length === 0 ? (
           <EmptyState title={t('No casework matches the current filters')} detail="Clear a filter to widen the register." />
         ) : (
           <DataTable rows={filteredCasework} columns={caseworkColumns} rowKey={(c) => c.id} pageSize={15} />
         )}
-      </Card>
+      </GovPanel>
     </PageBody>
   )
 }

@@ -1,7 +1,8 @@
 import { Banknote, Coins, Landmark, PiggyBank, Scale, TrendingUp } from 'lucide-react'
 import { PageBody, PageHeader, SplitLayout } from '@/components/layout/PageHeader'
 import { Badge, SeverityBadge, StateBadge } from '@/components/ui/badges'
-import { Card, CardHeader, DefinitionList, DefinitionRow, MetricGrid, ScoreDial } from '@/components/ui/primitives'
+import { Card, DefinitionList, DefinitionRow, MetricGrid, ScoreDial } from '@/components/ui/primitives'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { DataTable, type Column } from '@/components/ui/DataTable'
 import { DemonstrationNotice, ErrorState, LoadingState, PartialDataWarning } from '@/components/ui/states'
 import { MetricCard } from '@/components/cards/MetricCard'
@@ -42,10 +43,7 @@ const FRESHNESS = {
 
 export function FinancialIntelligencePage(): React.JSX.Element {
   // The shell's masthead carries the screen's name; the page states the wording.
-  usePageMasthead(
-    t('Municipal Financial Intelligence'),
-    t('The corporation\'s consolidated financial position - revenue, budget, commitments, capital and project spend - as one index that can always be taken apart into the six components that produced it.'),
-  )
+  usePageMasthead(t('Municipal Financial Intelligence'))
 
   const query = useServiceQuery(queryKeys.finance('intelligence'), (u) => financialIntelligenceService.position(u))
 
@@ -138,24 +136,22 @@ export function FinancialIntelligencePage(): React.JSX.Element {
 
       {/* Headline position -------------------------------------------- */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)]">
-        <Card>
-          <CardHeader title={t('Financial Health Index')} description={t('Weighted across six published components.')} />
-          <div className="mt-3 flex items-center gap-4">
+        <GovPanel title={t('Financial Health Index')} tone="primary">
+          <p className="mb-3 text-xs leading-relaxed text-ink-500">{t('Weighted across six published components.')}</p>
+          <div className="flex items-center gap-4">
             <ScoreDial score={result.index} label={t('Index')} caption={`${result.index}/100`} />
             <div className="min-w-0">
               <StateBadge state={result.state} />
               <p className="mt-2 text-xs leading-relaxed text-ink-600">{result.narrative}</p>
             </div>
           </div>
-        </Card>
+        </GovPanel>
 
-        <Card>
-          <CardHeader
-            title={t('How the index is composed')}
-            description={t('Published weights. Each bar is the component\'s contribution to the index.')}
-          />
+        <GovPanel title={t('How the index is composed')} tone="red">
+          <p className="mb-3 text-xs leading-relaxed text-ink-500">
+            {t('Published weights. Each bar is the component\'s contribution to the index.')}
+          </p>
           <ContributionBars
-            className="mt-3"
             items={components.map((c) => ({
               id: c.id,
               label: `${c.label} - ${c.measure}`,
@@ -168,7 +164,7 @@ export function FinancialIntelligencePage(): React.JSX.Element {
           <p className="mt-3 border-t border-ink-100 pt-2.5 text-[0.6875rem] leading-relaxed text-ink-500">
             {t('Weights sum to {0}. Budget utilisation scores highest near the phased plan rather than at 100% spend - both under- and over-spend are unhealthy positions.', Object.values(FINANCIAL_HEALTH_WEIGHTS).reduce((s, w) => s + w, 0).toFixed(2))}
           </p>
-        </Card>
+        </GovPanel>
       </div>
 
       {/* Position figures ---------------------------------------------- */}
@@ -209,12 +205,10 @@ export function FinancialIntelligencePage(): React.JSX.Element {
       <SplitLayout
         asideWidth="lg"
         main={
-          <Card flush>
-            <CardHeader
-              bordered
-              title={t('Departmental position')}
-              description={t('Ranked by the widest variance against the phased plan, either direction.')}
-            />
+          <GovPanel title={t('Departmental position')} tone="amber" dense>
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+              {t('Ranked by the widest variance against the phased plan, either direction.')}
+            </p>
             <DataTable
               rows={departments}
               columns={deptColumns}
@@ -224,16 +218,13 @@ export function FinancialIntelligencePage(): React.JSX.Element {
               maxHeight="30rem"
               searchPlaceholder="Search department"
             />
-          </Card>
+          </GovPanel>
         }
         aside={
           <>
-            <Card>
-              <CardHeader
-                title={t('Capital and project spend')}
-                description={t('Where the corporation\'s capital programme actually stands.')}
-              />
-              <DefinitionList className="mt-2">
+            <GovPanel title={t('Capital and project spend')} tone="amber">
+              <p className="mb-2 text-xs leading-relaxed text-ink-500">{t('Where the corporation\'s capital programme actually stands.')}</p>
+              <DefinitionList>
                 <DefinitionRow label={t('Capital approved')}>{formatCrore(position.capexApprovedCrore)}</DefinitionRow>
                 <DefinitionRow label={t('Capital spent')}>{formatCrore(position.capexActualCrore)}</DefinitionRow>
                 <DefinitionRow label={t('Project sanctioned')}>{formatCrore(position.projectSanctionedCrore)}</DefinitionRow>
@@ -243,20 +234,20 @@ export function FinancialIntelligencePage(): React.JSX.Element {
                 <DefinitionRow label={t('Forecast year-end')}>{formatCrore(position.forecastYearEndCrore)}</DefinitionRow>
                 <DefinitionRow label={t('Approved')}>{formatCrore(position.approvedCrore)}</DefinitionRow>
               </DefinitionList>
-            </Card>
+            </GovPanel>
 
-            <Card>
-              <CardHeader
-                title={t('Leakage indicators')}
-                description={t('Reconciliation candidates - never assertions of irregularity.')}
-                actions={<Badge tone="intel">{leakageIndicators.length}</Badge>}
-              />
+            <GovPanel
+              title={t('Leakage indicators')}
+              tone="red"
+              actions={<Badge tone="intel">{leakageIndicators.length}</Badge>}
+            >
+              <p className="mb-2 text-xs leading-relaxed text-ink-500">{t('Reconciliation candidates - never assertions of irregularity.')}</p>
               {leakageIndicators.length === 0 ? (
-                <p className="mt-2 text-xs leading-relaxed text-ink-500">
+                <p className="text-xs leading-relaxed text-ink-500">
                   {t('No leakage indicator is raised on the records in your scope.')}
                 </p>
               ) : (
-                <ul className="mt-3 space-y-2.5">
+                <ul className="space-y-2.5">
                   {leakageIndicators.map((l) => (
                     <li key={l.id} className="rounded-lg border border-ink-100 bg-surface-sunken p-2.5">
                       <div className="flex items-start justify-between gap-2">
@@ -273,7 +264,7 @@ export function FinancialIntelligencePage(): React.JSX.Element {
                   ))}
                 </ul>
               )}
-            </Card>
+            </GovPanel>
 
             <Card tone="sunken">
               <div className="flex items-start gap-2.5">

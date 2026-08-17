@@ -1,4 +1,13 @@
-import type { DataClassification, GeoPoint, IsoDateTime, OperationalState, Severity, TenantId, Trend } from './common'
+import type {
+  DataClassification,
+  GeoPoint,
+  IntelligenceDomain,
+  IsoDateTime,
+  OperationalState,
+  Severity,
+  TenantId,
+  Trend,
+} from './common'
 import { t } from '@/i18n'
 import { registerLayer } from '@/data/runtime'
 
@@ -554,4 +563,84 @@ export interface CouncilPosition {
   passedAwaitingImplementation: number
   meanDaysTabledToDecision: number
   attendanceTrend: Trend
+}
+
+/* ==========================================================================
+   Notified services register
+   ========================================================================== */
+
+/**
+ * The service domain a notified service belongs to, reusing the platform's
+ * own intelligence-domain taxonomy rather than inventing a parallel one -
+ * every one of these already has a department, a page and a place in
+ * `DOMAIN_LABEL`.
+ */
+export type NotifiedServiceDomain = Extract<
+  IntelligenceDomain,
+  | 'registration'
+  | 'licensing'
+  | 'property'
+  | 'buildings'
+  | 'health'
+  | 'water'
+  | 'sewerage'
+  | 'planning'
+  | 'gardens'
+  | 'assets'
+  | 'enforcement'
+>
+
+/** How a citizen may reach the counter this service is issued from. */
+export type NotifiedServiceChannel = 'online' | 'ward-office' | 'both'
+
+function build$NOTIFIED_SERVICE_CHANNEL_LABEL(): Record<NotifiedServiceChannel, string> {
+  return {
+  online: t('Online'),
+  'ward-office': t('Ward Office'),
+  both: t('Online & Ward Office'),
+}
+}
+export let NOTIFIED_SERVICE_CHANNEL_LABEL: Record<NotifiedServiceChannel, string> = build$NOTIFIED_SERVICE_CHANNEL_LABEL()
+registerLayer(() => {
+  NOTIFIED_SERVICE_CHANNEL_LABEL = build$NOTIFIED_SERVICE_CHANNEL_LABEL()
+})
+
+/**
+ * A NOTIFIED SERVICE - a proactive application a citizen files FOR (a
+ * certificate, a licence, a permit) against a published statutory delivery
+ * timeline, on the pattern set by Maharashtra's Right to Public Services
+ * Act and the individual Acts and Rules that notify each service in turn.
+ *
+ * This is deliberately distinct from `ServiceHealth` in
+ * `src/types/operations.ts`, which is COMPLAINT-RESOLUTION SLA - how fast a
+ * grievance already lodged against the corporation is closed. A notified
+ * service is not a grievance; it is a duty the corporation owes every
+ * applicant from the day the application is filed, whether or not anything
+ * has gone wrong. The two figures answer different questions and neither
+ * substitutes for the other.
+ *
+ * The unit of record is the SERVICE itself, aggregated city-wide across
+ * every ward and counter that issues it - not an individual application, an
+ * applicant's name or a certificate number. What the register reports is how
+ * well the notified timeline is being kept.
+ */
+export interface NotifiedService {
+  id: string
+  tenantId: TenantId
+  name: string
+  domain: NotifiedServiceDomain
+  departmentId: string
+  /** The published statutory turnaround, in working days. */
+  statutoryDays: number
+  channel: NotifiedServiceChannel
+  applications30d: number
+  /** Applications issued within the statutory period, as a share of those decided. */
+  issuedWithinStatutoryPeriodPct: number
+  /** Mean working days from application to issue, across every channel. */
+  avgIssueDays: number
+  /** Applications lodged and not yet decided. */
+  backlog: number
+  /** Change in `issuedWithinStatutoryPeriodPct` against the previous quarter, in percentage points. */
+  trendPct: number
+  state: OperationalState
 }

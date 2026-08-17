@@ -26,6 +26,8 @@ import { Button, IconButton } from '@/components/ui/primitives'
 import { Tooltip } from '@/components/ui/overlays'
 import { useActiveCorporation } from '@/stores/corporation.store'
 import { LanguageSwitcher } from './LanguageSwitcher'
+import { FontSizeControl } from './FontSizeControl'
+import { ContrastToggle } from './ContrastToggle'
 import { t } from '@/i18n'
 
 export interface TopbarStatus {
@@ -240,6 +242,12 @@ export function Topbar({ status }: { status: TopbarStatus }): React.JSX.Element 
           ) : null}
         </Link>
       </Tooltip>
+
+      {/* Contrast --------------------------------------------------------- */}
+      <ContrastToggle />
+
+      {/* Text size ------------------------------------------------------ */}
+      <FontSizeControl />
 
       {/* Interface language -------------------------------------------- */}
       <LanguageSwitcher />

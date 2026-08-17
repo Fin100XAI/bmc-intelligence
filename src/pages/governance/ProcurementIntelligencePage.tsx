@@ -22,7 +22,6 @@ import { formatCrore, formatDate, formatPercent } from '@/utils/format'
 import {
   Badge,
   Card,
-  CardHeader,
   DataTable,
   DemonstrationNotice,
   EmptyState,
@@ -32,6 +31,7 @@ import {
   MetricGrid,
   type Column,
 } from '@/components/ui'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { MetricCard } from '@/components/cards'
 import { CategoryBarChart, ChartFrame, ContributionBars, DonutChart, MiniBar } from '@/components/charts'
 import { t } from '@/i18n'
@@ -64,10 +64,7 @@ const STAGE_ORDER: TenderStage[] = ['draft', 'published', 'bidding', 'evaluation
 
 export function ProcurementIntelligencePage(): React.JSX.Element {
   // The shell's masthead carries the screen's name; the page states the wording.
-  usePageMasthead(
-    t('Procurement Intelligence'),
-    t('Tenders, contracts and vendors across every authorised procurement record. Risk indicators identify delivery and continuity exposure requiring management attention; they are never a finding against any contractor, officer or department.'),
-  )
+  usePageMasthead(t('Procurement Intelligence'))
 
   const openDrawer = useDrawerStore((s) => s.open)
   const [selectedContractId, setSelectedContractId] = useState<string | null>(null)
@@ -375,9 +372,9 @@ export function ProcurementIntelligencePage(): React.JSX.Element {
 
       {!anyLoading && !anyError && contracts.length > 0 ? (
         <>
-          <Card>
-            <CardHeader title={t('Procurement summary')} description={t('Across every contract within your authorised scope.')} />
-            <MetricGrid columns={5} className="mt-4">
+          <GovPanel title={t('Procurement summary')} tone="primary">
+            <p className="mb-3 text-xs leading-relaxed text-ink-500">{t('Across every contract within your authorised scope.')}</p>
+            <MetricGrid columns={5}>
               <MetricCard label={t('Active contracts')} value={String(summary.active)} support={t('of {0} on record', contracts.length)} />
               <MetricCard label={t('Total contract value')} value={formatCrore(summary.totalValue)} support={t('{0} paid to date', formatCrore(summary.paid))} />
               <MetricCard label={t('Average performance index')} value={String(summary.avgPerformance)} support={t('{0} vendors, 0–100, higher is better', vendors.length)} />
@@ -394,7 +391,7 @@ export function ProcurementIntelligencePage(): React.JSX.Element {
                 tone={summary.topConcentration?.aboveThreshold ? 'warn' : 'default'}
               />
             </MetricGrid>
-          </Card>
+          </GovPanel>
 
           {/* Two columns. The three registers an officer works through —
               contracts, the concentration each category carries, then the
@@ -404,12 +401,10 @@ export function ProcurementIntelligencePage(): React.JSX.Element {
               row that produced it. */}
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
           <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
-          <Card flush>
-            <CardHeader
-              bordered
-              title={t('Contracts')}
-              description={t('Sortable, filterable and paginated. Row click selects the contract for the risk-indicator breakdown below and opens its full record.')}
-            />
+          <GovPanel title={t('Contracts')} tone="red" dense>
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+              {t('Sortable, filterable and paginated. Row click selects the contract for the risk-indicator breakdown below and opens its full record.')}
+            </p>
             <DataTable
               rows={contracts}
               columns={contractColumns}
@@ -427,14 +422,12 @@ export function ProcurementIntelligencePage(): React.JSX.Element {
                 <span className={`w-[3px] rounded-full ${row.riskScore >= 60 ? 'bg-crit-500' : row.riskScore >= 42 ? 'bg-warn-500' : 'bg-ok-500'}`} />
               )}
             />
-          </Card>
+          </GovPanel>
 
-          <Card flush>
-            <CardHeader
-              bordered
-              title={t('Category concentration detail')}
-              description={t('Top vendor\'s share of contracted value within each category against the published departmental concentration threshold. Each note is the platform\'s institutional statement for that category, shown verbatim.')}
-            />
+          <GovPanel title={t('Category concentration detail')} tone="amber" dense>
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+              {t('Top vendor\'s share of contracted value within each category against the published departmental concentration threshold. Each note is the platform\'s institutional statement for that category, shown verbatim.')}
+            </p>
             <div className="divide-y divide-ink-50">
               {concentration.map((c) => (
                 <div key={c.category} className="p-4">
@@ -451,14 +444,12 @@ export function ProcurementIntelligencePage(): React.JSX.Element {
                 </div>
               ))}
             </div>
-          </Card>
+          </GovPanel>
 
-          <Card flush>
-            <CardHeader
-              bordered
-              title={t('Vendors')}
-              description={t('Every empanelled contractor holding at least one contract within your authorised scope, ranked by delivery index (lowest first).')}
-            />
+          <GovPanel title={t('Vendors')} tone="green" dense>
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+              {t('Every empanelled contractor holding at least one contract within your authorised scope, ranked by delivery index (lowest first).')}
+            </p>
             <DataTable
               rows={vendors}
               columns={vendorColumns}
@@ -468,19 +459,18 @@ export function ProcurementIntelligencePage(): React.JSX.Element {
               maxHeight="26rem"
               searchPlaceholder="Search vendors"
             />
-          </Card>
+          </GovPanel>
           </div>
 
           <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
-          <Card>
-            <CardHeader
-              title={t('Procurement risk indicators')}
-              description={t('Every contract\'s risk score is the weighted sum of five published indicators: category concentration, repeated extensions, unusual variation magnitude, milestone delivery delay and supplier performance deterioration. Select a contract in the table above to see its breakdown.')}
-            />
+          <GovPanel title={t('Procurement risk indicators')} tone="red">
+            <p className="mb-3 text-xs leading-relaxed text-ink-500">
+              {t('Every contract\'s risk score is the weighted sum of five published indicators: category concentration, repeated extensions, unusual variation magnitude, milestone delivery delay and supplier performance deterioration. Select a contract in the table above to see its breakdown.')}
+            </p>
             {!selectedContract ? (
-              <EmptyState title={t('Select a contract')} detail="Choose a contract from the table above to see its risk-indicator breakdown." compact className="mt-4" />
+              <EmptyState title={t('Select a contract')} detail="Choose a contract from the table above to see its risk-indicator breakdown." compact />
             ) : (
-              <div className="mt-4">
+              <div>
                 <div className="mb-3 flex flex-wrap items-center gap-2">
                   <Badge tone="neutral" className="font-mono">{selectedContract.reference}</Badge>
                   <span className="text-sm font-semibold text-ink-800">{selectedContract.title}</span>
@@ -495,7 +485,7 @@ export function ProcurementIntelligencePage(): React.JSX.Element {
                 </p>
               </div>
             )}
-          </Card>
+          </GovPanel>
 
             <Card>
               <ChartFrame title={t('Concentration by category - value composition')} unit={t('₹ crore')} timeframe="Current contract set" freshness={FRESHNESS} height={240}>

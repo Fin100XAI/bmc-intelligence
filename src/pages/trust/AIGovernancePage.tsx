@@ -1,20 +1,16 @@
 import { useMemo, useState } from 'react'
 import {
   AlertOctagon,
-  BrainCircuit,
-  CheckCircle2,
   Compass,
-  Gauge,
-  ScrollText,
-  ShieldBan,
   Sparkles,
 } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { Badge, SeverityBadge } from '@/components/ui/badges'
-import { Button, Card, CardHeader, Label, LinkButton, MetricGrid, ProgressBar, Select } from '@/components/ui/primitives'
+import { Button, Card, Label, LinkButton, MetricGrid, ProgressBar, Select } from '@/components/ui/primitives'
 import { DataTable } from '@/components/ui/DataTable'
 import { DemonstrationNotice, EmptyState, ErrorState, LoadingState } from '@/components/ui/states'
 import { ConfirmDialog, Tabs } from '@/components/ui/overlays'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { useServiceQuery, useServiceAction } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { aiService } from '@/services'
@@ -89,10 +85,7 @@ export function AIGovernancePage(): React.JSX.Element {
   const [tab, setTab] = useState<TabId>('risk')
 
   // The shell's masthead carries the screen's name; the page states the wording.
-  usePageMasthead(
-    t('AI Governance'),
-    t('Every AI capability in this platform is registered, risk-assessed and subject to named human oversight. AI analyses, recommends, forecasts, summarises, detects, prioritises, simulates and explains - it never decides.'),
-  )
+  usePageMasthead(t('AI Governance'))
 
   const modelsQuery = useServiceQuery(queryKeys.ai('models'), (user) => aiService.models(user))
   const promptsQuery = useServiceQuery(queryKeys.ai('prompts'), (user) => aiService.prompts(user))
@@ -148,12 +141,8 @@ export function AIGovernancePage(): React.JSX.Element {
 
       {/* ---------------------------------------------------- Human-in-the-loop */}
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card tone="critical">
-          <CardHeader
-            icon={<ShieldBan className="h-4 w-4 text-crit-700" />}
-            title={t('AI must never')}
-            description={t('Technically blocked at the gateway, regardless of role or confidence.')}
-          />
+        <GovPanel title={t('AI must never')} tone="critical">
+          <p className="mb-3 text-xs leading-relaxed text-ink-500">{t('Technically blocked at the gateway, regardless of role or confidence.')}</p>
           <ul className="mt-3 space-y-2.5">
             {HUMAN_CONFIRMATION_REQUIRED.map((item) => (
               <li key={item.id} className="rounded-md border border-crit-100 bg-surface px-3 py-2">
@@ -162,10 +151,10 @@ export function AIGovernancePage(): React.JSX.Element {
               </li>
             ))}
           </ul>
-        </Card>
+        </GovPanel>
 
-        <Card tone="positive">
-          <CardHeader icon={<CheckCircle2 className="h-4 w-4 text-ok-700" />} title={t('AI may')} description={t('The full extent of what this platform\'s AI layer is built to do.')} />
+        <GovPanel title={t('AI may')} tone="green">
+          <p className="mb-3 text-xs leading-relaxed text-ink-500">{t('The full extent of what this platform\'s AI layer is built to do.')}</p>
           <ul className="mt-3 space-y-2.5">
             {AI_MAY_DO.map((item) => (
               <li key={item.verb} className="rounded-md border border-ok-100 bg-surface px-3 py-2">
@@ -174,7 +163,7 @@ export function AIGovernancePage(): React.JSX.Element {
               </li>
             ))}
           </ul>
-        </Card>
+        </GovPanel>
       </div>
 
       <MetricGrid columns={5}>
@@ -214,13 +203,12 @@ export function AIGovernancePage(): React.JSX.Element {
       />
 
       {tab === 'models' ? (
-        <Card>
-          <CardHeader
-            icon={<BrainCircuit className="h-4 w-4" />}
-            title={t('Model registry - summary')}
-            description={t('Every model this platform is capable of invoking, its approved use and its evaluation status.')}
-            actions={<LinkButton to={ROUTES.modelRegistry} icon={<Compass className="h-3.5 w-3.5" />}>{t('Open full registry')}</LinkButton>}
-          />
+        <GovPanel
+          title={t('Model registry - summary')}
+          tone="amber"
+          actions={<LinkButton to={ROUTES.modelRegistry} icon={<Compass className="h-3.5 w-3.5" />}>{t('Open full registry')}</LinkButton>}
+        >
+          <p className="mb-3 text-xs leading-relaxed text-ink-500">{t('Every model this platform is capable of invoking, its approved use and its evaluation status.')}</p>
           <div className="mt-3">
             <DataTable
               rows={models}
@@ -251,17 +239,16 @@ export function AIGovernancePage(): React.JSX.Element {
               ]}
             />
           </div>
-        </Card>
+        </GovPanel>
       ) : null}
 
       {tab === 'prompts' ? (
-        <Card>
-          <CardHeader
-            icon={<ScrollText className="h-4 w-4" />}
-            title={t('Prompt registry - summary')}
-            description={t('Versioned, approved prompt templates with their guardrails and allowed roles.')}
-            actions={<LinkButton to={ROUTES.promptRegistry} icon={<Compass className="h-3.5 w-3.5" />}>{t('Open full registry')}</LinkButton>}
-          />
+        <GovPanel
+          title={t('Prompt registry - summary')}
+          tone="amber"
+          actions={<LinkButton to={ROUTES.promptRegistry} icon={<Compass className="h-3.5 w-3.5" />}>{t('Open full registry')}</LinkButton>}
+        >
+          <p className="mb-3 text-xs leading-relaxed text-ink-500">{t('Versioned, approved prompt templates with their guardrails and allowed roles.')}</p>
           <div className="mt-3">
             <DataTable
               rows={prompts}
@@ -288,7 +275,7 @@ export function AIGovernancePage(): React.JSX.Element {
               ]}
             />
           </div>
-        </Card>
+        </GovPanel>
       ) : null}
 
       {tab === 'risk' ? (
@@ -298,8 +285,8 @@ export function AIGovernancePage(): React.JSX.Element {
            produced it. */
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
           <div className="flex min-w-0 flex-col gap-4 xl:order-2 xl:col-span-4">
-          <Card>
-            <CardHeader icon={<Gauge className="h-4 w-4" />} title={t('Likelihood / impact matrix')} description={t('Count of registered risks at each combination. Darker cells carry higher inherent severity.')} />
+          <GovPanel title={t('Likelihood / impact matrix')} tone="red">
+            <p className="mb-3 text-xs leading-relaxed text-ink-500">{t('Count of registered risks at each combination. Darker cells carry higher inherent severity.')}</p>
             <div className="mt-3 overflow-x-auto">
               <table className="w-full min-w-[420px] border-separate border-spacing-1 text-center">
                 <thead>
@@ -348,12 +335,12 @@ export function AIGovernancePage(): React.JSX.Element {
                 </tbody>
               </table>
             </div>
-          </Card>
+          </GovPanel>
           </div>
 
           <div className="flex min-w-0 flex-col gap-4 xl:order-1 xl:col-span-8">
-          <Card>
-            <CardHeader title={t('AI risk register')} description={t('Every declared risk with its controls, owner and review schedule.')} />
+          <GovPanel title={t('AI risk register')} tone="amber">
+            <p className="mb-3 text-xs leading-relaxed text-ink-500">{t('Every declared risk with its controls, owner and review schedule.')}</p>
             <div className="mt-3">
               <DataTable
                 rows={risks}
@@ -391,7 +378,7 @@ export function AIGovernancePage(): React.JSX.Element {
                 </div>
               ))}
             </div>
-          </Card>
+          </GovPanel>
           </div>
         </div>
       ) : null}
@@ -432,8 +419,10 @@ export function AIGovernancePage(): React.JSX.Element {
             </MetricGrid>
           ) : null}
 
-          <Card>
-            <CardHeader title={t('Human oversight register')} description={t('Every AI-originated recommendation requiring human review, with reviewer and modification notes. Pending items may be reviewed below.')} />
+          <GovPanel title={t('Human oversight register')} tone="amber">
+            <p className="mb-3 text-xs leading-relaxed text-ink-500">
+              {t('Every AI-originated recommendation requiring human review, with reviewer and modification notes. Pending items may be reviewed below.')}
+            </p>
             {oversightQuery.isLoading ? (
               <LoadingState variant="table" />
             ) : oversightQuery.error ? (
@@ -476,7 +465,7 @@ export function AIGovernancePage(): React.JSX.Element {
                 />
               </div>
             )}
-          </Card>
+          </GovPanel>
         </>
       ) : null}
 

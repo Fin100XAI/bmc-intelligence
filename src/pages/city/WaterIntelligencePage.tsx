@@ -1,11 +1,10 @@
 import { useState } from 'react'
-import { Activity, AlertTriangle, ChevronRight, Database, Droplets, Gauge, Layers, MapPin, Truck } from 'lucide-react'
+import { AlertTriangle, ChevronRight, Droplets, Gauge, Truck } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import {
   Badge,
   Button,
   Card,
-  CardHeader,
   DataTable,
   DeltaBadge,
   DemonstrationNotice,
@@ -20,6 +19,7 @@ import {
   type ScoreTone,
 } from '@/components/ui'
 import { MetricCard } from '@/components/cards'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { ChartFrame, CategoryBarChart, RankedBarChart, CHART_COLOURS } from '@/components/charts'
 import { CityMap } from '@/components/map/CityMap'
 import { useServiceQuery } from '@/hooks'
@@ -28,6 +28,7 @@ import { usePageMasthead } from '@/stores/masthead.store'
 import { waterService } from '@/services'
 import { useContextStore, useDrawerStore } from '@/stores/ui.store'
 import { wardName } from '@/data/reference'
+import { activeCorporation } from '@/config/municipality.config'
 import type { WaterAsset, WaterZone } from '@/types/city-domains'
 import type { DataFreshness } from '@/types/common'
 import { cn } from '@/utils/cn'
@@ -105,10 +106,7 @@ function ReservoirTank({ fillPct }: { fillPct: number }): React.JSX.Element {
    ========================================================================== */
 
 export function WaterIntelligencePage(): React.JSX.Element {
-  usePageMasthead(
-    t('Water Intelligence'),
-    t('City-wide supply and demand position, reservoir storage, zone-level service quality and a drilldown from the city, through ward and zone, to individual water assets.'),
-  )
+  usePageMasthead(t('Water Intelligence'))
 
   /**
    * The drilldown answers to two things: the ward selected across the platform
@@ -224,16 +222,27 @@ function CityPositionSection(): React.JSX.Element {
   const totalTankers = zones.reduce((s, z) => s + z.tankerTripsPerDay, 0)
   const totalInterruptions = zones.reduce((s, z) => s + z.interruptions30d, 0)
   const totalComplaints = zones.reduce((s, z) => s + z.complaints30d, 0)
+  const isBmc = activeCorporation.id === 'bmc'
 
   return (
-    <Card>
-      <CardHeader
-        icon={<Activity className="h-4 w-4" />}
-        title={t('City Water Position')}
-        description={t('Aggregate supply-demand balance, network pressure and service reliability across every distribution zone.')}
-      />
-      <MetricGrid columns={5} className="mt-3">
-        <MetricCard label={t('Supply')} value={formatNumber(totalSupply)} unit="MLD" icon={<Droplets className="h-4 w-4" />} />
+    <GovPanel title={t('City Water Position')} tone="primary">
+      <p className="mb-3 text-xs leading-relaxed text-ink-500">
+        {t('Aggregate supply-demand balance, network pressure and service reliability across every distribution zone.')}
+      </p>
+      <MetricGrid columns={5}>
+        <MetricCard
+          label={t('Supply')}
+          value={formatNumber(totalSupply)}
+          unit="MLD"
+          icon={<Droplets className="h-4 w-4" />}
+          footer={
+            isBmc && activeCorporation.waterSupplyMLD ? (
+              <span className="text-[0.625rem] leading-snug text-ink-400">
+                {t('For context: BMC\'s own published bulk supply is {0} MLD against a demand of ~4,300 MLD, drawn from seven lakes — Bhatsa, Upper Vaitarna, Middle Vaitarna, Modak Sagar, Tansa, Vihar and Tulsi. That is a citywide bulk figure, not a sum of the zone rows below.', formatNumber(activeCorporation.waterSupplyMLD))}
+              </span>
+            ) : undefined
+          }
+        />
         <MetricCard label={t('Demand')} value={formatNumber(totalDemand)} unit="MLD" />
         <MetricCard label={t('Deficit')} value={formatNumber(totalDeficit)} unit="MLD" tone={totalDeficit > 0 ? 'warn' : 'default'} />
         <MetricCard label={t('Average pressure')} value={formatNumber(avgPressure, 1)} unit="m" icon={<Gauge className="h-4 w-4" />} />
@@ -245,7 +254,7 @@ function CityPositionSection(): React.JSX.Element {
         <MetricCard size="sm" label={t('Tanker dependency')} value={totalTankers} unit={'trips/day'} icon={<Truck className="h-4 w-4" />} />
         <MetricCard size="sm" label={t('Interruptions / complaints (30d)')} value={`${totalInterruptions} / ${totalComplaints}`} />
       </MetricGrid>
-    </Card>
+    </GovPanel>
   )
 }
 
@@ -284,9 +293,11 @@ function ReservoirSection(): React.JSX.Element {
   const avgDaysOfSupply = avgBy(reservoirs, (r) => r.daysOfSupply)
 
   return (
-    <Card>
-      <CardHeader icon={<Database className="h-4 w-4" />} title={t('Reservoir Status')} description={t('Combined lake system storage - the position leadership asks for first.')} />
-      <MetricGrid columns={2} className="mt-3">
+    <GovPanel title={t('Reservoir Status')} tone="red">
+      <p className="mb-3 text-xs leading-relaxed text-ink-500">
+        {t('Combined lake system storage - the position leadership asks for first.')}
+      </p>
+      <MetricGrid columns={2}>
         <MetricCard label={t('Combined fill')} value={formatPercent(overallFillPct)} tone={overallFillPct < 40 ? 'critical' : overallFillPct < 60 ? 'warn' : 'default'} />
         <MetricCard label={t('Useful storage')} value={formatNumber(totalCurrent)} unit={t('of {0} ML', formatNumber(totalUseful))} />
         <MetricCard label={t('Days of supply (avg)')} value={formatNumber(avgDaysOfSupply, 0)} unit="days" />
@@ -309,7 +320,7 @@ function ReservoirSection(): React.JSX.Element {
           </div>
         ))}
       </div>
-    </Card>
+    </GovPanel>
   )
 }
 
@@ -378,14 +389,11 @@ function ZoneSection({
   ]
 
   return (
-    <Card flush>
-      <CardHeader
-        className="px-4 pt-4 pb-3"
-        icon={<Layers className="h-4 w-4" />}
-        title={t('Water Distribution Zones')}
-        description={t('Every zone\'s supply-demand balance and service quality. Click a zone row, or a ward on the map, to drill down to assets.')}
-      />
-      <div className="px-4 pb-3">
+    <GovPanel title={t('Water Distribution Zones')} tone="red" dense>
+      <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+        {t('Every zone\'s supply-demand balance and service quality. Click a zone row, or a ward on the map, to drill down to assets.')}
+      </p>
+      <div className="px-3 pb-3">
         <CityMap
           layers={[
             {
@@ -412,7 +420,7 @@ function ZoneSection({
         initialSort={{ columnId: 'deficit', direction: 'desc' }}
         ariaLabel="Water distribution zone register"
       />
-    </Card>
+    </GovPanel>
   )
 }
 
@@ -439,16 +447,14 @@ function AnomalySection(): React.JSX.Element {
   const anomalies = q.data ?? []
 
   return (
-    <Card>
-      <CardHeader
-        icon={<AlertTriangle className="h-4 w-4" />}
-        title={t('Anomaly Indicators')}
-        description={t('Zones with a data pattern flagged for review. An anomaly is a statistical departure from the expected pattern - it is not evidence of fraud, and no individual\'s or contractor\'s conduct is characterised by this indicator.')}
-      />
+    <GovPanel title={t('Anomaly Indicators')} tone="amber">
+      <p className="mb-3 text-xs leading-relaxed text-ink-500">
+        {t('Zones with a data pattern flagged for review. An anomaly is a statistical departure from the expected pattern - it is not evidence of fraud, and no individual\'s or contractor\'s conduct is characterised by this indicator.')}
+      </p>
       {anomalies.length === 0 ? (
-        <EmptyState compact className="mt-3" title={t('No anomalies flagged')} detail="No water zone currently carries a flagged anomaly." />
+        <EmptyState compact title={t('No anomalies flagged')} detail="No water zone currently carries a flagged anomaly." />
       ) : (
-        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {anomalies.map((a) => (
             <div key={a.zoneId} className="rounded-lg border border-warn-200 bg-warn-50/50 p-3">
               <div className="flex items-center justify-between gap-2">
@@ -468,7 +474,7 @@ function AnomalySection(): React.JSX.Element {
           ))}
         </div>
       )}
-    </Card>
+    </GovPanel>
   )
 }
 
@@ -503,16 +509,16 @@ function DrilldownSection({
 
   let content: React.ReactNode
   if (!wardId && !zoneId) {
-    content = <EmptyState compact className="mx-4 mb-4" title={t('Nothing selected')} detail="Select a ward on the map, or a zone in the table above, to begin drilling down." />
+    content = <EmptyState compact className="mx-3 mb-3" title={t('Nothing selected')} detail="Select a ward on the map, or a zone in the table above, to begin drilling down." />
   } else if (q.isLoading) {
     content = (
-      <div className="px-4 pb-4">
+      <div className="px-3 pb-3">
         <LoadingState variant="table" rows={4} />
       </div>
     )
   } else if (q.error) {
     content = (
-      <div className="px-4 pb-4">
+      <div className="px-3 pb-3">
         <ErrorState detail={q.error.message} onRetry={() => q.refetch()} />
       </div>
     )
@@ -521,7 +527,7 @@ function DrilldownSection({
   } else {
     const result = q.data
     content = (
-      <div className="px-4 pb-4">
+      <div className="px-3 pb-3">
         {result.zone ? (
           <MetricGrid columns={4} className="mb-3">
             <MetricCard size="sm" label={t('Supply')} value={`${result.zone.supplyMld} MLD`} />
@@ -574,14 +580,11 @@ function DrilldownSection({
   }
 
   return (
-    <Card flush>
-      <CardHeader
-        className="px-4 pt-4 pb-3"
-        icon={<MapPin className="h-4 w-4" />}
-        title={t('Drilldown - City → Ward → Zone → Asset')}
-        description={t('Select a ward on the map or a zone in the table above to inspect the water assets serving it.')}
-      />
-      <div className="flex flex-wrap items-center gap-1 px-4 pb-3 text-xs">
+    <GovPanel title={t('Drilldown - City → Ward → Zone → Asset')} tone="amber" dense>
+      <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+        {t('Select a ward on the map or a zone in the table above to inspect the water assets serving it.')}
+      </p>
+      <div className="flex flex-wrap items-center gap-1 px-3 pb-3 text-xs">
         {breadcrumb.map((b, i) => (
           <span key={i} className="inline-flex items-center gap-1">
             {i > 0 ? <ChevronRight className="h-3 w-3 text-ink-300" /> : null}
@@ -596,7 +599,7 @@ function DrilldownSection({
         ))}
       </div>
       {content}
-    </Card>
+    </GovPanel>
   )
 }
 

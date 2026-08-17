@@ -48,11 +48,26 @@ export interface MetricCardProps {
    * institutional navy.
    */
   tone?: 'default' | 'critical' | 'warn' | 'positive' | 'info'
+  /**
+   * Opt-in pale Google wash for the card itself — identity, not a reading.
+   * Left unset everywhere by default, on purpose: the ruled-white-cell
+   * philosophy above still holds for an ordinary row of figures. A call site
+   * only reaches for this when the cards are standing in for `GovStripCell`
+   * as a page's own masthead strip and are meant to read as a row of
+   * distinct stat cards rather than a departmental return.
+   */
+  background?: 'red' | 'amber' | 'green'
   /** Explanation shown behind an info affordance. */
   explanation?: ReactNode
   size?: 'sm' | 'md' | 'lg'
   className?: string
   footer?: ReactNode
+}
+
+const BACKGROUND_WASH: Record<NonNullable<MetricCardProps['background']>, string> = {
+  red: 'bg-google-red-50',
+  amber: 'bg-google-yellow-50',
+  green: 'bg-google-green-50',
 }
 
 /**
@@ -92,6 +107,7 @@ export function MetricCard({
   icon,
   explanation,
   tone = 'default',
+  background,
   size = 'md',
   className,
   footer,
@@ -169,7 +185,8 @@ export function MetricCard({
     // Two pixels of radius, not none: a true right angle reads as an unstyled
     // box on screen, while a hairline with a two-pixel corner reads as a
     // printed rule. The same corner every panel on the platform now carries.
-    'group relative block overflow-hidden rounded-[2px] border border-ink-200 bg-surface p-3 shadow-xs',
+    'group relative block overflow-hidden rounded-[2px] border border-ink-200 p-3 shadow-xs',
+    background ? BACKGROUND_WASH[background] : 'bg-surface',
     interactive && 'cursor-pointer transition-colors hover:border-govt-300 hover:bg-govt-50/50',
     className,
   )

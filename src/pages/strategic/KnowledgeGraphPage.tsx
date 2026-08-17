@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ArrowLeft, ExternalLink, GitBranch, Search, Waypoints } from 'lucide-react'
+import { ArrowLeft, ExternalLink, Search } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
@@ -13,7 +13,6 @@ import { GRAPH_ENTITY_LABEL, GRAPH_RELATION_LABEL, type GraphEntityKind, type Gr
 import {
   Button,
   Card,
-  CardHeader,
   DefinitionList,
   DefinitionRow,
   DemonstrationNotice,
@@ -24,6 +23,7 @@ import {
   LoadingState,
   SeverityBadge,
 } from '@/components/ui'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { t } from '@/i18n'
 import { registerLayer } from '@/data/runtime'
 
@@ -115,10 +115,7 @@ export function KnowledgeGraphPage(): React.JSX.Element {
   const openDrawer = useDrawerStore((s) => s.open)
 
   // The shell's masthead states the screen's name; the page states the wording.
-  usePageMasthead(
-    t('Municipal Knowledge Graph'),
-    t('How wards, roads, complaints, departments, contracts, contractors, budgets, projects, incidents, hospitals, assets and decisions connect. Search for any entity, then explore its first- and second-degree neighbourhood - every edge is a real, named institutional relationship.'),
-  )
+  usePageMasthead(t('Municipal Knowledge Graph'))
 
   const [searchInput, setSearchInput] = useState('')
   const [debouncedQuery, setDebouncedQuery] = useState('')
@@ -221,15 +218,9 @@ export function KnowledgeGraphPage(): React.JSX.Element {
         freshness={FRESHNESS}
       />
 
-      <Card flush>
-        <CardHeader
-          className="px-4 pt-4"
-          icon={<Waypoints className="h-4 w-4" />}
-          eyebrow={t('Institutional methodology')}
-          title={t('The canonical relationship path')}
-          description={t('The chain this graph is built to make traceable, ward to measured outcome.')}
-        />
-        <div className="scrollbar-slim flex items-center gap-1 overflow-x-auto px-4 pb-4">
+      <GovPanel dense tone="amber" title={t('The canonical relationship path')} subtitle={t('Institutional methodology')}>
+        <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">{t('The chain this graph is built to make traceable, ward to measured outcome.')}</p>
+        <div className="scrollbar-slim flex items-center gap-1 overflow-x-auto px-3 pb-3">
           {CANONICAL_PATH.map((step, i) => (
             <div key={step.label} className="flex shrink-0 items-center gap-1">
               {i > 0 ? (
@@ -246,7 +237,7 @@ export function KnowledgeGraphPage(): React.JSX.Element {
             </div>
           ))}
         </div>
-      </Card>
+      </GovPanel>
 
       {/* ── Three columns ───────────────────────────────────────────
           How the surface is actually worked: find the entity on the left,
@@ -309,13 +300,9 @@ export function KnowledgeGraphPage(): React.JSX.Element {
             ) : null}
           </Card>
 
-          <Card>
-            <CardHeader
-              icon={<GitBranch className="h-4 w-4" />}
-              title={t('Filters')}
-              description={t('Restrict the rendered neighbourhood by entity kind or relationship type.')}
-            />
-            <div className="mt-2 space-y-2">
+          <GovPanel tone="red" title={t('Filters')}>
+            <p className="mb-3 text-xs leading-relaxed text-ink-500">{t('Restrict the rendered neighbourhood by entity kind or relationship type.')}</p>
+            <div className="space-y-2">
               <div>
                 <p className="mb-1 text-[0.6875rem] font-medium text-ink-500">{t('Entity kind')}</p>
                 <div className="flex flex-wrap gap-1">
@@ -373,26 +360,28 @@ export function KnowledgeGraphPage(): React.JSX.Element {
                 </Button>
               )}
             </div>
-          </Card>
+          </GovPanel>
         </div>
 
         {/* Column 2 — the neighbourhood itself --------------------- */}
         <div className="flex min-w-0 flex-col gap-3 xl:col-span-6">
-          <Card flush>
-            <CardHeader
-              className="px-4 pt-4 pb-3"
-              title={t('Neighbourhood')}
-              description={t('Focus node centred, first-degree neighbours on the inner ring, second-degree on the outer ring. Node size reflects institutional weight; colour reflects entity kind; a red ring marks a recorded severity.')}
-              actions={
-                trail.length > 1 ? (
-                  <Button size="xs" variant="outline" icon={<ArrowLeft className="h-3 w-3" />} onClick={goBack}>
-                    {t('Back')}
-                  </Button>
-                ) : undefined
-              }
-            />
+          <GovPanel
+            dense
+            tone="amber"
+            title={t('Neighbourhood')}
+            actions={
+              trail.length > 1 ? (
+                <Button size="xs" variant="outline" icon={<ArrowLeft className="h-3 w-3" />} onClick={goBack}>
+                  {t('Back')}
+                </Button>
+              ) : undefined
+            }
+          >
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+              {t('Focus node centred, first-degree neighbours on the inner ring, second-degree on the outer ring. Node size reflects institutional weight; colour reflects entity kind; a red ring marks a recorded severity.')}
+            </p>
             {trail.length > 0 ? (
-              <nav aria-label={t('Breadcrumb')} className="scrollbar-slim flex items-center gap-1 overflow-x-auto px-4 pb-2 text-[0.6875rem]">
+              <nav aria-label={t('Breadcrumb')} className="scrollbar-slim flex items-center gap-1 overflow-x-auto px-3 pb-2 text-[0.6875rem]">
                 {trail.map((crumb, i) => (
                   <span key={`${crumb.id}-${i}`} className="flex shrink-0 items-center gap-1">
                     {i > 0 ? <span className="text-ink-300">/</span> : null}
@@ -409,15 +398,15 @@ export function KnowledgeGraphPage(): React.JSX.Element {
             ) : null}
 
             {!selectedId ? (
-              <EmptyState className="m-4" title={t('Select an entity')} detail="Search above, or choose a result, to explore its neighbourhood." />
+              <EmptyState className="m-3" title={t('Select an entity')} detail="Search above, or choose a result, to explore its neighbourhood." />
             ) : neighbourhoodQuery.isLoading ? (
-              <LoadingState variant="chart" className="m-4 h-[26rem]" />
+              <LoadingState variant="chart" className="m-3 h-[26rem]" />
             ) : neighbourhoodQuery.error ? (
-              <ErrorState className="m-4" detail={neighbourhoodQuery.error.message} onRetry={() => neighbourhoodQuery.refetch()} />
+              <ErrorState className="m-3" detail={neighbourhoodQuery.error.message} onRetry={() => neighbourhoodQuery.refetch()} />
             ) : !neighbourhood?.focus ? (
-              <EmptyState className="m-4" title={t('Entity not found')} detail="This entity could not be resolved. It may fall outside your authorised scope." />
+              <EmptyState className="m-3" title={t('Entity not found')} detail="This entity could not be resolved. It may fall outside your authorised scope." />
             ) : (
-              <div className="px-4 pb-4">
+              <div className="px-3 pb-3">
                 <div className="aspect-square w-full overflow-hidden rounded-[2px] border border-ink-100 bg-[#fbfcfe]">
                   <svg viewBox="0 0 100 100" className="h-full w-full" role="img" aria-label={t('Neighbourhood of {0}', neighbourhood.focus.label)}>
                     {neighbourhood.links.map((link) => {
@@ -495,22 +484,22 @@ export function KnowledgeGraphPage(): React.JSX.Element {
                 </div>
               </div>
             )}
-          </Card>
+          </GovPanel>
         </div>
 
         {/* Column 3 — the record the graph is pointing at ---------- */}
         <div className="xl:col-span-3">
           <div className="scrollbar-rail flex flex-col gap-3 xl:sticky xl:top-[3.75rem] xl:max-h-[calc(100vh-4.5rem)] xl:overflow-y-auto">
             {neighbourhood?.focus ? (
-              <Card>
-                <CardHeader
-                  eyebrow={GRAPH_ENTITY_LABEL[neighbourhood.focus.kind]}
-                  title={neighbourhood.focus.label}
-                  description={neighbourhood.focus.subtitle}
-                  actions={neighbourhood.focus.severity ? <SeverityBadge severity={neighbourhood.focus.severity} /> : undefined}
-                />
+              <GovPanel
+                tone="green"
+                title={neighbourhood.focus.label}
+                subtitle={GRAPH_ENTITY_LABEL[neighbourhood.focus.kind]}
+                actions={neighbourhood.focus.severity ? <SeverityBadge severity={neighbourhood.focus.severity} /> : undefined}
+              >
+                <p className="mb-3 text-xs leading-relaxed text-ink-500">{neighbourhood.focus.subtitle}</p>
 
-                <DefinitionList className="mt-3">
+                <DefinitionList>
                   {neighbourhood.focus.attributes.map((attr) => (
                     <DefinitionRow key={attr.key} label={attr.key}>
                       {attr.value}
@@ -568,7 +557,7 @@ export function KnowledgeGraphPage(): React.JSX.Element {
                     </div>
                   )}
                 </div>
-              </Card>
+              </GovPanel>
             ) : (
               <EmptyState title={t('No entity focused')} detail="Select an entity from search to see its attributes and relationships here." />
             )}

@@ -1,10 +1,9 @@
 import { useMemo } from 'react'
-import { Trees, Scissors, Sprout, MapPinned } from 'lucide-react'
+import { Trees, TreePine, Sprout, MapPinned } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import {
   Badge,
   Card,
-  CardHeader,
   DataTable,
   DemonstrationNotice,
   EmptyState,
@@ -15,6 +14,7 @@ import {
   type Column,
 } from '@/components/ui'
 import { MetricCard } from '@/components/cards'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { CategoryBarChart, CHART_COLOURS, DonutChart, RankedBarChart } from '@/components/charts'
 import { FilterBar } from '@/components/filters/FilterBar'
 import { useServiceQuery } from '@/hooks'
@@ -22,6 +22,7 @@ import { queryKeys } from '@/app/queryClient'
 import { gardensService } from '@/services'
 import { useFilterStore } from '@/stores/ui.store'
 import { usePageMasthead } from '@/stores/masthead.store'
+import { activeCorporation } from '@/config/municipality.config'
 import { wardName, wardShortName } from '@/data/reference'
 import {
   OPEN_SPACE_KIND_LABEL,
@@ -66,10 +67,7 @@ const CONDITION_THRESHOLD = 55
 export function GardensIntelligencePage(): React.JSX.Element {
   const filters = useFilterStore((s) => s.filters)
 
-  usePageMasthead(
-    t('Gardens & Open Space'),
-    t('Gardens, playgrounds and recreation grounds, open space per resident, and the Tree Authority\'s position on felling permissions against the compensatory planting that conditioned them.'),
-  )
+  usePageMasthead(t('Gardens & Open Space'))
 
   const spacesQuery = useServiceQuery(queryKeys.gardens('open-spaces'), (u) => gardensService.openSpaces(u))
   const treesQuery = useServiceQuery(queryKeys.gardens('trees'), (u) => gardensService.treePositions(u))
@@ -240,12 +238,27 @@ export function GardensIntelligencePage(): React.JSX.Element {
       <FilterBar show={['ward', 'search']} searchPlaceholder="Search gardens and open spaces" />
 
       <MetricGrid columns={4}>
-        <MetricCard label={t('Open spaces')} value={filtered.length} support={t('{0} hectares maintained', totalArea)} icon={<Trees className="h-4 w-4" />} origin="demonstration" />
+        <MetricCard
+          label={t('Open spaces')}
+          value={filtered.length}
+          support={t('{0} hectares maintained', totalArea)}
+          icon={<Trees className="h-4 w-4" />}
+          origin="demonstration"
+          background="red"
+          footer={
+            activeCorporation.id === 'bmc' && activeCorporation.gardenPlotsCount ? (
+              <span className="text-[0.625rem] leading-snug text-ink-400">
+                {t('For context: BMC\'s official register lists {0} Recreation Ground / Playground / Garden plots citywide ({1} of them gardens specifically). Its 2018 tree census counted {2} trees, up from ~19 lakh in 2008; the next census is ground-penetrating-radar based.', formatNumber(activeCorporation.gardenPlotsCount), formatNumber(activeCorporation.gardensCount ?? 0), formatNumber(activeCorporation.treeCensusCount ?? 0))}
+              </span>
+            ) : undefined
+          }
+        />
         <MetricCard
           label={t('Below condition threshold')}
           value={belowCondition}
           support={t('Condition under {0} of 100', CONDITION_THRESHOLD)}
           tone={belowCondition > 0 ? 'warn' : 'positive'}
+          background="amber"
         />
         <MetricCard
           label={t('Step-free entrances')}
@@ -254,12 +267,24 @@ export function GardensIntelligencePage(): React.JSX.Element {
           support={t('{0} of {1} spaces', accessible, filtered.length)}
           tone={accessiblePct < 60 ? 'warn' : 'positive'}
           icon={<MapPinned className="h-4 w-4" />}
+          background="green"
         />
         <MetricCard
           label={t('Encroachment reported')}
           value={encroached}
           support={t('Open spaces with a reported encroachment')}
           tone={encroached > 0 ? 'critical' : 'positive'}
+        />
+        <MetricCard
+          label={t('Trees surveyed (citywide)')}
+          value={formatNumber(trees.reduce((s, x) => s + x.treesSurveyed, 0))}
+          support={t('Per BMC\'s 2018 tree census')}
+          icon={<TreePine className="h-4 w-4" />}
+          footer={
+            <span className="text-[0.625rem] leading-snug text-ink-400">
+              {t('BMC\'s most recent official tree census recorded 29,75,283 trees citywide (2018) - dnaindia.com; this register is scaled to that total and distributed across wards by population share. A periodic census figure, not a live count: BMC\'s next census (ground-penetrating radar based) was reported starting in 2026.')}
+            </span>
+          }
         />
       </MetricGrid>
 
@@ -270,41 +295,33 @@ export function GardensIntelligencePage(): React.JSX.Element {
           down the column beside. */}
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
         <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
-          <Card flush>
-            <CardHeader
-              bordered
-              icon={<Trees className="h-4 w-4" />}
-              title={t('Open space register')}
-              description={t('Every garden, playground and recreation ground within your authorised ward scope.')}
-            />
+          <GovPanel title={t('Open space register')} tone="amber" dense>
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+              {t('Every garden, playground and recreation ground within your authorised ward scope.')}
+            </p>
             {filtered.length === 0 ? (
               <EmptyState title={t('No open spaces match the current filters')} detail="Clear a filter to widen the register." />
             ) : (
               <DataTable rows={filtered} columns={spaceColumns} rowKey={(r) => r.id} pageSize={15} />
             )}
-          </Card>
+          </GovPanel>
 
-          <Card flush>
-            <CardHeader
-              bordered
-              icon={<Scissors className="h-4 w-4" />}
-              title={t('Tree Authority position by ward')}
-              description={t('Canopy, felling permissions and compensatory planting. Permissions and planting are never shown apart.')}
-            />
+          <GovPanel title={t('Tree Authority position by ward')} tone="red" dense>
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+              {t('Canopy, felling permissions and compensatory planting. Permissions and planting are never shown apart.')}
+            </p>
             {trees.length === 0 ? (
               <EmptyState title={t('No ward positions in scope')} />
             ) : (
               <DataTable rows={trees} columns={treeColumns} rowKey={(r) => r.wardId} pageSize={12} />
             )}
-          </Card>
+          </GovPanel>
 
-          <Card flush className="flex flex-col">
-            <CardHeader
-              bordered
-              title={t('Compensatory planting shortfall by ward')}
-              description={t('Trees required against permissions granted, and trees actually planted. Read together, never apart.')}
-            />
-            <div className="px-4 pb-4" style={{ height: 220 }}>
+          <GovPanel title={t('Compensatory planting shortfall by ward')} tone="amber" dense className="flex flex-col">
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+              {t('Trees required against permissions granted, and trees actually planted. Read together, never apart.')}
+            </p>
+            <div className="px-3 pb-3" style={{ height: 220 }}>
               <CategoryBarChart
                 data={plantingByWard}
                 showLegend
@@ -314,7 +331,7 @@ export function GardensIntelligencePage(): React.JSX.Element {
                 ]}
               />
             </div>
-          </Card>
+          </GovPanel>
         </div>
 
         <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
@@ -332,21 +349,18 @@ export function GardensIntelligencePage(): React.JSX.Element {
             </div>
           </Card>
 
-          <Card flush>
-            <CardHeader
-              bordered
-              icon={<MapPinned className="h-4 w-4" />}
-              title={t('Wards with least open space per resident')}
-              description={t('Hectares of maintained open space per thousand residents - the figure a development plan is judged against.')}
-            />
-            <div className="px-4 pb-4" style={{ height: Math.max(210, leastOpenSpace.length * 26) }}>
+          <GovPanel title={t('Wards with least open space per resident')} tone="amber" dense>
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+              {t('Hectares of maintained open space per thousand residents - the figure a development plan is judged against.')}
+            </p>
+            <div className="px-3 pb-3" style={{ height: Math.max(210, leastOpenSpace.length * 26) }}>
               <RankedBarChart
                 data={leastOpenSpace.map((treeWardPosition) => ({ label: wardShortName(treeWardPosition.wardId), value: Math.round(treeWardPosition.openSpacePerThousandHa * 1000) / 1000 }))}
                 unit=" ha"
                 higherIsWorse={false}
               />
             </div>
-          </Card>
+          </GovPanel>
 
           <Card className="flex flex-col">
             <p className="label-institutional mb-2">{t('Open space by kind')}</p>

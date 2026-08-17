@@ -1,8 +1,10 @@
-import { useMemo, useState } from 'react'
-import { ClipboardCheck, FlaskConical, ShieldCheck } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import { ClipboardCheck, FlaskConical, Network, ShieldCheck } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { Badge } from '@/components/ui/badges'
-import { Card, CardHeader, DefinitionList, DefinitionRow, MetricGrid, ProgressBar } from '@/components/ui/primitives'
+import { Card, DefinitionList, DefinitionRow, MetricGrid, ProgressBar } from '@/components/ui/primitives'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { DemonstrationNotice, EmptyState, ErrorState, LoadingState } from '@/components/ui/states'
 import { MetricCard } from '@/components/cards/MetricCard'
 import { useServiceQuery } from '@/hooks'
@@ -56,12 +58,10 @@ registerLayer(() => {
 
 export function AIEvaluationPage(): React.JSX.Element {
   // The shell's masthead states the screen's name; the page states the wording.
-  usePageMasthead(
-    t('AI Evaluation'),
-    t('The evidence behind each model\'s evaluation status: a dated run against six published dimensions, each scored against a published threshold. A model is approved for use only if it clears every dimension.'),
-  )
+  usePageMasthead(t('AI Evaluation'))
 
   const query = useServiceQuery(queryKeys.ai('evaluations'), (u) => aiService.evaluations(u))
+  const [searchParams] = useSearchParams()
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
   const evaluations = useMemo(() => query.data ?? [], [query.data])
@@ -69,6 +69,16 @@ export function AIEvaluationPage(): React.JSX.Element {
     () => evaluations.find((e) => e.id === selectedId) ?? evaluations[0] ?? null,
     [evaluations, selectedId],
   )
+
+  // `?run=<evaluationId>` selects that evaluation run on arrival - the entry
+  // point a model's card and AI Recommendations link into, so a reviewer
+  // reaches the full run behind a model's evaluation status in one click.
+  useEffect(() => {
+    const id = searchParams.get('run')
+    if (id) setSelectedId(id)
+    // Only ever re-run if the URL parameter itself changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams])
 
   if (query.isLoading) return <LoadingState variant="block" rows={6} />
   if (query.error) return <ErrorState detail={query.error.message} onRetry={() => query.refetch()} />
@@ -93,19 +103,34 @@ export function AIEvaluationPage(): React.JSX.Element {
       <div className="grid grid-cols-1 gap-3 xl:grid-cols-12">
         <div className="flex min-w-0 flex-col gap-3 xl:col-span-8">
           <MetricGrid columns={3}>
-            <MetricCard label={t('Models evaluated')} value={evaluations.length} support={`${passed} passing`} icon={<FlaskConical className="h-4 w-4" />} />
+            <MetricCard label={t('Models evaluated')} value={evaluations.length} support={`${passed} passing`} icon={<FlaskConical className="h-4 w-4" />} background="amber" />
             <MetricCard
               label={t('Failing evaluation')}
               value={failed}
               tone={failed > 0 ? 'critical' : 'positive'}
               support={t('Withheld from declared uses')}
               icon={<ShieldCheck className="h-4 w-4" />}
+              background="green"
             />
-            <MetricCard label={t('Re-evaluation due')} value={due} tone={due > 0 ? 'warn' : 'default'} support={t('Approaching or past threshold')} icon={<ClipboardCheck className="h-4 w-4" />} />
+            <MetricCard label={t('Re-evaluation due')} value={due} tone={due > 0 ? 'warn' : 'default'} support={t('Approaching or past threshold')} icon={<ClipboardCheck className="h-4 w-4" />} background="red" />
           </MetricGrid>
 
-          <Card flush>
-            <CardHeader bordered title={t('Evaluation runs')} description={t('One run per model. Select a run to open its dimension scores.')} />
+          <Card tone="sunken">
+            <div className="flex items-start gap-2.5">
+              <Network className="mt-0.5 h-4 w-4 shrink-0 text-govt-600" aria-hidden />
+              <div className="min-w-0">
+                <p className="text-[0.8125rem] font-semibold text-ink-900">{t('Evaluated once, applies to every tenant')}</p>
+                <p className="mt-1 text-xs leading-relaxed text-ink-600">
+                  {t('These runs score the model and prompt template themselves against the platform\'s AI gateway - they hold no corporation-specific data and are not scoped to a tenant. A model that passes here is approved for every corporation the reusable engine serves, not for Brihanmumbai alone; a corporation onboarded after this evaluation inherits the same verdict without a re-run.')}
+                </p>
+              </div>
+            </div>
+          </Card>
+
+          <GovPanel title={t('Evaluation runs')} tone="amber" dense>
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+              {t('One run per model. Select a run to open its dimension scores.')}
+            </p>
             {evaluations.length === 0 ? (
               <EmptyState title={t('No evaluations')} detail="No model evaluation runs are on record." />
             ) : (
@@ -150,7 +175,7 @@ export function AIEvaluationPage(): React.JSX.Element {
                 ))}
               </ul>
             )}
-          </Card>
+          </GovPanel>
         </div>
 
         {/* The whole column pins, not one panel of it: a `sticky` element stays
@@ -159,24 +184,23 @@ export function AIEvaluationPage(): React.JSX.Element {
           <div className="scrollbar-rail flex flex-col gap-3 xl:sticky xl:top-[3.75rem] xl:max-h-[calc(100vh-4.5rem)] xl:overflow-y-auto">
             {selected ? (
               <>
-                <Card>
-                  <CardHeader
-                    title={`${selected.modelName} v${selected.modelVersion}`}
-                    description={selected.summary}
-                    actions={<Badge tone={VERDICT_TONE[selected.verdict]}>{VERDICT_LABEL[selected.verdict]}</Badge>}
-                  />
+                <GovPanel
+                  title={`${selected.modelName} v${selected.modelVersion}`}
+                  tone="red"
+                  actions={<Badge tone={VERDICT_TONE[selected.verdict]}>{VERDICT_LABEL[selected.verdict]}</Badge>}
+                >
+                  <p className="mb-3 text-xs leading-relaxed text-ink-500">{selected.summary}</p>
                   <DefinitionList className="mt-3">
                     <DefinitionRow label={t('Composite score')}>{selected.compositeScore}/100</DefinitionRow>
                     <DefinitionRow label={t('Held-out cases')}>{selected.caseCount.toLocaleString()}</DefinitionRow>
                     <DefinitionRow label={t('Evaluated')}>{formatRelative(selected.evaluatedAt)}</DefinitionRow>
                   </DefinitionList>
-                </Card>
+                </GovPanel>
 
-                <Card>
-                  <CardHeader
-                    title={t('Dimension results')}
-                    description={t('Each dimension scored against its published pass threshold.')}
-                  />
+                <GovPanel title={t('Dimension results')} tone="amber">
+                  <p className="mb-3 text-xs leading-relaxed text-ink-500">
+                    {t('Each dimension scored against its published pass threshold.')}
+                  </p>
                   <ul className="mt-3 space-y-3">
                     {selected.dimensions.map((d) => (
                       <li key={d.id}>
@@ -200,7 +224,7 @@ export function AIEvaluationPage(): React.JSX.Element {
                       </li>
                     ))}
                   </ul>
-                </Card>
+                </GovPanel>
 
                 <Card tone="sunken">
                   <div className="flex items-start gap-2.5">

@@ -3,8 +3,6 @@ import { MessageSquareText, Users, Vote } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import {
   Badge,
-  Card,
-  CardHeader,
   DataTable,
   DemonstrationNotice,
   EmptyState,
@@ -17,10 +15,12 @@ import {
   type Column,
 } from '@/components/ui'
 import { MetricCard } from '@/components/cards'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { civicParticipationService } from '@/services'
 import { usePageMasthead } from '@/stores/masthead.store'
+import { activeCorporation } from '@/config/municipality.config'
 import { departmentName, wardShortName } from '@/data/reference'
 import {
   ENGAGEMENT_STATUS_LABEL,
@@ -57,10 +57,7 @@ export function CivicParticipationPage(): React.JSX.Element {
   const [themeFilter, setThemeFilter] = useState<EngagementTheme | ''>('')
   const [statusFilter, setStatusFilter] = useState<EngagementStatus | ''>('')
 
-  usePageMasthead(
-    t('Civic Participation'),
-    t('Consultations, suggestion schemes and public feedback the Corporation has run - what was asked, how many responded, and what came of it. No submission text or citizen identity is held.'),
-  )
+  usePageMasthead(t('Civic Participation'))
 
   const positionQuery = useServiceQuery(queryKeys.civicParticipation('position'), (u) => civicParticipationService.position(u))
   const engagementsQuery = useServiceQuery(queryKeys.civicParticipation('engagements'), (u) => civicParticipationService.engagements(u))
@@ -166,9 +163,21 @@ export function CivicParticipationPage(): React.JSX.Element {
       <DemonstrationNotice />
 
       <MetricGrid columns={4}>
-        <MetricCard label={t('Consultations active')} value={position?.consultationsActive ?? 0} icon={<Vote className="h-4 w-4" />} />
-        <MetricCard label={t('Closed (12m)')} value={position?.consultationsClosed12m ?? 0} icon={<MessageSquareText className="h-4 w-4" />} />
-        <MetricCard label={t('Submissions received (12m)')} value={position ? formatNumber(position.totalSubmissions12m) : '-'} icon={<Users className="h-4 w-4" />} />
+        <MetricCard
+          label={t('Consultations active')}
+          value={position?.consultationsActive ?? 0}
+          icon={<Vote className="h-4 w-4" />}
+          background="red"
+          footer={
+            activeCorporation.id === 'bmc' && activeCorporation.civicWardCommitteeUnawarePct ? (
+              <span className="text-[0.625rem] leading-snug text-ink-400">
+                {t('For context: the "Mumbai Speaks" survey (Mumbai Citizens\' Forum with TISS; 5,450 respondents across all 227 wards, published Dec 2025) found {0}% of citizens unaware their ward even has a statutory Ward Committee - while {1}% want greater involvement in local decision-making. Awareness of the participation channel, not appetite for it, is the gap this register measures against.', activeCorporation.civicWardCommitteeUnawarePct, activeCorporation.civicWantsGreaterInvolvementPct ?? '-')}
+              </span>
+            ) : undefined
+          }
+        />
+        <MetricCard label={t('Closed (12m)')} value={position?.consultationsClosed12m ?? 0} icon={<MessageSquareText className="h-4 w-4" />} background="amber" />
+        <MetricCard label={t('Submissions received (12m)')} value={position ? formatNumber(position.totalSubmissions12m) : '-'} icon={<Users className="h-4 w-4" />} background="green" />
         <MetricCard
           label={t('Incorporated into a decision')}
           value={position?.incorporatedSharePct ?? 0}
@@ -178,41 +187,42 @@ export function CivicParticipationPage(): React.JSX.Element {
         />
       </MetricGrid>
 
-      <Card flush>
-        <CardHeader
-          bordered
-          icon={<MessageSquareText className="h-4 w-4" />}
-          title={t('Engagement register')}
-          description={t('Every consultation, suggestion scheme and public-comment period the Corporation has run, most recently opened first.')}
-          actions={
-            <div className="flex flex-wrap items-end gap-2">
-              <div>
-                <Label htmlFor="theme-filter">{t('Theme')}</Label>
-                <Select
-                  id="theme-filter"
-                  value={themeFilter}
-                  onChange={(e) => setThemeFilter(e.target.value as EngagementTheme | '')}
-                  options={[{ value: '', label: t('All themes') }, ...THEMES.map((th) => ({ value: th, label: ENGAGEMENT_THEME_LABEL[th] }))]}
-                />
-              </div>
-              <div>
-                <Label htmlFor="engagement-status-filter">{t('Status')}</Label>
-                <Select
-                  id="engagement-status-filter"
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value as EngagementStatus | '')}
-                  options={[{ value: '', label: t('All statuses') }, ...STATUSES.map((s) => ({ value: s, label: ENGAGEMENT_STATUS_LABEL[s] }))]}
-                />
-              </div>
+      <GovPanel
+        title={t('Engagement register')}
+        tone="amber"
+        dense
+        actions={
+          <div className="flex flex-wrap items-end gap-2">
+            <div>
+              <Label htmlFor="theme-filter">{t('Theme')}</Label>
+              <Select
+                id="theme-filter"
+                value={themeFilter}
+                onChange={(e) => setThemeFilter(e.target.value as EngagementTheme | '')}
+                options={[{ value: '', label: t('All themes') }, ...THEMES.map((th) => ({ value: th, label: ENGAGEMENT_THEME_LABEL[th] }))]}
+              />
             </div>
-          }
-        />
+            <div>
+              <Label htmlFor="engagement-status-filter">{t('Status')}</Label>
+              <Select
+                id="engagement-status-filter"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as EngagementStatus | '')}
+                options={[{ value: '', label: t('All statuses') }, ...STATUSES.map((s) => ({ value: s, label: ENGAGEMENT_STATUS_LABEL[s] }))]}
+              />
+            </div>
+          </div>
+        }
+      >
+        <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+          {t('Every consultation, suggestion scheme and public-comment period the Corporation has run, most recently opened first.')}
+        </p>
         {filtered.length === 0 ? (
-          <EmptyState title={t('No engagements match the current filters')} detail="Clear a filter to widen the register." />
+          <EmptyState className="mx-3 mb-3" title={t('No engagements match the current filters')} detail="Clear a filter to widen the register." />
         ) : (
           <DataTable rows={filtered} columns={columns} rowKey={(e) => e.id} pageSize={12} />
         )}
-      </Card>
+      </GovPanel>
     </PageBody>
   )
 }

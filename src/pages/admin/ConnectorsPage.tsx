@@ -1,13 +1,13 @@
 import { useState } from 'react'
-import { AlertTriangle, Link2, ShieldAlert } from 'lucide-react'
+import { AlertTriangle, ShieldAlert } from 'lucide-react'
 import { PageBody, PageHeader, SplitLayout } from '@/components/layout/PageHeader'
 import { Badge, ClassificationBadge, StateBadge } from '@/components/ui/badges'
-import { Card, CardHeader, DefinitionList, DefinitionRow, MetricGrid } from '@/components/ui/primitives'
+import { Card, DefinitionList, DefinitionRow, MetricGrid } from '@/components/ui/primitives'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { DataTable, type Column } from '@/components/ui/DataTable'
 import { DemonstrationNotice, EmptyState, ErrorState, LoadingState } from '@/components/ui/states'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
-import { municipality } from '@/config/municipality.config'
 import { adminService } from '@/services'
 import { usePageMasthead } from '@/stores/masthead.store'
 import { departmentName, officerDisplayName } from '@/data/reference'
@@ -61,10 +61,7 @@ export function ConnectorsPage(): React.JSX.Element {
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
   // The shell renders the masthead; this page states what it should say.
-  usePageMasthead(
-    t('Connectors'),
-    t('The adapter configuration register for every connector this deployment\'s Urban Intelligence Core is capable of provisioning. No connector in this environment is authenticated against, or exchanging data with, a live {0} departmental system.', municipality.shortName),
-  )
+  usePageMasthead(t('Connectors'))
 
   if (connectorsQuery.isLoading) return <LoadingState variant="table" />
   if (connectorsQuery.error) {
@@ -156,15 +153,15 @@ export function ConnectorsPage(): React.JSX.Element {
       />
 
       <MetricGrid columns={4}>
-        <Card>
+        <Card background="red">
           <p className="label-institutional">{t('Connectors configured')}</p>
           <p className="numeric mt-2 text-metric font-semibold text-ink-900">{connectors.length}</p>
         </Card>
-        <Card tone={requiringReview > 0 ? 'warn' : 'default'}>
+        <Card tone={requiringReview > 0 ? 'warn' : 'default'} background="amber">
           <p className="label-institutional">{t('Requiring review or agreement')}</p>
           <p className="numeric mt-2 text-metric font-semibold text-ink-900">{requiringReview}</p>
         </Card>
-        <Card>
+        <Card background="green">
           <p className="label-institutional">{t('Adapter ready')}</p>
           <p className="numeric mt-2 text-metric font-semibold text-ink-900">
             {connectors.filter((c) => c.health === 'adapter-ready').length}
@@ -176,8 +173,7 @@ export function ConnectorsPage(): React.JSX.Element {
         </Card>
       </MetricGrid>
 
-      <Card flush>
-        <CardHeader className="p-4" icon={<Link2 className="h-4 w-4" />} title={t('Connector configuration register')} />
+      <GovPanel title={t('Connector configuration register')} tone="amber" dense>
         <SplitLayout
           className="px-4 pb-4"
           asideWidth="lg"
@@ -248,7 +244,7 @@ export function ConnectorsPage(): React.JSX.Element {
             )
           }
         />
-      </Card>
+      </GovPanel>
 
       <DemonstrationNotice />
     </PageBody>

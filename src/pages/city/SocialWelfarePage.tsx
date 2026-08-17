@@ -4,7 +4,6 @@ import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import {
   Badge,
   Card,
-  CardHeader,
   DataTable,
   DemonstrationNotice,
   EmptyState,
@@ -15,6 +14,7 @@ import {
   type Column,
 } from '@/components/ui'
 import { MetricCard } from '@/components/cards'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { CategoryBarChart, CHART_COLOURS, RankedBarChart } from '@/components/charts'
 import { FilterBar } from '@/components/filters/FilterBar'
 import { useServiceQuery } from '@/hooks'
@@ -101,10 +101,7 @@ function ComplianceChecks({ audit }: { audit: AccessibilityAudit }): React.JSX.E
 }
 
 export function SocialWelfarePage(): React.JSX.Element {
-  usePageMasthead(
-    t('Social Welfare & Accessibility'),
-    t('The corporation\'s duty to weaker sections of society and to persons with disabilities - who is entitled, who is enrolled, who was actually paid, and whether the corporation\'s own buildings can be entered by the residents they serve.'),
-  )
+  usePageMasthead(t('Social Welfare & Accessibility'))
 
   const filters = useFilterStore((s) => s.filters)
 
@@ -415,6 +412,7 @@ export function SocialWelfarePage(): React.JSX.Element {
           icon={<Users className="h-4 w-4" />}
           progress={{ value: coveragePct, max: 100 }}
           explanation="Eligible residents who are not enrolled on any scheme they qualify for. This is the number that describes who the corporation is failing; enrolment on its own describes only who it has already found."
+          background="red"
         />
         <MetricCard
           label={t('Mean disbursement delay')}
@@ -424,6 +422,7 @@ export function SocialWelfarePage(): React.JSX.Element {
           tone={meanDelay > DELAY_TOLERANCE_DAYS ? 'critical' : meanDelay > 8 ? 'warn' : 'positive'}
           icon={<Clock3 className="h-4 w-4" />}
           explanation="Days from the entitlement falling due to the money reaching the beneficiary's account. Beyond a fortnight the payment has missed the month it was owed for."
+          background="amber"
         />
         <MetricCard
           label={t('Arrears outstanding')}
@@ -431,6 +430,7 @@ export function SocialWelfarePage(): React.JSX.Element {
           support={t('Against {0} disbursed this month', formatCrore(monthlyValueLakh / 100))}
           tone={arrearsLakh > monthlyValueLakh ? 'critical' : arrearsLakh > monthlyValueLakh * 0.4 ? 'warn' : 'positive'}
           icon={<HandCoins className="h-4 w-4" />}
+          background="green"
         />
         <MetricCard
           label={t('Accessibility compliance')}
@@ -450,53 +450,57 @@ export function SocialWelfarePage(): React.JSX.Element {
           the column beside. */}
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
         <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
-        <Card flush>
-            <CardHeader
-              bordered
-              icon={<HeartHandshake className="h-4 w-4" />}
-            title={t('Welfare schemes')}
-            description={t('Central, state and corporation schemes administered by the welfare department, each stated against the residents entitled to it.')}
-            actions={
-              widestGap ? (
-                <Badge tone="warn" size="sm">
-                  {t('Widest gap: {0}', widestGap.name.slice(0, 34))}
-                </Badge>
-              ) : undefined
-            }
-          />
+        <GovPanel
+          title={t('Welfare schemes')}
+          tone="amber"
+          dense
+          actions={
+            widestGap ? (
+              <Badge tone="warn" size="sm">
+                {t('Widest gap: {0}', widestGap.name.slice(0, 34))}
+              </Badge>
+            ) : undefined
+          }
+        >
+          <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+            {t('Central, state and corporation schemes administered by the welfare department, each stated against the residents entitled to it.')}
+          </p>
           {filteredSchemes.length === 0 ? (
             <EmptyState
+              className="mx-3 mb-3"
               title={t('No welfare schemes match the current search')}
               detail="Clear the search term to restore the full register of schemes."
             />
           ) : (
             <DataTable rows={filteredSchemes} columns={schemeColumns} rowKey={(s) => s.id} pageSize={12} />
           )}
-        </Card>
+        </GovPanel>
 
-        <Card flush>
-          <CardHeader
-            bordered
-            icon={<Accessibility className="h-4 w-4" />}
-            title={t('Accessibility audits')}
-            description={t('Municipal facilities audited against the harmonised guidelines notified under the Rights of Persons with Disabilities Act, 2016, within your authorised ward scope.')}
-            actions={
-              noRamp > 0 ? (
-                <Badge tone="critical" size="sm">
-                  {t('{0} without a compliant ramp', formatNumber(noRamp))}
-                </Badge>
-              ) : undefined
-            }
-          />
+        <GovPanel
+          title={t('Accessibility audits')}
+          tone="red"
+          dense
+          actions={
+            noRamp > 0 ? (
+              <Badge tone="critical" size="sm">
+                {t('{0} without a compliant ramp', formatNumber(noRamp))}
+              </Badge>
+            ) : undefined
+          }
+        >
+          <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+            {t('Municipal facilities audited against the harmonised guidelines notified under the Rights of Persons with Disabilities Act, 2016, within your authorised ward scope.')}
+          </p>
           {filteredAudits.length === 0 ? (
             <EmptyState
+              className="mx-3 mb-3"
               title={t('No audited facilities match the current filters')}
               detail="Clear a filter to widen the register. A facility with no audit against it is not a facility that is compliant - it is one nobody has looked at."
             />
           ) : (
             <DataTable rows={filteredAudits} columns={auditColumns} rowKey={(a) => a.id} pageSize={12} />
           )}
-        </Card>
+        </GovPanel>
 
           <Card className="flex flex-col">
             <p className="label-institutional mb-2">{t('Monthly disbursement and new enrolments')}</p>
@@ -531,12 +535,10 @@ export function SocialWelfarePage(): React.JSX.Element {
           </div>
         </Card>
 
-          <Card flush className="flex flex-col">
-            <CardHeader
-              bordered
-              title={t('Longest disbursement delay')}
-              description={t('Where the entitlement is settled but the money has not yet arrived.')}
-            />
+          <GovPanel title={t('Longest disbursement delay')} tone="green" dense className="flex flex-col">
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+              {t('Where the entitlement is settled but the money has not yet arrived.')}
+            </p>
             <div className="px-4 pb-4" style={{ height: Math.max(210, slowest.length * 26) }}>
               {slowest.length === 0 ? (
                 <EmptyState title={t('No schemes match the current search')} detail="Clear the search to restore the register." compact />
@@ -547,7 +549,7 @@ export function SocialWelfarePage(): React.JSX.Element {
                 />
               )}
             </div>
-          </Card>
+          </GovPanel>
 
         </div>
       </div>

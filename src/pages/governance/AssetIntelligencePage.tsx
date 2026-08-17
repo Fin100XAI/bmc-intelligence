@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { AlertOctagon, Info, PackageSearch } from 'lucide-react'
+import { Info, PackageSearch } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
@@ -15,7 +15,6 @@ import { formatCrore, formatNumber, formatRelative } from '@/utils/format'
 import {
   Badge,
   Card,
-  CardHeader,
   DataTable,
   DemonstrationNotice,
   EmptyState,
@@ -28,6 +27,7 @@ import {
 } from '@/components/ui'
 import { SeverityBadge } from '@/components/ui/badges'
 import { MetricCard } from '@/components/cards'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { ChartFrame, DonutChart, MiniBar, RankedBarChart } from '@/components/charts'
 import { CityMap } from '@/components/map/CityMap'
 import { t } from '@/i18n'
@@ -84,10 +84,7 @@ function pastDesignLife(asset: MunicipalAsset): boolean {
 
 export function AssetIntelligencePage(): React.JSX.Element {
   // The shell's masthead carries the screen's name; the page states the wording.
-  usePageMasthead(
-    t('Asset Intelligence'),
-    t('The municipal asset register - condition, age against design life and lifecycle exposure across every asset category. Assembled from every ward\'s asset holding within your authorised scope.'),
-  )
+  usePageMasthead(t('Asset Intelligence'))
 
   const openDrawer = useDrawerStore((s) => s.open)
   const [categoryFilter, setCategoryFilter] = useState<'all' | AssetCategory>('all')
@@ -322,8 +319,8 @@ export function AssetIntelligencePage(): React.JSX.Element {
 
       {!anyLoading && !anyError && assets.length > 0 ? (
         <>
-          <Card>
-            <CardHeader title={t('Register summary')} description={t('Scoped to the filters selected above.')} />
+          <GovPanel title={t('Register summary')} tone="primary">
+            <p className="mb-3 text-xs leading-relaxed text-ink-500">{t('Scoped to the filters selected above.')}</p>
             <MetricGrid columns={5} className="mt-4">
               <MetricCard label={t('Assets tracked')} value={formatNumber(summary.total)} support={`${categories.length} categories`} />
               <MetricCard label={t('Replacement value')} value={formatCrore(summary.replacementValue)} />
@@ -336,7 +333,7 @@ export function AssetIntelligencePage(): React.JSX.Element {
               />
               <MetricCard label={t('Inspections overdue')} value={formatNumber(summary.inspectionsOverdue)} tone={summary.inspectionsOverdue > 0 ? 'warn' : 'default'} />
             </MetricGrid>
-          </Card>
+          </GovPanel>
 
           {/* Two columns. Lifecycle exposure, the register it is drawn from and
               the spatial view of that same register read down the wide column;
@@ -344,13 +341,14 @@ export function AssetIntelligencePage(): React.JSX.Element {
               cross-reference stand beside them. */}
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
           <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
-          <Card tone="critical" flush>
-            <CardHeader
-              bordered
-              icon={<AlertOctagon className="h-4 w-4" />}
-              title={t('Lifecycle exposure - {0} asset{1}', lifecycleExposed.length, lifecycleExposed.length === 1 ? '' : 's')}
-              description={t('A three-condition rule: an asset appears here only when (1) its age exceeds its design life, and (2) its condition index falls below the review threshold of 45, and (3) no capital project of a matching category is currently planned, tendered, awarded or in progress in its ward.')}
-            />
+          <GovPanel
+            tone="critical"
+            dense
+            title={t('Lifecycle exposure - {0} asset{1}', lifecycleExposed.length, lifecycleExposed.length === 1 ? '' : 's')}
+          >
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+              {t('A three-condition rule: an asset appears here only when (1) its age exceeds its design life, and (2) its condition index falls below the review threshold of 45, and (3) no capital project of a matching category is currently planned, tendered, awarded or in progress in its ward.')}
+            </p>
             {lifecycleExposed.length === 0 ? (
               <EmptyState title={t('No assets meet all three conditions')} detail="No asset in the current scope is simultaneously past design life, below the condition threshold and without a matching programme entry." compact className="m-4" />
             ) : (
@@ -378,10 +376,12 @@ export function AssetIntelligencePage(): React.JSX.Element {
                 ))}
               </div>
             )}
-          </Card>
+          </GovPanel>
 
-          <Card flush>
-            <CardHeader bordered title={t('Asset register')} description={t('Sortable, filterable and paginated. Row click opens the asset\'s full record.')} />
+          <GovPanel title={t('Asset register')} tone="amber" dense>
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+              {t('Sortable, filterable and paginated. Row click opens the asset\'s full record.')}
+            </p>
             <DataTable
               rows={filtered}
               columns={columns}
@@ -395,10 +395,12 @@ export function AssetIntelligencePage(): React.JSX.Element {
                 <span className={`w-[3px] rounded-full ${row.conditionIndex < 30 ? 'bg-crit-500' : row.conditionIndex < CONDITION_THRESHOLD ? 'bg-risk-500' : 'bg-ok-500'}`} />
               )}
             />
-          </Card>
+          </GovPanel>
 
-          <Card flush>
-            <CardHeader bordered title={t('Asset condition - spatial view')} description={t('Illustrative ward map shaded by average asset condition index for the current scope.')} />
+          <GovPanel title={t('Asset condition - spatial view')} tone="red" dense>
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+              {t('Illustrative ward map shaded by average asset condition index for the current scope.')}
+            </p>
             <div className="p-4">
               <CityMap
                 layers={[
@@ -414,7 +416,7 @@ export function AssetIntelligencePage(): React.JSX.Element {
                 height={420}
               />
             </div>
-          </Card>
+          </GovPanel>
           </div>
 
           <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">

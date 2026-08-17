@@ -4,7 +4,6 @@ import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import {
   Badge,
   Card,
-  CardHeader,
   DataTable,
   DemonstrationNotice,
   EmptyState,
@@ -16,11 +15,13 @@ import {
   type BadgeTone,
   type Column,
 } from '@/components/ui'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { MetricCard } from '@/components/cards'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { infraCoordinationService } from '@/services'
 import { usePageMasthead } from '@/stores/masthead.store'
+import { activeCorporation } from '@/config/municipality.config'
 import { wardShortName } from '@/data/reference'
 import {
   COORDINATION_PROJECT_STATUS_LABEL,
@@ -31,7 +32,7 @@ import {
   type CoordinationTask,
   type CoordinationTaskStatus,
 } from '@/types/infra-coordination'
-import { formatDate } from '@/utils/format'
+import { formatDate, formatNumber } from '@/utils/format'
 import { t } from '@/i18n'
 
 /**
@@ -64,10 +65,7 @@ export function InfrastructureCoordinationPage(): React.JSX.Element {
   const [projectFilter, setProjectFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState<CoordinationTaskStatus | ''>('')
 
-  usePageMasthead(
-    t('Infrastructure Coordination'),
-    t('Metro, coastal and rail works led by a state agency, running through the Corporation’s own streets and drains - and what the Corporation owes each one.'),
-  )
+  usePageMasthead(t('Infrastructure Coordination'))
 
   const positionQuery = useServiceQuery(queryKeys.infraCoordination('position'), (u) => infraCoordinationService.position(u))
   const projectsQuery = useServiceQuery(queryKeys.infraCoordination('projects'), (u) => infraCoordinationService.projects(u))
@@ -173,13 +171,26 @@ export function InfrastructureCoordinationPage(): React.JSX.Element {
       <DemonstrationNotice />
 
       <MetricGrid columns={4}>
-        <MetricCard label={t('Agency-led projects active')} value={position?.projectsActive ?? 0} icon={<TrainFront className="h-4 w-4" />} />
-        <MetricCard label={t('Coordination tasks open')} value={position?.tasksOpen ?? 0} icon={<ClipboardList className="h-4 w-4" />} />
+        <MetricCard
+          label={t('Agency-led projects active')}
+          value={position?.projectsActive ?? 0}
+          icon={<TrainFront className="h-4 w-4" />}
+          background="red"
+          footer={
+            activeCorporation.id === 'bmc' && activeCorporation.coastalRoadCostCrore ? (
+              <span className="text-[0.625rem] leading-snug text-ink-400">
+                {t('For context: three real agency-led works anchor this register - the Coastal Road (Phase 1, {0} km, opened {1}, ~₹{2} crore, "the most expensive project in BMC\'s history"), the Goregaon-Mulund Link Road (₹{3} crore, {4} km twin tunnel beneath SGNP), and the Gargai Dam (₹{5} crore, {6} MLD additional yield, still pre-construction).', activeCorporation.coastalRoadLengthKm ?? '-', activeCorporation.coastalRoadPhase1OpenedYear ?? '-', formatNumber(activeCorporation.coastalRoadCostCrore), formatNumber(activeCorporation.gmlrCostCrore ?? 0), activeCorporation.gmlrTunnelLengthKm ?? '-', formatNumber(activeCorporation.gargaiDamCostCrore ?? 0), activeCorporation.gargaiDamYieldMLD ?? '-')}
+              </span>
+            ) : undefined
+          }
+        />
+        <MetricCard label={t('Coordination tasks open')} value={position?.tasksOpen ?? 0} icon={<ClipboardList className="h-4 w-4" />} background="amber" />
         <MetricCard
           label={t('Overdue')}
           value={position?.tasksOverdue ?? 0}
           icon={<AlertTriangle className="h-4 w-4" />}
           tone={position && position.tasksOverdue > 0 ? 'warn' : 'default'}
+          background="green"
         />
         <MetricCard
           label={t('Disputed handbacks')}
@@ -210,44 +221,45 @@ export function InfrastructureCoordinationPage(): React.JSX.Element {
         ))}
       </div>
 
-      <Card flush>
-        <CardHeader
-          bordered
-          icon={<ClipboardList className="h-4 w-4" />}
-          title={t('Coordination obligations')}
-          description={t('Utility shifting, road reinstatement, drain diversion and NOC issuance the Corporation owes to, or holds against, each agency-led corridor.')}
-          actions={
-            <div className="flex flex-wrap items-end gap-2">
-              <div>
-                <Label htmlFor="project-filter">{t('Project')}</Label>
-                <Select
-                  id="project-filter"
-                  value={projectFilter}
-                  onChange={(e) => setProjectFilter(e.target.value)}
-                  options={[{ value: '', label: t('All projects') }, ...projects.map((p) => ({ value: p.id, label: p.name }))]}
-                />
-              </div>
-              <div>
-                <Label htmlFor="task-status-filter">{t('Status')}</Label>
-                <Select
-                  id="task-status-filter"
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value as CoordinationTaskStatus | '')}
-                  options={[
-                    { value: '', label: t('All statuses') },
-                    ...TASK_STATUSES.map((s) => ({ value: s, label: COORDINATION_TASK_STATUS_LABEL[s] })),
-                  ]}
-                />
-              </div>
+      <GovPanel
+        title={t('Coordination obligations')}
+        tone="amber"
+        dense
+        actions={
+          <div className="flex flex-wrap items-end gap-2">
+            <div>
+              <Label htmlFor="project-filter">{t('Project')}</Label>
+              <Select
+                id="project-filter"
+                value={projectFilter}
+                onChange={(e) => setProjectFilter(e.target.value)}
+                options={[{ value: '', label: t('All projects') }, ...projects.map((p) => ({ value: p.id, label: p.name }))]}
+              />
             </div>
-          }
-        />
+            <div>
+              <Label htmlFor="task-status-filter">{t('Status')}</Label>
+              <Select
+                id="task-status-filter"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as CoordinationTaskStatus | '')}
+                options={[
+                  { value: '', label: t('All statuses') },
+                  ...TASK_STATUSES.map((s) => ({ value: s, label: COORDINATION_TASK_STATUS_LABEL[s] })),
+                ]}
+              />
+            </div>
+          </div>
+        }
+      >
+        <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+          {t('Utility shifting, road reinstatement, drain diversion and NOC issuance the Corporation owes to, or holds against, each agency-led corridor.')}
+        </p>
         {filteredTasks.length === 0 ? (
           <EmptyState title={t('No obligations match the current filters')} detail="Clear a filter to widen the register." />
         ) : (
           <DataTable rows={filteredTasks} columns={taskColumns} rowKey={(task) => task.id} pageSize={14} />
         )}
-      </Card>
+      </GovPanel>
     </PageBody>
   )
 }

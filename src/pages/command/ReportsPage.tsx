@@ -560,10 +560,7 @@ export function ReportsPage(): React.JSX.Element {
   const activeReport = REPORTS.find((r) => r.id === selected) ?? REPORTS[0]
 
   // The shell renders the masthead; this page states what it should say.
-  usePageMasthead(
-    t('Report Workspace'),
-    t('Institutional reports rendered as print-ready documents - masthead, provenance statement and figures drawn directly from the live service layer.'),
-  )
+  usePageMasthead(t('Report Workspace'))
 
   return (
     <PageBody>

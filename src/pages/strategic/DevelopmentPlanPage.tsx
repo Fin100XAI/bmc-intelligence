@@ -4,7 +4,6 @@ import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import {
   Badge,
   Card,
-  CardHeader,
   DataTable,
   DemonstrationNotice,
   EmptyState,
@@ -17,6 +16,7 @@ import {
   type Column,
 } from '@/components/ui'
 import { MetricCard } from '@/components/cards'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { developmentPlanService } from '@/services'
@@ -64,10 +64,7 @@ export function DevelopmentPlanPage(): React.JSX.Element {
   const [reservationTypeFilter, setReservationTypeFilter] = useState<ReservationType | ''>('')
   const [statusFilter, setStatusFilter] = useState<ReservationStatus | ''>('')
 
-  usePageMasthead(
-    t('Development Plan 2034'),
-    t('Sanctioned land-use zoning, the FSI and TDR position, and reservation status ward by ward - the ground truth Urban Planning Intelligence runs a proxy model in place of.'),
-  )
+  usePageMasthead(t('Development Plan 2034'))
 
   const positionQuery = useServiceQuery(queryKeys.developmentPlan('position'), (u) => developmentPlanService.position(u))
   const zonesQuery = useServiceQuery(queryKeys.developmentPlan('zones'), (u) => developmentPlanService.zones(u))
@@ -232,9 +229,21 @@ export function DevelopmentPlanPage(): React.JSX.Element {
       </Card>
 
       <MetricGrid columns={5}>
-        <MetricCard label={t('Plan sanctioned')} value={position ? formatDate(position.planSanctionedAt) : '-'} icon={<Landmark className="h-4 w-4" />} />
-        <MetricCard label={t('Wards zoned')} value={position?.zonesMapped ?? 0} icon={<MapPinned className="h-4 w-4" />} />
-        <MetricCard label={t('Reservations on record')} value={position?.reservationsTotal ?? 0} icon={<LandPlot className="h-4 w-4" />} />
+        <MetricCard
+          label={t('Plan sanctioned')}
+          value={position ? formatDate(position.planSanctionedAt) : '-'}
+          icon={<Landmark className="h-4 w-4" />}
+          background="red"
+          footer={
+            isBmc && activeCorporation.dp2034SanctionYear ? (
+              <span className="text-[0.625rem] leading-snug text-ink-400">
+                {t('Sanctioned by State Government notification in {0}; Development Plan 2034 and its Development Control and Promotion Regulations came fully into force from 13 November 2019.', activeCorporation.dp2034SanctionYear)}
+              </span>
+            ) : undefined
+          }
+        />
+        <MetricCard label={t('Wards zoned')} value={position?.zonesMapped ?? 0} icon={<MapPinned className="h-4 w-4" />} background="amber" />
+        <MetricCard label={t('Reservations on record')} value={position?.reservationsTotal ?? 0} icon={<LandPlot className="h-4 w-4" />} background="green" />
         <MetricCard
           label={t('Reservations undeveloped')}
           value={position?.reservationsUndeveloped ?? 0}
@@ -250,61 +259,53 @@ export function DevelopmentPlanPage(): React.JSX.Element {
         />
       </MetricGrid>
 
-      <Card flush>
-        <CardHeader
-          bordered
-          icon={<MapPinned className="h-4 w-4" />}
-          title={t('Ward zoning register')}
-          description={t('Dominant sanctioned land-use zone per ward, with the FSI and TDR position.')}
-        />
+      <GovPanel title={t('Ward zoning register')} tone="amber" dense>
+        <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+          {t('Dominant sanctioned land-use zone per ward, with the FSI and TDR position.')}
+        </p>
         {zones.length === 0 ? (
           <EmptyState title={t('No zoning data on record')} />
         ) : (
           <DataTable rows={zones} columns={zoneColumns} rowKey={(z) => z.wardId} pageSize={12} />
         )}
-      </Card>
+      </GovPanel>
 
-      <Card flush>
-        <CardHeader
-          bordered
-          icon={<LandPlot className="h-4 w-4" />}
-          title={t('Reservation register')}
-          description={t('Land earmarked for a public purpose - construction is barred until the Corporation acquires or develops it, or the reservation is lifted.')}
-          actions={
-            <div className="flex flex-wrap items-end gap-2">
-              <div>
-                <Label htmlFor="reservation-type-filter">{t('Reservation')}</Label>
-                <Select
-                  id="reservation-type-filter"
-                  value={reservationTypeFilter}
-                  onChange={(e) => setReservationTypeFilter(e.target.value as ReservationType | '')}
-                  options={[
-                    { value: '', label: t('All reservations') },
-                    ...RESERVATION_TYPES.map((rt) => ({ value: rt, label: RESERVATION_TYPE_LABEL[rt] })),
-                  ]}
-                />
-              </div>
-              <div>
-                <Label htmlFor="reservation-status-filter">{t('Status')}</Label>
-                <Select
-                  id="reservation-status-filter"
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value as ReservationStatus | '')}
-                  options={[
-                    { value: '', label: t('All statuses') },
-                    ...RESERVATION_STATUSES.map((s) => ({ value: s, label: RESERVATION_STATUS_LABEL[s] })),
-                  ]}
-                />
-              </div>
-            </div>
-          }
-        />
+      <GovPanel title={t('Reservation register')} tone="red" dense>
+        <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+          {t('Land earmarked for a public purpose - construction is barred until the Corporation acquires or develops it, or the reservation is lifted.')}
+        </p>
+        <div className="flex flex-wrap items-end gap-2 border-b border-ink-100 px-3 py-2.5">
+          <div>
+            <Label htmlFor="reservation-type-filter">{t('Reservation')}</Label>
+            <Select
+              id="reservation-type-filter"
+              value={reservationTypeFilter}
+              onChange={(e) => setReservationTypeFilter(e.target.value as ReservationType | '')}
+              options={[
+                { value: '', label: t('All reservations') },
+                ...RESERVATION_TYPES.map((rt) => ({ value: rt, label: RESERVATION_TYPE_LABEL[rt] })),
+              ]}
+            />
+          </div>
+          <div>
+            <Label htmlFor="reservation-status-filter">{t('Status')}</Label>
+            <Select
+              id="reservation-status-filter"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as ReservationStatus | '')}
+              options={[
+                { value: '', label: t('All statuses') },
+                ...RESERVATION_STATUSES.map((s) => ({ value: s, label: RESERVATION_STATUS_LABEL[s] })),
+              ]}
+            />
+          </div>
+        </div>
         {filteredReservations.length === 0 ? (
           <EmptyState title={t('No reservations match the current filters')} detail="Clear a filter to widen the register." />
         ) : (
           <DataTable rows={filteredReservations} columns={reservationColumns} rowKey={(r) => r.id} pageSize={15} />
         )}
-      </Card>
+      </GovPanel>
     </PageBody>
   )
 }

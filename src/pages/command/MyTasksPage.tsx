@@ -2,7 +2,8 @@ import { useMemo, useState, type FormEvent } from 'react'
 import { CheckCircle2, Inbox, Send, UserPlus } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { Badge, SeverityBadge } from '@/components/ui/badges'
-import { Button, Card, CardHeader, Input, Label, MetricGrid, Select, Textarea } from '@/components/ui/primitives'
+import { Button, Input, Label, MetricGrid, Select, Textarea } from '@/components/ui/primitives'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { Modal } from '@/components/ui/overlays'
 import { DemonstrationNotice, EmptyState, ErrorState, LoadingState } from '@/components/ui/states'
 import { MetricCard } from '@/components/cards/MetricCard'
@@ -69,10 +70,7 @@ export function MyTasksPage(): React.JSX.Element {
   const [assignOpen, setAssignOpen] = useState(false)
 
   // The shell renders the masthead; this page states what it should say.
-  usePageMasthead(
-    t('My Tasks'),
-    t('The tasks assigned to you, and the tasks you have assigned to other officers. Assigning a task here places it directly on that officer\'s own dashboard — it is waiting for them the moment they sign in.'),
-  )
+  usePageMasthead(t('My Tasks'))
 
   /**
    * The ward selection in effect across the shell.
@@ -127,15 +125,13 @@ export function MyTasksPage(): React.JSX.Element {
       <div className="grid grid-cols-1 gap-3 xl:grid-cols-12">
         {/* Column 1 — the registers -------------------------------- */}
         <div className="flex min-w-0 flex-col gap-3 xl:col-span-8">
-          <Card flush>
-            <CardHeader
-              bordered
-              icon={<Inbox className="h-4 w-4" />}
-              title={t('Assigned to me')}
-              description={t('Tasks another officer has assigned to you. Assignment is the authorisation — these appear regardless of domain.')}
-            />
+          <GovPanel title={t('Assigned to me')} tone="amber" dense>
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+              {t('Tasks another officer has assigned to you. Assignment is the authorisation — these appear regardless of domain.')}
+            </p>
             {myTasks.length === 0 ? (
               <EmptyState
+                className="mx-3 mb-3"
                 title={t('No tasks assigned to you')}
                 detail="When another officer assigns you a task, it will appear here the moment you sign in."
               />
@@ -146,22 +142,19 @@ export function MyTasksPage(): React.JSX.Element {
                 ))}
               </ul>
             )}
-          </Card>
+          </GovPanel>
 
           {assignedByMe.length > 0 ? (
-            <Card flush>
-              <CardHeader
-                bordered
-                icon={<Send className="h-4 w-4" />}
-                title={t('Assigned by me')}
-                description={t('Tasks you have dispatched to other officers. Each is now on that officer\'s own dashboard.')}
-              />
+            <GovPanel title={t('Assigned by me')} tone="red" dense>
+              <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+                {t('Tasks you have dispatched to other officers. Each is now on that officer\'s own dashboard.')}
+              </p>
               <ul className="divide-y divide-ink-50">
                 {assignedByMe.map((task) => (
                   <TaskRow key={task.id} task={task} perspective="by-me" />
                 ))}
               </ul>
-            </Card>
+            </GovPanel>
           ) : null}
         </div>
 

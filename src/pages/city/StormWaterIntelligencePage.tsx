@@ -4,7 +4,6 @@ import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import {
   Badge,
   Card,
-  CardHeader,
   DataTable,
   DemonstrationNotice,
   EmptyState,
@@ -18,6 +17,7 @@ import {
   type ScoreTone,
 } from '@/components/ui'
 import { MetricCard } from '@/components/cards'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { CategoryBarChart, CHART_COLOURS, ChartFrame, ContributionBars, MiniBar } from '@/components/charts'
 import { CityMap, jitteredWardPoint, type MapMarker } from '@/components/map/CityMap'
 import { FilterBar } from '@/components/filters/FilterBar'
@@ -27,6 +27,7 @@ import { monsoonService } from '@/services'
 import { useFilterStore } from '@/stores/ui.store'
 import { usePageMasthead } from '@/stores/masthead.store'
 import { ROUTES } from '@/config/navigation'
+import { activeCorporation } from '@/config/municipality.config'
 import { wardName, wardShortName } from '@/data/reference'
 import type {
   DesiltingContractorPosition,
@@ -129,10 +130,7 @@ const FRESHNESS: DataFreshness = {
 }
 
 export function StormWaterIntelligencePage(): React.JSX.Element {
-  usePageMasthead(
-    t('Storm Water Intelligence'),
-    t('Nallahs, closed drains and culverts across the storm water drainage network, read against pre-monsoon desilting targets and published blockage-risk drivers, together with the pumping station readiness that governs discharge during high-intensity rainfall.'),
-  )
+  usePageMasthead(t('Storm Water Intelligence'))
 
   const filters = useFilterStore((s) => s.filters)
   const [selectedDrainId, setSelectedDrainId] = useState<string | null>(null)
@@ -230,6 +228,7 @@ export function StormWaterIntelligencePage(): React.JSX.Element {
   const belowThreshold = filteredDrains.filter((d) => d.desiltingCompletionPct < DESILTING_OPERATIONAL_THRESHOLD)
   const totalEncroachment = filteredDrains.reduce((s, d) => s + d.encroachmentReports, 0)
   const pumpsBelowReadiness = scopedPumps.filter((p) => p.readinessIndex < PUMP_READINESS_THRESHOLD)
+  const isBmc = activeCorporation.id === 'bmc'
 
   const selectedDrain = drains.find((d) => d.id === selectedDrainId) ?? null
 
@@ -576,17 +575,31 @@ export function StormWaterIntelligencePage(): React.JSX.Element {
       />
 
       <MetricGrid columns={5}>
-        <MetricCard label={t('Network length')} value={formatNumber(totalLengthKm, 0)} unit="km" icon={<Waves className="h-4 w-4" />} support={t('{0} mapped reaches', filteredDrains.length)} />
+        <MetricCard label={t('Network length')} value={formatNumber(totalLengthKm, 0)} unit="km" icon={<Waves className="h-4 w-4" />} support={t('{0} mapped reaches', filteredDrains.length)} background="red" />
         <MetricCard
           label={t('Desilting completion')}
           value={formatPercent(avgDesilting, 0)}
           support={t('Against {0}% pre-monsoon target', PRE_MONSOON_DESILTING_TARGET)}
           tone={avgDesilting < DESILTING_OPERATIONAL_THRESHOLD ? 'warn' : 'positive'}
           progress={{ value: avgDesilting, max: 100 }}
+          background="amber"
         />
-        <MetricCard label={t('Reaches below target')} value={belowThreshold.length} support={t('of {0}, below {1}% threshold', filteredDrains.length, DESILTING_OPERATIONAL_THRESHOLD)} tone={belowThreshold.length > 0 ? 'critical' : 'default'} />
+        <MetricCard label={t('Reaches below target')} value={belowThreshold.length} support={t('of {0}, below {1}% threshold', filteredDrains.length, DESILTING_OPERATIONAL_THRESHOLD)} tone={belowThreshold.length > 0 ? 'critical' : 'default'} background="green" />
         <MetricCard label={t('Encroachment reports')} value={totalEncroachment} support={t('Recorded against mapped reaches')} tone={totalEncroachment > 0 ? 'warn' : 'default'} icon={<Droplets className="h-4 w-4" />} />
-        <MetricCard label={t('Pumps below readiness')} value={pumpsBelowReadiness.length} support={t('of {0}, below {1}% threshold', scopedPumps.length, PUMP_READINESS_THRESHOLD)} tone={pumpsBelowReadiness.length > 0 ? 'critical' : 'default'} icon={<Gauge className="h-4 w-4" />} />
+        <MetricCard
+          label={t('Pumps below readiness')}
+          value={pumpsBelowReadiness.length}
+          support={t('of {0}, below {1}% threshold', scopedPumps.length, PUMP_READINESS_THRESHOLD)}
+          tone={pumpsBelowReadiness.length > 0 ? 'critical' : 'default'}
+          icon={<Gauge className="h-4 w-4" />}
+          footer={
+            isBmc && activeCorporation.brimstowadPumpingStationsBuilt && activeCorporation.brimstowadPumpingStationsPlanned ? (
+              <span className="text-[0.625rem] leading-snug text-ink-400">
+                {t('For context: under BRIMSTOWAD, the post-2005-flood drainage upgrade programme, {0} of {1} Chitale-Committee-recommended pumping stations are built and operational; the remaining two (Mogra, Mahul) are still delayed by land/CRZ clearance. Programme cost has escalated to ~₹{2} crore.', activeCorporation.brimstowadPumpingStationsBuilt, activeCorporation.brimstowadPumpingStationsPlanned, formatNumber(activeCorporation.brimstowadCostCrore ?? 0))}
+              </span>
+            ) : undefined
+          }
+        />
       </MetricGrid>
 
       {/* Two columns, read downward. The registers the department is held to
@@ -596,8 +609,10 @@ export function StormWaterIntelligencePage(): React.JSX.Element {
           and ward desilting progress read down the column beside. */}
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
         <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
-          <Card flush>
-            <CardHeader className="px-4 pt-4 pb-3" title={t('Storm water drain register')} description={t('Sortable, searchable by reach or ward. Select a reach to inspect its published risk drivers.')} />
+          <GovPanel title={t('Storm water drain register')} tone="amber" dense>
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+              {t('Sortable, searchable by reach or ward. Select a reach to inspect its published risk drivers.')}
+            </p>
             {filteredDrains.length === 0 ? (
               <EmptyState className="m-4" title={t('No reaches match the current filters')} detail="Adjust the ward or search term above." />
             ) : (
@@ -613,7 +628,7 @@ export function StormWaterIntelligencePage(): React.JSX.Element {
                 ariaLabel="Storm water drain register"
               />
             )}
-          </Card>
+          </GovPanel>
 
         {/* ------------------------------------------------------------------
             The pre-monsoon works programme.
@@ -703,12 +718,10 @@ export function StormWaterIntelligencePage(): React.JSX.Element {
               />
             </MetricGrid>
 
-            <Card flush>
-              <CardHeader
-                className="px-4 pt-4 pb-3"
-                title={t('Contractor position on the works programme')}
-                description={t('Every contractor holding a reach this cycle, heaviest uncorroborated value first. This is the same delivery record Contractor Intelligence reads.')}
-              />
+            <GovPanel title={t('Contractor position on the works programme')} tone="red" dense>
+              <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+                {t('Every contractor holding a reach this cycle, heaviest uncorroborated value first. This is the same delivery record Contractor Intelligence reads.')}
+              </p>
               <DataTable
                 rows={programme.byContractor}
                 columns={contractorColumns}
@@ -718,14 +731,12 @@ export function StormWaterIntelligencePage(): React.JSX.Element {
                 initialSort={{ columnId: 'unverified-value', direction: 'desc' }}
                 ariaLabel="Contractor position on the desilting works programme"
               />
-            </Card>
+            </GovPanel>
 
-            <Card flush>
-              <CardHeader
-                className="px-4 pt-4 pb-3"
-                title={t('Desilting work order register')}
-                description={t('One order per reach in the programme, with the quantum recorded against it and how that record was checked.')}
-              />
+            <GovPanel title={t('Desilting work order register')} tone="amber" dense>
+              <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+                {t('One order per reach in the programme, with the quantum recorded against it and how that record was checked.')}
+              </p>
               {filteredOrders.length === 0 ? (
                 <EmptyState className="m-4" title={t('No work orders match the current filters')} detail="Adjust the ward or search term above." />
               ) : (
@@ -739,7 +750,7 @@ export function StormWaterIntelligencePage(): React.JSX.Element {
                   ariaLabel="Desilting work order register"
                 />
               )}
-            </Card>
+            </GovPanel>
           </>
         ) : null}
 
@@ -785,12 +796,10 @@ export function StormWaterIntelligencePage(): React.JSX.Element {
               />
             </MetricGrid>
 
-            <Card flush>
-              <CardHeader
-                className="px-4 pt-4 pb-3"
-                title={t('Dewatering set register')}
-                description={t('Every set in the fleet with its current state, duty over the last 30 days and whether it reports that state itself or is logged by hand at the site.')}
-              />
+            <GovPanel title={t('Dewatering set register')} tone="green" dense>
+              <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+                {t('Every set in the fleet with its current state, duty over the last 30 days and whether it reports that state itself or is logged by hand at the site.')}
+              </p>
               {filteredUnits.length === 0 ? (
                 <EmptyState className="m-4" title={t('No dewatering sets match the current filters')} detail="Adjust the ward or search term above." />
               ) : (
@@ -804,12 +813,14 @@ export function StormWaterIntelligencePage(): React.JSX.Element {
                   ariaLabel="Dewatering set register"
                 />
               )}
-            </Card>
+            </GovPanel>
           </>
         ) : null}
 
-        <Card flush>
-          <CardHeader className="px-4 pt-4 pb-3" title={t('Pumping station readiness register')} description={t('Pump availability, standby power and duty cycle over the last 30 days.')} />
+        <GovPanel title={t('Pumping station readiness register')} tone="amber" dense>
+          <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+            {t('Pump availability, standby power and duty cycle over the last 30 days.')}
+          </p>
           <DataTable
             rows={pumps}
             columns={pumpColumns}
@@ -819,7 +830,7 @@ export function StormWaterIntelligencePage(): React.JSX.Element {
             initialSort={{ columnId: 'readiness', direction: 'asc' }}
             ariaLabel="Pumping station readiness register"
           />
-        </Card>
+        </GovPanel>
         </div>
 
         <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
@@ -833,8 +844,10 @@ export function StormWaterIntelligencePage(): React.JSX.Element {
           </div>
         </Card>
 
-          <Card className="min-w-0">
-            <CardHeader title={t('Risk driver breakdown')} description={t('Published, weighted contribution to the selected reach\'s blockage-risk score.')} />
+          <GovPanel title={t('Risk driver breakdown')} tone="amber" className="min-w-0">
+            <p className="mb-3 text-xs leading-relaxed text-ink-500">
+              {t('Published, weighted contribution to the selected reach\'s blockage-risk score.')}
+            </p>
             {selectedDrain ? (
               <div className="mt-3">
                 <p className="text-[0.8125rem] font-semibold text-ink-900">{selectedDrain.name}</p>
@@ -848,11 +861,13 @@ export function StormWaterIntelligencePage(): React.JSX.Element {
             ) : (
               <EmptyState compact className="mt-3" title={t('No reach selected')} detail="Select a row in the drain register to inspect its risk drivers." />
             )}
-          </Card>
+          </GovPanel>
 
 
-        <Card>
-          <CardHeader title={t('Network map')} description={t('Drain-risk and pumping-station-readiness layers, with pumping station markers. Switch layers with the control above the map.')} />
+        <GovPanel title={t('Network map')} tone="red">
+          <p className="mb-3 text-xs leading-relaxed text-ink-500">
+            {t('Drain-risk and pumping-station-readiness layers, with pumping station markers. Switch layers with the control above the map.')}
+          </p>
           <div className="mt-3">
             <CityMap
               layers={[
@@ -877,7 +892,7 @@ export function StormWaterIntelligencePage(): React.JSX.Element {
               height={400}
             />
           </div>
-        </Card>
+        </GovPanel>
 
         <Card>
           <ChartFrame
