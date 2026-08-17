@@ -95,8 +95,13 @@ registerLayer(() => {
   // empty - a corporation with no slaughter house on its books is not a
   // corporation with no meat trade, it is a corporation that has stopped
   // looking.
+  // Retail markets are anchored to `municipalMarketsCount` - BMC's own most
+  // recent published count of 136 municipal markets (2019/2022 reporting; no
+  // more recent citywide recount was found). Wholesale yards, fish markets,
+  // slaughter houses and tanneries have no comparable published census and
+  // stay modelled from population as before.
   const composition: Array<{ kind: MarketKind; count: number }> = [
-    { kind: 'retail-market', count: scaledCount(74, scale.population, 5) },
+    { kind: 'retail-market', count: Math.max(5, scale.municipalMarketsCount) },
     { kind: 'wholesale-market', count: scaledCount(9, scale.population, 1) },
     { kind: 'fish-market', count: scaledCount(coastal ? 17 : 6, scale.population, 1) },
     { kind: 'slaughterhouse', count: scaledCount(5, scale.population, 1) },

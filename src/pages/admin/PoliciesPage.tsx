@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { Ban, CheckCircle2, ListChecks } from 'lucide-react'
+import { Ban, CheckCircle2 } from 'lucide-react'
 import { PageBody, PageHeader, SplitLayout } from '@/components/layout/PageHeader'
 import { Badge, ClassificationBadge } from '@/components/ui/badges'
-import { Card, CardHeader, DefinitionList, DefinitionRow, MetricGrid } from '@/components/ui/primitives'
+import { Card, DefinitionList, DefinitionRow, MetricGrid } from '@/components/ui/primitives'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { DataTable, type Column } from '@/components/ui/DataTable'
 import { DemonstrationNotice, EmptyState, ErrorState, LoadingState } from '@/components/ui/states'
 import { useServiceQuery } from '@/hooks'
@@ -37,10 +38,7 @@ export function PoliciesPage(): React.JSX.Element {
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
   // The shell renders the masthead; this page states what it should say.
-  usePageMasthead(
-    t('Policies'),
-    t('The attribute-based access control policies layered over the role catalogue - the conditions, in addition to a role grant, under which a request is allowed or explicitly refused.'),
-  )
+  usePageMasthead(t('Policies'))
 
   if (policiesQuery.isLoading) return <LoadingState variant="table" />
   if (policiesQuery.error) {
@@ -134,17 +132,17 @@ export function PoliciesPage(): React.JSX.Element {
       />
 
       <MetricGrid columns={4}>
-        <Card>
+        <Card background="red">
           <p className="label-institutional">{t('Policies')}</p>
           <p className="numeric mt-2 text-metric font-semibold text-ink-900">{policies.length}</p>
         </Card>
-        <Card>
+        <Card background="amber">
           <p className="label-institutional">{t('Active')}</p>
           <p className="numeric mt-2 text-metric font-semibold text-ink-900">
             {policies.filter((p) => p.status === 'active').length}
           </p>
         </Card>
-        <Card tone={denyCount > 0 ? 'critical' : 'default'}>
+        <Card tone={denyCount > 0 ? 'critical' : 'default'} background="green">
           <p className="label-institutional">{t('Deny policies')}</p>
           <p className="numeric mt-2 text-metric font-semibold text-ink-900">{denyCount}</p>
         </Card>
@@ -156,8 +154,7 @@ export function PoliciesPage(): React.JSX.Element {
         </Card>
       </MetricGrid>
 
-      <Card flush>
-        <CardHeader className="p-4" icon={<ListChecks className="h-4 w-4" />} title={t('Policy register')} />
+      <GovPanel title={t('Policy register')} tone="amber" dense>
         <SplitLayout
           className="px-4 pb-4"
           asideWidth="lg"
@@ -238,7 +235,7 @@ export function PoliciesPage(): React.JSX.Element {
             )
           }
         />
-      </Card>
+      </GovPanel>
 
       <DemonstrationNotice />
     </PageBody>

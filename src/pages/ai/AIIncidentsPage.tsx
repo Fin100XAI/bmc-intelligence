@@ -2,7 +2,8 @@ import { useMemo, useState } from 'react'
 import { AlertOctagon, ShieldCheck } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { Badge, SeverityBadge } from '@/components/ui/badges'
-import { Card, CardHeader, DefinitionList, DefinitionRow, MetricGrid } from '@/components/ui/primitives'
+import { DefinitionList, DefinitionRow, MetricGrid } from '@/components/ui/primitives'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { DemonstrationNotice, EmptyState, ErrorState, LoadingState } from '@/components/ui/states'
 import { MetricCard } from '@/components/cards/MetricCard'
 import { useServiceQuery } from '@/hooks'
@@ -83,10 +84,7 @@ function IncidentStages({ status }: { status: AIIncident['status'] }): React.JSX
 
 export function AIIncidentsPage(): React.JSX.Element {
   // The shell's masthead states the screen's name; the page states the wording.
-  usePageMasthead(
-    t('AI Incidents'),
-    t('Every AI use case that behaves in a way warranting a record - a grounding failure, a drift signal, a blocked-request pattern - moves through a fixed lifecycle from detection to review. Recording the failures, not only the successes, is what makes the AI layer governed.'),
-  )
+  usePageMasthead(t('AI Incidents'))
 
   const query = useServiceQuery(queryKeys.ai('incidents-page'), (u) => aiService.incidents(u))
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -143,13 +141,16 @@ export function AIIncidentsPage(): React.JSX.Element {
               tone={open > 0 ? 'critical' : 'positive'}
               support={t('Not yet resolved or reviewed')}
               icon={<AlertOctagon className="h-4 w-4" />}
+              background="green"
             />
-            <MetricCard label={t('High or critical')} value={critical} tone={critical > 0 ? 'warn' : 'default'} support={t('By severity, all statuses')} />
-            <MetricCard label={t('Reviewed and closed')} value={reviewed} support={t('Completed the full lifecycle')} icon={<ShieldCheck className="h-4 w-4" />} />
+            <MetricCard label={t('High or critical')} value={critical} tone={critical > 0 ? 'warn' : 'default'} support={t('By severity, all statuses')} background="red" />
+            <MetricCard label={t('Reviewed and closed')} value={reviewed} support={t('Completed the full lifecycle')} icon={<ShieldCheck className="h-4 w-4" />} background="amber" />
           </MetricGrid>
 
-          <Card flush>
-            <CardHeader bordered title={t('Incident register')} description={t('Every recorded AI incident and its lifecycle position.')} />
+          <GovPanel title={t('Incident register')} tone="amber" dense>
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+              {t('Every recorded AI incident and its lifecycle position.')}
+            </p>
             {filtered.length === 0 ? (
               <EmptyState title={t('No incidents')} detail={openOnly ? 'No open incidents. Clear the filter to see closed ones.' : 'No AI incidents are on the register.'} />
             ) : (
@@ -181,7 +182,7 @@ export function AIIncidentsPage(): React.JSX.Element {
                 ))}
               </ul>
             )}
-          </Card>
+          </GovPanel>
         </div>
 
         {/* The whole column pins, not one panel of it: a `sticky` element stays
@@ -190,12 +191,12 @@ export function AIIncidentsPage(): React.JSX.Element {
           <div className="scrollbar-rail flex flex-col gap-3 xl:sticky xl:top-[3.75rem] xl:max-h-[calc(100vh-4.5rem)] xl:overflow-y-auto">
             {selected ? (
               <>
-                <Card>
-                  <CardHeader
-                    title={selected.title}
-                    description={selected.reference}
-                    actions={<SeverityBadge severity={selected.severity} />}
-                  />
+                <GovPanel
+                  title={selected.title}
+                  subtitle={selected.reference}
+                  tone="red"
+                  actions={<SeverityBadge severity={selected.severity} />}
+                >
                   <div className="mt-3">
                     <IncidentStages status={selected.status} />
                   </div>
@@ -211,10 +212,12 @@ export function AIIncidentsPage(): React.JSX.Element {
                     <DefinitionRow label={t('Detected')}>{formatRelative(selected.detectedAt)}</DefinitionRow>
                     <DefinitionRow label={t('Current status')}>{STAGE_LABEL[selected.status]}</DefinitionRow>
                   </DefinitionList>
-                </Card>
+                </GovPanel>
 
-                <Card>
-                  <CardHeader title={t('Actions taken')} description={t('The containment and remediation steps on the record.')} />
+                <GovPanel title={t('Actions taken')} tone="amber">
+                  <p className="mb-3 text-xs leading-relaxed text-ink-500">
+                    {t('The containment and remediation steps on the record.')}
+                  </p>
                   {selected.actionsTaken.length === 0 ? (
                     <p className="mt-2 text-xs text-ink-500">{t('No actions have been recorded against this incident yet.')}</p>
                   ) : (
@@ -229,7 +232,7 @@ export function AIIncidentsPage(): React.JSX.Element {
                       ))}
                     </ol>
                   )}
-                </Card>
+                </GovPanel>
               </>
             ) : null}
 

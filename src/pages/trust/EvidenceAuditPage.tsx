@@ -1,12 +1,13 @@
 import { useMemo, useState } from 'react'
-import { Database, Download, FileSearch, ShieldOff } from 'lucide-react'
+import { Download, ShieldOff } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { Badge, ClassificationBadge } from '@/components/ui/badges'
-import { Button, Card, CardHeader, Input, Label, MetricGrid, Select } from '@/components/ui/primitives'
+import { Button, Card, Input, Label, MetricGrid, Select } from '@/components/ui/primitives'
 import { DataTable, type Column } from '@/components/ui/DataTable'
 import { DemonstrationNotice, EmptyState, ErrorState, LoadingState } from '@/components/ui/states'
 import { Tabs } from '@/components/ui/overlays'
 import { EvidenceCard } from '@/components/cards'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { useServiceQuery, useServiceAction } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import {
@@ -82,10 +83,7 @@ export function EvidenceAuditPage(): React.JSX.Element {
   const [tab, setTab] = useState<'evidence' | 'audit'>('evidence')
 
   // The shell's masthead carries the screen's name; the page states the wording.
-  usePageMasthead(
-    t('Evidence & Audit'),
-    t('The evidence corpus this platform holds, browsable in full and filterable by kind, classification and ward, and the immutable-style record of every consequential action taken against it.'),
-  )
+  usePageMasthead(t('Evidence & Audit'))
 
   // ---------------------------------------------------------------- Evidence
   const [evidenceSearch, setEvidenceSearch] = useState('')
@@ -195,13 +193,11 @@ export function EvidenceAuditPage(): React.JSX.Element {
         }
       />
 
-      <Card>
-        <CardHeader
-          icon={<Database className="h-4 w-4" />}
-          title={t('The provenance chain')}
-          description={t('Every figure the platform presents can be traced through these nine stages, end to end.')}
-        />
-        <div className="mt-3 flex flex-col gap-2 overflow-x-auto sm:flex-row sm:items-stretch">
+      <GovPanel title={t('The provenance chain')} tone="amber">
+        <p className="mb-3 text-xs leading-relaxed text-ink-500">
+          {t('Every figure the platform presents can be traced through these nine stages, end to end.')}
+        </p>
+        <div className="flex flex-col gap-2 overflow-x-auto sm:flex-row sm:items-stretch">
           {PROVENANCE_RAIL.map((stage, i) => (
             <div key={stage.label} className="flex min-w-[8rem] flex-1 items-center gap-2">
               <div className="min-w-0 flex-1 rounded-md border border-ink-100 bg-surface-sunken px-2.5 py-2" title={stage.detail}>
@@ -212,7 +208,7 @@ export function EvidenceAuditPage(): React.JSX.Element {
             </div>
           ))}
         </div>
-      </Card>
+      </GovPanel>
 
       {tab === 'evidence' ? (
         <>
@@ -250,13 +246,11 @@ export function EvidenceAuditPage(): React.JSX.Element {
                 </Card>
               </MetricGrid>
 
-              <Card>
-                <CardHeader
-                  icon={<FileSearch className="h-4 w-4" />}
-                  title={t('Evidence corpus')}
-                  description={t('The evidence corpus browsed in full, scoped to your principal\'s ward, department and classification ceiling. Open a record to inspect its full provenance chain.')}
-                />
-                <div className="mt-3 flex flex-wrap items-center gap-2">
+              <GovPanel title={t('Evidence corpus')} tone="red">
+                <p className="mb-3 text-xs leading-relaxed text-ink-500">
+                  {t('The evidence corpus browsed in full, scoped to your principal\'s ward, department and classification ceiling. Open a record to inspect its full provenance chain.')}
+                </p>
+                <div className="flex flex-wrap items-center gap-2">
                   <div className="w-full max-w-56">
                     <Label htmlFor="ev-search" className="sr-only">{t('Search evidence')}</Label>
                     <Input id="ev-search" value={evidenceSearch} onChange={(e) => setEvidenceSearch(e.target.value)} placeholder={t('Search title or summary')} />
@@ -288,7 +282,7 @@ export function EvidenceAuditPage(): React.JSX.Element {
                     ))}
                   </div>
                 )}
-              </Card>
+              </GovPanel>
             </>
           )}
         </>
@@ -327,26 +321,26 @@ export function EvidenceAuditPage(): React.JSX.Element {
                   rows rather than scrolled past them. */}
               <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
                 <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
-              <Card>
-                <CardHeader
-                  title={t('Filters')}
-                  actions={
-                    <Button
-                      size="sm"
-                      variant="primary"
-                      icon={<Download className="h-3.5 w-3.5" />}
-                      disabled={!canExport}
-                      title={canExport ? 'Export the filtered audit trail. This export is itself recorded as an audit event.' : 'Your role does not hold audit:export. This control is disabled by the permission engine.'}
-                      onClick={async () => {
-                        const result = await exportAudit(activeAuditFilters)
-                        setExportResult({ count: result.length, at: new Date().toISOString() })
-                      }}
-                    >
-                      {t('Export audit trail')}
-                    </Button>
-                  }
-                />
-                <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+              <GovPanel
+                title={t('Filters')}
+                tone="red"
+                actions={
+                  <Button
+                    size="sm"
+                    variant="primary"
+                    icon={<Download className="h-3.5 w-3.5" />}
+                    disabled={!canExport}
+                    title={canExport ? 'Export the filtered audit trail. This export is itself recorded as an audit event.' : 'Your role does not hold audit:export. This control is disabled by the permission engine.'}
+                    onClick={async () => {
+                      const result = await exportAudit(activeAuditFilters)
+                      setExportResult({ count: result.length, at: new Date().toISOString() })
+                    }}
+                  >
+                    {t('Export audit trail')}
+                  </Button>
+                }
+              >
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
                   <Select value={actorFilter} onChange={(e) => setActorFilter(e.target.value)} options={[{ value: '', label: t('All actors') }, ...actorOptions.map((a) => ({ value: a, label: a }))]} />
                   <Select value={actionFilter} onChange={(e) => setActionFilter(e.target.value as AuditAction | '')} options={[{ value: '', label: t('All actions') }, ...(Object.keys(AUDIT_ACTION_LABEL) as AuditAction[]).map((a) => ({ value: a, label: AUDIT_ACTION_LABEL[a] }))]} />
                   <Select value={outcomeFilter} onChange={(e) => setOutcomeFilter(e.target.value as AuditEvent['outcome'] | '')} options={[{ value: '', label: t('All outcomes') }, { value: 'success', label: t('Success') }, { value: 'denied', label: t('Denied') }, { value: 'error', label: t('Error') }]} />
@@ -359,11 +353,10 @@ export function EvidenceAuditPage(): React.JSX.Element {
                     {t('Export completed: {0} record(s) matching the current filters, {1}. The export itself has been written to the audit trail below.', exportResult.count, formatRelative(exportResult.at))}
                   </p>
                 ) : null}
-              </Card>
+              </GovPanel>
 
-              <Card flush>
-                <CardHeader className="p-4" title={t('Full audit register')} />
-                <div className="px-4 pb-4">
+              <GovPanel title={t('Full audit register')} tone="amber" dense>
+                <div className="p-3">
                   <DataTable
                     rows={filteredAudit}
                     columns={auditColumns}
@@ -375,13 +368,13 @@ export function EvidenceAuditPage(): React.JSX.Element {
                     rowAccent={(e) => <span className={cn('block h-full w-full rounded-full', e.outcome === 'denied' ? 'bg-crit-500' : 'bg-transparent')} />}
                   />
                 </div>
-              </Card>
+              </GovPanel>
                 </div>
 
                 <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
-              <Card>
-                <CardHeader title={t('Recent activity')} description={t('The most recent audit events, newest first.')} />
-                <ol className="mt-3 space-y-0">
+              <GovPanel title={t('Recent activity')} tone="green">
+                <p className="mb-3 text-xs leading-relaxed text-ink-500">{t('The most recent audit events, newest first.')}</p>
+                <ol className="space-y-0">
                   {filteredAudit.slice(0, 25).map((event, i, arr) => (
                     <li key={event.id} className="relative pb-3 pl-6 last:pb-0">
                       {i < arr.length - 1 ? <span className="absolute top-4 bottom-0 left-[7px] w-px bg-ink-100" aria-hidden /> : null}
@@ -403,7 +396,7 @@ export function EvidenceAuditPage(): React.JSX.Element {
                   ))}
                 </ol>
                 {filteredAudit.length === 0 ? <EmptyState compact title={t('No audit events match the current filters')} /> : null}
-              </Card>
+              </GovPanel>
                 </div>
               </div>
             </>

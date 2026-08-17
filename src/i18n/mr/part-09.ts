@@ -18,8 +18,6 @@ export const MR_PART_09: Record<string, string> = {
   '80% and above': '80% व त्यावरील',
   'A certificate of vending is an entitlement, not a favour':
     'विक्री प्रमाणपत्र हा हक्क आहे, उपकार नव्हे',
-  'A coherent operational picture of every ward - citizen services, infrastructure condition, public health signal and capital delivery - together with an explainable composite risk index and a side-by-side comparison across wards.':
-    'प्रत्येक प्रभागाचे सुसंगत कामकाज चित्र - नागरिक सेवा, पायाभूत सुविधांची स्थिती, सार्वजनिक आरोग्य संकेत आणि भांडवली अंमलबजावणी - सोबतच स्पष्ट करता येणारा एकत्रित जोखीम निर्देशांक आणि प्रभागांची शेजारी-शेजारी तुलना.',
   'a control. This one': 'एक नियंत्रण. हे',
   'A cross-sectional comparison across zones for the current period - not a time series.':
     'चालू कालावधीसाठी झोननिहाय आडवी तुलना - कालमालिका नव्हे.',
@@ -33,16 +31,12 @@ export const MR_PART_09: Record<string, string> = {
     'प्रत्येक माहितीसंच जोडण्यापूर्वी लागू माहिती-संरक्षण बंधनांच्या तुलनेत त्याचे औपचारिक गोपनीयता परिणाम मूल्यांकन.',
   'A governed assistant answering from this corporation&apos;s own operational record. Every answer arrives with the evidence it rests on, the confidence it carries and the limits of what it can support — bounded by what {0} is authorised to see.':
     'या महानगरपालिकेच्या स्वतःच्या कामकाज नोंदींवरून उत्तर देणारा नियंत्रित सहायक. प्रत्येक उत्तरासोबत ते ज्यावर आधारित आहे तो पुरावा, त्याची विश्वासार्हता आणि ते कशापर्यंत पुष्टी देऊ शकते याच्या मर्यादा येतात — आणि हे सर्व {0} यांना पाहण्याची परवानगी असलेल्या माहितीपुरतेच मर्यादित असते.',
-  "A governed intelligence assistant grounded in the platform's own operational records. Every answer states its evidence, its confidence and its limitations.":
-    'मंचाच्या स्वतःच्या कामकाज नोंदींवर आधारलेला नियंत्रित बुद्धिमत्ता सहायक. प्रत्येक उत्तर आपला पुरावा, आपली विश्वासार्हता आणि आपल्या मर्यादा नमूद करते.',
   'A governed urban intelligence and decision-support layer connecting municipal operations, infrastructure, finances, wards, projects, risks, citizen services and institutional knowledge into one evidence-backed operating environment for {0}.':
     '{0} साठी महानगरपालिकेचे कामकाज, पायाभूत सुविधा, वित्त, प्रभाग, प्रकल्प, जोखीम, नागरिक सेवा आणि संस्थात्मक ज्ञान एकाच पुरावा-आधारित कार्यवातावरणात जोडणारा नियंत्रित नागरी बुद्धिमत्ता व निर्णय-साहाय्य स्तर.',
   'A human checkpoint cannot be bypassed. No workflow on this platform is able to transition a municipal record - an incident, a decision, a work order, an assignment - without a named officer completing the checkpoint step. Retrieval, analysis and recommendation steps run unattended; the transition itself never does.':
     'मानवी तपासणी-बिंदू टाळता येत नाही. या मंचावरील कोणताही कार्यप्रवाह नामनिर्देशित अधिकाऱ्याने तपासणी-बिंदूचा टप्पा पूर्ण केल्याशिवाय महानगरपालिकेच्या नोंदीची - घटना, निर्णय, कार्यादेश, नेमणूक - अवस्था बदलू शकत नाही. शोध, विश्लेषण आणि शिफारशीचे टप्पे विनादेखरेख चालतात; अवस्थाबदल मात्र कधीही तसा होत नाही.',
   'A large lapsed count is a renewal-administration problem before it is an enforcement one.':
     'मुदत संपलेल्यांची मोठी संख्या ही अंमलबजावणीची नव्हे, आधी नूतनीकरण प्रशासनाची समस्या आहे.',
-  'A layered 2D spatial representation of municipal entity classes across the city - explicitly not a photorealistic or surveyed 3D model. Geometry is illustrative; every figure attached to an entity is drawn from the same service layer the rest of the platform reads.':
-    'शहरभरातील महानगरपालिका घटक वर्गांचे स्तररचित द्विमितीय स्थानिक चित्रण - हे स्पष्टपणे छायाचित्रसदृश किंवा प्रत्यक्ष सर्वेक्षणावर आधारित त्रिमितीय प्रारूप नाही. भूमिती केवळ दिशादर्शक आहे; घटकाशी जोडलेला प्रत्येक आकडा उर्वरित मंच जी सेवा वाचतो त्याच सेवा स्तरावरून घेतलेला आहे.',
   'A least-squares line of observed health against difficulty, fitted across the wards.':
     'सर्व प्रभागांवर बसवलेली, अडचणीच्या तुलनेत नोंदवलेल्या आरोग्याची लघुत्तम-वर्ग रेषा.',
   'A managed key lifecycle - generation, rotation, escrow and revocation - for data at rest and in transit, rather than an environment-level assumption.':
@@ -168,8 +162,6 @@ export const MR_PART_09: Record<string, string> = {
   'Age of that record': 'त्या नोंदीचा कालावधी',
   'Agent registry': 'प्रतिनिधी नोंदवही',
   'Agents registered': 'नोंदणीकृत प्रतिनिधी',
-  'Aggregate disease surveillance across dengue, malaria, leptospirosis, gastroenteritis, hepatitis, respiratory illness and chikungunya, read alongside hospital utilisation and environmental correlates. These are aggregate ward-level indicators; no patient-level record exists anywhere in the platform.':
-    'डेंग्यू, मलेरिया, लेप्टोस्पायरोसिस, जठरांत्रदाह, कावीळ, श्वसनविकार आणि चिकुनगुनिया यांचे एकत्रित रोग सर्वेक्षण, रुग्णालय वापर व पर्यावरणीय सहसंबंधांसह वाचले जाणारे. हे एकत्रित प्रभाग-स्तरीय निर्देशक आहेत; मंचावर कोठेही रुग्ण-स्तरीय नोंद अस्तित्वात नाही.',
   'Aggregate outbreak signal strength by disease indicator. No patient-level data of any kind is modelled.':
     'रोग निर्देशकानुसार एकत्रित उद्रेक संकेत तीव्रता. कोणत्याही प्रकारची रुग्ण-स्तरीय माहिती प्रतिरूपित केलेली नाही.',
   'Aggregate reported cases by condition, current reporting period vs previous, across all wards.':
@@ -192,8 +184,6 @@ export const MR_PART_09: Record<string, string> = {
   'AI must never': 'कृत्रिम बुद्धिमत्तेने हे कधीही करू नये',
   'AI request log': 'कृत्रिम बुद्धिमत्ता विनंती नोंदपत्रक',
   'Air quality · AQI {0} ({1})': 'हवेची गुणवत्ता · AQI {0} ({1})',
-  'Air quality and ambient noise across every ward, read against the standards each zone type is held to.':
-    'प्रत्येक प्रभागातील हवेची गुणवत्ता व सभोवतालचा ध्वनी, प्रत्येक झोन प्रकारास लागू असलेल्या मानकांच्या तुलनेत.',
   'Air Quality Index': 'हवा गुणवत्ता निर्देशांक',
   'Air quality stations and noise readings in exceedance of their limit.':
     'आपली मर्यादा ओलांडणारी हवा गुणवत्ता केंद्रे व ध्वनी मोजमापे.',
@@ -252,8 +242,6 @@ export const MR_PART_09: Record<string, string> = {
     'नेमून दिलेले, जबाबदारी निश्चित असलेले, देय दिनांक असलेले आणि पूर्ततेपर्यंत मागोवा घेतले जाणारे कार्य.',
   'An extrapolation from the reconciled sample to the full assessment register. It is an indicative estimate for deciding whether this work is worth commissioning - not an amount owed by anybody, and not a figure any demand is raised from.':
     'ताळमेळ घातलेल्या नमुन्यावरून संपूर्ण आकारणी नोंदवहीसाठी काढलेला अंदाज. हे काम हाती घेण्यासारखे आहे की नाही हे ठरवण्यासाठीचा हा निर्देशात्मक अंदाज आहे - ही कोणाकडून येणे असलेली रक्कम नाही, आणि या आकड्यावरून कोणतीही मागणी काढली जात नाही.',
-  'An honest account of what this deployment implements today and what stands between it and production operation. This page exists so that credibility is earned through transparency rather than assumed.':
-    'ही तैनाती आज प्रत्यक्षात काय करते आणि तिच्या व प्रत्यक्ष कामकाजाच्या दरम्यान काय शिल्लक आहे याचा प्रामाणिक हिशेब. विश्वासार्हता गृहीत न धरता पारदर्शकतेतून मिळवावी म्हणून हे पृष्ठ आहे.',
   'An independent third party': 'स्वतंत्र त्रयस्थ संस्था',
   "An indicative figure only. It is collected revenue less recorded expenditure across the readable set, not a treasury cash position - the corporation's actual cash position is held in the financial system of record.":
     'हा केवळ निर्देशात्मक आकडा आहे. वाचता येणाऱ्या संचातील वसूल महसुलातून नोंदवलेला खर्च वजा केलेला हा आकडा आहे, तिजोरीतील रोख स्थिती नव्हे - महानगरपालिकेची प्रत्यक्ष रोख स्थिती अधिकृत वित्तीय प्रणालीत असते.',
@@ -324,8 +312,6 @@ export const MR_PART_09: Record<string, string> = {
   'Assessment efficiency - spatial view': 'आकारणी कार्यक्षमता - स्थानिक दृश्य',
   'Assessment no.': 'आकारणी क्र.',
   'Assessment register': 'आकारणी नोंदवही',
-  'Assessment review candidates raised where two municipal registers disagree about the same property. Each row is a candidate for verification by a named officer, not a finding - and closing one without action, with a recorded reason, is an equal outcome to revising a demand.':
-    'दोन महानगरपालिका नोंदवह्यांमध्ये एकाच मालमत्तेबाबत तफावत असल्याने उपस्थित केलेली आकारणी पुनरावलोकन प्रकरणे. प्रत्येक ओळ ही नामनिर्देशित अधिकाऱ्याकडून पडताळणीसाठीचे प्रकरण आहे, निष्कर्ष नाही - आणि नोंदवलेल्या कारणासह कोणतीही कारवाई न करता प्रकरण बंद करणे हा मागणी सुधारण्याइतकाच समान दर्जाचा निष्कर्ष आहे.',
   'Asset Condition': 'मालमत्ता स्थिती',
   'Asset condition - spatial view': 'मालमत्ता स्थिती - स्थानिक दृश्य',
   'Asset register': 'मालमत्ता नोंदवही',
@@ -345,13 +331,9 @@ export const MR_PART_09: Record<string, string> = {
   'Auditability.': 'लेखापरीक्षायोग्यता.',
   'Audits overdue': 'मुदतबाह्य लेखापरीक्षा',
   Authentication: 'प्रमाणीकरण',
-  'Authentication and identity posture, the security event workflow and access administration for this platform. Every figure below is read from the live security service, gated by the same permission engine every other screen uses.':
-    'या मंचासाठी प्रमाणीकरण व ओळख स्थिती, सुरक्षा घटना कार्यप्रवाह आणि प्रवेश प्रशासन. खालील प्रत्येक आकडा थेट सुरक्षा सेवेतून वाचला जातो, आणि इतर प्रत्येक पडदा वापरतो त्याच परवानगी यंत्रणेतून नियंत्रित होतो.',
   'Authentication mode': 'प्रमाणीकरण पद्धत',
   'Authentication not configured': 'प्रमाणीकरण संरचित नाही',
   'Authoritative departmental integrations': 'अधिकृत विभागीय एकात्मीकरणे',
-  'Automated sequences that retrieve, analyse, correlate and recommend across municipal data on a declared trigger. Every workflow carries at least one mandatory human checkpoint - a step no automation can complete on its own - before any downstream municipal record is touched.':
-    'घोषित प्रसंगावर महानगरपालिका माहितीवर शोध, विश्लेषण, सहसंबंध आणि शिफारस करणाऱ्या स्वयंचलित क्रमवारी. पुढील कोणत्याही महानगरपालिका नोंदीला हात लावण्यापूर्वी प्रत्येक कार्यप्रवाहात किमान एक अनिवार्य मानवी तपासणी-बिंदू असतो - असा टप्पा जो कोणतेही स्वयंचलन स्वतःहून पूर्ण करू शकत नाही.',
   'Availability (30d)': 'उपलब्धता (30 दि)',
   'Availability by service': 'सेवानिहाय उपलब्धता',
   'Availability, last 30 days': 'उपलब्धता, मागील 30 दिवस',
@@ -490,8 +472,6 @@ export const MR_PART_09: Record<string, string> = {
   Capacity: 'क्षमता',
   'Capacity and utilisation across transfer stations, processing plants, composting units, bio-methanation and landfills. Low remaining life is flagged for landfill sites.':
     'हस्तांतरण केंद्रे, प्रक्रिया प्रकल्प, खतनिर्मिती एकके, जैव-मिथेनीकरण आणि भरावभूमींवरील क्षमता व वापर. भरावभूमींसाठी उरलेले कमी आयुर्मान चिन्हांकित केले जाते.',
-  'Capacity, occupancy, critical care headroom, staffing, equipment serviceability and accessibility across every major, peripheral, speciality, maternity and dispensary facility. No patient record of any kind is modelled or displayed.':
-    'प्रत्येक प्रमुख, उपनगरीय, विशेषोपचार, प्रसूती व दवाखाना सुविधेतील क्षमता, भोगवटा, अतिदक्षता उपचारांची शिल्लक क्षमता, मनुष्यबळ, उपकरणांची कार्यक्षमता आणि प्रवेशयोग्यता. कोणत्याही प्रकारची रुग्ण नोंद प्रतिरूपित केलेली नाही किंवा दाखवलेली नाही.',
   'Capital allocation and spend by ward, from the finance service ward variance view.':
     'वित्त सेवेच्या प्रभाग फरक दृश्यातून, प्रभागनिहाय भांडवली तरतूद व खर्च.',
   'Capital allocation delta scales capital-head lines by the stated percentage.':
@@ -502,8 +482,6 @@ export const MR_PART_09: Record<string, string> = {
   'Capital delivery performance': 'भांडवली अंमलबजावणी कामगिरी',
   'Capital in play': 'कार्यरत भांडवल',
   'Capital per resident rises rightward': 'उजवीकडे जाताना दरडोई भांडवल वाढते',
-  'Capital project delivery across every category, with the explainable Project Risk Engine driving prioritisation. Every risk score is the transparent, published sum of seven weighted delivery-risk drivers - never a judgement of any person or organisation.':
-    'प्रत्येक श्रेणीतील भांडवली प्रकल्पांची अंमलबजावणी, प्राधान्यक्रम ठरवणाऱ्या स्पष्ट करता येण्याजोग्या प्रकल्प जोखीम यंत्रणेसह. प्रत्येक जोखीम गुण हा भार दिलेल्या सात अंमलबजावणी-जोखीम घटकांची पारदर्शक, प्रकाशित बेरीज आहे - कोणत्याही व्यक्तीबद्दलचा किंवा संस्थेबद्दलचा निवाडा कधीही नाही.',
   'Capital spent': 'खर्च झालेले भांडवल',
   'Capital works - {0} delayed, {1} at risk of {2}':
     'भांडवली कामे - {0} विलंबित, {1} ला {2} ची जोखीम',

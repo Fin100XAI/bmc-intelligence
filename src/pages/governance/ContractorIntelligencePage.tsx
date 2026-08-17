@@ -4,7 +4,6 @@ import { PageBody, PageHeader, SplitLayout } from '@/components/layout/PageHeade
 import { Badge, SeverityBadge, StateBadge } from '@/components/ui/badges'
 import {
   Card,
-  CardHeader,
   DefinitionList,
   DefinitionRow,
   Label,
@@ -12,6 +11,7 @@ import {
   ProgressBar,
   Select,
 } from '@/components/ui/primitives'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { DataTable, type Column } from '@/components/ui/DataTable'
 import { DemonstrationNotice, EmptyState, ErrorState, LoadingState, PartialDataWarning } from '@/components/ui/states'
 import { MetricCard } from '@/components/cards/MetricCard'
@@ -51,10 +51,7 @@ const FRESHNESS = {
 
 export function ContractorIntelligencePage(): React.JSX.Element {
   // The shell's masthead carries the screen's name; the page states the wording.
-  usePageMasthead(
-    t('Contractor Intelligence'),
-    t('How the corporation\'s suppliers are delivering, computed from the contract and project record through published weights. A risk indicator describes delivery exposure requiring management attention - it is never an assertion of misconduct.'),
-  )
+  usePageMasthead(t('Contractor Intelligence'))
 
   const portfolioQuery = useServiceQuery(queryKeys.contractors('portfolio'), (u) => contractorService.portfolio(u))
   const profilesQuery = useServiceQuery(queryKeys.contractors('profiles'), (u) => contractorService.profiles(u))
@@ -223,12 +220,14 @@ export function ContractorIntelligencePage(): React.JSX.Element {
           value={portfolio?.suppliers ?? 0}
           support={t('With at least one readable contract or project')}
           icon={<HardHat className="h-4 w-4" />}
+          background="red"
         />
         <MetricCard
           label={t('Contracted value')}
           value={formatCrore(portfolio?.totalContractedCrore ?? 0)}
           support={t('{0} released to date', formatCrore(portfolio?.totalPaidCrore ?? 0))}
           icon={<Building2 className="h-4 w-4" />}
+          background="amber"
         />
         <MetricCard
           label={t('Mean performance index')}
@@ -243,6 +242,7 @@ export function ContractorIntelligencePage(): React.JSX.Element {
           }
           support={t('Weighted across five published criteria')}
           icon={<TrendingDown className="h-4 w-4" />}
+          background="green"
         />
         <MetricCard
           label={t('Carrying indicators')}
@@ -269,12 +269,10 @@ export function ContractorIntelligencePage(): React.JSX.Element {
       <SplitLayout
         asideWidth="lg"
         main={
-          <Card flush>
-            <CardHeader
-              bordered
-              title={t('Suppliers by delivery standing')}
-              description={t('Ranked lowest performance index first - the suppliers whose active work most warrants supervision.')}
-            />
+          <GovPanel title={t('Suppliers by delivery standing')} tone="amber" dense>
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+              {t('Ranked lowest performance index first - the suppliers whose active work most warrants supervision.')}
+            </p>
             {filtered.length === 0 ? (
               <EmptyState
                 title={t('No suppliers match this filter')}
@@ -293,18 +291,14 @@ export function ContractorIntelligencePage(): React.JSX.Element {
                 activeRowKey={selected?.contractor.id}
               />
             )}
-          </Card>
+          </GovPanel>
         }
         aside={
           selected ? (
             <>
-              <Card>
-                <CardHeader
-                  title={selected.contractor.name}
-                  description={t('Empanelment {0}', selected.contractor.registrationRef)}
-                  actions={<StateBadge state={selected.state} />}
-                />
-                <div className="mt-3">
+              <GovPanel title={selected.contractor.name} tone="amber" actions={<StateBadge state={selected.state} />}>
+                <p className="mb-3 text-xs leading-relaxed text-ink-500">{t('Empanelment {0}', selected.contractor.registrationRef)}</p>
+                <div>
                   <div className="flex items-baseline justify-between">
                     <span className="label-institutional">{t('Performance index')}</span>
                     <span className="numeric text-metric-sm font-semibold text-ink-900">
@@ -337,13 +331,10 @@ export function ContractorIntelligencePage(): React.JSX.Element {
                       : selected.wards.map((w) => wardName(w)).join(', ') || '-'}
                   </DefinitionRow>
                 </DefinitionList>
-              </Card>
+              </GovPanel>
 
-              <Card>
-                <CardHeader
-                  title={t('How this index is computed')}
-                  description={t('Published weights. The same arithmetic is applied to every supplier.')}
-                />
+              <GovPanel title={t('How this index is computed')} tone="red">
+                <p className="mb-3 text-xs leading-relaxed text-ink-500">{t('Published weights. The same arithmetic is applied to every supplier.')}</p>
                 <ContributionBars
                   className="mt-3"
                   items={selected.components.map((c) => ({
@@ -358,13 +349,10 @@ export function ContractorIntelligencePage(): React.JSX.Element {
                 <p className="mt-3 border-t border-ink-100 pt-2.5 text-[0.6875rem] leading-relaxed text-ink-500">
                   {t('Weights sum to {0}. A supplier may ask how their standing was reached, and this is the answer.', Object.values(CONTRACTOR_PERFORMANCE_WEIGHTS).reduce((s, w) => s + w, 0).toFixed(2))}
                 </p>
-              </Card>
+              </GovPanel>
 
-              <Card>
-                <CardHeader
-                  title={t('Delivery risk indicators')}
-                  description={t('Exposure requiring departmental attention - not findings.')}
-                />
+              <GovPanel title={t('Delivery risk indicators')} tone="amber">
+                <p className="mb-3 text-xs leading-relaxed text-ink-500">{t('Exposure requiring departmental attention - not findings.')}</p>
                 {selected.riskIndicators.length === 0 ? (
                   <p className="mt-2 text-xs leading-relaxed text-ink-500">
                     {t('No delivery risk indicator is raised against this supplier on the records in your scope.')}
@@ -386,7 +374,7 @@ export function ContractorIntelligencePage(): React.JSX.Element {
                   <Info className="mt-px h-3 w-3 shrink-0" aria-hidden />
                   {t('Any action against a supplier follows the corporation\'s contract-management process. This page informs that process; it does not substitute for it.')}
                 </p>
-              </Card>
+              </GovPanel>
             </>
           ) : (
             <Card>
@@ -397,12 +385,9 @@ export function ContractorIntelligencePage(): React.JSX.Element {
       />
 
       {/* Distribution -------------------------------------------------- */}
-      <Card>
-        <CardHeader
-          title={t('Delivery standing across the supplier base')}
-          description={t('Banded distribution used when reporting supplier standing to the corporation.')}
-        />
-        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <GovPanel title={t('Delivery standing across the supplier base')} tone="green">
+        <p className="mb-3 text-xs leading-relaxed text-ink-500">{t('Banded distribution used when reporting supplier standing to the corporation.')}</p>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {(bandsQuery.data ?? []).map((band) => (
             <div key={band.band} className="rounded-lg border border-ink-100 p-3">
               <div className="flex items-baseline justify-between">
@@ -416,7 +401,7 @@ export function ContractorIntelligencePage(): React.JSX.Element {
             </div>
           ))}
         </div>
-      </Card>
+      </GovPanel>
     </PageBody>
   )
 }

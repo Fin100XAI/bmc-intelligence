@@ -14,7 +14,6 @@ import { DOMAIN_LABEL } from '@/types/common'
 import {
   Badge,
   Card,
-  CardHeader,
   ConfidenceBadge,
   DataTable,
   DemonstrationNotice,
@@ -26,6 +25,7 @@ import {
   type Column,
 } from '@/components/ui'
 import { MetricCard } from '@/components/cards'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { CategoryBarChart, ChartFrame, DonutChart } from '@/components/charts'
 import { t } from '@/i18n'
 import { registerLayer } from '@/data/runtime'
@@ -78,10 +78,7 @@ registerLayer(() => {
 
 export function AIIntelligenceCentrePage(): React.JSX.Element {
   // The shell's masthead states the screen's name; the page states the wording.
-  usePageMasthead(
-    t('AI Intelligence Centre'),
-    t('Every request the governed AI layer has processed, with the model that produced it, the evidence it drew on and the human review and policy outcome recorded against it. This is the operational control surface for AI use across the platform.'),
-  )
+  usePageMasthead(t('AI Intelligence Centre'))
 
   const requestsQuery = useServiceQuery(queryKeys.ai('requests-all'), (u) => aiService.requests(u, { pageSize: 300 }))
 
@@ -250,9 +247,9 @@ export function AIIntelligenceCentrePage(): React.JSX.Element {
         ) : (
           <>
             <MetricGrid columns={6}>
-              <MetricCard label={t('Total requests')} value={requests.length} icon={<Cpu className="h-4 w-4" />} />
-              <MetricCard label={t('Average latency')} value={`${Math.round(avgLatency)} ms`} />
-              <MetricCard label={t('Evidence-backed share')} value={formatPercent(evidenceBackedShare)} tone="positive" />
+              <MetricCard label={t('Total requests')} value={requests.length} icon={<Cpu className="h-4 w-4" />} background="red" />
+              <MetricCard label={t('Average latency')} value={`${Math.round(avgLatency)} ms`} background="amber" />
+              <MetricCard label={t('Evidence-backed share')} value={formatPercent(evidenceBackedShare)} tone="positive" background="green" />
               <MetricCard label={t('Flagged')} value={requests.filter((r) => r.policyStatus === 'flagged').length} tone="warn" />
               <MetricCard label={t('Blocked')} value={requests.filter((r) => r.policyStatus === 'blocked').length} tone={requests.some((r) => r.policyStatus === 'blocked') ? 'critical' : 'default'} />
               <MetricCard label={t('Pending review')} value={requests.filter((r) => r.reviewStatus === 'pending').length} tone="warn" />
@@ -265,12 +262,11 @@ export function AIIntelligenceCentrePage(): React.JSX.Element {
                 produced it without scrolling the table away. */}
             <div className="grid grid-cols-1 gap-3 xl:grid-cols-12">
               <div className="min-w-0 xl:col-span-8">
-                  <Card flush>
-                    <CardHeader
-                      bordered
-                      title={t('AI request log')}
-                      description={t('Sortable, searchable and paginated. Column visibility can be adjusted for a narrower screen.')}
-                      actions={
+                  <GovPanel
+                    title={t('AI request log')}
+                    tone="amber"
+                    dense
+                    actions={
                         <div className="flex flex-wrap items-center gap-2">
                           <Select
                             aria-label={t('Filter by use case')}
@@ -327,7 +323,10 @@ export function AIIntelligenceCentrePage(): React.JSX.Element {
                           />
                         </div>
                       }
-                    />
+                    >
+                    <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+                      {t('Sortable, searchable and paginated. Column visibility can be adjusted for a narrower screen.')}
+                    </p>
                     <DataTable
                       rows={filtered}
                       columns={columns}
@@ -340,7 +339,7 @@ export function AIIntelligenceCentrePage(): React.JSX.Element {
                       emptyTitle={t('No requests match these filters')}
                       emptyDetail="Adjust the filters above to widen the result set."
                     />
-                  </Card>
+                  </GovPanel>
               </div>
 
               <div className="flex min-w-0 flex-col gap-3 xl:col-span-4">
@@ -361,12 +360,10 @@ export function AIIntelligenceCentrePage(): React.JSX.Element {
                 </Card>
 
                 {flaggedOrBlocked.length > 0 ? (
-                  <Card tone="warn">
-                    <CardHeader
-                      icon={<AlertTriangle className="h-4 w-4" />}
-                      title={t('Flagged and blocked requests')}
-                      description={t('Requests the AI gateway policy flagged for review or blocked outright before reaching a model, with the recorded policy note.')}
-                    />
+                  <GovPanel title={t('Flagged and blocked requests')} tone="critical">
+                    <p className="mb-3 text-xs leading-relaxed text-ink-500">
+                      {t('Requests the AI gateway policy flagged for review or blocked outright before reaching a model, with the recorded policy note.')}
+                    </p>
                     <ul className="mt-3 space-y-2">
                       {flaggedOrBlocked.map((r) => (
                         <li key={r.id} className="flex items-start gap-2 rounded-[2px] border border-warn-200 bg-warn-50/40 p-2.5 text-xs">
@@ -385,7 +382,7 @@ export function AIIntelligenceCentrePage(): React.JSX.Element {
                         </li>
                       ))}
                     </ul>
-                  </Card>
+                  </GovPanel>
                 ) : null}
               </div>
             </div>

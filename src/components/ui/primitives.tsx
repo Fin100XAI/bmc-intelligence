@@ -147,6 +147,22 @@ export interface CardProps extends HTMLAttributes<HTMLDivElement> {
   flush?: boolean
   interactive?: boolean
   tone?: 'default' | 'sunken' | 'critical' | 'warn' | 'positive' | 'info'
+  /**
+   * Opt-in pale Google wash for the card itself — identity, not a reading.
+   * Separate from `tone`, which stays semantic (critical/warn/positive/info):
+   * a call site only reaches for `background` when a row of cards is
+   * standing in as a page's own masthead strip and is meant to read as a
+   * row of distinct stat cards, the same use `MetricCard`'s matching prop
+   * serves. Left unset everywhere else, which is why it's safe to add
+   * without touching how any existing card renders.
+   */
+  background?: 'red' | 'amber' | 'green'
+}
+
+const CARD_BACKGROUND_WASH: Record<NonNullable<CardProps['background']>, string> = {
+  red: 'bg-google-red-50',
+  amber: 'bg-google-yellow-50',
+  green: 'bg-google-green-50',
 }
 
 /**
@@ -182,13 +198,17 @@ const CARD_TONES: Record<NonNullable<CardProps['tone']>, string> = {
  * without the header needing a negative top margin that would misfire on a
  * header nested deeper inside the card.
  */
-export function Card({ flush, interactive, tone = 'default', className, children, ...rest }: CardProps): React.JSX.Element {
+export function Card({ flush, interactive, tone = 'default', background, className, children, ...rest }: CardProps): React.JSX.Element {
   return (
     <div
       data-card-padded={flush ? undefined : ''}
       className={cn(
         'rounded-[2px] border shadow-xs',
-        CARD_TONES[tone],
+        // `background` is only ever paired with the default tone at call
+        // sites (identity, not a reading) — its wash and a plain hairline
+        // border stand in for `CARD_TONES` entirely rather than layering
+        // on top of it.
+        background ? cn(CARD_BACKGROUND_WASH[background], 'border-ink-200') : CARD_TONES[tone],
         interactive && 'lift-on-hover cursor-pointer hover:border-govt-300',
         !flush && 'p-4 has-[>[data-card-band]]:pt-0',
         className,
@@ -675,7 +695,7 @@ export function ScoreDial({
   caption?: ReactNode
 }): React.JSX.Element {
   const tone = toneForScore(score, higherIsBetter)
-  const stroke = size >= 80 ? 7 : 5
+  const stroke = size >= 140 ? 10 : size >= 80 ? 7 : 5
   const radius = (size - stroke) / 2
   const circumference = 2 * Math.PI * radius
   const offset = circumference * (1 - Math.max(0, Math.min(100, score)) / 100)
@@ -709,7 +729,13 @@ export function ScoreDial({
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className={cn('numeric font-semibold tracking-tight', size >= 80 ? 'text-2xl' : 'text-lg', SCORE_TONE_TEXT[tone])}>
+          <span
+            className={cn(
+              'numeric font-semibold tracking-tight',
+              size >= 140 ? 'text-4xl' : size >= 80 ? 'text-2xl' : 'text-lg',
+              SCORE_TONE_TEXT[tone],
+            )}
+          >
             {Math.round(score)}
           </span>
           {label ? <span className="mt-px text-[0.625rem] text-ink-400">{label}</span> : null}

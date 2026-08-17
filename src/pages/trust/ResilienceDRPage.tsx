@@ -1,19 +1,17 @@
 import { useMemo, useState } from 'react'
 import {
-  DatabaseBackup,
-  GitFork,
   Loader2,
   Play,
   RotateCcw,
   ShieldAlert,
-  TestTube2,
 } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { Badge, StateBadge } from '@/components/ui/badges'
-import { Button, Card, CardHeader, MetricGrid, Select } from '@/components/ui/primitives'
+import { Button, Card, MetricGrid, Select } from '@/components/ui/primitives'
 import { DataTable, type Column } from '@/components/ui/DataTable'
 import { ConfirmDialog } from '@/components/ui/overlays'
 import { DemonstrationNotice, EmptyState, ErrorState, LoadingState } from '@/components/ui/states'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { drService } from '@/services'
@@ -95,10 +93,7 @@ const DRILL_FINDINGS = [
 
 export function ResilienceDRPage(): React.JSX.Element {
   // The shell's masthead carries the screen's name; the page states the wording.
-  usePageMasthead(
-    t('Resilience & Disaster Recovery'),
-    t('The platform\'s continuity posture — backup, failover and resilience testing. Every item is labelled as target architecture, the production design, or demonstration status, what this environment provides. This page makes no claim of production disaster recovery.'),
-  )
+  usePageMasthead(t('Resilience & Disaster Recovery'))
 
   const query = useServiceQuery(queryKeys.dr(), (u) => drService.posture(u))
 
@@ -306,48 +301,39 @@ export function ResilienceDRPage(): React.JSX.Element {
           whether any of it has actually been exercised stands beside it. */}
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
         <div className="flex min-w-0 flex-col gap-4 xl:col-span-7">
-      <Card flush>
-        <CardHeader
-          className="px-4 pt-4"
-          icon={<DatabaseBackup className="h-4 w-4" />}
-          title={t('Backup posture')}
-          description={t('Recovery point and recovery time objectives by data scope. The last column states plainly whether the objective is operational in this environment or a design target.')}
-        />
-        <div className="p-4 pt-2">
+      <GovPanel title={t('Backup posture')} tone="amber" dense>
+        <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+          {t('Recovery point and recovery time objectives by data scope. The last column states plainly whether the objective is operational in this environment or a design target.')}
+        </p>
+        <div className="p-3 pt-0">
           {filteredBackups.length === 0 ? (
             <EmptyState compact title={t('No backup scope matches this maturity filter')} />
           ) : (
             <DataTable rows={filteredBackups} columns={backupColumns} rowKey={(b) => b.id} pageSize={10} />
           )}
         </div>
-      </Card>
+      </GovPanel>
 
-      <Card flush>
-        <CardHeader
-          className="px-4 pt-4"
-          icon={<GitFork className="h-4 w-4" />}
-          title={t('Failover posture')}
-          description={t('How each tier is designed to survive the loss of a zone or component.')}
-        />
-        <div className="p-4 pt-2">
+      <GovPanel title={t('Failover posture')} tone="red" dense>
+        <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+          {t('How each tier is designed to survive the loss of a zone or component.')}
+        </p>
+        <div className="p-3 pt-0">
           {filteredFailover.length === 0 ? (
             <EmptyState compact title={t('No failover component matches this maturity filter')} />
           ) : (
             <DataTable rows={filteredFailover} columns={failoverColumns} rowKey={(f) => f.id} pageSize={10} />
           )}
         </div>
-      </Card>
+      </GovPanel>
         </div>
 
         <div className="flex min-w-0 flex-col gap-4 xl:col-span-5">
-      <Card flush>
-        <CardHeader
-          className="px-4 pt-4"
-          icon={<TestTube2 className="h-4 w-4" />}
-          title={t('Resilience testing')}
-          description={t('A recovery capability is only real once it is exercised. A drill can only be run against something this environment actually does — target-architecture items are refused rather than simulated green.')}
-        />
-        <div className="p-4 pt-2">
+      <GovPanel title={t('Resilience testing')} tone="amber" dense>
+        <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+          {t('A recovery capability is only real once it is exercised. A drill can only be run against something this environment actually does — target-architecture items are refused rather than simulated green.')}
+        </p>
+        <div className="p-3 pt-0">
           {effectiveTests.length === 0 ? (
             <EmptyState compact title={t('No test matches this maturity filter')} />
           ) : (
@@ -379,7 +365,7 @@ export function ResilienceDRPage(): React.JSX.Element {
           )}
         </div>
         {drillCount > 0 ? (
-          <div className="space-y-2 border-t border-ink-100 px-4 py-3">
+          <div className="space-y-2 border-t border-ink-100 px-3 py-3">
             <p className="label-institutional">{t('Drills run this session')}</p>
             {Object.values(drills).map((drill) => {
               const test = posture.tests.find((resilienceTest) => resilienceTest.id === drill.testId)
@@ -404,7 +390,7 @@ export function ResilienceDRPage(): React.JSX.Element {
             </p>
           </div>
         ) : null}
-      </Card>
+      </GovPanel>
         </div>
       </div>
 

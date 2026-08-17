@@ -1,22 +1,21 @@
 import { useMemo, useState } from 'react'
-import { Banknote, FileWarning, Gavel, Scale3d, ScrollText, ShieldQuestion } from 'lucide-react'
+import { ShieldQuestion } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import {
   Badge,
   Card,
-  CardHeader,
   DataTable,
   DemonstrationNotice,
   EmptyState,
   ErrorState,
   Label,
   LoadingState,
-  MetricGrid,
+  ScoreDial,
   Select,
   type BadgeTone,
   type Column,
 } from '@/components/ui'
-import { MetricCard } from '@/components/cards'
+import { GovPanel, GovStripCell } from '@/components/gov/GovPanel'
 import { CHART_COLOURS, DonutChart } from '@/components/charts'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
@@ -54,6 +53,11 @@ import { t } from '@/i18n'
  * contractor's arbitration reference. This is that register. It is
  * deliberately read-only - a case is not filed, an RTI application is not
  * decided and a tribunal is not constituted from a screen like this one.
+ *
+ * Composed with the same institutional-return furniture (`GovPanel`/`GovStat`/
+ * `GovStripCell`) the Executive Overview and Commissioner Cockpit already use,
+ * rather than the floating-card language most other registers carry - a
+ * docket reads as ruled sections on a printed page, not a mosaic of widgets.
  */
 
 const CASE_STATUS_TONE: Record<CaseStatus, BadgeTone> = {
@@ -105,10 +109,7 @@ export function LegalLitigationPage(): React.JSX.Element {
   const [typeFilter, setTypeFilter] = useState<CaseType | ''>('')
   const [statusFilter, setStatusFilter] = useState<CaseStatus | ''>('')
 
-  usePageMasthead(
-    t('Legal & Litigation'),
-    t('Every court matter, RTI application and contractor arbitration the Corporation is party to - most often as respondent, not as the party in control of the timeline.'),
-  )
+  usePageMasthead(t('Legal & Litigation'))
 
   const positionQuery = useServiceQuery(queryKeys.legal('position'), (u) => legalService.position(u))
   const casesQuery = useServiceQuery(queryKeys.legal('cases'), (u) => legalService.cases(u))
@@ -162,6 +163,8 @@ export function LegalLitigationPage(): React.JSX.Element {
   const byStatus = CASE_STATUSES.map((s) => ({ status: s, count: cases.filter((c) => c.status === s).length })).filter(
     (x) => x.count > 0,
   )
+  const disposedCount = cases.filter((c) => c.status.startsWith('disposed')).length
+  const favourablePct = position?.favourableSharePct ?? 0
 
   const caseColumns: Array<Column<LegalCase>> = [
     {
@@ -309,89 +312,91 @@ export function LegalLitigationPage(): React.JSX.Element {
         </div>
       </Card>
 
-      <MetricGrid columns={4}>
-        <MetricCard
-          label={t('Cases active')}
-          value={position?.casesActive ?? 0}
-          support={t('{0} filed this financial year', position?.casesFiledYtd ?? 0)}
-          icon={<Gavel className="h-4 w-4" />}
-        />
-        <MetricCard
+      {/* ── Status strip ───────────────────────────────────────────────
+          The six figures a Law Officer reads first, in the same ruled
+          ledger strip the Executive Overview opens with. */}
+      <div className="flex flex-wrap items-stretch gap-px overflow-hidden rounded-[2px] border border-ink-200 bg-ink-100 shadow-xs">
+        <GovStripCell label={t('Cases active')} value={position?.casesActive ?? 0} background="amber" />
+        <GovStripCell
           label={t('Financial exposure')}
           value={position ? formatCrore(position.financialExposureCrore) : '-'}
-          support={t('Across every undisposed matter, if decided adversely')}
-          icon={<Banknote className="h-4 w-4" />}
           tone={position && position.financialExposureCrore > 0 ? 'warn' : 'default'}
+          background="red"
         />
-        <MetricCard
-          label={t('RTI applications pending')}
-          value={position?.rtiPending ?? 0}
-          support={t('{0} past the statutory response deadline', position?.rtiOverdue ?? 0)}
-          icon={<ScrollText className="h-4 w-4" />}
-          tone={position && position.rtiOverdue > 0 ? 'warn' : 'positive'}
+        <GovStripCell label={t('RTI applications pending')} value={position?.rtiPending ?? 0} background="green" />
+        <GovStripCell
+          label={t('RTI past statutory deadline')}
+          value={position?.rtiOverdue ?? 0}
+          tone={position && position.rtiOverdue > 0 ? 'critical' : 'positive'}
         />
-        <MetricCard
-          label={t('Arbitration active')}
-          value={position?.arbitrationActive ?? 0}
-          support={t('{0} past the statutory award timeline unextended', position?.arbitrationOverdue ?? 0)}
-          icon={<Scale3d className="h-4 w-4" />}
+        <GovStripCell label={t('Arbitration active')} value={position?.arbitrationActive ?? 0} />
+        <GovStripCell
+          label={t('Arbitration past award timeline')}
+          value={position?.arbitrationOverdue ?? 0}
           tone={position && position.arbitrationOverdue > 0 ? 'critical' : 'default'}
         />
-      </MetricGrid>
+      </div>
 
       <div className="grid grid-cols-1 gap-3 xl:grid-cols-12">
         <div className="flex min-w-0 flex-col gap-3 xl:col-span-8">
-          <Card flush>
-            <CardHeader
-              bordered
-              icon={<Gavel className="h-4 w-4" />}
-              title={t('Court matters')}
-              description={t('Every case the Corporation is party to, most recently filed first.')}
-              actions={
-                <div className="flex flex-wrap items-end gap-2">
-                  <div>
-                    <Label htmlFor="type-filter">{t('Case type')}</Label>
-                    <Select
-                      id="type-filter"
-                      value={typeFilter}
-                      onChange={(e) => setTypeFilter(e.target.value as CaseType | '')}
-                      options={[
-                        { value: '', label: t('All types') },
-                        ...CASE_TYPES.map((ty) => ({ value: ty, label: CASE_TYPE_LABEL[ty] })),
-                      ]}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="status-filter">{t('Status')}</Label>
-                    <Select
-                      id="status-filter"
-                      value={statusFilter}
-                      onChange={(e) => setStatusFilter(e.target.value as CaseStatus | '')}
-                      options={[
-                        { value: '', label: t('All statuses') },
-                        ...CASE_STATUSES.map((s) => ({ value: s, label: CASE_STATUS_LABEL[s] })),
-                      ]}
-                    />
-                  </div>
-                </div>
-              }
-            />
+          <GovPanel
+            title={t('Court matters')}
+            subtitle={t('{0} of {1}', filtered.length, cases.length)}
+            tone="amber"
+            dense
+          >
+            <div className="flex flex-wrap items-end gap-2 border-b border-ink-100 px-3 py-2.5">
+              <div>
+                <Label htmlFor="type-filter">{t('Case type')}</Label>
+                <Select
+                  id="type-filter"
+                  value={typeFilter}
+                  onChange={(e) => setTypeFilter(e.target.value as CaseType | '')}
+                  options={[
+                    { value: '', label: t('All types') },
+                    ...CASE_TYPES.map((ty) => ({ value: ty, label: CASE_TYPE_LABEL[ty] })),
+                  ]}
+                />
+              </div>
+              <div>
+                <Label htmlFor="status-filter">{t('Status')}</Label>
+                <Select
+                  id="status-filter"
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value as CaseStatus | '')}
+                  options={[
+                    { value: '', label: t('All statuses') },
+                    ...CASE_STATUSES.map((s) => ({ value: s, label: CASE_STATUS_LABEL[s] })),
+                  ]}
+                />
+              </div>
+            </div>
             {filtered.length === 0 ? (
               <EmptyState title={t('No matters match the current filters')} detail="Clear a filter to widen the register." />
             ) : (
               <DataTable rows={filtered} columns={caseColumns} rowKey={(c) => c.id} pageSize={12} />
             )}
-          </Card>
+          </GovPanel>
         </div>
 
         <div className="flex min-w-0 flex-col gap-3 xl:col-span-4">
-          <Card flush className="flex flex-col">
-            <CardHeader
-              icon={<Gavel className="h-4 w-4" />}
-              title={t('Matters by status')}
-              bordered
-            />
-            <div className="px-4 pt-4" style={{ height: 180 }}>
+          <GovPanel title={t('Case outcomes')} subtitle={t('Resolution quality')} tone="red" dense>
+            <div className="flex items-center gap-3 border-b border-ink-100 px-3 py-3">
+              <ScoreDial score={favourablePct} size={76} label={t('favourable')} />
+              <div className="min-w-0">
+                <p className="text-[0.625rem] font-bold tracking-[0.08em] text-ink-500 uppercase">
+                  {t('Favourable resolution rate')}
+                </p>
+                <p className="mt-1 text-xs leading-relaxed text-ink-600">
+                  {t(
+                    '{0} of {1} disposed matters resolved in the Corporation’s favour.',
+                    Math.round((favourablePct / 100) * disposedCount),
+                    disposedCount,
+                  )}
+                </p>
+              </div>
+            </div>
+            <div className="px-3 pt-3" style={{ height: 170 }}>
               <DonutChart
                 data={byStatus.map((s) => ({
                   label: CASE_STATUS_LABEL[s.status],
@@ -402,39 +407,37 @@ export function LegalLitigationPage(): React.JSX.Element {
                 centreLabel="matters"
               />
             </div>
-            <p className="border-t border-ink-100 px-4 py-3 text-[0.6875rem] leading-relaxed text-ink-500">
-              {t('{0} of {1} disposed matters were resolved in the Corporation’s favour.', Math.round(((position?.favourableSharePct ?? 0) / 100) * cases.filter((c) => c.status.startsWith('disposed')).length), cases.filter((c) => c.status.startsWith('disposed')).length)}
-            </p>
-          </Card>
+          </GovPanel>
 
-          <Card flush className="flex flex-col">
-            <CardHeader icon={<ScrollText className="h-4 w-4" />} title={t('RTI applications')} description={t('Right to Information Act, 2005 - the statutory clock, not the applicant.')} bordered />
-            <ul className="divide-y divide-ink-100">
-              {rti.slice(0, 6).map((a) => (
-                <li key={a.id} className="flex items-center gap-2.5 px-4 py-2.5">
-                  <span className="min-w-0 flex-1 truncate text-xs text-ink-700">{a.subjectCategory}</span>
-                  <Badge tone={RTI_STATUS_TONE[a.status]} size="sm">{RTI_STATUS_LABEL[a.status]}</Badge>
-                </li>
-              ))}
-            </ul>
-            {rti.length === 0 ? <EmptyState title={t('No RTI applications on record')} /> : null}
-          </Card>
+          <GovPanel title={t('RTI applications')} subtitle={t('Right to Information Act, 2005')} tone="amber" dense>
+            {rti.length === 0 ? (
+              <EmptyState title={t('No RTI applications on record')} />
+            ) : (
+              <ul className="divide-y divide-ink-100">
+                {rti.slice(0, 6).map((a) => (
+                  <li key={a.id} className="flex items-center gap-2.5 px-3 py-2.5">
+                    <span className="min-w-0 flex-1 truncate text-xs text-ink-700">{a.subjectCategory}</span>
+                    <Badge tone={RTI_STATUS_TONE[a.status]} size="sm">{RTI_STATUS_LABEL[a.status]}</Badge>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </GovPanel>
         </div>
       </div>
 
-      <Card flush>
-        <CardHeader
-          bordered
-          icon={<FileWarning className="h-4 w-4" />}
-          title={t('Contractor arbitration')}
-          description={t('Referred under the Arbitration and Conciliation Act, 1996. An award falls due twelve months after pleadings close, extendable by six with the parties’ consent.')}
-        />
+      <GovPanel
+        title={t('Contractor arbitration')}
+        subtitle={t('Arbitration and Conciliation Act, 1996')}
+        tone="green"
+        dense
+      >
         {arbitration.length === 0 ? (
           <EmptyState title={t('No arbitration matters on record')} />
         ) : (
           <DataTable rows={arbitration} columns={arbitrationColumns} rowKey={(a) => a.id} pageSize={10} />
         )}
-      </Card>
+      </GovPanel>
     </PageBody>
   )
 }

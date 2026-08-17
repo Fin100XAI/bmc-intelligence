@@ -84,10 +84,7 @@ const STATUS_TONE: Record<AgentWorkflow['status'], 'positive' | 'warn' | 'neutra
 
 export function AgentWorkflowsPage(): React.JSX.Element {
   // The shell's masthead states the screen's name; the page states the wording.
-  usePageMasthead(
-    t('Agent Workflows'),
-    t('Automated sequences that retrieve, analyse, correlate and recommend across municipal data on a declared trigger. Every workflow carries at least one mandatory human checkpoint - a step no automation can complete on its own - before any downstream municipal record is touched.'),
-  )
+  usePageMasthead(t('Agent Workflows'))
 
   const workflowsQuery = useServiceQuery(queryKeys.ai('agent-workflows'), (u) => aiService.agentWorkflows(u))
   const [expandedWorkflow, setExpandedWorkflow] = useState<string | null>(null)

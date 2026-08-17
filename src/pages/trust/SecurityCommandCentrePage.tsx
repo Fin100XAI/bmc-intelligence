@@ -1,18 +1,13 @@
 import { useMemo, useState } from 'react'
 import {
   AlertTriangle,
-  Fingerprint,
-  Lock,
-  ShieldAlert,
   ShieldCheck,
-  Users as UsersIcon,
 } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { Badge, ClassificationBadge, StateBadge } from '@/components/ui/badges'
 import {
   Button,
   Card,
-  CardHeader,
   DefinitionList,
   DefinitionRow,
   Label,
@@ -25,6 +20,7 @@ import { DataTable, type Column } from '@/components/ui/DataTable'
 import { DemonstrationNotice, EmptyState, ErrorState, LoadingState } from '@/components/ui/states'
 import { ConfirmDialog, Tabs } from '@/components/ui/overlays'
 import { ChartFrame } from '@/components/charts/ChartFrame'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { CATEGORICAL_SERIES, DonutChart, RankedBarChart } from '@/components/charts/charts'
 import { useServiceQuery, useServiceAction } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
@@ -64,10 +60,7 @@ export function SecurityCommandCentrePage(): React.JSX.Element {
   const [tab, setTab] = useState<'events' | 'identity'>('events')
 
   // The shell's masthead carries the screen's name; the page states the wording.
-  usePageMasthead(
-    t('Security Command Centre'),
-    t('Authentication and identity posture, the security event workflow and access administration for this platform. Every figure below is read from the live security service, gated by the same permission engine every other screen uses.'),
-  )
+  usePageMasthead(t('Security Command Centre'))
 
   const postureQuery = useServiceQuery(queryKeys.security('posture'), (user) => securityService.posture(user))
   const eventsQuery = useServiceQuery(queryKeys.security('events'), (user) => securityService.events(user))
@@ -208,16 +201,16 @@ export function SecurityCommandCentrePage(): React.JSX.Element {
           <ScoreDial score={posture.authenticationHealth} label="/ 100" caption={t('Authentication health')} size={104} />
         </Card>
         <MetricGrid columns={4}>
-          <Card>
+          <Card background="red">
             <p className="label-institutional">{t('MFA coverage')}</p>
             <p className="numeric mt-2 text-metric font-semibold text-ink-900">{formatPercent(posture.mfaCoveragePct, 1)}</p>
             <ProgressBar value={posture.mfaCoveragePct} size="xs" className="mt-2" />
           </Card>
-          <Card>
+          <Card background="amber">
             <p className="label-institutional">{t('Privileged accounts')}</p>
             <p className="numeric mt-2 text-metric font-semibold text-ink-900">{posture.privilegedAccounts}</p>
           </Card>
-          <Card tone={posture.privilegedWithoutMfa > 0 ? 'critical' : 'default'}>
+          <Card tone={posture.privilegedWithoutMfa > 0 ? 'critical' : 'default'} background="green">
             <p className="label-institutional">{t('Privileged without MFA')}</p>
             <p className={cn('numeric mt-2 text-metric font-semibold', posture.privilegedWithoutMfa > 0 ? 'text-crit-700' : 'text-ink-900')}>
               {posture.privilegedWithoutMfa}
@@ -236,15 +229,15 @@ export function SecurityCommandCentrePage(): React.JSX.Element {
       </div>
 
       <MetricGrid columns={4}>
-        <Card>
+        <Card background="amber">
           <p className="label-institutional">{t('Policy violations (30d)')}</p>
           <p className="numeric mt-2 text-metric font-semibold text-ink-900">{posture.policyViolations30d}</p>
         </Card>
-        <Card>
+        <Card background="green">
           <p className="label-institutional">{t('Security events (30d)')}</p>
           <p className="numeric mt-2 text-metric font-semibold text-ink-900">{posture.securityEvents30d}</p>
         </Card>
-        <Card>
+        <Card background="red">
           <p className="label-institutional">{t('Integrations requiring review')}</p>
           <p className="numeric mt-2 text-metric font-semibold text-ink-900">{posture.integrationsRequiringReview}</p>
         </Card>
@@ -257,9 +250,8 @@ export function SecurityCommandCentrePage(): React.JSX.Element {
       {/* Vulnerabilities, encryption and the certification note read as one
           posture band rather than three stacked rows. */}
       <div className="grid gap-4 lg:grid-cols-3">
-        <Card>
-          <CardHeader icon={<ShieldAlert className="h-4 w-4" />} title={t('Open vulnerabilities by severity')} />
-          <div className="mt-3 grid grid-cols-4 gap-2">
+        <GovPanel title={t('Open vulnerabilities by severity')} tone="amber">
+          <div className="grid grid-cols-4 gap-2">
             {(['critical', 'high', 'medium', 'low'] as const).map((sev) => (
               <div key={sev} className="rounded-md bg-surface-sunken px-2 py-2 text-center">
                 <p className="numeric text-lg font-semibold text-ink-900">{posture.openVulnerabilities[sev]}</p>
@@ -267,10 +259,9 @@ export function SecurityCommandCentrePage(): React.JSX.Element {
               </div>
             ))}
           </div>
-        </Card>
-        <Card>
-          <CardHeader icon={<Lock className="h-4 w-4" />} title={t('Encryption posture')} />
-          <DefinitionList className="mt-2">
+        </GovPanel>
+        <GovPanel title={t('Encryption posture')} tone="red">
+          <DefinitionList>
             <DefinitionRow label={t('In transit')}>
               <StateBadge state={posture.encryptionInTransit} />
             </DefinitionRow>
@@ -278,7 +269,7 @@ export function SecurityCommandCentrePage(): React.JSX.Element {
               <StateBadge state={posture.encryptionAtRest} />
             </DefinitionRow>
           </DefinitionList>
-        </Card>
+        </GovPanel>
         <Card tone="warn">
           <div className="flex items-start gap-2.5">
             <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-warn-700" />
@@ -304,30 +295,29 @@ export function SecurityCommandCentrePage(): React.JSX.Element {
            read beside them. */
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
           <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
-          <Card>
-            <CardHeader
-              icon={<ShieldAlert className="h-4 w-4" />}
-              title={t('Security events')}
-              description={t('Every recorded security event within scope. Select a row to open the full record.')}
-              actions={
-                <div className="flex flex-wrap items-center gap-2">
-                  <Select
-                    value={severityFilter}
-                    onChange={(e) => setSeverityFilter(e.target.value as Severity | '')}
-                    options={[
-                      { value: '', label: t('All severities') },
-                      ...(Object.keys(SEVERITY_LABEL) as Severity[]).map((s) => ({ value: s, label: SEVERITY_LABEL[s] })),
-                    ]}
-                  />
-                  <Select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value as SecurityEvent['status'] | '')}
-                    options={[{ value: '', label: t('All statuses') }, ...STATUS_OPTIONS.map((s) => ({ value: s, label: s.replace('-', ' ') }))]}
-                  />
-                </div>
-              }
-            />
-            <div className="mt-3">
+          <GovPanel
+            title={t('Security events')}
+            tone="amber"
+            actions={
+              <div className="flex flex-wrap items-center gap-2">
+                <Select
+                  value={severityFilter}
+                  onChange={(e) => setSeverityFilter(e.target.value as Severity | '')}
+                  options={[
+                    { value: '', label: t('All severities') },
+                    ...(Object.keys(SEVERITY_LABEL) as Severity[]).map((s) => ({ value: s, label: SEVERITY_LABEL[s] })),
+                  ]}
+                />
+                <Select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value as SecurityEvent['status'] | '')}
+                  options={[{ value: '', label: t('All statuses') }, ...STATUS_OPTIONS.map((s) => ({ value: s, label: s.replace('-', ' ') }))]}
+                />
+              </div>
+            }
+          >
+            <p className="mb-3 text-xs leading-relaxed text-ink-500">{t('Every recorded security event within scope. Select a row to open the full record.')}</p>
+            <div>
               <DataTable
                 rows={filteredEvents}
                 columns={eventColumns}
@@ -357,7 +347,7 @@ export function SecurityCommandCentrePage(): React.JSX.Element {
                 )}
               />
             </div>
-          </Card>
+          </GovPanel>
           </div>
 
           <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
@@ -378,14 +368,13 @@ export function SecurityCommandCentrePage(): React.JSX.Element {
            they are currently doing with it sits beside the register. */
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
           <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
-          <Card>
-            <CardHeader icon={<UsersIcon className="h-4 w-4" />} title={t('Demonstration principals')} />
+          <GovPanel title={t('Demonstration principals')} tone="amber">
             {usersQuery.isLoading ? (
               <LoadingState variant="table" />
             ) : usersQuery.error ? (
               <ErrorState detail={usersQuery.error.message} onRetry={() => usersQuery.refetch()} />
             ) : (
-              <div className="mt-3">
+              <div>
                 <DataTable
                   rows={usersQuery.data ?? []}
                   rowKey={(u: User) => u.id}
@@ -455,12 +444,12 @@ export function SecurityCommandCentrePage(): React.JSX.Element {
                 />
               </div>
             )}
-          </Card>
+          </GovPanel>
           </div>
 
           <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
-          <Card>
-            <CardHeader icon={<Fingerprint className="h-4 w-4" />} title={t('Active sessions')} description={t('Sessions established through the authentication service during this browser session.')} />
+          <GovPanel title={t('Active sessions')} tone="amber">
+            <p className="mb-3 text-xs leading-relaxed text-ink-500">{t('Sessions established through the authentication service during this browser session.')}</p>
             {sessionsQuery.isLoading ? (
               <LoadingState variant="inline" />
             ) : sessionsQuery.error ? (
@@ -472,7 +461,7 @@ export function SecurityCommandCentrePage(): React.JSX.Element {
                 detail="The demonstration role switcher changes the acting principal without establishing a new tracked session. Signing out and back in through the login screen creates one."
               />
             ) : (
-              <div className="mt-2 space-y-2">
+              <div className="space-y-2">
                 {(sessionsQuery.data as Session[]).map((s) => (
                   <div key={s.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-surface-sunken px-3 py-2">
                     <div className="min-w-0">
@@ -487,7 +476,7 @@ export function SecurityCommandCentrePage(): React.JSX.Element {
                 ))}
               </div>
             )}
-          </Card>
+          </GovPanel>
           </div>
         </div>
       )}

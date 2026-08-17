@@ -21,10 +21,12 @@ import { PROJECT_STATUS_LABEL, type Project } from '@/types/finance'
 import type { EvidenceItem } from '@/types/intelligence'
 import type { SecurityEvent } from '@/types/governance'
 import type { Ward } from '@/types/organisation'
-import type { AIRecommendationBlock } from '@/types/ai'
+import type { AIEvaluation, AIModel, AIRecommendationBlock } from '@/types/ai'
 import { cn } from '@/utils/cn'
 import { formatCompact, formatCrore, formatDate, formatDuration, formatRelative } from '@/utils/format'
 import { departmentName, officerDisplayName, wardName } from '@/data/reference'
+import { EVIDENCE_BY_ID } from '@/data/evidence.data'
+import { ROUTES } from '@/config/navigation'
 import {
   Badge,
   ClassificationBadge,
@@ -671,12 +673,21 @@ export function SecurityCard({
    AI recommendation - never executes, always names a human owner
    ========================================================================== */
 
+const EVAL_VERDICT_TONE: Record<AIEvaluation['verdict'], 'positive' | 'critical' | 'warn'> = {
+  passed: 'positive',
+  failed: 'critical',
+  're-evaluation-due': 'warn',
+}
+
 export function AIRecommendationCard({
   recommendation,
   onApprove,
   onModify,
   onReject,
   onOpenEvidence,
+  onOpenEvidenceItem,
+  model,
+  evaluation,
   status,
   className,
 }: {
@@ -685,6 +696,16 @@ export function AIRecommendationCard({
   onModify?: () => void
   onReject?: () => void
   onOpenEvidence?: () => void
+  /** Opens the evidence record for one citation, so the corpus behind a
+   * recommendation is reachable item by item rather than as a single bundle. */
+  onOpenEvidenceItem?: (evidenceId: string) => void
+  /** The governed model that produced this recommendation - links through to
+   * its entry in the AI Model Registry. Absent where the model cannot be
+   * resolved for this recommendation. */
+  model?: Pick<AIModel, 'id' | 'name' | 'version'>
+  /** That model's most recent evaluation run - links through to the full run
+   * on AI Evaluation. Absent where no evaluation has been recorded. */
+  evaluation?: Pick<AIEvaluation, 'id' | 'verdict' | 'compositeScore'>
   status?: 'pending' | 'accepted' | 'modified' | 'rejected' | 'escalated'
   className?: string
 }): React.JSX.Element {
@@ -738,6 +759,58 @@ export function AIRecommendationCard({
             {recommendation.humanOwnerRole} · {departmentName(recommendation.departmentId)}
           </dd>
         </div>
+        {model ? (
+          <div>
+            <dt className="label-institutional">{t('AI model behind this recommendation')}</dt>
+            <dd className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+              <Link
+                to={`${ROUTES.modelRegistry}?model=${model.id}`}
+                className="inline-flex items-center gap-0.5 font-medium text-govt-700 hover:underline"
+              >
+                {model.name} <span className="numeric text-ink-400">v{model.version}</span>
+                <ChevronRight className="h-3 w-3" />
+              </Link>
+              {evaluation ? (
+                <Link
+                  to={`${ROUTES.aiEvaluation}?run=${evaluation.id}`}
+                  className="inline-flex items-center gap-1 text-ink-500 hover:text-govt-700 hover:underline"
+                >
+                  <Badge tone={EVAL_VERDICT_TONE[evaluation.verdict]} size="sm">
+                    {evaluation.verdict === 'passed'
+                      ? t('Passed')
+                      : evaluation.verdict === 'failed'
+                        ? t('Failed')
+                        : t('Re-evaluation due')}
+                  </Badge>
+                  <span className="numeric">{evaluation.compositeScore}/100</span>
+                  <ChevronRight className="h-3 w-3" />
+                </Link>
+              ) : null}
+            </dd>
+          </div>
+        ) : null}
+        {recommendation.evidenceRefs.length > 0 && onOpenEvidenceItem ? (
+          <div>
+            <dt className="label-institutional">{t('Evidence ({0})', recommendation.evidenceRefs.length)}</dt>
+            <dd className="mt-1 flex flex-wrap gap-1.5">
+              {recommendation.evidenceRefs.map((evidenceId) => {
+                const title = EVIDENCE_BY_ID.get(evidenceId)?.title ?? evidenceId
+                return (
+                  <button
+                    key={evidenceId}
+                    type="button"
+                    onClick={() => onOpenEvidenceItem(evidenceId)}
+                    title={title}
+                    className="inline-flex max-w-[11rem] items-center gap-1 rounded-[2px] border border-ink-200 bg-surface px-1.5 py-1 text-[0.6875rem] text-ink-600 transition-colors hover:border-govt-300 hover:bg-govt-50/50"
+                  >
+                    <FileSearch className="h-3 w-3 shrink-0 text-ink-400" />
+                    <span className="truncate">{title}</span>
+                  </button>
+                )
+              })}
+            </dd>
+          </div>
+        ) : null}
       </dl>
 
       <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-intel-200/70 pt-2.5">

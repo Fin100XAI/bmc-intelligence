@@ -1,13 +1,15 @@
 import { useState } from 'react'
-import { AlertTriangle, Construction, GitCompare, TrafficCone } from 'lucide-react'
+import { AlertTriangle, Construction, TrafficCone } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
-import { Badge, Card, CardHeader, DataTable, DemonstrationNotice, EmptyState, ErrorState, LoadingState, MetricGrid, StateBadge, type Column } from '@/components/ui'
+import { Badge, Card, DataTable, DemonstrationNotice, EmptyState, ErrorState, LoadingState, MetricGrid, StateBadge, type Column } from '@/components/ui'
 import { MetricCard } from '@/components/cards'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { CategoryBarChart, CHART_COLOURS, ChartFrame, MiniBar } from '@/components/charts'
 import { CityMap, type MapPath } from '@/components/map/CityMap'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { roadsService } from '@/services'
+import { activeCorporation } from '@/config/municipality.config'
 import { wardShortName } from '@/data/reference'
 import { usePageMasthead } from '@/stores/masthead.store'
 import { useFilterStore } from '@/stores/ui.store'
@@ -43,10 +45,7 @@ function congestionTone(index: number): 'primary' | 'warn' | 'critical' {
 }
 
 export function TrafficIntelligencePage(): React.JSX.Element {
-  usePageMasthead(
-    t('Traffic & Mobility'),
-    t('Corridor-level congestion, incidents and closures across the city\'s principal traffic corridors, read alongside the road condition and planned works in the wards each corridor serves.'),
-  )
+  usePageMasthead(t('Traffic & Mobility'))
 
   const [selectedCorridorId, setSelectedCorridorId] = useState<string | null>(null)
 
@@ -118,6 +117,7 @@ export function TrafficIntelligencePage(): React.JSX.Element {
   const corridorsDegraded = corridors.filter((c) => c.state !== 'operational')
   const incidents30d = corridors.reduce((s, c) => s + c.incidents30d, 0)
   const activeClosures = corridors.reduce((s, c) => s + c.closures, 0)
+  const isBmc = activeCorporation.id === 'bmc'
 
   const selectedCorridor = corridors.find((c) => c.id === selectedCorridorId) ?? null
 
@@ -193,9 +193,35 @@ export function TrafficIntelligencePage(): React.JSX.Element {
       />
 
       <MetricGrid columns={4}>
-        <MetricCard label={t('Average congestion index')} value={Math.round(avgCongestion)} unit="/100" icon={<TrafficCone className="h-4 w-4" />} tone={avgCongestion >= DEGRADED_CONGESTION_THRESHOLD ? 'warn' : 'default'} />
-        <MetricCard label={t('Corridors degraded')} value={corridorsDegraded.length} support={t('of {0} corridors', corridors.length)} tone={corridorsDegraded.length > 0 ? 'warn' : 'default'} />
-        <MetricCard label={t('Incidents (30d)')} value={formatNumber(incidents30d)} tone={incidents30d > 0 ? 'warn' : 'default'} />
+        <MetricCard
+          label={t('Average congestion index')}
+          value={Math.round(avgCongestion)}
+          unit="/100"
+          icon={<TrafficCone className="h-4 w-4" />}
+          tone={avgCongestion >= DEGRADED_CONGESTION_THRESHOLD ? 'warn' : 'default'}
+          background="red"
+          footer={
+            isBmc && activeCorporation.vehiclePopulationCount ? (
+              <span className="text-[0.625rem] leading-snug text-ink-400">
+                {t('For context: BMC\'s own Environment Status Report counts {0} registered vehicles citywide as of March {1} — ~2.94 lakh new registrations that year, +6.2% on the year before.', formatNumber(activeCorporation.vehiclePopulationCount), activeCorporation.vehiclePopulationAsOfYear ?? '-')}
+              </span>
+            ) : undefined
+          }
+        />
+        <MetricCard label={t('Corridors degraded')} value={corridorsDegraded.length} support={t('of {0} corridors', corridors.length)} tone={corridorsDegraded.length > 0 ? 'warn' : 'default'} background="amber" />
+        <MetricCard
+          label={t('Incidents (30d)')}
+          value={formatNumber(incidents30d)}
+          tone={incidents30d > 0 ? 'warn' : 'default'}
+          background="green"
+          footer={
+            isBmc && activeCorporation.roadAccidentFatalities ? (
+              <span className="text-[0.625rem] leading-snug text-ink-400">
+                {t('For context: Mumbai Traffic Police\'s official road-safety report recorded {0} road-accident fatalities citywide in {1} — a ~39-40% reduction versus 2015. Two/three-wheeler occupants and pedestrians are the largest victim categories.', activeCorporation.roadAccidentFatalities, activeCorporation.roadAccidentFatalitiesYear ?? '-')}
+              </span>
+            ) : undefined
+          }
+        />
         <MetricCard label={t('Active closures')} value={activeClosures} tone={activeClosures > 0 ? 'critical' : 'default'} icon={<Construction className="h-4 w-4" />} />
       </MetricGrid>
 
@@ -204,8 +230,10 @@ export function TrafficIntelligencePage(): React.JSX.Element {
           currently in force and the speed profile read beside them. */}
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
         <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
-        <Card flush>
-            <CardHeader className="px-4 pt-4 pb-3" title={t('Corridor register')} description={t('Sortable and searchable. Select a row to highlight the corridor on the map.')} />
+        <GovPanel title={t('Corridor register')} tone="amber" dense>
+          <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+            {t('Sortable and searchable. Select a row to highlight the corridor on the map.')}
+          </p>
           <DataTable
             rows={corridors}
             columns={corridorColumns}
@@ -217,15 +245,12 @@ export function TrafficIntelligencePage(): React.JSX.Element {
             initialSort={{ columnId: 'congestion', direction: 'desc' }}
             ariaLabel="Traffic corridor register"
           />
-        </Card>
+        </GovPanel>
 
-        <Card flush>
-          <CardHeader
-            className="px-4 pt-4 pb-3"
-            icon={<GitCompare className="h-4 w-4" />}
-            title={t('Cross-domain panel - corridor degradation, road condition and planned works')}
-            description={t('Average pavement condition and count of planned closures across the road segments in each corridor\'s served wards, set alongside the corridor\'s own congestion index.')}
-          />
+        <GovPanel title={t('Cross-domain panel - corridor degradation, road condition and planned works')} tone="red" dense>
+          <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+            {t('Average pavement condition and count of planned closures across the road segments in each corridor\'s served wards, set alongside the corridor\'s own congestion index.')}
+          </p>
           <div className="mx-4 mb-3 flex items-start gap-2 rounded-md border border-warn-200 bg-warn-50/70 px-3 py-2">
             <AlertTriangle className="mt-px h-3.5 w-3.5 shrink-0 text-warn-700" aria-hidden />
             <p className="text-[0.6875rem] leading-relaxed text-warn-700">
@@ -264,12 +289,14 @@ export function TrafficIntelligencePage(): React.JSX.Element {
               { id: 'wardsServed', header: t('Wards served'), cell: (r) => r.corridor.wardIds.map((w) => wardShortName(w)).join(', '), sortValue: (r) => r.corridor.wardIds.length, hideBelow: 'lg' },
             ]}
           />
-        </Card>
+        </GovPanel>
         </div>
 
         <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
-        <Card>
-          <CardHeader title={t('Corridor map')} description={t('Corridor geometry toned by congestion. Click a corridor row, or a ward the corridor serves, to highlight it - selection syncs between the map and the table.')} />
+        <GovPanel title={t('Corridor map')} tone="amber">
+          <p className="mb-3 text-xs leading-relaxed text-ink-500">
+            {t('Corridor geometry toned by congestion. Click a corridor row, or a ward the corridor serves, to highlight it - selection syncs between the map and the table.')}
+          </p>
           <div className="mt-3">
             <CityMap
               layers={[
@@ -297,10 +324,12 @@ export function TrafficIntelligencePage(): React.JSX.Element {
               {selectedCorridor.incidents30d}{' '}{t('incident(s) in 30 days ·')}{' '}{selectedCorridor.closures}{' '}{t('closure(s).')}
             </p>
           ) : null}
-        </Card>
+        </GovPanel>
 
-          <Card flush>
-            <CardHeader className="px-4 pt-4 pb-3" title={t('Junction & closure impact')} description={t('Corridors currently carrying one or more closures, ranked by count.')} />
+          <GovPanel title={t('Junction & closure impact')} tone="green" dense>
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+              {t('Corridors currently carrying one or more closures, ranked by count.')}
+            </p>
             {closureImpact.length === 0 ? (
               <EmptyState compact className="m-4" title={t('No active closures')} detail="No corridor currently reports a closure." />
             ) : (
@@ -319,7 +348,7 @@ export function TrafficIntelligencePage(): React.JSX.Element {
                 ))}
               </ul>
             )}
-          </Card>
+          </GovPanel>
 
 
           <Card>

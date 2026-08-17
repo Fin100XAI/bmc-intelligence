@@ -28,7 +28,6 @@ import {
   Route,
   ScanSearch,
   Send,
-  ShieldAlert,
   Siren,
   Sparkles,
   Stethoscope,
@@ -64,7 +63,6 @@ import {
   Badge,
   Button,
   Card,
-  CardHeader,
   ClassificationBadge,
   ConfidenceBadge,
   ConfirmDialog,
@@ -73,6 +71,7 @@ import {
   Tabs,
   Textarea,
 } from '@/components/ui'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { AIRecommendationCard } from '@/components/cards/domain-cards'
 import { AnswerVisuals } from '@/components/ai/AnswerVisuals'
 import { t } from '@/i18n'
@@ -364,10 +363,7 @@ export function CopilotPage(): React.JSX.Element {
   // The shell's masthead states the screen's name; the page states the wording.
   // Declared here, above the unauthenticated guard, because a hook cannot sit
   // behind an early return.
-  usePageMasthead(
-    t('{0} Municipal Copilot', corporation.city),
-    t('A governed intelligence assistant grounded in the platform\'s own operational records. Every answer states its evidence, its confidence and its limitations.'),
-  )
+  usePageMasthead(t('{0} Municipal Copilot', corporation.city))
 
   // The thread, the ledger and the composer live in the session store, not in
   // this component. An operator who opens a decision case raised from an answer
@@ -644,12 +640,10 @@ export function CopilotPage(): React.JSX.Element {
 
         {/* ---------------------------------------------------- Inspector */}
         <div className="min-w-0 space-y-4 xl:sticky xl:top-4 xl:self-start">
-          <Card className="rounded-[2px]">
-            <CardHeader
-              icon={<ShieldAlert className="h-4 w-4" />}
-              title={t('Your authority')}
-              description={t('Answers are bounded by what you may see — not by the assistant\'s willingness.')}
-            />
+          <GovPanel title={t('Your authority')} tone="amber">
+            <p className="mb-3 text-xs leading-relaxed text-ink-500">
+              {t('Answers are bounded by what you may see — not by the assistant\'s willingness.')}
+            </p>
             <dl className="mt-4 space-y-2.5 text-xs">
               <RailRow label={t('Acting as')} value={role?.name ?? principal.roleId} />
               <RailRow label={t('Department')} value={departmentName(principal.departmentId)} />
@@ -662,11 +656,10 @@ export function CopilotPage(): React.JSX.Element {
             <p className="mt-3.5 border-t border-ink-100 pt-3 text-[0.6875rem] leading-relaxed text-ink-500">
               {t('The Copilot analyses, recommends and explains — it never decides. Approving expenditure, sanctioning payment or issuing an order always requires a named officer and cannot be completed here.')}
             </p>
-          </Card>
+          </GovPanel>
 
           {messages.length > 0 ? (
-            <Card className="rounded-[2px]">
-              <CardHeader icon={<Sparkles className="h-4 w-4" />} title={t('Ask next')} />
+            <GovPanel title={t('Ask next')} tone="red">
               <div className="mt-3 flex flex-col gap-1.5">
                 {prompts.map((p) => (
                   <button
@@ -685,18 +678,16 @@ export function CopilotPage(): React.JSX.Element {
                   </button>
                 ))}
               </div>
-            </Card>
+            </GovPanel>
           ) : null}
 
           {sessionLedger.decisions + sessionLedger.tasks + sessionLedger.briefs > 0 ||
           escalations.length > 0 ||
           situationRoom.length > 0 ? (
-            <Card className="rounded-[2px]">
-              <CardHeader
-                icon={<ClipboardPlus className="h-4 w-4" />}
-                title={t('Raised from this session')}
-                description={t('What left this surface and became a record elsewhere.')}
-              />
+            <GovPanel title={t('Raised from this session')} tone="amber">
+              <p className="mb-3 text-xs leading-relaxed text-ink-500">
+                {t('What left this surface and became a record elsewhere.')}
+              </p>
               <div className="mt-3.5 grid grid-cols-3 gap-2 text-center">
                 <LedgerStat label={t('Decisions')} value={sessionLedger.decisions} />
                 <LedgerStat label={t('Tasks')} value={sessionLedger.tasks} />
@@ -738,7 +729,7 @@ export function CopilotPage(): React.JSX.Element {
                   </ul>
                 </div>
               ) : null}
-            </Card>
+            </GovPanel>
           ) : null}
         </div>
       </div>

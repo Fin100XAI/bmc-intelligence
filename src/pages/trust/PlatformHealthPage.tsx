@@ -1,11 +1,10 @@
 import { useMemo, useState } from 'react'
-import { Activity, Gauge, Loader2, Play, RotateCcw, Workflow } from 'lucide-react'
+import { Activity, Loader2, Play, RotateCcw } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { Badge, StateBadge } from '@/components/ui/badges'
 import {
   Button,
   Card,
-  CardHeader,
   DefinitionList,
   DefinitionRow,
   MetricGrid,
@@ -17,6 +16,7 @@ import { Drawer } from '@/components/ui/overlays'
 import { DemonstrationNotice, EmptyState, ErrorState, LoadingState } from '@/components/ui/states'
 import { ChartFrame } from '@/components/charts/ChartFrame'
 import { RankedBarChart, Sparkline, TrendChart } from '@/components/charts/charts'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { platformService } from '@/services'
@@ -105,10 +105,7 @@ interface JobRerun {
 
 export function PlatformHealthPage(): React.JSX.Element {
   // The shell's masthead carries the screen's name; the page states the wording.
-  usePageMasthead(
-    t('Platform Health'),
-    t('Service availability, data pipeline health, the AI gateway, connector runtime, storage and event processing - reported plainly, with every simulated component labelled as such.'),
-  )
+  usePageMasthead(t('Platform Health'))
 
   const servicesQuery = useServiceQuery(queryKeys.platform(), (u) => platformService.services(u))
   const jobsQuery = useServiceQuery(['trust-platform-health', 'jobs'], (u) => platformService.jobs(u))
@@ -405,29 +402,30 @@ export function PlatformHealthPage(): React.JSX.Element {
           beside them. */}
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
         <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
-      <Card flush>
-        <CardHeader
-          className="px-4 pt-4"
-          icon={<Gauge className="h-4 w-4" />}
-          title={t('Service register')}
-          description={t('Select a service to see its 30-day availability history and what it actually runs on in this environment.')}
-          actions={
-            categoryFilter || originFilter ? (
-              <Button
-                variant="ghost"
-                size="xs"
-                icon={<RotateCcw className="h-3 w-3" />}
-                onClick={() => {
-                  setCategoryFilter('')
-                  setOriginFilter('')
-                }}
-              >
-                {t('Clear filters')}
-              </Button>
-            ) : null
-          }
-        />
-        <div className="flex flex-wrap items-center gap-2 px-4 pt-3">
+      <GovPanel
+        title={t('Service register')}
+        tone="amber"
+        dense
+        actions={
+          categoryFilter || originFilter ? (
+            <Button
+              variant="ghost"
+              size="xs"
+              icon={<RotateCcw className="h-3 w-3" />}
+              onClick={() => {
+                setCategoryFilter('')
+                setOriginFilter('')
+              }}
+            >
+              {t('Clear filters')}
+            </Button>
+          ) : null
+        }
+      >
+        <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+          {t('Select a service to see its 30-day availability history and what it actually runs on in this environment.')}
+        </p>
+        <div className="flex flex-wrap items-center gap-2 px-3">
           <Select
             aria-label={t('Filter by category')}
             value={categoryFilter}
@@ -450,7 +448,7 @@ export function PlatformHealthPage(): React.JSX.Element {
             ]}
           />
         </div>
-        <div className="p-4">
+        <div className="p-3">
           <DataTable
             rows={filteredServices}
             columns={serviceColumns}
@@ -463,16 +461,13 @@ export function PlatformHealthPage(): React.JSX.Element {
             emptyTitle={t('No service matches the current filters')}
           />
         </div>
-      </Card>
+      </GovPanel>
 
-      <Card flush>
-        <CardHeader
-          className="px-4 pt-4"
-          icon={<Workflow className="h-4 w-4" />}
-          title={t('Data pipeline jobs')}
-          description={t('Scheduled jobs feeding the intelligence engine. Jobs with failures in the last seven days are flagged. A re-run is simulated and can fail — it is a diagnostic, not a remedy.')}
-        />
-        <div className="p-4">
+      <GovPanel title={t('Data pipeline jobs')} tone="red" dense>
+        <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+          {t('Scheduled jobs feeding the intelligence engine. Jobs with failures in the last seven days are flagged. A re-run is simulated and can fail — it is a diagnostic, not a remedy.')}
+        </p>
+        <div className="p-3">
           <DataTable
             rows={effectiveJobs}
             columns={jobColumns}
@@ -498,13 +493,13 @@ export function PlatformHealthPage(): React.JSX.Element {
           />
         </div>
         {rerunCount > 0 ? (
-          <div className="border-t border-ink-100 px-4 py-3">
+          <div className="border-t border-ink-100 px-3 py-3">
             <p className="text-[0.6875rem] leading-relaxed text-ink-500">
               {t('{0} job{1} been re-run this session. A successful re-run does not clear the seven-day failure count — a job that failed on Tuesday still failed on Tuesday, and a register that erased that on demand would be useless for spotting a job that fails intermittently.', rerunCount, rerunCount === 1 ? ' has' : 's have')}
             </p>
           </div>
         ) : null}
-      </Card>
+      </GovPanel>
         </div>
 
         <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
@@ -597,14 +592,13 @@ export function PlatformHealthPage(): React.JSX.Element {
               </DefinitionRow>
             </DefinitionList>
 
-            <Card tone={detail.simulated ? 'warn' : 'info'}>
-              <CardHeader title={detail.simulated ? 'This component is simulated' : 'This component runs directly'} />
-              <p className="mt-2 text-[0.8125rem] leading-relaxed text-ink-700">
+            <GovPanel title={detail.simulated ? 'This component is simulated' : 'This component runs directly'} tone="amber">
+              <p className="text-[0.8125rem] leading-relaxed text-ink-700">
                 {detail.simulated
                   ? 'Its availability, latency and error figures describe deterministic local logic running inside this application, not a deployed service. They are useful for demonstrating the shape of the surface and useless as a service-level indicator — nothing here can be relied upon as one.'
                   : 'Its figures describe something genuinely served by the deployment target. They are still modelled for this environment and carry no service-level commitment, but the component itself is not a stand-in.'}
               </p>
-            </Card>
+            </GovPanel>
           </div>
         ) : null}
       </Drawer>

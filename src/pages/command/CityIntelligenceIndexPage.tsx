@@ -2,8 +2,9 @@ import { useMemo, useState } from 'react'
 import { ArrowDownRight, ArrowRight, ArrowUpRight, Gauge, Minus, Plus } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { Badge, ConfidenceBadge, StateBadge } from '@/components/ui/badges'
-import { Card, CardHeader, ProgressBar, ScoreDial } from '@/components/ui/primitives'
+import { Card, ProgressBar, ScoreDial } from '@/components/ui/primitives'
 import { DemonstrationNotice, ErrorState, LoadingState } from '@/components/ui/states'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { cityIndexService } from '@/services'
@@ -48,10 +49,7 @@ export function CityIntelligenceIndexPage(): React.JSX.Element {
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
   // The shell renders the masthead; this page states what it should say.
-  usePageMasthead(
-    t('{0} City Intelligence Index', corporation.city),
-    t('One composite across twelve dimensions of the city\'s condition, each computed from the corporation\'s own records. Every score can be opened to its positive and negative contributors - this page never shows a number it cannot explain.'),
-  )
+  usePageMasthead(t('{0} City Intelligence Index', corporation.city))
 
   const dimensions = useMemo(() => query.data?.dimensions ?? [], [query.data])
   const selected = useMemo(
@@ -83,9 +81,9 @@ export function CityIntelligenceIndexPage(): React.JSX.Element {
       <div className="grid grid-cols-1 gap-3 xl:grid-cols-12">
         {/* Column 1 — the composite and its components -------------- */}
         <div className="flex min-w-0 flex-col gap-3 xl:col-span-7">
-          <Card>
-            <CardHeader title={t('Composite index')} description={t('Weighted across all twelve dimensions.')} />
-            <div className="mt-3 flex items-center gap-4">
+          <GovPanel title={t('Composite index')} tone="primary">
+            <p className="mb-3 text-xs leading-relaxed text-ink-500">{t('Weighted across all twelve dimensions.')}</p>
+            <div className="flex items-center gap-4">
               <ScoreDial score={index.score} label={t('Index')} caption={`${index.score}/100`} />
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
@@ -99,14 +97,16 @@ export function CityIntelligenceIndexPage(): React.JSX.Element {
                 <p className="mt-2 text-xs leading-relaxed text-ink-600">{index.narrative}</p>
               </div>
             </div>
-          </Card>
+          </GovPanel>
 
-          <Card flush>
-            <CardHeader
-              bordered
-              title={t('The twelve dimensions')}
-              description={t('Ranked by weighted contribution to the composite. Select a dimension to open its drivers.')}
-            />
+          <GovPanel
+            title={t('The twelve dimensions')}
+            tone="red"
+            dense
+          >
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+              {t('Ranked by weighted contribution to the composite. Select a dimension to open its drivers.')}
+            </p>
             <ul className="divide-y divide-ink-50">
               {[...dimensions]
                 .sort((a, b) => b.contribution - a.contribution)
@@ -146,7 +146,7 @@ export function CityIntelligenceIndexPage(): React.JSX.Element {
                   </li>
                 ))}
             </ul>
-          </Card>
+          </GovPanel>
 
           <Card tone="sunken">
             <p className="text-[0.6875rem] leading-relaxed text-ink-500">
@@ -157,12 +157,11 @@ export function CityIntelligenceIndexPage(): React.JSX.Element {
 
         {/* Column 2 — movement and the open dimension --------------- */}
         <div className="flex min-w-0 flex-col gap-3 xl:col-span-5">
-          <Card>
-            <CardHeader
-              title={t('Movement highlights')}
-              description={t('Where the composite is anchored and where it is moving.')}
-            />
-            <div className="mt-3 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+          <GovPanel title={t('Movement highlights')} tone="amber">
+            <p className="mb-3 text-xs leading-relaxed text-ink-500">
+              {t('Where the composite is anchored and where it is moving.')}
+            </p>
+            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
               {[
                 { label: t('Strongest dimension'), dim: index.strongest, tone: 'positive' as const },
                 { label: t('Weakest dimension'), dim: index.weakest, tone: 'critical' as const },
@@ -189,7 +188,7 @@ export function CityIntelligenceIndexPage(): React.JSX.Element {
                 ) : null,
               )}
             </div>
-          </Card>
+          </GovPanel>
 
           {selected ? <DimensionDetail dimension={selected} /> : null}
         </div>
@@ -201,13 +200,15 @@ export function CityIntelligenceIndexPage(): React.JSX.Element {
 function DimensionDetail({ dimension }: { dimension: IndexDimension }): React.JSX.Element {
   return (
     <>
-      <Card>
-        <CardHeader
-          title={dimension.label}
-          description={t('Weight {0} · contributes {1} points to the composite', dimension.weight.toFixed(2), dimension.contribution)}
-          actions={<StateBadge state={dimension.state} />}
-        />
-        <div className="mt-3">
+      <GovPanel
+        title={dimension.label}
+        tone="red"
+        actions={<StateBadge state={dimension.state} />}
+      >
+        <p className="mb-3 text-xs leading-relaxed text-ink-500">
+          {t('Weight {0} · contributes {1} points to the composite', dimension.weight.toFixed(2), dimension.contribution)}
+        </p>
+        <div>
           <div className="flex items-baseline justify-between">
             <span className="label-institutional">{t('Dimension score')}</span>
             <span className="numeric text-metric-sm font-semibold text-ink-900">
@@ -224,16 +225,15 @@ function DimensionDetail({ dimension }: { dimension: IndexDimension }): React.JS
           </p>
         </div>
         <p className="mt-3 text-xs leading-relaxed text-ink-600">{dimension.explanation}</p>
-      </Card>
+      </GovPanel>
 
-      <Card>
-        <CardHeader title={t('What raised this score')} />
+      <GovPanel title={t('What raised this score')} tone="amber">
         {dimension.positiveContributors.length === 0 ? (
-          <p className="mt-2 text-xs leading-relaxed text-ink-500">
+          <p className="text-xs leading-relaxed text-ink-500">
             {t('No positive contributor is recorded for this dimension in the current period.')}
           </p>
         ) : (
-          <ul className="mt-3 space-y-2">
+          <ul className="space-y-2">
             {dimension.positiveContributors.map((c, i) => (
               <li key={`pos-${i}`} className="rounded-[2px] border border-ok-100 bg-ok-50/40 p-2.5">
                 <div className="flex items-start justify-between gap-2">
@@ -248,16 +248,15 @@ function DimensionDetail({ dimension }: { dimension: IndexDimension }): React.JS
             ))}
           </ul>
         )}
-      </Card>
+      </GovPanel>
 
-      <Card>
-        <CardHeader title={t('What lowered this score')} />
+      <GovPanel title={t('What lowered this score')} tone="green">
         {dimension.negativeContributors.length === 0 ? (
-          <p className="mt-2 text-xs leading-relaxed text-ink-500">
+          <p className="text-xs leading-relaxed text-ink-500">
             {t('No negative contributor is recorded for this dimension in the current period.')}
           </p>
         ) : (
-          <ul className="mt-3 space-y-2">
+          <ul className="space-y-2">
             {dimension.negativeContributors.map((c, i) => (
               <li key={`neg-${i}`} className="rounded-[2px] border border-crit-100 bg-crit-50/40 p-2.5">
                 <div className="flex items-start justify-between gap-2">
@@ -272,7 +271,7 @@ function DimensionDetail({ dimension }: { dimension: IndexDimension }): React.JS
             ))}
           </ul>
         )}
-      </Card>
+      </GovPanel>
 
       <Card tone="sunken">
         <div className="flex items-start gap-2.5">

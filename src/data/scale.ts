@@ -50,8 +50,12 @@ export const REFERENCE_SCALE = {
   budgetCrore: BMC.budgetCrore ?? 80952,
   wards: BMC.administrativeWards ?? 24,
   waterSupplyMLD: BMC.waterSupplyMLD ?? 3850,
+  sewageTreatmentMLD: BMC.sewageTreatmentMLD ?? 1226,
   solidWasteTPD: BMC.solidWasteTPD ?? 6300,
   roadLengthKm: BMC.roadLengthKm ?? 2055,
+  gardenPlotsCount: BMC.gardenPlotsCount ?? 1068,
+  gardensCount: BMC.gardensCount ?? 254,
+  municipalMarketsCount: BMC.municipalMarketsCount ?? 136,
 } as const
 
 export interface CorporationScale {
@@ -69,13 +73,24 @@ export interface CorporationScale {
   budgetCrore: number
   wardCount: number
   waterSupplyMLD: number
+  /** Currently operational sewage-treatment capacity - published or modelled. */
+  sewageTreatmentMLD: number
   solidWasteTPD: number
   roadLengthKm: number
+  /** All BMC-held open-space plots (gardens, playgrounds, recreation grounds) - published or modelled. */
+  gardenPlotsCount: number
+  /** The subset of `gardenPlotsCount` that are gardens specifically - published or modelled. */
+  gardensCount: number
+  /** Municipal markets - published or modelled. */
+  municipalMarketsCount: number
   /** True where the corporation publishes its own budget rather than it being modelled. */
   budgetIsPublished: boolean
   waterSupplyIsPublished: boolean
+  sewageTreatmentIsPublished: boolean
   solidWasteIsPublished: boolean
   roadLengthIsPublished: boolean
+  gardenPlotsIsPublished: boolean
+  municipalMarketsIsPublished: boolean
 }
 
 /**
@@ -114,11 +129,32 @@ function build(): CorporationScale {
   const waterSupplyIsPublished = corp.waterSupplyMLD !== null
   const waterSupplyMLD = corp.waterSupplyMLD ?? Math.round((corp.population2011 * 135) / 1_000_000)
 
+  // Sewage generated is conventionally taken at around 80% of water supplied;
+  // installed treatment capacity where the corporation does not publish its
+  // own figure is modelled a little under that.
+  const sewageTreatmentIsPublished = corp.sewageTreatmentMLD !== null
+  const sewageTreatmentMLD = corp.sewageTreatmentMLD ?? Math.round(waterSupplyMLD * 0.72)
+
   const solidWasteIsPublished = corp.solidWasteTPD !== null
   const solidWasteTPD = corp.solidWasteTPD ?? Math.round((corp.population2011 * 0.45) / 1000)
 
   const roadLengthIsPublished = corp.roadLengthKm !== null
   const roadLengthKm = corp.roadLengthKm ?? Math.round(area * REFERENCE_SCALE.roadLengthKm)
+
+  // Open-space plots and municipal markets scale with ground covered and
+  // residents served respectively, exactly like road length and water supply
+  // above - published where the corporation states it, modelled by the same
+  // ratio otherwise.
+  const gardenPlotsIsPublished = corp.gardenPlotsCount !== null
+  const gardenPlotsCount = corp.gardenPlotsCount ?? Math.round(area * REFERENCE_SCALE.gardenPlotsCount)
+  // Gardens are the published SHARE of the plot total, so a corporation with
+  // no share of its own inherits Brihanmumbai's - about a quarter of every
+  // plot it holds.
+  const gardensCount =
+    corp.gardensCount ?? Math.round(gardenPlotsCount * (REFERENCE_SCALE.gardensCount / REFERENCE_SCALE.gardenPlotsCount))
+
+  const municipalMarketsIsPublished = corp.municipalMarketsCount !== null
+  const municipalMarketsCount = corp.municipalMarketsCount ?? Math.round(population * REFERENCE_SCALE.municipalMarketsCount)
 
   const wardCount = Math.max(3, corp.divisions.length || corp.administrativeWards || corp.electoralWards || 8)
 
@@ -132,12 +168,19 @@ function build(): CorporationScale {
     budgetCrore,
     wardCount,
     waterSupplyMLD,
+    sewageTreatmentMLD,
     solidWasteTPD,
     roadLengthKm,
+    gardenPlotsCount,
+    gardensCount,
+    municipalMarketsCount,
     budgetIsPublished,
     waterSupplyIsPublished,
+    sewageTreatmentIsPublished,
     solidWasteIsPublished,
     roadLengthIsPublished,
+    gardenPlotsIsPublished,
+    municipalMarketsIsPublished,
   }
 }
 

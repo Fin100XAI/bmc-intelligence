@@ -1,10 +1,9 @@
 import { useMemo, useState } from 'react'
-import { CalendarDays, Gavel, Landmark, ListChecks, Users, Vote } from 'lucide-react'
+import { CalendarDays, Gavel, Landmark, Users, Vote } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import {
   Badge,
   Card,
-  CardHeader,
   DataTable,
   DemonstrationNotice,
   EmptyState,
@@ -18,6 +17,7 @@ import {
 } from '@/components/ui'
 import { MetricCard } from '@/components/cards'
 import { CHART_COLOURS, DonutChart } from '@/components/charts'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { councilService } from '@/services'
@@ -81,10 +81,7 @@ export function CouncilResolutionsPage(): React.JSX.Element {
   const [statusFilter, setStatusFilter] = useState<ResolutionStatus | ''>('')
 
   // The shell renders the masthead; this page states what it should say.
-  usePageMasthead(
-    t('Council & Committees'),
-    t('The Corporation in session - its committees, the matters before them, and what has been resolved. The Commissioner administers; the Corporation decides.'),
-  )
+  usePageMasthead(t('Council & Committees'))
 
   const positionQuery = useServiceQuery(queryKeys.council('position'), (u) => councilService.position(u))
   const committeesQuery = useServiceQuery(queryKeys.council('committees'), (u) => councilService.committees(u))
@@ -244,13 +241,10 @@ export function CouncilResolutionsPage(): React.JSX.Element {
             </div>
           </Card>
 
-          <Card flush className="flex flex-col">
-            <CardHeader
-              icon={<Users className="h-4 w-4" />}
-              title={t('Committees')}
-              description={t('Each committee\'s composition, its financial sanction limit, and when it next sits.')}
-              bordered
-            />
+          <GovPanel title={t('Committees')} tone="amber" dense>
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+              {t('Each committee\'s composition, its financial sanction limit, and when it next sits.')}
+            </p>
 
             {committees.length === 0 ? (
               <EmptyState title={t('No committees on record')} detail="The committee register is empty for this corporation." />
@@ -300,11 +294,16 @@ export function CouncilResolutionsPage(): React.JSX.Element {
                         <dd className="mt-0.5 text-xs font-medium text-ink-800">{formatDate(c.nextSittingAt)}</dd>
                       </div>
                     </dl>
+                    {c.kind === 'standing' ? (
+                      <p className="mt-2.5 text-[0.625rem] leading-snug text-ink-400">
+                        {t("26 corporators sit on BMC's own Standing Committee, elected annually by the general body; the seat count above is anchored to that figure.")}
+                      </p>
+                    ) : null}
                   </li>
                 ))}
               </ul>
             )}
-          </Card>
+          </GovPanel>
         </div>
 
         {/* Column 2 — the corporation's standing figures ------------ */}
@@ -340,13 +339,10 @@ export function CouncilResolutionsPage(): React.JSX.Element {
             />
           </MetricGrid>
 
-          <Card flush className="flex flex-col">
-            <CardHeader
-              icon={<ListChecks className="h-4 w-4" />}
-              title={t('Matters by status')}
-              description={t('Where every matter tabled before the house currently stands.')}
-              bordered
-            />
+          <GovPanel title={t('Matters by status')} tone="red" dense>
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+              {t('Where every matter tabled before the house currently stands.')}
+            </p>
 
             <div className="px-4 pt-4" style={{ height: 200 }}>
               <DonutChart
@@ -383,48 +379,49 @@ export function CouncilResolutionsPage(): React.JSX.Element {
             <p className="border-t border-ink-100 px-4 py-3 text-[0.6875rem] leading-relaxed text-ink-500">
               {t('&quot;Passed&quot; and &quot;Implemented&quot; are deliberately separate. A matter the house has carried and the administration has not yet acted on is the accountability gap that belongs to neither wing alone.')}
             </p>
-          </Card>
+          </GovPanel>
         </div>
       </div>
 
-      <Card flush>
-        <CardHeader
-          bordered
-          icon={<Vote className="h-4 w-4" />}
-          title={t('Resolution register')}
-          description={t('Matters tabled before the Corporation and its committees, most recent first.')}
-          actions={
-            <div className="flex flex-wrap items-end gap-2">
-              <div>
-                <Label htmlFor="committee-filter">{t('Committee')}</Label>
-                <Select
-                  id="committee-filter"
-                  value={committeeFilter}
-                  onChange={(e) => setCommitteeFilter(e.target.value)}
-                  options={[{ value: '', label: t('All committees') }, ...committees.map((c) => ({ value: c.id, label: c.name }))]}
-                />
-              </div>
-              <div>
-                <Label htmlFor="status-filter">{t('Status')}</Label>
-                <Select
-                  id="status-filter"
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value as ResolutionStatus | '')}
-                  options={[
-                    { value: '', label: t('All statuses') },
-                    ...STATUSES.map((s) => ({ value: s, label: RESOLUTION_STATUS_LABEL[s] })),
-                  ]}
-                />
-              </div>
+      <GovPanel
+        title={t('Resolution register')}
+        tone="amber"
+        dense
+        actions={
+          <div className="flex flex-wrap items-end gap-2">
+            <div>
+              <Label htmlFor="committee-filter">{t('Committee')}</Label>
+              <Select
+                id="committee-filter"
+                value={committeeFilter}
+                onChange={(e) => setCommitteeFilter(e.target.value)}
+                options={[{ value: '', label: t('All committees') }, ...committees.map((c) => ({ value: c.id, label: c.name }))]}
+              />
             </div>
-          }
-        />
+            <div>
+              <Label htmlFor="status-filter">{t('Status')}</Label>
+              <Select
+                id="status-filter"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as ResolutionStatus | '')}
+                options={[
+                  { value: '', label: t('All statuses') },
+                  ...STATUSES.map((s) => ({ value: s, label: RESOLUTION_STATUS_LABEL[s] })),
+                ]}
+              />
+            </div>
+          </div>
+        }
+      >
+        <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+          {t('Matters tabled before the Corporation and its committees, most recent first.')}
+        </p>
         {filtered.length === 0 ? (
           <EmptyState title={t('No matters match the current filters')} detail="Clear a filter to widen the register." />
         ) : (
           <DataTable rows={filtered} columns={columns} rowKey={(r) => r.id} pageSize={15} />
         )}
-      </Card>
+      </GovPanel>
     </PageBody>
   )
 }

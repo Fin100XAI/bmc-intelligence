@@ -1,10 +1,8 @@
 import { useState } from 'react'
-import { Flame, Gauge, Siren, Truck, Users } from 'lucide-react'
+import { Gauge, Siren, Truck, Users } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import {
   Badge,
-  Card,
-  CardHeader,
   DataTable,
   DemonstrationNotice,
   EmptyState,
@@ -19,6 +17,7 @@ import {
 } from '@/components/ui'
 import { MetricCard } from '@/components/cards'
 import { IncidentCard } from '@/components/cards/domain-cards'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { CategoryBarChart, ChartFrame, MiniBar, CHART_COLOURS } from '@/components/charts'
 import { CityMap, jitteredWardPoint, type MapMarker } from '@/components/map/CityMap'
 import { FilterBar } from '@/components/filters/FilterBar'
@@ -87,10 +86,7 @@ export function FireEmergencyPage(): React.JSX.Element {
   /** The fire service's own name for this corporation - see `dept-fire`. */
   const fireBrigadeName = `${corporation.city} Fire Brigade`
 
-  usePageMasthead(
-    t('Fire & Emergency'),
-    t('Station readiness, response-time performance against the modelled urban service standard, coverage and current fire-related incidents across the {0} and disaster control network.', fireBrigadeName),
-  )
+  usePageMasthead(t('Fire & Emergency'))
 
   const stationsQuery = useServiceQuery(queryKeys.health('emergency-stations'), (u) => healthService.emergencyStations(u))
   const incidentsQuery = useServiceQuery(queryKeys.incidents(), (u) => incidentService.list(u, { pageSize: 500 }))
@@ -257,9 +253,16 @@ export function FireEmergencyPage(): React.JSX.Element {
       />
 
       <MetricGrid columns={5}>
-        <MetricCard label={t('Stations')} value={stations.length} support={t('{0} fire stations', stations.filter((s) => s.type === 'fire-station').length)} icon={<Siren className="h-4 w-4" />} />
-        <MetricCard label={t('Vehicles available')} value={vehiclesAvailable} unit={`/ ${vehiclesTotal}`} icon={<Truck className="h-4 w-4" />} tone={vehiclesAvailable / vehiclesTotal < 0.7 ? 'warn' : 'default'} />
-        <MetricCard label={t('Personnel on duty')} value={formatCompact(personnelOnDuty)} icon={<Users className="h-4 w-4" />} />
+        <MetricCard
+          label={t('Stations')}
+          value={stations.length}
+          support={t('{0} fire stations', stations.filter((s) => s.type === 'fire-station').length)}
+          icon={<Siren className="h-4 w-4" />}
+          background="red"
+          footer={<span className="text-[0.625rem] leading-snug text-ink-400">{t('Mumbai Fire Brigade runs 54 fire stations citywide (35 major + 19 small, Feb 2025); this register is anchored to that count.')}</span>}
+        />
+        <MetricCard label={t('Vehicles available')} value={vehiclesAvailable} unit={`/ ${vehiclesTotal}`} icon={<Truck className="h-4 w-4" />} tone={vehiclesAvailable / vehiclesTotal < 0.7 ? 'warn' : 'default'} background="amber" />
+        <MetricCard label={t('Personnel on duty')} value={formatCompact(personnelOnDuty)} icon={<Users className="h-4 w-4" />} background="green" />
         <MetricCard
           label={t('Average response time')}
           value={avgResponse}
@@ -277,9 +280,9 @@ export function FireEmergencyPage(): React.JSX.Element {
           supporting figures beside them. */}
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
         <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
-      <Card flush>
-        <CardHeader className="px-4 pt-4 pb-3" icon={<Flame className="h-4 w-4" />} title={t('Station register')} description={t('Sortable and filterable by type and ward.')} />
-        <div className="flex flex-wrap items-center gap-2 px-4 pb-3">
+      <GovPanel title={t('Station register')} tone="amber" dense>
+        <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">{t('Sortable and filterable by type and ward.')}</p>
+        <div className="flex flex-wrap items-center gap-2 px-3 pb-3">
           <FilterBar show={['ward', 'search']} searchPlaceholder="Search station or ward" compact />
           <div className="flex items-center gap-1.5">
             <Label className="mb-0 whitespace-nowrap">{t('Type')}</Label>
@@ -302,12 +305,12 @@ export function FireEmergencyPage(): React.JSX.Element {
              is stationed. */
           nearestCover ? (
             <EmptyState
-              className="m-4"
+              className="m-3"
               title={t('No station within {0}', wardName(nearestCover.wardId))}
               detail={t('The nearest covering station is {0} in {1}, about {2} km away, with a {3} min average response. Fire cover for this {4} is provided from there.', nearestCover.station.name, wardName(nearestCover.station.wardId), nearestCover.km.toFixed(1), nearestCover.station.avgResponseMinutes, corporation.wardTerminology.toLowerCase())}
             />
           ) : (
-            <EmptyState className="m-4" title={t('No stations match the current filters')} detail="Adjust the type, ward or search term above." />
+            <EmptyState className="m-3" title={t('No stations match the current filters')} detail="Adjust the type, ward or search term above." />
           )
         ) : (
           <DataTable
@@ -320,55 +323,59 @@ export function FireEmergencyPage(): React.JSX.Element {
             ariaLabel="Emergency station register"
           />
         )}
-      </Card>
+      </GovPanel>
 
-          <Card flush>
-            <CardHeader className="px-4 pt-4 pb-3" title={t('Current fire & emergency incidents')} description={t('Incidents of type Fire, or owned by the {0}, currently in the unified incident register.', fireBrigadeName)} />
+          <GovPanel title={t('Current fire & emergency incidents')} tone="red" dense>
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+              {t('Incidents of type Fire, or owned by the {0}, currently in the unified incident register.', fireBrigadeName)}
+            </p>
             {incidentsQuery.isLoading ? (
-              <LoadingState variant="block" rows={3} className="p-4" />
+              <LoadingState variant="block" rows={3} className="p-3" />
             ) : incidentsQuery.error ? (
-              <ErrorState className="m-4" detail={incidentsQuery.error.message} onRetry={() => incidentsQuery.refetch()} />
+              <ErrorState className="m-3" detail={incidentsQuery.error.message} onRetry={() => incidentsQuery.refetch()} />
             ) : activeFireIncidents.length === 0 ? (
-              <EmptyState compact className="mx-4 mb-4" title={t('No active fire or emergency incidents')} detail="No open incident is currently attributed to the fire and emergency network." />
+              <EmptyState compact className="mx-3 mb-3" title={t('No active fire or emergency incidents')} detail="No open incident is currently attributed to the fire and emergency network." />
             ) : (
-              <div className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 2xl:grid-cols-3">
+              <div className="grid grid-cols-1 gap-3 p-3 sm:grid-cols-2 2xl:grid-cols-3">
                 {activeFireIncidents.map((incident) => (
                   <IncidentCard key={incident.id} incident={incident} onClick={() => openDrawer({ kind: 'incident', id: incident.id })} />
                 ))}
               </div>
             )}
-          </Card>
+          </GovPanel>
         </div>
 
         <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
-          <Card>
-            <CardHeader title={t('Coverage map')} description={t('Station markers with a response-time coverage layer. Wards without a marker are not necessarily uncovered - a neighbouring station\'s radius may extend into them.')} />
-            <div className="mt-3">
-              <CityMap
-                layers={[
-                  {
-                    id: 'response-coverage',
-                    label: t('Response Time Coverage'),
-                    valueFor: (wardId) => {
-                      const minutes = responseByWard.get(wardId)
-                      if (minutes === undefined) return undefined
-                      return Math.min(100, Math.round((minutes / 15) * 100))
-                    },
-                    higherIsWorse: true,
-                    unit: ' min (scaled; 15 min = 100)',
-                    description: t('Average response time of the nearest station located in the ward, scaled 0–100. Wards with no local station show no data.'),
+          <GovPanel title={t('Coverage map')} tone="amber">
+            <p className="mb-3 text-xs leading-relaxed text-ink-500">
+              {t('Station markers with a response-time coverage layer. Wards without a marker are not necessarily uncovered - a neighbouring station\'s radius may extend into them.')}
+            </p>
+            <CityMap
+              layers={[
+                {
+                  id: 'response-coverage',
+                  label: t('Response Time Coverage'),
+                  valueFor: (wardId) => {
+                    const minutes = responseByWard.get(wardId)
+                    if (minutes === undefined) return undefined
+                    return Math.min(100, Math.round((minutes / 15) * 100))
                   },
-                ]}
-                markers={markers}
-                height={380}
-              />
-            </div>
-          </Card>
+                  higherIsWorse: true,
+                  unit: ' min (scaled; 15 min = 100)',
+                  description: t('Average response time of the nearest station located in the ward, scaled 0–100. Wards with no local station show no data.'),
+                },
+              ]}
+              markers={markers}
+              height={380}
+            />
+          </GovPanel>
 
           {aboveStandard.length > 0 ? (
-            <Card tone="warn">
-              <CardHeader title={t('Catchments above the response-time standard')} description={t('Average response time exceeds the modelled {0}-minute standard. The limiting availability constraint is named for each.', RESPONSE_STANDARD_MINUTES)} />
-              <ul className="mt-2 divide-y divide-warn-200/60">
+            <GovPanel title={t('Catchments above the response-time standard')} tone="red">
+              <p className="mb-3 text-xs leading-relaxed text-ink-500">
+                {t('Average response time exceeds the modelled {0}-minute standard. The limiting availability constraint is named for each.', RESPONSE_STANDARD_MINUTES)}
+              </p>
+              <ul className="divide-y divide-warn-200/60">
                 {aboveStandard.map((s) => (
                   <li key={s.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
                     <span className="min-w-0 truncate text-xs font-medium text-ink-800">
@@ -383,22 +390,20 @@ export function FireEmergencyPage(): React.JSX.Element {
                   </li>
                 ))}
               </ul>
-            </Card>
+            </GovPanel>
           ) : null}
 
-          <Card>
-            <CardHeader title={t('Response-time distribution')} description={t('Count of stations by average response-time band.')} />
-            <div className="mt-3">
-              <ChartFrame
-                title={t('Stations by response-time band')}
-                unit={t('Number of stations')}
-                timeframe="Trailing 30 days"
-                footnote={t('The platform\'s modelled urban response-time standard is {0} minutes. Bands at or above this threshold are named in "Catchments above standard" below.', RESPONSE_STANDARD_MINUTES)}
-              >
-                <CategoryBarChart data={distribution} series={[{ key: 'count', label: t('Stations'), colour: CHART_COLOURS.primary }]} categoryKey="label" />
-              </ChartFrame>
-            </div>
-          </Card>
+          <GovPanel title={t('Response-time distribution')} tone="amber">
+            <p className="mb-3 text-xs leading-relaxed text-ink-500">{t('Count of stations by average response-time band.')}</p>
+            <ChartFrame
+              title={t('Stations by response-time band')}
+              unit={t('Number of stations')}
+              timeframe="Trailing 30 days"
+              footnote={t('The platform\'s modelled urban response-time standard is {0} minutes. Bands at or above this threshold are named in "Catchments above standard" below.', RESPONSE_STANDARD_MINUTES)}
+            >
+              <CategoryBarChart data={distribution} series={[{ key: 'count', label: t('Stations'), colour: CHART_COLOURS.primary }]} categoryKey="label" />
+            </ChartFrame>
+          </GovPanel>
         </div>
       </div>
 

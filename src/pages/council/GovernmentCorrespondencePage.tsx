@@ -4,7 +4,6 @@ import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import {
   Badge,
   Card,
-  CardHeader,
   DataTable,
   DemonstrationNotice,
   EmptyState,
@@ -16,6 +15,7 @@ import {
   type BadgeTone,
   type Column,
 } from '@/components/ui'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { MetricCard } from '@/components/cards'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
@@ -65,10 +65,7 @@ export function GovernmentCorrespondencePage(): React.JSX.Element {
   const [subjectFilter, setSubjectFilter] = useState<CorrespondenceSubject | ''>('')
   const [statusFilter, setStatusFilter] = useState<CorrespondenceStatus | ''>('')
 
-  usePageMasthead(
-    t('Government Correspondence'),
-    t('Government Resolutions, circulars and notifications the state has directed to the Corporation, and their implementation status.'),
-  )
+  usePageMasthead(t('Government Correspondence'))
 
   const positionQuery = useServiceQuery(queryKeys.correspondence('position'), (u) => correspondenceService.position(u))
   const resolutionsQuery = useServiceQuery(queryKeys.correspondence('resolutions'), (u) => correspondenceService.resolutions(u))
@@ -206,17 +203,20 @@ export function GovernmentCorrespondencePage(): React.JSX.Element {
           label={t('Received (12m)')}
           value={position?.received12m ?? 0}
           icon={<ScrollText className="h-4 w-4" />}
+          background="red"
         />
         <MetricCard
           label={t('Under implementation')}
           value={position?.underImplementation ?? 0}
           icon={<FileSignature className="h-4 w-4" />}
+          background="amber"
         />
         <MetricCard
           label={t('Implemented (12m)')}
           value={position?.implemented12m ?? 0}
           icon={<FileSignature className="h-4 w-4" />}
           tone="positive"
+          background="green"
         />
         <MetricCard
           label={t('Compliance overdue')}
@@ -226,59 +226,60 @@ export function GovernmentCorrespondencePage(): React.JSX.Element {
         />
       </MetricGrid>
 
-      <Card flush>
-        <CardHeader
-          bordered
-          icon={<FileSignature className="h-4 w-4" />}
-          title={t('Correspondence register')}
-          description={t('Every Government Resolution, circular and notification received, most recently issued first.')}
-          actions={
-            <div className="flex flex-wrap items-end gap-2">
-              <div>
-                <Label htmlFor="dept-filter">{t('Issued by')}</Label>
-                <Select
-                  id="dept-filter"
-                  value={deptFilter}
-                  onChange={(e) => setDeptFilter(e.target.value as IssuingDepartment | '')}
-                  options={[
-                    { value: '', label: t('All departments') },
-                    ...ISSUING_DEPARTMENTS.map((d) => ({ value: d, label: ISSUING_DEPARTMENT_LABEL[d] })),
-                  ]}
-                />
-              </div>
-              <div>
-                <Label htmlFor="subject-filter">{t('Subject')}</Label>
-                <Select
-                  id="subject-filter"
-                  value={subjectFilter}
-                  onChange={(e) => setSubjectFilter(e.target.value as CorrespondenceSubject | '')}
-                  options={[
-                    { value: '', label: t('All subjects') },
-                    ...SUBJECTS.map((s) => ({ value: s, label: CORRESPONDENCE_SUBJECT_LABEL[s] })),
-                  ]}
-                />
-              </div>
-              <div>
-                <Label htmlFor="corr-status-filter">{t('Status')}</Label>
-                <Select
-                  id="corr-status-filter"
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value as CorrespondenceStatus | '')}
-                  options={[
-                    { value: '', label: t('All statuses') },
-                    ...STATUSES.map((s) => ({ value: s, label: CORRESPONDENCE_STATUS_LABEL[s] })),
-                  ]}
-                />
-              </div>
+      <GovPanel
+        title={t('Correspondence register')}
+        tone="amber"
+        actions={
+          <div className="flex flex-wrap items-end gap-2">
+            <div>
+              <Label htmlFor="dept-filter">{t('Issued by')}</Label>
+              <Select
+                id="dept-filter"
+                value={deptFilter}
+                onChange={(e) => setDeptFilter(e.target.value as IssuingDepartment | '')}
+                options={[
+                  { value: '', label: t('All departments') },
+                  ...ISSUING_DEPARTMENTS.map((d) => ({ value: d, label: ISSUING_DEPARTMENT_LABEL[d] })),
+                ]}
+              />
             </div>
-          }
-        />
+            <div>
+              <Label htmlFor="subject-filter">{t('Subject')}</Label>
+              <Select
+                id="subject-filter"
+                value={subjectFilter}
+                onChange={(e) => setSubjectFilter(e.target.value as CorrespondenceSubject | '')}
+                options={[
+                  { value: '', label: t('All subjects') },
+                  ...SUBJECTS.map((s) => ({ value: s, label: CORRESPONDENCE_SUBJECT_LABEL[s] })),
+                ]}
+              />
+            </div>
+            <div>
+              <Label htmlFor="corr-status-filter">{t('Status')}</Label>
+              <Select
+                id="corr-status-filter"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as CorrespondenceStatus | '')}
+                options={[
+                  { value: '', label: t('All statuses') },
+                  ...STATUSES.map((s) => ({ value: s, label: CORRESPONDENCE_STATUS_LABEL[s] })),
+                ]}
+              />
+            </div>
+          </div>
+        }
+        dense
+      >
+        <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+          {t('Every Government Resolution, circular and notification received, most recently issued first.')}
+        </p>
         {filtered.length === 0 ? (
-          <EmptyState title={t('No correspondence matches the current filters')} detail="Clear a filter to widen the register." />
+          <EmptyState className="mx-3 mb-3" title={t('No correspondence matches the current filters')} detail="Clear a filter to widen the register." />
         ) : (
           <DataTable rows={filtered} columns={columns} rowKey={(g) => g.id} pageSize={15} />
         )}
-      </Card>
+      </GovPanel>
     </PageBody>
   )
 }

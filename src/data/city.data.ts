@@ -563,10 +563,12 @@ registerLayer(() => {
 
   /** -------------------------------------------------------------- Sewerage */
 
-  // Sewage generated is conventionally taken at around 80% of water supplied;
-  // installed treatment capacity here sits a little under that, which is the
-  // gap every sewerage surface in the platform is there to show.
-  const sewerageTreatmentMld = Math.max(2, scale.waterSupplyMLD * 0.72)
+  // Anchored to the corporation's own published operational treatment
+  // capacity (`CorporationRef.sewageTreatmentMLD`) via `scale.ts` - 1,226 MLD
+  // for Brihanmumbai, distinct from capacity under construction. Every
+  // treatment facility and trunk-sewer reach below distributes around this
+  // real total rather than an arbitrary derived ratio.
+  const sewerageTreatmentMld = Math.max(2, scale.sewageTreatmentMLD)
   const facilityCount = scaledCount(9, population, 3)
   const facilityLocalities = localityNames(facilityCount)
 

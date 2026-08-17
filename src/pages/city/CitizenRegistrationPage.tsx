@@ -4,7 +4,6 @@ import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import {
   Badge,
   Card,
-  CardHeader,
   DataTable,
   DemonstrationNotice,
   EmptyState,
@@ -15,6 +14,7 @@ import {
   type Column,
 } from '@/components/ui'
 import { MetricCard } from '@/components/cards'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { CategoryBarChart, CHART_COLOURS, RankedBarChart } from '@/components/charts'
 import { FilterBar } from '@/components/filters/FilterBar'
 import { useServiceQuery } from '@/hooks'
@@ -22,6 +22,7 @@ import { queryKeys } from '@/app/queryClient'
 import { registrationService } from '@/services'
 import { useFilterStore } from '@/stores/ui.store'
 import { usePageMasthead } from '@/stores/masthead.store'
+import { activeCorporation } from '@/config/municipality.config'
 import { wardName, wardShortName } from '@/data/reference'
 import type { RegistrationCentre } from '@/types/civic-services'
 import type { DataFreshness } from '@/types/common'
@@ -56,10 +57,7 @@ const STATUTORY_PERIOD_DAYS = 21
 export function CitizenRegistrationPage(): React.JSX.Element {
   const filters = useFilterStore((s) => s.filters)
 
-  usePageMasthead(
-    t('Births & Deaths Registration'),
-    t('The corporation\'s statutory registration service - volumes, compliance with the twenty-one day statutory period, certificate issue times and the backlog waiting at each counter.'),
-  )
+  usePageMasthead(t('Births & Deaths Registration'))
 
   const centresQuery = useServiceQuery(queryKeys.registration('centres'), (u) => registrationService.centres(u))
   const trendQuery = useServiceQuery(queryKeys.registration('trend'), (u) => registrationService.trend(u))
@@ -201,6 +199,14 @@ export function CitizenRegistrationPage(): React.JSX.Element {
           support={t('{0} births · {1} deaths', formatNumber(births), formatNumber(deaths))}
           icon={<Landmark className="h-4 w-4" />}
           origin="demonstration"
+          background="red"
+          footer={
+            activeCorporation.id === 'bmc' && activeCorporation.annualBirthsRegistered && activeCorporation.annualDeathsRegistered ? (
+              <span className="text-[0.625rem] leading-snug text-ink-400">
+                {t('For context: BMC registered {0} deaths in {1} (provisional) and {2} births in {3} - the lowest annual birth count since 2015, a 23% drop on 2019. These are annual totals, not directly comparable to the rolling 30-day figure above.', formatNumber(activeCorporation.annualDeathsRegistered), activeCorporation.annualDeathsAsOfYear ?? '-', formatNumber(activeCorporation.annualBirthsRegistered), activeCorporation.annualBirthsAsOfYear ?? '-')}
+              </span>
+            ) : undefined
+          }
         />
         <MetricCard
           label={t('Within {0}-day period', STATUTORY_PERIOD_DAYS)}
@@ -209,6 +215,7 @@ export function CitizenRegistrationPage(): React.JSX.Element {
           support={t('{0} late registrations requiring an order', formatNumber(late))}
           tone={withinPeriod < 90 ? 'warn' : 'positive'}
           icon={<BadgeCheck className="h-4 w-4" />}
+          background="amber"
         />
         <MetricCard
           label={t('Mean certificate issue')}
@@ -217,6 +224,8 @@ export function CitizenRegistrationPage(): React.JSX.Element {
           support={t('{0} certificates issued in 30 days', formatNumber(certificates))}
           tone={meanIssue > 7 ? 'critical' : meanIssue > 4 ? 'warn' : 'positive'}
           icon={<Clock3 className="h-4 w-4" />}
+          background="green"
+          footer={<span className="text-[0.625rem] leading-snug text-ink-400">{t("Mirrors MCGM's birth/death certificate services — a simulated feed in this demonstration.")}</span>}
         />
         <MetricCard
           label={t('Backlog')}
@@ -231,19 +240,16 @@ export function CitizenRegistrationPage(): React.JSX.Element {
           are read beside it. */}
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
         <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
-          <Card flush>
-            <CardHeader
-              bordered
-              icon={<Landmark className="h-4 w-4" />}
-              title={t('Registration centres')}
-              description={t('Hospital registration units and ward offices within your authorised ward scope.')}
-            />
+          <GovPanel title={t('Registration centres')} tone="amber" dense>
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+              {t('Hospital registration units and ward offices within your authorised ward scope.')}
+            </p>
             {filtered.length === 0 ? (
-              <EmptyState title={t('No registration centres match the current filters')} detail="Clear a filter to widen the register." />
+              <EmptyState className="mx-3 mb-3" title={t('No registration centres match the current filters')} detail="Clear a filter to widen the register." />
             ) : (
               <DataTable rows={filtered} columns={columns} rowKey={(r) => r.id} pageSize={12} />
             )}
-          </Card>
+          </GovPanel>
 
           <Card className="flex flex-col">
             <p className="label-institutional mb-2">{t('Monthly registrations and certificates issued')}</p>
@@ -276,16 +282,14 @@ export function CitizenRegistrationPage(): React.JSX.Element {
             </div>
           </Card>
 
-          <Card flush className="flex flex-col">
-            <CardHeader
-              bordered
-              title={t('Slowest certificate issue')}
-              description={t('Where a family waits longest for the document they came for.')}
-            />
+          <GovPanel title={t('Slowest certificate issue')} tone="red" dense className="flex flex-col">
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+              {t('Where a family waits longest for the document they came for.')}
+            </p>
             <div className="px-4 pb-4" style={{ height: Math.max(210, slowest.length * 26) }}>
               <RankedBarChart data={slowest.map((c) => ({ label: c.name.slice(0, 22), value: c.meanIssueDays }))} unit=" d" />
             </div>
-          </Card>
+          </GovPanel>
         </div>
       </div>
     </PageBody>

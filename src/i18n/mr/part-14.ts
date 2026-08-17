@@ -96,8 +96,6 @@ export const MR_PART_14: Record<string, string> = {
   'Runs directly only': 'केवळ थेट चालते',
   'Runs, last 30 days': 'फेऱ्या, गेल्या 30 दिवसांतील',
   'Sanction limit': 'मंजुरी मर्यादा',
-  'Sanctioned and deployed strength, vacancy and workload pressure by department and cadre, with an explicit view of where high vacancy co-occurs with service-response deterioration.':
-    'विभाग व संवर्गनिहाय मंजूर व कार्यरत संख्या, रिक्त पदे आणि कामाचा ताण, तसेच जास्त रिक्त पदे आणि सेवा-प्रतिसादातील घसरण एकत्र कोठे आढळतात याचे स्पष्ट दर्शन.',
   'Sanctioned exposure': 'मंजूर जोखीम रक्कम',
   'Sanctioned exposure, active works': 'मंजूर जोखीम रक्कम, चालू कामे',
   'Sanctioned schemes and what has actually been delivered against them.':
@@ -124,8 +122,6 @@ export const MR_PART_14: Record<string, string> = {
   'School': 'शाळा',
   'School register': 'शाळा नोंदवही',
   'Schools by level': 'स्तरनिहाय शाळा',
-  "Scope a single-ward recovery pilot on four measurable outputs, and generate the property tax return a corporation has to file against Finance Commission grant conditions. A pilot at this size sits inside the Commissioner's own administrative approval limit and produces the number that funds anything larger.":
-    'चार मोजता येण्याजोग्या निर्गतांवर एकाच प्रभागापुरत्या सुधारणा प्रायोगिक प्रकल्पाची व्याप्ती ठरवा, आणि वित्त आयोगाच्या अनुदान अटींविरुद्ध महानगरपालिकेला सादर करावे लागणारे मालमत्ता कर विवरण तयार करा. या आकाराचा प्रायोगिक प्रकल्प आयुक्तांच्या स्वतःच्या प्रशासकीय मंजुरी मर्यादेत बसतो आणि त्याहून मोठ्या कशालाही निधी मिळवून देणारा आकडा तयार करतो.',
   'Scoped to the ward filter above.': 'वरील प्रभाग गाळणीपुरते मर्यादित.',
   'Scoped to the ward filter selected above.': 'वर निवडलेल्या प्रभाग गाळणीपुरते मर्यादित.',
   'Scrutiny': 'छाननी',
@@ -150,8 +146,6 @@ export const MR_PART_14: Record<string, string> = {
   'Security events routed to a monitored security operations capability with defined escalation, rather than surfaced only within this application.':
     'सुरक्षा घटना केवळ या अनुप्रयोगातच दाखवण्याऐवजी, निश्चित उन्नयन मार्गासह देखरेखीखालील सुरक्षा कामकाज क्षमतेकडे पाठवणे.',
   'Security posture unavailable': 'सुरक्षा स्थिती उपलब्ध नाही',
-  'Security, privacy, AI governance, data lineage, evidence, access, integrations, audit and platform resilience - the full institutional accountability surface behind every intelligence screen in this platform.':
-    'सुरक्षा, गोपनीयता, कृत्रिम बुद्धिमत्ता कारभार, माहितीची उगमसाखळी, पुरावा, प्रवेश, एकात्मीकरणे, लेखापरीक्षा आणि मंच लवचिकता — या मंचावरील प्रत्येक बुद्धिमत्ता पडद्यामागील संपूर्ण संस्थात्मक उत्तरदायित्व पृष्ठभाग.',
   'Seeded from the service identifier, so this history is the same on every visit.':
     'सेवा ओळखकावरून बीजांकित, त्यामुळे हा इतिहास प्रत्येक भेटीत सारखाच राहतो.',
   'Segment': 'भाग',
@@ -196,12 +190,8 @@ export const MR_PART_14: Record<string, string> = {
     'वापरकर्ता, साधन आणि कृती निवडते, प्रत्यक्ष canAccess यंत्रणेद्वारे विनंतीचे मूल्यमापन करते आणि त्यातून निघणारा निर्णय, कारण व आधार दर्शवते. कोणतीही नोंद वाचली किंवा लिहिली जात नाही आणि कोणतीही लेखापरीक्षा घटना निर्माण होत नाही.',
   'Self-help groups bank linked': 'बँकेशी जोडलेले बचत गट',
   'Sensor reading': 'संवेदक नोंद',
-  "Service adequacy in the city's informal settlements, and the rehousing schemes running against them. A corporation's duty to provide water, sanitation and collection does not depend on how the land beneath a settlement is held.":
-    'शहरातील अनौपचारिक वसाहतींमधील सेवांची पर्याप्तता, आणि त्यांच्यासाठी सुरू असलेल्या पुनर्वसन योजना. पाणी, स्वच्छता आणि संकलन पुरवण्याचे महानगरपालिकेचे कर्तव्य वसाहतीखालील जमिनीची मालकी कशी आहे यावर अवलंबून नाही.',
   'Service availability reflects the current reporting period; a curtailed service means it is not currently being offered at this facility, not that the facility is closed.':
     'सेवा उपलब्धता चालू अहवाल कालावधी दर्शवते; मर्यादित सेवा म्हणजे ती सध्या या सुविधेत दिली जात नाही, सुविधा बंद आहे असे नव्हे.',
-  'Service availability, data pipeline health, the AI gateway, connector runtime, storage and event processing - reported plainly, with every simulated component labelled as such.':
-    'सेवा उपलब्धता, माहिती वाहिनीची स्थिती, कृत्रिम बुद्धिमत्ता प्रवेशद्वार, जोडणी कार्यप्रणाली, साठवण आणि घटना प्रक्रिया — स्पष्टपणे नोंदवलेले, आणि प्रत्येक नक्कल घटक तसाच चिन्हांकित केलेला.',
   'Service category': 'सेवा श्रेणी',
   'Service coverage by settlement, within your authorised ward scope.':
     'तुमच्या अधिकृत प्रभाग व्याप्तीतील, वसाहतनिहाय सेवा व्याप्ती.',
@@ -233,8 +223,6 @@ export const MR_PART_14: Record<string, string> = {
   'SFTP key pair': 'SFTP कळ जोडी',
   'Sharing status': 'सामायिकरण स्थिती',
   'Shift': 'पाळी',
-  'Shoreline segment-level exposure - beaches, seawalls, mangroves, creeks and promenades - read alongside tide behaviour and modelled monsoon flood exposure.':
-    'किनारपट्टीची भागनिहाय जोखीम — समुद्रकिनारे, समुद्रभिंती, कांदळवने, खाड्या आणि किनारी सैरमार्ग — भरतीचे वर्तन आणि प्रतिरूपित पावसाळी पूर जोखमीसह वाचावी.',
   'Short name': 'संक्षिप्त नाव',
   'Shortest planning horizon': 'सर्वात कमी नियोजन कालमर्यादा',
   'Shortest retention': 'सर्वात कमी जतन कालावधी',
@@ -351,8 +339,6 @@ export const MR_PART_14: Record<string, string> = {
     'यासाठी उन्नयन का आवश्यक आहे ते नमूद करा. हे या सत्रापुरते नोंदवले जाते आणि मूळ परिस्थिती तसे मागत असल्यास त्यानंतर इशारे व उन्नयन मार्फत औपचारिक उन्नयन करावे.',
     "Station markers with a response-time coverage layer. Wards without a marker are not necessarily uncovered - a neighbouring station's radius may extend into them.":
     'प्रतिसाद-वेळ व्याप्ती स्तरासह केंद्रांच्या खुणा. खूण नसलेले प्रभाग व्याप्तीबाहेर आहेत असे नाही — शेजारच्या केंद्राची त्रिज्या त्यांच्यापर्यंत पोहोचू शकते.',
-  'Station readiness, response-time performance against the modelled urban service standard, coverage and current fire-related incidents across the {0} and disaster control network.':
-    '{0} आणि आपत्ती नियंत्रण जाळ्यातील केंद्र सज्जता, प्रतिरूपित नागरी सेवा मानकाच्या तुलनेत प्रतिसाद-वेळ कामगिरी, व्याप्ती आणि आगीशी संबंधित सध्याच्या घटना.',
   'Station register': 'केंद्र नोंदवही',
   'station(s) currently reporting heavy or greater rainfall intensity coincide with a':
     'केंद्र(े) सध्या मुसळधार किंवा त्याहून अधिक पर्जन्य तीव्रता नोंदवत आहेत, आणि ती जुळते',
@@ -381,8 +367,6 @@ export const MR_PART_14: Record<string, string> = {
   'Strong match': 'ठळक जुळणी',
   'Strongest dimension': 'सर्वात मजबूत मिती',
   'Structural audit compliance': 'संरचनात्मक लेखापरीक्षा अनुपालन',
-  'Structural audits, dilapidation status and development-control proposals across the municipal building stock. Structures with a C1 dilapidation category or an overdue structural audit are treated as a life-safety exposure requiring priority attention.':
-    'महानगरपालिकेच्या संपूर्ण इमारत संचयातील संरचनात्मक लेखापरीक्षा, जीर्णता स्थिती आणि विकास-नियंत्रण प्रस्ताव. C1 जीर्णता श्रेणी असलेली किंवा संरचनात्मक लेखापरीक्षा मुदतबाह्य असलेली बांधकामे ही प्राधान्याने लक्ष देण्याजोगी जीवितसुरक्षा जोखीम मानली जातात.',
   'Structures register': 'बांधकाम नोंदवही',
   'Structures tracked': 'नोंदीत ठेवलेली बांधकामे',
   'Submitted': 'सादर केले',
@@ -419,8 +403,6 @@ export const MR_PART_14: Record<string, string> = {
   'Tenant identifier': 'टेनंट ओळखक',
   'Tenant isolation': 'टेनंट विलगीकरण',
   'Tenant-isolation architecture': 'टेनंट-विलगीकरण रचना',
-  'Tenders, contracts and vendors across every authorised procurement record. Risk indicators identify delivery and continuity exposure requiring management attention; they are never a finding against any contractor, officer or department.':
-    'प्रत्येक अधिकृत खरेदी नोंदीतील निविदा, करार आणि पुरवठादार. जोखीम निर्देशक हे व्यवस्थापनाच्या लक्षाची गरज असलेली पुरवठा व सातत्यविषयक जोखीम दर्शवतात; ते कोणत्याही कंत्राटदार, अधिकारी किंवा विभागाविरुद्धचा निष्कर्ष कधीही नसतात.',
   'Tenements delivered': 'वितरित सदनिका',
   'Tenements sanctioned': 'मंजूर सदनिका',
   'Tests that can be drilled': 'सराव करता येण्याजोग्या चाचण्या',
@@ -428,16 +410,12 @@ export const MR_PART_14: Record<string, string> = {
     'ते उत्तीर्ण नाही आणि तसे मोजलेही जात नाही. काही नियंत्रणे — उदाहरणार्थ, नाकारलेली परवानगी यंत्रणा खरोखर नाकारते हे सिद्ध करणे — केवळ ज्याला प्रत्यक्षात काहीतरी नाकारले आहे अशा वापरकर्त्याकडूनच दाखवता येतात. ती तपासण्यासाठी अधिक मर्यादित भूमिकेतून प्रवेश करा.',
   'The accountability gap that belongs to neither wing, read at the unit it is asked about':
     'दोन्हीपैकी कोणत्याही शाखेची नसलेली उत्तरदायित्वातील तूट, जिच्याबद्दल विचारणा होते त्याच एककावर वाचलेली',
-  "The adapter configuration register for every connector this deployment's Urban Intelligence Core is capable of provisioning. No connector in this environment is authenticated against, or exchanging data with, a live {0} departmental system.":
-    'या तैनातीचा नागरी बुद्धिमत्ता गाभा ज्या प्रत्येक जोडणीची तरतूद करू शकतो, त्यांची अडॅप्टर मांडणी नोंदवही. या वातावरणातील कोणतीही जोडणी प्रत्यक्ष {0} विभागीय प्रणालीशी प्रमाणित झालेली नाही, किंवा तिच्याशी माहितीची देवाणघेवाण करत नाही.',
   'The agent is assembling and analysing - no output has left for human review.':
     'हा प्रतिनिधी माहिती जुळवत व विश्लेषण करत आहे — मानवी पुनरावलोकनासाठी कोणताही निर्गत बाहेर गेलेला नाही.',
   'The agent is configured but has not produced an active cycle.':
     'हा प्रतिनिधी मांडून ठेवला आहे परंतु त्याने सक्रिय चक्र तयार केलेले नाही.',
   'The Animal Birth Control (Dogs) Rules make sterilisation - not removal and not relocation - the lawful method of controlling the free-roaming dog population. That settles the method and leaves one honest question about performance: did the bite rate move? A corporation that publishes sterilisation numbers without bite rates is reporting activity, not results, so both are held on this screen and neither is shown alone. Cattle pounds appear in the same estate because they are the same statutory duty - though loose cattle on a carriageway are a nuisance and a road-safety cause before they are a welfare case.':
     'प्राणी जन्म नियंत्रण (श्वान) नियम हे मोकाट श्वान संख्येवर नियंत्रण ठेवण्याची कायदेशीर पद्धत म्हणून निर्बीजीकरण निश्चित करतात — हटवणे नव्हे आणि स्थलांतर नव्हे. यामुळे पद्धत ठरते आणि कामगिरीबाबत एकच प्रामाणिक प्रश्न शिल्लक राहतो: चावा दर बदलला का? चावा दर न देता केवळ निर्बीजीकरणाचे आकडे प्रसिद्ध करणारी महानगरपालिका कामाचा अहवाल देते, निकालांचा नाही; म्हणून या पडद्यावर दोन्ही ठेवले आहेत आणि दोन्हीपैकी एकही स्वतंत्रपणे दाखवले जात नाही. गुरांचे कोंडवाडे याच संचात दिसतात कारण ते त्याच वैधानिक कर्तव्याचा भाग आहेत — जरी वाहनमार्गावरील मोकाट गुरे ही कल्याणाची बाब असण्यापूर्वी उपद्रव आणि रस्ता-सुरक्षेचे कारण असतात.',
-  'The attribute-based access control policies layered over the role catalogue - the conditions, in addition to a role grant, under which a request is allowed or explicitly refused.':
-    'भूमिका सूचीवर आच्छादित असलेली गुणधर्माधारित प्रवेश नियंत्रण धोरणे — भूमिका मंजुरीव्यतिरिक्त, ज्या अटींवर विनंती मान्य केली जाते किंवा स्पष्टपणे नाकारली जाते त्या अटी.',
   'The audit trail in this demonstration environment is held in-session only - it resets on reload and is not independently retained. Production deployment requires a real, tamper-evident, append-only audit store held outside the application itself. See Platform Readiness for the full production requirement.':
     'या प्रात्यक्षिक वातावरणातील लेखापरीक्षा नोंद केवळ सत्रापुरती ठेवली जाते — पान पुन्हा उघडल्यावर ती पुसली जाते आणि स्वतंत्रपणे जतन केली जात नाही. प्रत्यक्ष तैनातीसाठी अनुप्रयोगाबाहेर ठेवलेला खरा, छेडछाड उघड करणारा, केवळ-जोडणीचा लेखापरीक्षा कोश आवश्यक आहे. संपूर्ण उत्पादन आवश्यकतेसाठी मंच सज्जता पहा.',
   'The authoritative departmental system of record. The platform never writes back to it.':
@@ -449,8 +427,6 @@ export const MR_PART_14: Record<string, string> = {
     'जीवनचक्रातील जोखमीसाठी वापरला जाणारा भांडवली-प्रकल्प संदर्भ मालमत्तेची श्रेणी व प्रभाग यांची तुलना त्याच श्रेणीच्या चालू किंवा नियोजित प्रकल्पांशी करतो. मंचाच्या स्वतःच्या प्रकल्प माहितीत जुळणारी कार्यक्रम नोंद वरकरणी नसल्याचे तो दर्शवतो; या प्रणालीबाहेर ठेवलेला विभागीय बदली आराखडा नाही, याची तो पुष्टी करत नाही.',
   'The chain this graph is built to make traceable, ward to measured outcome.':
     'हा आलेख ज्या साखळीचा माग काढता यावा म्हणून उभारला आहे ती साखळी, प्रभागापासून मोजलेल्या निष्कर्षापर्यंत.',
-  "The city's capacity to absorb a shock and keep functioning, scored across the {0} hazards {1} plans against. Every score measures preparedness, not the likelihood of the hazard - a strong flood score does not forecast a mild monsoon.":
-    'धक्का पचवून कार्यरत राहण्याची शहराची क्षमता, {1} ज्या {0} धोक्यांसाठी नियोजन करते त्या सर्वांवर गुणांकित. प्रत्येक गुण सज्जता मोजतो, धोक्याची शक्यता नव्हे — पुराचा चांगला गुण म्हणजे सौम्य पावसाळ्याचा अंदाज नव्हे.',
   'The comparison is drawn across {0} {1}': 'ही तुलना {0} {1} यांवर काढली आहे',
   'The complaint record modelled here holds no name, contact detail, address or citizen identifier. Only service category, locality, ward, department and timing are held - which is what service intelligence requires and no more.':
     'येथे प्रतिरूपित केलेल्या तक्रार नोंदीत कोणतेही नाव, संपर्क तपशील, पत्ता किंवा नागरिक ओळखक नाही. केवळ सेवा श्रेणी, वस्ती, प्रभाग, विभाग आणि वेळ एवढेच ठेवले जाते — सेवा बुद्धिमत्तेसाठी जेवढे आवश्यक आहे तेवढेच, त्याहून अधिक नाही.',
@@ -466,24 +442,8 @@ export const MR_PART_14: Record<string, string> = {
   'The corporation': 'महानगरपालिका',
   'The corporation holds {0} public bays against the vehicle fleet in these wards - {1} bays for every thousand registered vehicles, against a planning benchmark of {2}. Where that ratio collapses the shortfall does not disappear, it moves onto the carriageway and reappears as a traffic finding. Collections of {3} a month are what falls out of pricing the instrument correctly - they are the consequence of the policy, not the reason for it.':
     'या प्रभागांतील वाहनसंख्येच्या तुलनेत महानगरपालिकेकडे {0} सार्वजनिक वाहनतळ जागा आहेत — प्रत्येक हजार नोंदणीकृत वाहनांमागे {1} जागा, तर नियोजन निकष {2} आहे. जेथे हे प्रमाण कोसळते तेथे तूट नाहीशी होत नाही, ती वाहनमार्गावर सरकते आणि वाहतुकीच्या निष्कर्षाच्या रूपाने पुन्हा दिसते. महिन्याला {3} इतकी वसुली ही हे साधन योग्य दराने आकारल्याचा परिणाम आहे — ती धोरणाचा परिणाम आहे, त्यामागील कारण नव्हे.',
-  'The Corporation in session - its committees, the matters before them, and what has been resolved. The Commissioner administers; the Corporation decides.':
-    'सभेतील महानगरपालिका — तिच्या समित्या, त्यांच्यापुढील विषय, आणि काय ठरले. आयुक्त प्रशासन चालवतात; महानगरपालिका निर्णय घेते.',
-  "The corporation's burial grounds, cemeteries and crematoria - the ground each has left, the years that ground represents at the current rate, and the hours a family waits at the gate.":
-    'महानगरपालिकेच्या दफनभूमी, कबरस्थाने आणि स्मशानभूमी — प्रत्येकाकडे शिल्लक असलेली जागा, सध्याच्या वेगाने ती जागा किती वर्षे पुरेल, आणि कुटुंबाला दारात किती तास थांबावे लागते.',
-  "The corporation's consolidated financial position - revenue, budget, commitments, capital and project spend - as one index that can always be taken apart into the six components that produced it.":
-    'महानगरपालिकेची एकत्रित आर्थिक स्थिती — महसूल, अर्थसंकल्प, बांधिलकी, भांडवली व प्रकल्प खर्च — एकाच निर्देशांकाच्या रूपात, जो तो घडवणाऱ्या सहा घटकांमध्ये कधीही विभागून पाहता येतो.',
-  "The corporation's duty to weaker sections of society and to persons with disabilities - who is entitled, who is enrolled, who was actually paid, and whether the corporation's own buildings can be entered by the residents they serve.":
-    'समाजातील दुर्बल घटक आणि दिव्यांग व्यक्तींप्रती महानगरपालिकेचे कर्तव्य — कोण पात्र आहे, कोणाची नोंदणी झाली, कोणाला प्रत्यक्षात रक्कम मिळाली, आणि महानगरपालिकेच्या स्वतःच्या इमारतींमध्ये त्या ज्यांना सेवा देतात त्या रहिवाशांना प्रवेश करता येतो का.',
-  "The corporation's market estate and the trades it regulates inside it - stall occupancy, hygiene at the last inspection, the interval since anybody last looked, and whether trade effluent is leaving the premises lawfully.":
-    'महानगरपालिकेची बाजार मालमत्ता आणि तिच्या आत ती ज्या व्यवसायांचे नियमन करते ते — गाळे व्यापलेले प्रमाण, शेवटच्या तपासणीतील स्वच्छता, शेवटच्या पाहणीनंतर उलटलेला कालावधी, आणि व्यावसायिक सांडपाणी आवाराबाहेर कायदेशीररीत्या जाते का.',
-  "The corporation's obligation under function 11 of the Twelfth Schedule - skill training and placement under DAY-NULM, self-help group formation and bank linkage, shelters for the urban homeless, and the vending register held under the Street Vendors Act, 2014.":
-    'बाराव्या अनुसूचीतील कार्य 11 अंतर्गत महानगरपालिकेचे दायित्व — DAY-NULM अंतर्गत कौशल्य प्रशिक्षण व नोकरी नियुक्ती, बचत गट स्थापना व बँक जोडणी, नागरी निराधारांसाठी निवारे, आणि पथविक्रेता अधिनियम, 2014 अंतर्गत ठेवली जाणारी विक्री नोंदवही.',
-  "The corporation's own schools - enrolment, the teaching establishment against sanctioned strength, and the condition of the buildings children are taught in.":
-    'महानगरपालिकेच्या स्वतःच्या शाळा — पटसंख्या, मंजूर संख्येच्या तुलनेत शिक्षक आस्थापना, आणि ज्या इमारतींमध्ये मुले शिकतात त्यांची स्थिती.',
   "The corporation's registers disagree with each other":
     'महानगरपालिकेच्या नोंदवह्या परस्परांशी जुळत नाहीत',
-  "The corporation's statutory registration service - volumes, compliance with the twenty-one day statutory period, certificate issue times and the backlog waiting at each counter.":
-    'महानगरपालिकेची वैधानिक नोंदणी सेवा — प्रमाण, एकवीस दिवसांच्या वैधानिक मुदतीचे अनुपालन, प्रमाणपत्र वितरणाचा वेळ आणि प्रत्येक खिडकीवर प्रतीक्षेत असलेला अनुशेष.',
   'The Council register establishes that a matter the house has passed and the administration has not acted on is nobody&apos;s alone - the corporation resolved, and the corporation did not deliver. That gap is visible city-wide but not ward by ward, which is the unit a corporator asks about in the General Body. This page joins the deliberative record to the delivery record so the answer is one reading rather than four. A commitment appears here only where the source record names a ward: {0} commitments carried for the whole corporation - {1} resolutions, {2} works and {3} decision cases - are excluded by construction rather than overlooked, and belong to the city-wide registers they came from.':
     'महासभा नोंदवही हे प्रस्थापित करते की सभागृहाने मंजूर केलेला आणि प्रशासनाने कृती न केलेला विषय हा कोणा एकाचा एकट्याचा प्रश्न नसतो — महानगरपालिकेने ठराव केला, आणि महानगरपालिकेने तो पूर्ण केला नाही. ती तूट संपूर्ण शहराच्या पातळीवर दिसते, पण प्रभागनिहाय नाही; आणि महासभेत नगरसेवक याच एककाबद्दल विचारणा करतो. हे पृष्ठ विचारविनिमयाची नोंद आणि पूर्ततेची नोंद एकत्र जोडते, जेणेकरून उत्तर चार वाचनांऐवजी एकाच वाचनात मिळेल. स्रोत नोंदीत प्रभागाचे नाव असेल तरच बांधिलकी येथे दिसते: संपूर्ण महानगरपालिकेसाठी नोंदवलेल्या {0} बांधिलक्या — {1} ठराव, {2} कामे आणि {3} निर्णय प्रकरणे — दुर्लक्षामुळे नव्हे तर रचनेमुळेच वगळल्या आहेत, आणि त्या ज्या शहरस्तरीय नोंदवह्यांमधून आल्या त्यांच्याच आहेत.',
   'The coverage gap is the finding, not the enrolment':
@@ -499,12 +459,8 @@ export const MR_PART_14: Record<string, string> = {
     'हा सराव या प्रात्यक्षिक वातावरणात प्रत्यक्षात जे घडते तेवढेच तपासतो — यात कोणताही बाह्य कोश, प्रतिकृती किंवा दुसरा झोन सामील नाही. त्यातून निष्कर्ष निघू शकतात, आणि येथील उत्तीर्णता ही प्रत्यक्ष उत्पादनातील पुनर्प्राप्ती तपासल्याचा पुरावा नाही.',
   "The equity gap is the difference between a ward's provision percentile and its need percentile, in percentile points. It is a statement about rank within this cohort, not about adequacy in absolute terms: a cohort in which every ward is under-provisioned would still produce gaps close to zero. Adequacy against a service standard is a separate question, and this page does not answer it.":
     'समता तूट म्हणजे प्रभागाच्या तरतूद शतमकातील आणि गरज शतमकातील फरक, शतमक बिंदूंमध्ये. हे या गटातील क्रमाबद्दलचे विधान आहे, निरपेक्ष पर्याप्ततेबद्दलचे नाही: ज्या गटातील प्रत्येक प्रभागाला कमी तरतूद आहे अशा गटातही तूट शून्याजवळच येईल. सेवा मानकाच्या तुलनेत पर्याप्तता हा वेगळा प्रश्न आहे आणि हे पृष्ठ त्याचे उत्तर देत नाही.',
-  "The evidence behind each model's evaluation status: a dated run against six published dimensions, each scored against a published threshold. A model is approved for use only if it clears every dimension.":
-    'प्रत्येक प्रारूपाच्या मूल्यमापन स्थितीमागील पुरावा: सहा प्रकाशित मितींवर दिनांकित चाचणी, आणि प्रत्येक मिती प्रकाशित मर्यादेच्या तुलनेत गुणांकित. प्रत्येक मिती पार केली तरच प्रारूप वापरासाठी मंजूर होते.',
   "The evidence corpus browsed in full, scoped to your principal's ward, department and classification ceiling. Open a record to inspect its full provenance chain.":
     'तुमच्या वापरकर्त्याचा प्रभाग, विभाग आणि वर्गीकरण मर्यादेपुरता मर्यादित असलेला, संपूर्ण पाहता येणारा पुरावा संग्रह. संपूर्ण उगमसाखळी पाहण्यासाठी नोंद उघडा.',
-  'The evidence corpus this platform holds, browsable in full and filterable by kind, classification and ward, and the immutable-style record of every consequential action taken against it.':
-    'हा मंच ठेवत असलेला पुरावा संग्रह — संपूर्ण पाहता येणारा आणि प्रकार, वर्गीकरण व प्रभागानुसार गाळता येणारा — आणि त्यावर केलेल्या प्रत्येक परिणामकारक कृतीची अपरिवर्तनीय स्वरूपाची नोंद.',
   'The executive brief could not be generated': 'कार्यकारी टिपण तयार करता आले नाही',
   'The fields this adapter ingests, exactly as declared. Fields marked':
     'हा अडॅप्टर ग्रहण करत असलेली क्षेत्रे, जशी घोषित केली आहेत तशीच. अशी खूण असलेली क्षेत्रे',
@@ -516,8 +472,6 @@ export const MR_PART_14: Record<string, string> = {
     'सर्वाधिक एकत्रित जोखीम निर्देशांक असलेले पाच प्रभाग.',
   'The four weights above are a reasonable prior, not a finding. They were chosen so that a reader can reconstruct every figure on this page by hand, which matters more at this stage than being precisely right. A real deployment would fit both the difficulty weighting and the expectation line on the corporation&apos;s own historic record - several years of ward returns - and would revise them each year as the ground itself changes. Until that is done, treat the residuals as a way of choosing where to send the next visit, and not as a settled judgement on any ward office.{0}':
     'वरील चार भार हे वाजवी पूर्वगृहीत आहेत, निष्कर्ष नव्हेत. वाचकाला या पृष्ठावरील प्रत्येक आकडा हाताने पुन्हा मांडता यावा म्हणून ते निवडले आहेत; या टप्प्यावर अगदी अचूक असण्यापेक्षा हेच अधिक महत्त्वाचे आहे. प्रत्यक्ष तैनातीत अडचण भारांकन आणि अपेक्षा रेषा या दोन्ही गोष्टी महानगरपालिकेच्या स्वतःच्या ऐतिहासिक नोंदींवर — अनेक वर्षांच्या प्रभाग विवरणांवर — बसवल्या जातील आणि जमिनीवरील स्थिती बदलेल तशा दरवर्षी सुधारल्या जातील. तोपर्यंत हे अवशेष म्हणजे पुढील भेट कोठे पाठवावी हे ठरवण्याचा मार्ग समजावेत, कोणत्याही प्रभाग कार्यालयाबद्दलचा निश्चित निवाडा नव्हे.{0}',
-  'The full dataset register this platform governs - purpose, classification, retention, sensitivity, allowed roles, sharing status and the minimisation measures applied to each. No regulatory certification, accreditation or formal privacy attestation is claimed anywhere in this environment.':
-    'हा मंच ज्यांचे नियंत्रण करतो त्या सर्व माहितीसंचांची नोंदवही — उद्देश, वर्गीकरण, जतन कालावधी, संवेदनशीलता, अनुमत भूमिका, सामायिकरण स्थिती आणि प्रत्येकावर लागू केलेल्या किमानीकरण उपाययोजना. या वातावरणात कोठेही कोणतेही नियामक प्रमाणन, मान्यता किंवा औपचारिक गोपनीयता प्रमाणपत्र असल्याचा दावा केलेला नाही.',
   "The full extent of what this platform's AI layer is built to do.":
     'या मंचाचा कृत्रिम बुद्धिमत्ता स्तर जे करण्यासाठी उभारला आहे त्याची संपूर्ण व्याप्ती.',
   'The half of the corporation the rest of this platform does not show':

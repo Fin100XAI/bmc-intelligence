@@ -16,8 +16,6 @@ export const MR_PART_32: Record<string, string> = {
 
   /* --- Masthead ----------------------------------------------------------- */
   '{0} · Office of the Municipal Commissioner': '{0} · महानगरपालिका आयुक्त कार्यालय',
-  'The city-level operational position across every domain — composite health, ward risk, emerging signals and financial and infrastructure standing.':
-    'प्रत्येक क्षेत्रातील शहर पातळीवरील कार्यात्मक स्थिती — संमिश्र आरोग्य, प्रभाग जोखीम, उदयोन्मुख संकेत आणि वित्तीय व पायाभूत सुविधा स्थिती.',
   'Position as at': 'स्थिती दिनांक',
 
   /* --- City health index -------------------------------------------------- */
@@ -61,7 +59,7 @@ export const MR_PART_32: Record<string, string> = {
   'At risk': 'जोखमीत',
 
   /* --- Service delivery --------------------------------------------------- */
-  'SLA, lowest first': 'SLA, सर्वात कमी प्रथम',
+  'Complaints vs. notified services': 'तक्रारी वि. अधिसूचित सेवा',
 
   /* --- Infrastructure ----------------------------------------------------- */
   'Infrastructure standing': 'पायाभूत सुविधा स्थिती',

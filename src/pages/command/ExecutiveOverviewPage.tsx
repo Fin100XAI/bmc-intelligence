@@ -1,18 +1,31 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Copy, FileSearch, Printer, RefreshCw, Save, Sparkles } from 'lucide-react'
+import {
+  AlertOctagon,
+  ClipboardList,
+  Copy,
+  FileSearch,
+  HeartPulse,
+  Printer,
+  RefreshCw,
+  Save,
+  ShieldAlert,
+  Siren,
+  Sparkles,
+  Users,
+} from 'lucide-react'
 import { PageBody } from '@/components/layout/PageHeader'
-import { Button, ProgressBar } from '@/components/ui/primitives'
+import { Button, ProgressBar, ScoreDial } from '@/components/ui/primitives'
 import { Badge, ConfidenceBadge, SeverityBadge, StateBadge } from '@/components/ui/badges'
 import { DemonstrationNotice, EmptyState, ErrorState, LoadingState } from '@/components/ui/states'
 import { DataTable, type Column } from '@/components/ui/DataTable'
-import { TrendChart } from '@/components/charts'
+import { CHART_COLOURS, RadarChart, TrendChart } from '@/components/charts'
 import { CityMap } from '@/components/map/CityMap'
 import { GovPanel, GovRow, GovStat, GovStripCell } from '@/components/gov/GovPanel'
 import { LiveFeed, buildFeed } from '@/components/gov/LiveFeed'
 import { useServiceAction, useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
-import { monsoonService, projectService, roadsService, wardService, aiService } from '@/services'
+import { monsoonService, notifiedServicesService, projectService, roadsService, wardService, aiService } from '@/services'
 import { buildCityPosition } from '@/domains'
 import { getAIProvider, type ExecutiveBrief, type ExecutiveBriefSection } from '@/ai'
 import { useDrawerStore } from '@/stores/ui.store'
@@ -74,12 +87,7 @@ export function ExecutiveOverviewPage(): React.JSX.Element {
   const feed = useMemo(() => buildFeed(user, DEMO_NOW), [user])
 
   // The shell renders the masthead; this page states what it should say.
-  usePageMasthead(
-    t('{0} Operational Intelligence', corporation.city),
-    t(
-      'The city-level operational position across every domain — composite health, ward risk, emerging signals and financial and infrastructure standing.',
-    ),
-  )
+  usePageMasthead(t('{0} Operational Intelligence', corporation.city))
 
   const wardsQuery = useServiceQuery(queryKeys.wards(), (u) => wardService.list(u))
   const readinessQuery = useServiceQuery(queryKeys.monsoon('exec-readiness'), (u) => monsoonService.readiness(u))
@@ -102,6 +110,15 @@ export function ExecutiveOverviewPage(): React.JSX.Element {
       .map(([category, b]) => ({ category, avgSla: b.count > 0 ? b.slaSum / b.count : 0, open: b.open }))
       .sort((a, b) => a.avgSla - b.avgSla)
   })
+  // Distinct from `serviceHealthQuery` above: that is COMPLAINT-resolution SLA
+  // - how fast a grievance already lodged is closed. This is the notified-
+  // service register - certificates, licences and permits a citizen applies
+  // FOR, against their own published statutory timeline. Weighted by volume
+  // so a high-traffic service lagging moves the headline more than a rarely
+  // used one doing the same.
+  const notifiedServicesQuery = useServiceQuery(queryKeys.notifiedServices('exec-overview'), (u) =>
+    notifiedServicesService.list(u),
+  )
 
   const doSaveBrief = useServiceAction(
     (u, title: string, response: AIResponse) => aiService.saveBrief(u, 'executive-brief', title, response),
@@ -197,6 +214,14 @@ export function ExecutiveOverviewPage(): React.JSX.Element {
     [cityPosition],
   )
 
+  const notifiedServices = mapDefined(notifiedServicesQuery.data)
+  const notifiedApplications30d = notifiedServices.reduce((s, x) => s + x.applications30d, 0)
+  const notifiedWithinPeriodPct = notifiedApplications30d > 0
+    ? Math.round(
+        (notifiedServices.reduce((s, x) => s + x.issuedWithinStatutoryPeriodPct * x.applications30d, 0) / notifiedApplications30d) * 10,
+      ) / 10
+    : 0
+
   const projects = mapDefined(projectsQuery.data?.items)
   const topAtRiskProjects = useMemo(() => [...projects].sort((a, b) => b.riskScore - a.riskScore).slice(0, 5), [projects])
 
@@ -239,65 +264,79 @@ export function ExecutiveOverviewPage(): React.JSX.Element {
           shell. What stays on the page is the part that is this page's data
           rather than the corporation's letterhead: the six figures a
           commissioner reads first. */}
-      <div className="flex flex-wrap items-stretch divide-x divide-ink-100 overflow-hidden rounded-[2px] border border-ink-200 bg-surface-sunken shadow-xs">
+      <div className="flex flex-wrap items-stretch gap-px overflow-hidden rounded-[2px] border border-ink-200 bg-ink-100 shadow-xs">
         <GovStripCell
           label={t('City health index')}
           value={`${cityPosition.healthScore}/100`}
           tone={healthTone === 'positive' ? 'positive' : healthTone === 'default' ? 'default' : healthTone}
+          icon={<HeartPulse className="h-3.5 w-3.5" />}
+          background="amber"
         />
         <GovStripCell
           label={t('Critical alerts')}
           value={cityPosition.criticalAlerts}
           tone={cityPosition.criticalAlerts > 0 ? 'critical' : 'default'}
+          icon={<AlertOctagon className="h-3.5 w-3.5" />}
+          background="red"
         />
         <GovStripCell
           label={t('Active incidents')}
           value={cityPosition.activeIncidents}
           tone={cityPosition.activeIncidents > 0 ? 'critical' : 'default'}
+          icon={<Siren className="h-3.5 w-3.5" />}
+          background="green"
         />
         <GovStripCell
           label={t('Priority decisions')}
           value={cityPosition.priorityDecisions}
           tone={cityPosition.priorityDecisions > 0 ? 'warn' : 'default'}
+          icon={<ClipboardList className="h-3.5 w-3.5" />}
         />
         <GovStripCell
           label={t('Services at risk')}
           value={cityPosition.servicesAtRisk}
           tone={cityPosition.servicesAtRisk > 0 ? 'warn' : 'default'}
+          icon={<ShieldAlert className="h-3.5 w-3.5" />}
         />
-        <GovStripCell label={t('Citizens affected')} value={cityPosition.citizensAffected.toLocaleString('en-IN')} />
+        <GovStripCell
+          label={t('Citizens affected')}
+          value={cityPosition.citizensAffected.toLocaleString('en-IN')}
+          icon={<Users className="h-3.5 w-3.5" />}
+        />
       </div>
 
       {/* ── Three columns ──────────────────────────────────────────── */}
       <div className="grid grid-cols-1 gap-3 xl:grid-cols-12">
         {/* Column 1 — the city's condition ------------------------- */}
         <div className="flex flex-col gap-3 xl:col-span-5">
-          <GovPanel title={t('City health index')} subtitle={t('Weighted composite')} tone="primary" dense>
-            <div className="flex items-stretch border-b border-ink-100">
-              <div className="w-[8.5rem] shrink-0 border-r border-ink-100 px-3 py-3 text-center">
-                <p
-                  className={`numeric text-[2.75rem] leading-none font-bold tabular-nums ${
-                    healthTone === 'critical'
-                      ? 'text-crit-600'
-                      : healthTone === 'warn'
-                        ? 'text-warn-700'
-                        : healthTone === 'positive'
-                          ? 'text-google-green-700'
-                          : 'text-govt-900'
-                  }`}
-                >
-                  {cityPosition.healthScore}
-                </p>
-                <p className="mt-0.5 text-[0.6875rem] text-ink-400">{t('of 100')}</p>
-                <div className="mt-2 flex justify-center">
-                  <StateBadge state={cityPosition.state} />
-                </div>
+          <GovPanel title={t('City health index')} subtitle={t('Weighted composite')} tone="amber" dense>
+            {/* The gauge states the one number an executive reads first; the
+                radar states its SHAPE — which components are pulling it down
+                — in the same glance, before anyone reads a row of a table.
+                Precision stays available: the ledger beneath still publishes
+                every weight and contribution, unabridged. */}
+            <div className="flex flex-col items-center gap-3 border-b border-ink-100 px-3 py-3 sm:flex-row sm:items-stretch">
+              <div className="flex shrink-0 flex-col items-center justify-center gap-2 sm:w-[9rem] sm:border-r sm:border-ink-100 sm:pr-3">
+                <ScoreDial score={cityPosition.healthScore} size={124} label={t('of 100')} caption={t('Composite score')} />
+                <StateBadge state={cityPosition.state} size="sm" />
               </div>
-              {/* The weighting is published, not summarised. A composite whose
-                  arithmetic is hidden is an opinion; one whose components,
-                  weights and contributions are on the page is a measurement an
-                  officer can challenge. */}
-              <div className="scrollbar-slim min-w-0 flex-1 overflow-x-auto">
+              <div className="h-[190px] min-w-0 flex-1">
+                <RadarChart
+                  data={cityPosition.healthComponents.map((c) => ({ label: c.label, value: c.score }))}
+                  unit="/100"
+                  colour={
+                    healthTone === 'critical'
+                      ? CHART_COLOURS.critical
+                      : healthTone === 'warn'
+                        ? CHART_COLOURS.warn
+                        : healthTone === 'positive'
+                          ? CHART_COLOURS.positive
+                          : CHART_COLOURS.primary
+                  }
+                />
+              </div>
+            </div>
+            <div className="scrollbar-slim min-w-0 flex-1 overflow-x-auto border-b border-ink-100">
                 <table className="w-full text-[0.6875rem]">
                   <thead>
                     <tr className="border-b border-ink-100 bg-surface-sunken text-left">
@@ -324,7 +363,6 @@ export function ExecutiveOverviewPage(): React.JSX.Element {
                     ))}
                   </tbody>
                 </table>
-              </div>
             </div>
             <div className="px-3 py-2">
               <p className="mb-1 text-[0.5625rem] font-bold tracking-[0.09em] text-ink-500 uppercase">
@@ -348,6 +386,7 @@ export function ExecutiveOverviewPage(): React.JSX.Element {
           <GovPanel
             title={t('Ward performance register')}
             subtitle={t('{0} wards', cityPosition.wardPerformance.length)}
+            tone="green"
             dense
           >
             <DataTable
@@ -365,7 +404,7 @@ export function ExecutiveOverviewPage(): React.JSX.Element {
             />
           </GovPanel>
 
-          <GovPanel title={t('Ward risk map')} subtitle={t('Select a ward to open its profile')} dense>
+          <GovPanel title={t('Ward risk map')} subtitle={t('Select a ward to open its profile')} tone="red" dense>
             <CityMap
               layers={[
                 {
@@ -435,7 +474,7 @@ export function ExecutiveOverviewPage(): React.JSX.Element {
           <GovPanel
             title={t('Latest updates')}
             subtitle={t('{0} live', feed.length)}
-            tone="primary"
+            tone="green"
             dense
             /* Pinning is handled by the column wrapper above — see the note
                there on why sticking this panel alone could not work. The
@@ -498,7 +537,7 @@ export function ExecutiveOverviewPage(): React.JSX.Element {
 
         {/* Column 3 — what the administration is carrying ----------- */}
         <div className="flex flex-col gap-3 xl:col-span-3">
-          <GovPanel title={t('Revenue & finance')} dense>
+          <GovPanel title={t('Revenue & finance')} tone="amber" dense>
             <GovStat
               label={t('Revenue realisation')}
               value={formatPercent(cityPosition.revenue.efficiencyPct)}
@@ -516,7 +555,7 @@ export function ExecutiveOverviewPage(): React.JSX.Element {
             />
           </GovPanel>
 
-          <GovPanel title={t('Capital works')} subtitle={t('{0} live', cityPosition.projects.total)} dense>
+          <GovPanel title={t('Capital works')} subtitle={t('{0} live', cityPosition.projects.total)} tone="green" dense>
             <GovRow label={t('Sanctioned value')} value={formatCrore(cityPosition.projects.sanctionedCrore)} />
             <GovRow label={t('At risk')} value={cityPosition.projects.atRisk} tone={cityPosition.projects.atRisk > 0 ? 'warn' : 'default'} />
             <GovRow label={t('Delayed')} value={cityPosition.projects.delayed} tone={cityPosition.projects.delayed > 0 ? 'critical' : 'default'} />
@@ -549,7 +588,26 @@ export function ExecutiveOverviewPage(): React.JSX.Element {
             )}
           </GovPanel>
 
-          <GovPanel title={t('Service delivery')} subtitle={t('SLA, lowest first')} dense>
+          <GovPanel title={t('Service delivery')} subtitle={t('Complaints vs. notified services')} tone="amber" dense>
+            {/* The notified-service headline is a genuinely different figure
+                from the complaint-SLA breakdown below it - see the page
+                header comment. Both are kept, clearly labelled, rather than
+                one replacing the other. */}
+            {notifiedServicesQuery.isLoading ? (
+              <LoadingState variant="inline" />
+            ) : notifiedServicesQuery.error ? (
+              <ErrorState detail={notifiedServicesQuery.error.message} onRetry={() => notifiedServicesQuery.refetch()} />
+            ) : (
+              <GovRow
+                label={t('Notified services within statutory period')}
+                note={t('{0} services · proactive applications, not grievances', notifiedServices.length)}
+                value={formatPercent(notifiedWithinPeriodPct)}
+                tone={notifiedWithinPeriodPct >= 85 ? 'positive' : notifiedWithinPeriodPct >= 70 ? 'warn' : 'critical'}
+              />
+            )}
+            <p className="border-b border-ink-100 bg-surface-sunken px-3 py-1 text-[0.5625rem] font-bold tracking-[0.09em] text-ink-500 uppercase">
+              {t('Complaint resolution SLA, by category')}
+            </p>
             {serviceHealthQuery.isLoading ? (
               <LoadingState variant="inline" />
             ) : serviceHealthQuery.error ? (
@@ -571,7 +629,7 @@ export function ExecutiveOverviewPage(): React.JSX.Element {
             )}
           </GovPanel>
 
-          <GovPanel title={t('Infrastructure standing')} dense>
+          <GovPanel title={t('Infrastructure standing')} tone="red" dense>
             <GovRow
               label={t('Water supply')}
               note={t('{0} zone(s) at risk', cityPosition.water.zonesAtRisk)}

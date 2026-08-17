@@ -6,10 +6,19 @@ import { queryKeys } from '@/app/queryClient'
 import { aiService, type OversightFilters } from '@/services'
 import { useCurrentUser } from '@/stores/auth.store'
 import { usePageMasthead } from '@/stores/masthead.store'
+import { useDrawerStore } from '@/stores/ui.store'
 import { allowed } from '@/security'
 import { isoFromAnchor } from '@/utils/deterministic'
 import { formatPercent, formatRelative } from '@/utils/format'
-import { AI_USE_CASE_LABEL, type AIRecommendationBlock, type AIRequestRecord, type HumanOversightRecord } from '@/types/ai'
+import { evidenceForDomain } from '@/data/evidence.data'
+import {
+  AI_USE_CASE_LABEL,
+  type AIEvaluation,
+  type AIModel,
+  type AIRecommendationBlock,
+  type AIRequestRecord,
+  type HumanOversightRecord,
+} from '@/types/ai'
 import { DOMAIN_LABEL, type IntelligenceDomain } from '@/types/common'
 import {
   Card,
@@ -90,12 +99,25 @@ registerLayer(() => {
   TABS = build$TABS()
 })
 
+/** Evidence backing a recommendation is drawn from the same domain-scoped
+ * corpus every AI answer cites from, sized to the originating request's own
+ * citation count and seeded on the oversight record's id so the same
+ * recommendation always resolves to the same records. Where the originating
+ * request was general reasoning rather than evidence-backed, no evidence is
+ * manufactured for it - that absence is stated in `why` above, not concealed
+ * behind a fabricated citation list. */
+function recommendationEvidenceRefs(record: HumanOversightRecord, request: AIRequestRecord | undefined): string[] {
+  if (!request || request.grounding !== 'evidence-backed' || request.citationCount <= 0) return []
+  const count = Math.min(Math.max(request.citationCount, 1), 4)
+  return evidenceForDomain(record.domain, count, record.id)
+}
+
 function toRecommendationBlock(record: HumanOversightRecord, request: AIRequestRecord | undefined): AIRecommendationBlock {
   return {
     id: record.id,
     title: record.recommendationTitle,
     why: `Raised from a ${AI_USE_CASE_LABEL[record.useCase]} request in ${DOMAIN_LABEL[record.domain]}, submitted ${formatRelative(record.submittedAt)}.${request ? ` The originating request drew on ${request.citationCount} evidence citation${request.citationCount === 1 ? '' : 's'} with ${request.confidence} confidence.` : ''}`,
-    evidenceRefs: [],
+    evidenceRefs: recommendationEvidenceRefs(record, request),
     expectedImpact: t('Addresses a {0} severity condition identified in {1}. Confirming, modifying or declining this recommendation is what determines whether it has any operational effect.', record.severity, DOMAIN_LABEL[record.domain]),
     confidence: request?.confidence ?? 'medium',
     dependencies: [],
@@ -110,10 +132,7 @@ export function AIRecommendationsPage(): React.JSX.Element {
   const user = useCurrentUser()
 
   // The shell's masthead states the screen's name; the page states the wording.
-  usePageMasthead(
-    t('AI Recommendations'),
-    t('Every advisory recommendation the AI layer has produced, awaiting or carrying a named officer\'s decision. An AI recommendation is not an instruction - it becomes an action only once a competent, accountable officer approves it here.'),
-  )
+  usePageMasthead(t('AI Recommendations'))
 
   const [tab, setTab] = useState<HumanOversightRecord['outcome']>('pending')
   const [dialog, setDialog] = useState<{ id: string; outcome: HumanOversightRecord['outcome']; title: string } | null>(null)
@@ -122,6 +141,12 @@ export function AIRecommendationsPage(): React.JSX.Element {
   const filters: OversightFilters = useMemo(() => ({ outcome: [tab], pageSize: 100 }), [tab])
   const oversightQuery = useServiceQuery(queryKeys.ai(`oversight:${tab}`), (u) => aiService.oversight(u, filters))
   const requestsQuery = useServiceQuery(queryKeys.ai('requests-for-oversight'), (u) => aiService.requests(u, { pageSize: 300 }))
+  // The model and evaluation registers, so each recommendation can be traced
+  // through to the model that produced it and that model's most recent
+  // evaluation verdict - the accountability chain this page exists to close.
+  const modelsQuery = useServiceQuery(queryKeys.ai('models'), (u) => aiService.models(u))
+  const evaluationsQuery = useServiceQuery(queryKeys.ai('evaluations'), (u) => aiService.evaluations(u))
+  const openDrawer = useDrawerStore((s) => s.open)
 
   const review = useServiceAction(
     (u, id: string, outcome: HumanOversightRecord['outcome'], note?: string) => aiService.reviewRecommendation(u, id, outcome, note),
@@ -134,12 +159,25 @@ export function AIRecommendationsPage(): React.JSX.Element {
     return map
   }, [requestsQuery.data])
 
+  const modelById = useMemo(() => {
+    const map = new Map<string, AIModel>()
+    for (const m of modelsQuery.data ?? []) map.set(m.id, m)
+    return map
+  }, [modelsQuery.data])
+
+  // One evaluation run per model - see AI Evaluation.
+  const evaluationByModelId = useMemo(() => {
+    const map = new Map<string, AIEvaluation>()
+    for (const e of evaluationsQuery.data ?? []) map.set(e.modelId, e)
+    return map
+  }, [evaluationsQuery.data])
+
   const summary = summaryQuery.data
   const records = oversightQuery.data?.items ?? []
   const mayReview = allowed(user, 'ai-governance', 'approve')
 
-  const anyLoading = summaryQuery.isLoading || oversightQuery.isLoading
-  const anyError = summaryQuery.error ?? oversightQuery.error
+  const anyLoading = summaryQuery.isLoading || oversightQuery.isLoading || modelsQuery.isLoading || evaluationsQuery.isLoading
+  const anyError = summaryQuery.error ?? oversightQuery.error ?? modelsQuery.error ?? evaluationsQuery.error
 
   const tabItems = TABS.map((tabDef) => ({
     id: tabDef.id,
@@ -178,6 +216,8 @@ export function AIRecommendationsPage(): React.JSX.Element {
           onRetry={() => {
             void summaryQuery.refetch()
             void oversightQuery.refetch()
+            void modelsQuery.refetch()
+            void evaluationsQuery.refetch()
           }}
         />
       ) : null}
@@ -203,28 +243,37 @@ export function AIRecommendationsPage(): React.JSX.Element {
                 />
               ) : (
                 <div className="grid grid-cols-1 gap-3 p-4 lg:grid-cols-2">
-                  {records.map((record) => (
-                    <AIRecommendationCard
-                      key={record.id}
-                      recommendation={toRecommendationBlock(record, requestById.get(record.aiRequestId))}
-                      status={record.outcome}
-                      onApprove={
-                        tab === 'pending' && mayReview
-                          ? () => setDialog({ id: record.id, outcome: 'accepted', title: t('Approve - {0}', record.recommendationTitle) })
-                          : undefined
-                      }
-                      onModify={
-                        tab === 'pending' && mayReview
-                          ? () => setDialog({ id: record.id, outcome: 'modified', title: t('Modify - {0}', record.recommendationTitle) })
-                          : undefined
-                      }
-                      onReject={
-                        tab === 'pending' && mayReview
-                          ? () => setDialog({ id: record.id, outcome: 'rejected', title: t('Reject - {0}', record.recommendationTitle) })
-                          : undefined
-                      }
-                    />
-                  ))}
+                  {records.map((record) => {
+                    const request = requestById.get(record.aiRequestId)
+                    const model = request ? modelById.get(request.modelId) : undefined
+                    const evaluation = model ? evaluationByModelId.get(model.id) : undefined
+                    const block = toRecommendationBlock(record, request)
+                    return (
+                      <AIRecommendationCard
+                        key={record.id}
+                        recommendation={block}
+                        status={record.outcome}
+                        model={model ? { id: model.id, name: model.name, version: model.version } : undefined}
+                        evaluation={evaluation ? { id: evaluation.id, verdict: evaluation.verdict, compositeScore: evaluation.compositeScore } : undefined}
+                        onOpenEvidenceItem={block.evidenceRefs.length > 0 ? (evidenceId) => openDrawer({ kind: 'evidence', id: evidenceId }) : undefined}
+                        onApprove={
+                          tab === 'pending' && mayReview
+                            ? () => setDialog({ id: record.id, outcome: 'accepted', title: t('Approve - {0}', record.recommendationTitle) })
+                            : undefined
+                        }
+                        onModify={
+                          tab === 'pending' && mayReview
+                            ? () => setDialog({ id: record.id, outcome: 'modified', title: t('Modify - {0}', record.recommendationTitle) })
+                            : undefined
+                        }
+                        onReject={
+                          tab === 'pending' && mayReview
+                            ? () => setDialog({ id: record.id, outcome: 'rejected', title: t('Reject - {0}', record.recommendationTitle) })
+                            : undefined
+                        }
+                      />
+                    )
+                  })}
                 </div>
               )}
               {!mayReview ? (

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { AlertCircle, Building, FileSearch, Info, ShieldQuestion } from 'lucide-react'
+import { AlertCircle, Building, FileSearch, Info } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { useServiceQuery, useServiceAction } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
@@ -7,6 +7,7 @@ import { revenueService } from '@/services'
 import { useCurrentUser } from '@/stores/auth.store'
 import { useDrawerStore } from '@/stores/ui.store'
 import { usePageMasthead } from '@/stores/masthead.store'
+import { activeCorporation } from '@/config/municipality.config'
 import { allowed } from '@/security'
 import { ROUTES } from '@/config/navigation'
 import type { DataFreshness } from '@/types/common'
@@ -26,7 +27,6 @@ import {
   Badge,
   Button,
   Card,
-  CardHeader,
   ConfirmDialog,
   DataTable,
   DemonstrationNotice,
@@ -38,6 +38,7 @@ import {
   Tabs,
   type Column,
 } from '@/components/ui'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { ConfidenceBadge, DeltaBadge, SeverityBadge, SeverityRail, StateBadge } from '@/components/ui/badges'
 import { MetricCard } from '@/components/cards'
 import { CategoryBarChart, ChartFrame, CompositionBar, MiniBar, RankedBarChart } from '@/components/charts'
@@ -117,10 +118,7 @@ registerLayer(() => {
 
 export function RevenueIntelligencePage(): React.JSX.Element {
   // The shell's masthead carries the screen's name; the page states the wording.
-  usePageMasthead(
-    t('Revenue Intelligence'),
-    t('City revenue command centre across property tax, water charges, development charges, licence fees, advertisement, rentals, octroi compensation and other receipts. All collection and variance figures are year-to-date against a pro-rated phased target - the financial year is approximately 31% elapsed at this reporting date.'),
-  )
+  usePageMasthead(t('Revenue Intelligence'))
 
   const user = useCurrentUser()
   const openDrawer = useDrawerStore((s) => s.open)
@@ -425,19 +423,23 @@ export function RevenueIntelligencePage(): React.JSX.Element {
 
       {!recordsQuery.isLoading && !recordsQuery.error && allRecords.length > 0 ? (
         <>
-          <Card>
-            <CardHeader
-              eyebrow={t('FY 2026–27 · Year to date')}
-              title={t('City revenue position')}
-              description={t('Collected figures are year-to-date. Variance is measured against the phased (pro-rated) target for the elapsed portion of the financial year, not the full annual target.')}
-            />
-            <MetricGrid columns={5} className="mt-4">
-              <MetricCard label={t('Assessed')} value={formatCrore(cityPosition.assessed)} support={t('{0} annual target', formatCrore(cityPosition.target))} />
+          <GovPanel title={t('City revenue position')} subtitle={t('FY 2026–27 · Year to date')} tone="primary">
+            <p className="mb-3 text-xs leading-relaxed text-ink-500">
+              {t('Collected figures are year-to-date. Variance is measured against the phased (pro-rated) target for the elapsed portion of the financial year, not the full annual target.')}
+            </p>
+            <MetricGrid columns={5}>
+              <MetricCard
+                label={t('Assessed')}
+                value={formatCrore(cityPosition.assessed)}
+                support={t('{0} annual target', formatCrore(cityPosition.target))}
+                footer={<span className="text-[0.625rem] leading-snug text-ink-400">{t('BMC\'s own FY2026-27 budget estimates total revenue income (all sources) at {0} - up 19.35% on FY2025-26\'s ₹43,159.40 crore. Distinct from the ₹80,952.56 crore total budget outlay, which includes capital spend and borrowings, and from the modelled annual target above, which covers only the revenue streams tracked on this page.', formatCrore(activeCorporation.revenueIncomeCroreEstimate ?? 0))}</span>}
+              />
               <MetricCard
                 label={t('Collected - year to date')}
                 value={formatCrore(cityPosition.collected)}
                 support={t('{0} of assessed value', formatPercent(cityPosition.efficiencyPct))}
                 progress={{ value: cityPosition.efficiencyPct, max: 100 }}
+                footer={<span className="text-[0.625rem] leading-snug text-ink-400">{t('BMC\'s property tax collection alone reached a record {0} in FY2024-25, 99.5% of target - the actual collected figure for that specific stream and closed financial year, not a target or estimate. The year-to-date total above blends every revenue stream for the current financial year and is modelled.', formatCrore(activeCorporation.propertyTaxRevenueCollectedCrore ?? 0))}</span>}
               />
               <MetricCard label={t('Arrears outstanding')} value={formatCrore(cityPosition.arrears)} tone="warn" />
               <MetricCard
@@ -452,7 +454,7 @@ export function RevenueIntelligencePage(): React.JSX.Element {
                 support={t('{0} vs annual target', formatDelta(cityPosition.forecastVsAnnualPct))}
               />
             </MetricGrid>
-          </Card>
+          </GovPanel>
 
           {/* Two columns. The three registers an officer reads in order —
               streams, wards, then the anomalies raised against both — hold the
@@ -460,8 +462,8 @@ export function RevenueIntelligencePage(): React.JSX.Element {
               drawn from those same rows read down beside them. */}
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
           <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
-            <Card flush>
-              <CardHeader bordered title={t('Revenue by stream')} description={t('City-wide position for every revenue stream, sorted and searchable.')} />
+            <GovPanel title={t('Revenue by stream')} tone="red" dense>
+              <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">{t('City-wide position for every revenue stream, sorted and searchable.')}</p>
               <DataTable
                 rows={cityRecords}
                 columns={streamColumns}
@@ -469,14 +471,12 @@ export function RevenueIntelligencePage(): React.JSX.Element {
                 pageSize={8}
                 searchPlaceholder="Search revenue streams"
               />
-            </Card>
+            </GovPanel>
 
-            <Card flush>
-              <CardHeader
-                bordered
-                title={t('Ward revenue performance')}
-                description={t('Property tax position by ward - the principal ward-attributable revenue stream. Row click opens the ward\'s full intelligence record.')}
-              />
+            <GovPanel title={t('Ward revenue performance')} tone="amber" dense>
+              <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+                {t('Property tax position by ward - the principal ward-attributable revenue stream. Row click opens the ward\'s full intelligence record.')}
+              </p>
               <DataTable
                 rows={wardRecords}
                 columns={wardColumns}
@@ -490,31 +490,32 @@ export function RevenueIntelligencePage(): React.JSX.Element {
                   <SeverityRail severity={row.targetVariancePct < -25 ? 'high' : row.targetVariancePct < -10 ? 'medium' : 'low'} />
                 )}
               />
-            </Card>
+            </GovPanel>
 
-          <Card flush>
-            <CardHeader
-              bordered
-              icon={<ShieldQuestion className="h-4 w-4" />}
-              title={t('Anomalies - reconciliation and review candidates')}
-              description={t('Statistical patterns in revenue and assessment records that require assessment. An anomaly is not a finding, and disposition here never characterises the conduct of any person or organisation.')}
-              actions={
-                <Tabs
-                  variant="pill"
-                  value={anomalyStatusFilter}
-                  onChange={(id) => setAnomalyStatusFilter(id as typeof anomalyStatusFilter)}
-                  ariaLabel="Filter anomalies by status"
-                  items={[
-                    { id: 'all', label: t('All'), count: anomalies.length },
-                    { id: 'open', label: STATUS_LABEL.open, count: statusCounts.open },
-                    { id: 'under-review', label: STATUS_LABEL['under-review'], count: statusCounts['under-review'] },
-                    { id: 'reconciled', label: STATUS_LABEL.reconciled, count: statusCounts.reconciled },
-                    { id: 'referred', label: STATUS_LABEL.referred, count: statusCounts.referred },
-                    { id: 'closed', label: STATUS_LABEL.closed, count: statusCounts.closed },
-                  ]}
-                />
-              }
-            />
+          <GovPanel
+            title={t('Anomalies - reconciliation and review candidates')}
+            tone="green"
+            dense
+            actions={
+              <Tabs
+                variant="pill"
+                value={anomalyStatusFilter}
+                onChange={(id) => setAnomalyStatusFilter(id as typeof anomalyStatusFilter)}
+                ariaLabel="Filter anomalies by status"
+                items={[
+                  { id: 'all', label: t('All'), count: anomalies.length },
+                  { id: 'open', label: STATUS_LABEL.open, count: statusCounts.open },
+                  { id: 'under-review', label: STATUS_LABEL['under-review'], count: statusCounts['under-review'] },
+                  { id: 'reconciled', label: STATUS_LABEL.reconciled, count: statusCounts.reconciled },
+                  { id: 'referred', label: STATUS_LABEL.referred, count: statusCounts.referred },
+                  { id: 'closed', label: STATUS_LABEL.closed, count: statusCounts.closed },
+                ]}
+              />
+            }
+          >
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+              {t('Statistical patterns in revenue and assessment records that require assessment. An anomaly is not a finding, and disposition here never characterises the conduct of any person or organisation.')}
+            </p>
 
             {anomaliesQuery.isLoading ? <LoadingState variant="table" className="p-4" /> : null}
             {anomaliesQuery.error ? (
@@ -616,7 +617,7 @@ export function RevenueIntelligencePage(): React.JSX.Element {
                 </div>
               </div>
             ) : null}
-          </Card>
+          </GovPanel>
           </div>
 
           <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
@@ -660,14 +661,14 @@ export function RevenueIntelligencePage(): React.JSX.Element {
             </Card>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-1">
-            <Card>
-              <CardHeader title={t('Payer-segment breakdown')} description={t('Assessed value and collection by property use-class segment, city-wide.')} />
+            <GovPanel title={t('Payer-segment breakdown')} tone="amber">
+              <p className="mb-3 text-xs leading-relaxed text-ink-500">{t('Assessed value and collection by property use-class segment, city-wide.')}</p>
               {segmentsQuery.isLoading ? (
-                <LoadingState variant="block" className="mt-4" />
+                <LoadingState variant="block" />
               ) : segmentsQuery.error ? (
-                <ErrorState detail={segmentsQuery.error.message} onRetry={() => segmentsQuery.refetch()} className="mt-4" />
+                <ErrorState detail={segmentsQuery.error.message} onRetry={() => segmentsQuery.refetch()} />
               ) : (
-                <div className="mt-4 space-y-3">
+                <div className="space-y-3">
                   <CompositionBar
                     segments={segmentTotals.map((s, i) => ({
                       id: s.id,
@@ -690,7 +691,7 @@ export function RevenueIntelligencePage(): React.JSX.Element {
                   </ul>
                 </div>
               )}
-            </Card>
+            </GovPanel>
             <Card>
               <ChartFrame
                 title={t('Forecast vs annual target - by stream')}

@@ -1,8 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   Activity,
-  Database,
-  FileWarning,
   Loader2,
   Pencil,
   Plus,
@@ -18,7 +16,6 @@ import { Badge, ClassificationBadge, SeverityBadge } from '@/components/ui/badge
 import {
   Button,
   Card,
-  CardHeader,
   DefinitionList,
   DefinitionRow,
   IconButton,
@@ -29,6 +26,7 @@ import {
   Select,
   Switch,
 } from '@/components/ui/primitives'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { DataTable, type Column } from '@/components/ui/DataTable'
 import { ChartFrame } from '@/components/charts/ChartFrame'
 import { DonutChart, MiniBar, RankedBarChart } from '@/components/charts/charts'
@@ -45,7 +43,6 @@ import {
 } from '@/stores/data-source.store'
 import { usePageMasthead } from '@/stores/masthead.store'
 import { DEPARTMENTS_ORDERED, departmentName, officerDisplayName } from '@/data/reference'
-import { municipality } from '@/config/municipality.config'
 import { DEMO_NOW, det, isoFromAnchor } from '@/utils/deterministic'
 import { formatCompact, formatDateTime, formatDuration, formatNumber, formatRelative } from '@/utils/format'
 import { cn } from '@/utils/cn'
@@ -213,10 +210,7 @@ export function DataSourcesPage(): React.JSX.Element {
   const [exportNote, setExportNote] = useState<string | null>(null)
 
   // The shell renders the masthead; this page states what it should say.
-  usePageMasthead(
-    t('Data Sources'),
-    t('The operational ingestion register — every upstream feed the Urban Intelligence Core draws on, with the schema it ingests, the purpose it is held for, the retention it sits under and the metrics downstream of it. Enable or pause a source, change its cadence, classification or retention, run a sync, open it in full, add or remove one; changes apply immediately for this session. No source is connected to a live {0} system and every sync is simulated.', municipality.shortName),
-  )
+  usePageMasthead(t('Data Sources'))
 
   // Filters
   const [categoryFilter, setCategoryFilter] = useState<DataSourceCategory | ''>('')
@@ -613,19 +607,19 @@ export function DataSourcesPage(): React.JSX.Element {
         {/* Column 2 — the register's own figures -------------------- */}
         <div className="flex min-w-0 flex-col gap-3 xl:col-span-4">
           <MetricGrid columns={2} className="xl:grid-cols-1">
-            <Card>
+            <Card background="red">
               <p className="label-institutional">{t('Registered sources')}</p>
               <p className="numeric mt-2 text-metric font-semibold text-ink-900">{metrics.total}</p>
               <p className="mt-0.5 text-[0.6875rem] text-ink-500">{t('{0} enabled · {1} paused', metrics.enabled, metrics.paused)}</p>
             </Card>
-            <Card tone={metrics.needingAttention > 0 ? 'warn' : 'default'}>
+            <Card tone={metrics.needingAttention > 0 ? 'warn' : 'default'} background="amber">
               <p className="label-institutional">{t('Needing attention')}</p>
               <p className="numeric mt-2 text-metric font-semibold text-ink-900">{metrics.needingAttention}</p>
               <p className="mt-0.5 text-[0.6875rem] text-ink-500">
                 {t('Degraded, stale or in error · {0} past their freshness expectation', metrics.slaBreaches)}
               </p>
             </Card>
-            <Card>
+            <Card background="green">
               <p className="label-institutional">{t('Records ingested')}</p>
               <p className="numeric mt-2 text-metric font-semibold text-ink-900">{formatCompact(metrics.totalRecords)}</p>
               <p className="mt-0.5 text-[0.6875rem] text-ink-500">{t('Across all sources, simulated')}</p>
@@ -659,33 +653,34 @@ export function DataSourcesPage(): React.JSX.Element {
         </div>
       </div>
 
-      <Card flush>
-        <CardHeader
-          className="px-4 pt-4"
-          icon={<Database className="h-4 w-4" />}
-          title={t('Ingestion register')}
-          description={t('Select a row to open the full source record — schema, quality decomposition, sync history and downstream use.')}
-          actions={
-            activeFilterCount > 0 ? (
-              <Button
-                variant="ghost"
-                size="xs"
-                icon={<RotateCcw className="h-3 w-3" />}
-                onClick={() => {
-                  setCategoryFilter('')
-                  setStatusFilter('')
-                  setDomainFilter('')
-                  setClassificationFilter('')
-                  setStateFilter('')
-                }}
-              >
-                {t('Clear {0} filter{1}', activeFilterCount, activeFilterCount === 1 ? '' : 's')}
-              </Button>
-            ) : null
-          }
-        />
+      <GovPanel
+        title={t('Ingestion register')}
+        tone="amber"
+        dense
+        actions={
+          activeFilterCount > 0 ? (
+            <Button
+              variant="ghost"
+              size="xs"
+              icon={<RotateCcw className="h-3 w-3" />}
+              onClick={() => {
+                setCategoryFilter('')
+                setStatusFilter('')
+                setDomainFilter('')
+                setClassificationFilter('')
+                setStateFilter('')
+              }}
+            >
+              {t('Clear {0} filter{1}', activeFilterCount, activeFilterCount === 1 ? '' : 's')}
+            </Button>
+          ) : null
+        }
+      >
+        <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+          {t('Select a row to open the full source record — schema, quality decomposition, sync history and downstream use.')}
+        </p>
 
-        <div className="flex flex-wrap items-center gap-2 px-4 pt-3">
+        <div className="flex flex-wrap items-center gap-2 px-3 pt-1">
           <Select
             aria-label={t('Filter by category')}
             value={categoryFilter}
@@ -748,7 +743,7 @@ export function DataSourcesPage(): React.JSX.Element {
             detail="Every source has been removed for this session. Add one, or reset the session to restore the register."
           />
         ) : (
-          <div className="p-4">
+          <div className="p-3">
             <DataTable
               rows={filtered}
               columns={columns}
@@ -767,7 +762,7 @@ export function DataSourcesPage(): React.JSX.Element {
             />
           </div>
         )}
-      </Card>
+      </GovPanel>
 
       {/* Source detail ---------------------------------------------------- */}
       <Drawer
@@ -1141,14 +1136,11 @@ function DataSourceDetail({
           </Card>
         ) : null}
 
-        <Card flush>
-          <CardHeader
-            className="px-4 pt-4"
-            icon={<FileWarning className="h-4 w-4" />}
-            title={t('Ingestion incidents')}
-            description={t('Faults in the feed itself. An ingestion fault is never recorded as a departmental failing.')}
-          />
-          <div className="px-4 pb-4">
+        <GovPanel title={t('Ingestion incidents')} tone="amber" dense>
+          <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+            {t('Faults in the feed itself. An ingestion fault is never recorded as a departmental failing.')}
+          </p>
+          <div className="px-3 pb-3">
             {(source.incidents ?? []).length === 0 ? (
               <EmptyState compact title={t('No ingestion incidents recorded')} />
             ) : (
@@ -1174,7 +1166,7 @@ function DataSourceDetail({
               </p>
             ) : null}
           </div>
-        </Card>
+        </GovPanel>
       </div>
     )
   }

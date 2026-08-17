@@ -114,10 +114,20 @@ export interface HeritageSite {
 }
 
 export interface HeritageTourismPosition {
+  /** Notable landmarks this platform profiles individually - a curated register, not BMC's citywide inventory. */
   sitesOnRegister: number
   gradeICount: number
   atRiskOrEncroached: number
   underRestoration: number
   annualFootfallTotal: number
   revenueCollectedLakhTotal: number
+  /**
+   * BMC's published citywide count of Grade I/IIA/IIB/III heritage-listed
+   * structures, compiled from its own ward-by-ward lists - distinct from
+   * `sitesOnRegister` above. Null where the active corporation publishes no
+   * such aggregate.
+   */
+  heritageStructuresCitywide: number | null
+  /** BMC's published citywide count of heritage precincts. Null where unpublished. */
+  heritagePrecinctsCitywide: number | null
 }

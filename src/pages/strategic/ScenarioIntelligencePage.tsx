@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { Bookmark, CloudRain, Landmark, Layers3, RotateCcw, TrendingUp } from 'lucide-react'
+import { Bookmark, CloudRain, Landmark, Layers3, RotateCcw } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { useServiceAction, useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
@@ -25,7 +25,6 @@ import {
   Badge,
   Button,
   Card,
-  CardHeader,
   DemonstrationNotice,
   EmptyState,
   ErrorState,
@@ -36,6 +35,7 @@ import {
   Tabs,
 } from '@/components/ui'
 import { MetricCard } from '@/components/cards'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { ContributionBars } from '@/components/charts'
 import { usePageMasthead } from '@/stores/masthead.store'
 import { t } from '@/i18n'
@@ -117,10 +117,7 @@ export function ScenarioIntelligencePage(): React.JSX.Element {
   const user = useCurrentUser()
 
   // The shell's masthead states the screen's name; the page states the wording.
-  usePageMasthead(
-    t('Scenario Intelligence'),
-    t('One workspace for the platform\'s three deterministic scenario engines. Every output is a simulation produced by a declared rule model with published driver weights, applied to the current position - it is never a forecast, and it never changes a live municipal record on its own.'),
-  )
+  usePageMasthead(t('Scenario Intelligence'))
 
   const [engine, setEngine] = useState<EngineId>('monsoon')
   const [saved, setSaved] = useState<SavedScenario[]>([])
@@ -496,8 +493,8 @@ export function ScenarioIntelligencePage(): React.JSX.Element {
         </div>
 
         <div className="flex min-w-0 flex-col gap-3 xl:col-span-3">
-          <Card flush>
-            <CardHeader className="px-4 pt-4 pb-3" icon={<TrendingUp className="h-4 w-4" />} title={t('Saved scenarios')} description={t('Held in this session only, across all three engines.')} />
+          <GovPanel title={t('Saved scenarios')} tone="amber" dense>
+            <p className="px-4 pt-4 pb-3 text-xs leading-relaxed text-ink-500">{t('Held in this session only, across all three engines.')}</p>
             {saved.length === 0 ? (
               <EmptyState className="m-4" compact title={t('No scenarios saved yet')} detail="Run a scenario above and select Save scenario to keep a reference here." />
             ) : (
@@ -516,7 +513,7 @@ export function ScenarioIntelligencePage(): React.JSX.Element {
                 ))}
               </ul>
             )}
-          </Card>
+          </GovPanel>
 
           <DemonstrationNotice />
         </div>

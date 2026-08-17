@@ -1,24 +1,19 @@
 import { useEffect, useState } from 'react'
 import {
   AlertTriangle,
-  Banknote,
   Droplets,
   FileSearch,
   Gauge,
-  HeartPulse,
   LayoutGrid,
   MapPin,
   Scale,
   Trash2,
-  Users,
   Waves,
 } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import {
   Badge,
   Button,
-  Card,
-  CardHeader,
   Checkbox,
   ConfidenceBadge,
   DefinitionList,
@@ -38,7 +33,8 @@ import {
   SCORE_TONE_TEXT,
 } from '@/components/ui'
 import { MetricCard, IncidentCard, IntelligenceCard, ProjectCard } from '@/components/cards'
-import { ChartFrame, ContributionBars, CategoryBarChart, HeatmapMatrix, MiniBar, RankedBarChart, CHART_COLOURS } from '@/components/charts'
+import { GovPanel, GovStripCell } from '@/components/gov/GovPanel'
+import { ChartFrame, ContributionBars, CategoryBarChart, HeatmapMatrix, RankedBarChart, CHART_COLOURS } from '@/components/charts'
 import { CityMap } from '@/components/map/CityMap'
 import { useServiceQuery, useQueryParamState, useBoundedSelection } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
@@ -52,7 +48,7 @@ import { officerDisplayName } from '@/data/reference'
 import type { Ward } from '@/types/organisation'
 import type { DataFreshness, IntelligenceDomain } from '@/types/common'
 import type { IntelligenceItem } from '@/types/intelligence'
-import { COMPLAINT_CATEGORY_LABEL, ASSET_CATEGORY_LABEL } from '@/types/operations'
+import { COMPLAINT_CATEGORY_LABEL } from '@/types/operations'
 import { DISEASE_LABEL } from '@/types/city-domains'
 import { cn } from '@/utils/cn'
 import {
@@ -64,6 +60,7 @@ import {
   formatPercent,
   formatRelative,
   titleCase,
+  truncate,
 } from '@/utils/format'
 import { DEMO_NOW } from '@/utils/deterministic'
 import { t } from '@/i18n'
@@ -105,10 +102,7 @@ function resolveWardId(
 }
 
 export function WardIntelligencePage(): React.JSX.Element {
-  usePageMasthead(
-    t('Ward Intelligence'),
-    t('A coherent operational picture of every ward - citizen services, infrastructure condition, public health signal and capital delivery - together with an explainable composite risk index and a side-by-side comparison across wards.'),
-  )
+  usePageMasthead(t('Ward Intelligence'))
 
   const user = useCurrentUser()
   const [tab, setTab] = useState<WardTab>('overview')
@@ -210,13 +204,13 @@ export function WardIntelligencePage(): React.JSX.Element {
         freshness={freshness}
         controls={
           wards.length > 1 ? (
-            <div className="flex items-center gap-2">
-              <MapPin className="h-3.5 w-3.5 text-ink-400" aria-hidden />
+            <div className="flex items-center gap-2 rounded-[2px] border border-google-red-100 bg-google-red-50 py-1 pr-2 pl-2.5">
+              <MapPin className="h-3.5 w-3.5 text-google-red-700" aria-hidden />
               <Select
                 value={resolvedWardId}
                 onChange={(e) => selectWard(e.target.value)}
                 options={wards.map((w) => ({ value: w.id, label: `${w.code} - ${w.name.split(' · ')[0]}` }))}
-                className="w-auto min-w-[15rem]"
+                className="w-auto min-w-[15rem] border-google-red-200 bg-white text-google-red-900"
                 aria-label={t('Select ward')}
               />
             </div>
@@ -297,48 +291,41 @@ function WardOverviewTab({
 
   return (
     <div className="space-y-4">
-      <Card>
-        <CardHeader
-          eyebrow={`${ward.code} · ${ward.region}`}
-          title={ward.name.split(' · ')[0] ?? ward.name}
-          description={t('{0} residents · {1} km² · {2} households · Ward Officer: {3}', formatCompact(ward.population), ward.areaSqKm, formatCompact(ward.households), officerDisplayName(ward.wardOfficerId))}
-          actions={<StateBadge state={profile.state} size="sm" />}
+      <div className="flex flex-wrap items-stretch gap-px overflow-hidden rounded-[2px] border border-ink-200 bg-ink-100 shadow-xs">
+        <GovStripCell
+          label={t('Open complaints')}
+          value={profile.services.complaints.open}
+          tone={profile.services.complaints.slaBreached > 0 ? 'warn' : 'default'}
+          background="amber"
         />
-        <div className="mt-4 flex flex-col gap-5 lg:flex-row lg:items-center">
-          <div className="flex shrink-0 items-center gap-5 lg:border-r lg:border-ink-100 lg:pr-5">
-            <ScoreDial score={profile.healthScore} label="/100" caption={t('Operational health')} />
-            <ScoreDial score={profile.riskScore} label="/100" caption={t('Composite risk')} higherIsBetter={false} />
-          </div>
-          <MetricGrid columns={4} className="min-w-0 flex-1">
-            <MetricCard
-              label={t('Open complaints')}
-              value={profile.services.complaints.open}
-              support={t('{0} SLA-breached', profile.services.complaints.slaBreached)}
-              tone={profile.services.complaints.slaBreached > 0 ? 'warn' : 'default'}
-              icon={<Users className="h-4 w-4" />}
-            />
-            <MetricCard
-              label={t('Road condition index')}
-              value={profile.roads.conditionIndex}
-              unit="/100"
-              support={t('{0} high-priority defects', profile.roads.openDefects)}
-            />
-            <MetricCard
-              label={t('Monsoon readiness')}
-              value={profile.drainage.readinessScore}
-              unit="/100"
-              support={t('{0} chronic locations', profile.drainage.floodSpots)}
-              tone={profile.drainage.readinessScore < 60 ? 'warn' : 'default'}
-            />
-            <MetricCard
-              label={t('Capital works at risk')}
-              value={profile.projects.atRisk}
-              support={t('of {0} active works', profile.projects.total)}
-              tone={profile.projects.atRisk > 0 ? 'warn' : 'default'}
-            />
-          </MetricGrid>
+        <GovStripCell label={t('Road condition index')} value={`${profile.roads.conditionIndex}/100`} background="red" />
+        <GovStripCell
+          label={t('Monsoon readiness')}
+          value={`${profile.drainage.readinessScore}/100`}
+          tone={profile.drainage.readinessScore < 60 ? 'warn' : 'default'}
+          background="green"
+        />
+        <GovStripCell
+          label={t('Capital works at risk')}
+          value={t('{0} of {1}', profile.projects.atRisk, profile.projects.total)}
+          tone={profile.projects.atRisk > 0 ? 'warn' : 'default'}
+        />
+      </div>
+
+      <GovPanel
+        title={ward.name.split(' · ')[0] ?? ward.name}
+        subtitle={`${ward.code} · ${ward.region}`}
+        tone="red"
+        actions={<StateBadge state={profile.state} size="sm" />}
+      >
+        <p className="mb-4 text-xs leading-relaxed text-ink-500">
+          {t('{0} residents · {1} km² · {2} households · Ward Officer: {3}', formatCompact(ward.population), ward.areaSqKm, formatCompact(ward.households), officerDisplayName(ward.wardOfficerId))}
+        </p>
+        <div className="flex flex-wrap items-center gap-6">
+          <ScoreDial score={profile.healthScore} size={156} label="/100" caption={t('Operational health')} />
+          <ScoreDial score={profile.riskScore} size={104} label="/100" caption={t('Composite risk')} higherIsBetter={false} />
         </div>
-      </Card>
+      </GovPanel>
 
       {/* Two columns, read downward. Services, infrastructure and delivery —
           what the ward officer answers for — carry the width; where the ward
@@ -347,13 +334,11 @@ function WardOverviewTab({
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
         <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
         {/* Citizen Services -------------------------------------------------- */}
-        <Card>
-          <CardHeader
-            icon={<Users className="h-4 w-4" />}
-            title={t('Citizen Services')}
-            description={t('Complaint volumes, SLA compliance and repeat-complaint rate by service category.')}
-          />
-          <MetricGrid columns={4} className="mt-3">
+        <GovPanel title={t('Citizen Services')} subtitle={t('{0} open', profile.services.complaints.open)} tone="amber">
+          <p className="mb-3 text-xs leading-relaxed text-ink-500">
+            {t('Complaint volumes, SLA compliance and repeat-complaint rate by service category.')}
+          </p>
+          <MetricGrid columns={4}>
             <MetricCard size="sm" label={t('Open')} value={profile.services.complaints.open} />
             <MetricCard
               size="sm"
@@ -413,17 +398,15 @@ function WardOverviewTab({
               </ul>
             </div>
           ) : null}
-        </Card>
+        </GovPanel>
 
         {/* Infrastructure ------------------------------------------------------ */}
-        <Card>
-          <CardHeader
-            icon={<Droplets className="h-4 w-4" />}
-            title={t('Infrastructure')}
-            description={t('Water supply, solid waste, road condition, drainage readiness and municipal asset condition.')}
-          />
-          <div className="mt-3 grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <div className="rounded-lg border border-ink-100 p-3">
+        <GovPanel title={t('Infrastructure')} subtitle={t('{0} assets', profile.assets.total)} tone="green">
+          <p className="mb-3 text-xs leading-relaxed text-ink-500">
+            {t('Water supply, solid waste, road condition, drainage readiness and municipal asset condition.')}
+          </p>
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <div className="rounded-[2px] border border-ink-200 p-3">
               <p className="label-institutional mb-2 flex items-center gap-1.5">
                 <Droplets className="h-3.5 w-3.5" />{' '}{t('Water supply')}{profile.water ? ` · ${profile.water.zoneName}` : ''}
               </p>
@@ -455,7 +438,7 @@ function WardOverviewTab({
               )}
             </div>
 
-            <div className="rounded-lg border border-ink-100 p-3">
+            <div className="rounded-[2px] border border-ink-200 p-3">
               <p className="label-institutional mb-2 flex items-center gap-1.5">
                 <Trash2 className="h-3.5 w-3.5" />{' '}{t('Solid waste')}
               </p>
@@ -475,7 +458,7 @@ function WardOverviewTab({
               )}
             </div>
 
-            <div className="rounded-lg border border-ink-100 p-3">
+            <div className="rounded-[2px] border border-ink-200 p-3">
               <p className="label-institutional mb-2">{t('Road network')}</p>
               <div className="flex items-baseline gap-2">
                 <span className={cn('numeric text-2xl font-semibold', SCORE_TONE_TEXT[toneForScore(profile.roads.conditionIndex)])}>
@@ -499,7 +482,7 @@ function WardOverviewTab({
               )}
             </div>
 
-            <div className="rounded-lg border border-ink-100 p-3">
+            <div className="rounded-[2px] border border-ink-200 p-3">
               <p className="label-institutional mb-2 flex items-center gap-1.5">
                 <Waves className="h-3.5 w-3.5" />{' '}{t('Drainage & flood readiness')}
               </p>
@@ -538,32 +521,26 @@ function WardOverviewTab({
             </MetricGrid>
             <p className="mt-2 text-[0.6875rem] text-ink-500">{t('Replacement value at risk: {0}', formatCrore(profile.assets.replacementValueCrore))}</p>
             {profile.assets.items.length > 0 ? (
-              <ul className="mt-2 divide-y divide-ink-50">
-                {profile.assets.items.slice(0, 5).map((a) => (
-                  <li key={a.id} className="flex flex-wrap items-center justify-between gap-2 py-1.5 text-xs">
-                    <span className="min-w-0 truncate text-ink-700">
-                      {a.name} <span className="text-ink-400">· {ASSET_CATEGORY_LABEL[a.category]}</span>
-                    </span>
-                    <span className="flex shrink-0 items-center gap-1.5">
-                      <MiniBar value={a.conditionIndex} width={44} />
-                      <span className="numeric font-semibold text-ink-700">{a.conditionIndex}</span>
-                      <StateBadge state={a.state} />
-                    </span>
-                  </li>
-                ))}
-              </ul>
+              <div className="mt-3" style={{ height: Math.max(160, Math.min(6, profile.assets.items.length) * 34) }}>
+                <RankedBarChart
+                  data={[...profile.assets.items]
+                    .sort((a, b) => a.conditionIndex - b.conditionIndex)
+                    .slice(0, 6)
+                    .map((a) => ({ label: truncate(a.name, 14), value: a.conditionIndex }))}
+                  unit="/100"
+                  higherIsWorse={false}
+                />
+              </div>
             ) : null}
           </div>
-        </Card>
+        </GovPanel>
 
         {/* Delivery & Finance ------------------------------------------------ */}
-        <Card>
-          <CardHeader
-            icon={<Banknote className="h-4 w-4" />}
-            title={t('Delivery & Finance')}
-            description={t('Capital works portfolio, revenue realisation and budget utilisation for the ward.')}
-          />
-          <MetricGrid columns={4} className="mt-3">
+        <GovPanel title={t('Delivery & Finance')} subtitle={t('{0} live works', profile.projects.total)} tone="amber">
+          <p className="mb-3 text-xs leading-relaxed text-ink-500">
+            {t('Capital works portfolio, revenue realisation and budget utilisation for the ward.')}
+          </p>
+          <MetricGrid columns={4}>
             <MetricCard size="sm" label={t('Sanctioned')} value={formatCrore(profile.projects.sanctionedCrore)} />
             <MetricCard size="sm" label={t('Paid to date')} value={formatCrore(profile.projects.paidCrore)} />
             <MetricCard size="sm" label={t('Collection efficiency')} value={formatPercent(profile.finance.collectionEfficiencyPct)} />
@@ -594,57 +571,55 @@ function WardOverviewTab({
             <div className="mt-4 grid grid-cols-1 gap-4 border-t border-ink-100 pt-3 lg:grid-cols-2">
               {profile.workforce.length > 0 ? (
                 <div>
-                  <p className="label-institutional mb-1.5">{t('Workforce')}</p>
-                  <ul className="divide-y divide-ink-50">
-                    {profile.workforce.slice(0, 5).map((w) => (
-                      <li key={w.id} className="flex items-center justify-between gap-2 py-1.5 text-xs">
-                        <span className="text-ink-700">{w.cadre}</span>
-                        <span className="numeric text-ink-500">
-                          {w.deployed}/{w.sanctioned}{' '}{t('deployed ·')}{' '}{formatPercent(w.vacancyPct)} vacant
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
+                  <p className="label-institutional mb-1.5">{t('Workforce vacancy')}</p>
+                  <div style={{ height: Math.max(140, Math.min(5, profile.workforce.length) * 34) }}>
+                    <RankedBarChart
+                      data={profile.workforce.slice(0, 5).map((w) => ({ label: truncate(w.cadre, 14), value: w.vacancyPct }))}
+                      unit="%"
+                      higherIsWorse
+                    />
+                  </div>
                 </div>
               ) : null}
               {profile.contractors.length > 0 ? (
                 <div>
-                  <p className="label-institutional mb-1.5">{t('Contractors active in ward')}</p>
-                  <ul className="divide-y divide-ink-50">
-                    {profile.contractors.slice(0, 5).map((c) => (
-                      <li key={c.id} className="flex items-center justify-between gap-2 py-1.5 text-xs">
-                        <span className="min-w-0 truncate text-ink-700">{c.name}</span>
-                        <span className="numeric shrink-0 text-ink-500">
-                          {t('{0} contract(s) · perf. {1}/100', c.activeContracts, c.performanceIndex)}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
+                  <p className="label-institutional mb-1.5">{t('Contractor performance')}</p>
+                  <div style={{ height: Math.max(140, Math.min(5, profile.contractors.length) * 34) }}>
+                    <RankedBarChart
+                      data={profile.contractors.slice(0, 5).map((c) => ({ label: truncate(c.name, 14), value: c.performanceIndex }))}
+                      unit="/100"
+                      higherIsWorse={false}
+                    />
+                  </div>
                 </div>
               ) : null}
             </div>
           ) : null}
-        </Card>
+        </GovPanel>
 
-        <Card flush>
-          <CardHeader className="px-4 pt-4 pb-3" title={t('Open intelligence')} description={t('Active intelligence items raised against this ward, across every domain.')} />
+        <GovPanel title={t('Open intelligence')} subtitle={t('{0} items', profile.openIntelligence.length)} tone="red" dense>
+          <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+            {t('Active intelligence items raised against this ward, across every domain.')}
+          </p>
           {profile.openIntelligence.length === 0 ? (
-            <EmptyState compact className="mx-4 mb-4" title={t('No open intelligence')} detail="No open intelligence item is currently recorded for this ward." />
+            <EmptyState compact className="mx-3 mb-3" title={t('No open intelligence')} detail="No open intelligence item is currently recorded for this ward." />
           ) : (
-            <div className="grid grid-cols-1 gap-2 p-4 pt-0 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-2 p-3 pt-0 sm:grid-cols-2">
               {profile.openIntelligence.map((item) => (
                 <IntelligenceCard key={item.id} item={item} compact onClick={() => openDrawer({ kind: 'intelligence', id: item.id })} />
               ))}
             </div>
           )}
-        </Card>
+        </GovPanel>
         </div>
 
         <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
         {/* Map, incidents ----------------------------------------------------- */}
-          <Card>
-            <CardHeader title={t('Ward location')} description={t('Illustrative spatial position within the city; shading shows composite risk across all wards. Click another ward to change context.')} />
-            <div className="mt-3">
+          <GovPanel title={t('Ward location')} tone="green" dense>
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+              {t('Illustrative spatial position within the city; shading shows composite risk across all wards. Click another ward to change context.')}
+            </p>
+            <div className="px-3 pb-3">
               <CityMap
                 layers={[{ id: 'risk', label: t('Composite Risk'), valueFor: (id) => wards.find((w) => w.id === id)?.riskScore, higherIsWorse: true, unit: '/100' }]}
                 selectedWardId={wardId}
@@ -652,53 +627,62 @@ function WardOverviewTab({
                 height={320}
               />
             </div>
-          </Card>
+          </GovPanel>
 
-          <Card flush>
-            <CardHeader className="px-4 pt-4 pb-3" title={t('Open incidents')} description={t('Incidents recorded against this ward not yet resolved or reviewed.')} />
+          <GovPanel title={t('Open incidents')} subtitle={t('{0} open', profile.incidents.length)} tone="amber" dense>
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+              {t('Incidents recorded against this ward not yet resolved or reviewed.')}
+            </p>
             {profile.incidents.length === 0 ? (
-              <EmptyState compact className="mx-4 mb-4" title={t('No open incidents')} detail="No unresolved incident is currently recorded for this ward." />
+              <EmptyState compact className="mx-3 mb-3" title={t('No open incidents')} detail="No unresolved incident is currently recorded for this ward." />
             ) : (
-              <div className="scrollbar-slim max-h-80 space-y-2 overflow-y-auto p-4 pt-0">
+              <div className="scrollbar-slim max-h-80 space-y-2 overflow-y-auto p-3 pt-0">
                 {profile.incidents.map((i) => (
                   <IncidentCard key={i.id} incident={i} onClick={() => openDrawer({ kind: 'incident', id: i.id })} />
                 ))}
               </div>
             )}
-          </Card>
+          </GovPanel>
 
         {/* Health & Environment -------------------------------------------- */}
-        <Card>
-          <CardHeader
-            icon={<HeartPulse className="h-4 w-4" />}
-            title={t('Health & Environment')}
-            description={t('Aggregate outbreak signal strength by disease indicator. No patient-level data of any kind is modelled.')}
-          />
+        <GovPanel title={t('Health & Environment')} tone="red">
+          <p className="mb-3 text-xs leading-relaxed text-ink-500">
+            {t('Aggregate outbreak signal strength by disease indicator. No patient-level data of any kind is modelled.')}
+          </p>
           {profile.health.topSignals.length === 0 ? (
             <EmptyState compact className="mt-3" title={t('No elevated signals')} detail="No outbreak signal above the reporting threshold is currently recorded for this ward." />
           ) : (
-            <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3 xl:grid-cols-1">
-              {profile.health.topSignals.map((sig) => (
-                <div key={sig.id} className="rounded-lg border border-ink-100 p-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-semibold text-ink-800">{DISEASE_LABEL[sig.disease]}</span>
-                    <ConfidenceBadge confidence={sig.confidence} />
+            <>
+              <div className="mt-3" style={{ height: Math.max(140, Math.min(6, profile.health.topSignals.length) * 34) }}>
+                <RankedBarChart
+                  data={profile.health.topSignals.map((sig) => ({ label: truncate(DISEASE_LABEL[sig.disease], 14), value: sig.outbreakSignal }))}
+                  unit="/100"
+                  higherIsWorse
+                />
+              </div>
+              <div className="mt-3 space-y-2">
+                {profile.health.topSignals.slice(0, 2).map((sig) => (
+                  <div key={sig.id} className="rounded-[2px] border border-ink-200 p-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-semibold text-ink-800">{DISEASE_LABEL[sig.disease]}</span>
+                      <ConfidenceBadge confidence={sig.confidence} />
+                    </div>
+                    <p className={cn('numeric mt-1.5 text-xl font-semibold', SCORE_TONE_TEXT[toneForScore(sig.outbreakSignal, false)])}>
+                      {sig.outbreakSignal}
+                      <span className="ml-0.5 text-xs font-normal text-ink-400">/100</span>
+                    </p>
+                    <p className="mt-0.5 text-[0.6875rem] text-ink-500">
+                      {t('{0} cases this period · {1} vs prior', sig.casesReported, formatDelta(sig.changePct))}
+                    </p>
+                    {sig.correlates.length > 0 ? (
+                      <p className="mt-1.5 text-[0.6875rem] leading-relaxed text-ink-400">{t('Correlates observed: {0}', sig.correlates.join(', '))}</p>
+                    ) : null}
                   </div>
-                  <p className={cn('numeric mt-1.5 text-xl font-semibold', SCORE_TONE_TEXT[toneForScore(sig.outbreakSignal, false)])}>
-                    {sig.outbreakSignal}
-                    <span className="ml-0.5 text-xs font-normal text-ink-400">/100</span>
-                  </p>
-                  <p className="mt-0.5 text-[0.6875rem] text-ink-500">
-                    {t('{0} cases this period · {1} vs prior', sig.casesReported, formatDelta(sig.changePct))}
-                  </p>
-                  {sig.correlates.length > 0 ? (
-                    <p className="mt-1.5 text-[0.6875rem] leading-relaxed text-ink-400">{t('Correlates observed: {0}', sig.correlates.join(', '))}</p>
-                  ) : null}
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            </>
           )}
-        </Card>
+        </GovPanel>
         </div>
       </div>
     </div>
@@ -764,14 +748,12 @@ function RiskIndexTab({ wardId, wardLabel }: { wardId: string; wardLabel: string
 
   return (
     <div className="space-y-4">
-      <Card>
-        <CardHeader
-          eyebrow={t('Ward Risk & Performance Index')}
-          title={t('{0} - composite index', wardLabel)}
-          description={t('A weighted composite across six components. Every component is explainable: its raw score, its published weight and its contribution to the total are shown below. The composite is a risk index - a higher score is worse.')}
-        />
-        <div className="mt-4 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
-          <ScoreDial score={riskIndex.score} size={112} label="/100" caption={t('Composite index')} higherIsBetter={false} />
+      <GovPanel title={t('{0} - composite index', wardLabel)} subtitle={t('Ward Risk & Performance Index')} tone="primary">
+        <p className="mb-4 text-xs leading-relaxed text-ink-500">
+          {t('A weighted composite across six components. Every component is explainable: its raw score, its published weight and its contribution to the total are shown below. The composite is a risk index - a higher score is worse.')}
+        </p>
+        <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+          <ScoreDial score={riskIndex.score} size={156} label="/100" caption={t('Composite index')} higherIsBetter={false} />
           <div className="flex-1 space-y-1.5">
             <div className="flex flex-wrap items-center gap-1.5">
               <TrendBadge
@@ -792,16 +774,17 @@ function RiskIndexTab({ wardId, wardLabel }: { wardId: string; wardLabel: string
             </p>
           </div>
         </div>
-      </Card>
+      </GovPanel>
 
       {/* The composite and its arithmetic read down the wide column; the
           reasons it is moving and the published weighting stand beside. */}
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
         <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
-        <Card>
-          <CardHeader title={t('Component contribution')} description={t('Each component\'s raw score (0–100, higher is worse), its published weight and its resulting contribution to the composite.')} />
+        <GovPanel title={t('Component contribution')} tone="amber">
+          <p className="mb-3 text-xs leading-relaxed text-ink-500">
+            {t('Each component\'s raw score (0–100, higher is worse), its published weight and its resulting contribution to the composite.')}
+          </p>
           <ContributionBars
-            className="mt-3"
             items={riskIndex.components.map((c) => ({ id: c.id, label: c.label, contribution: c.contribution, weight: c.weight, rawScore: c.score, explanation: c.explanation }))}
           />
           <div className="mt-4 space-y-2 border-t border-ink-100 pt-3">
@@ -823,13 +806,15 @@ function RiskIndexTab({ wardId, wardLabel }: { wardId: string; wardLabel: string
               )
             })}
           </div>
-        </Card>
+        </GovPanel>
         </div>
 
         <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
-        <Card tone="warn">
-          <CardHeader icon={<AlertTriangle className="h-4 w-4" />} title={t('Why this ward is deteriorating')} description={t('Institutional explanation of the components currently exceeding their attention threshold.')} />
-          <ul className="mt-2 space-y-2">
+        <GovPanel tone="critical" title={t('Why this ward is deteriorating')}>
+          <p className="mb-2 text-xs leading-relaxed text-ink-500">
+            {t('Institutional explanation of the components currently exceeding their attention threshold.')}
+          </p>
+          <ul className="space-y-2">
             {riskIndex.deteriorationReasons.map((r, i) => (
               <li key={i} className="flex items-start gap-2 text-xs leading-relaxed text-ink-700">
                 <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-warn-500" aria-hidden />
@@ -837,18 +822,20 @@ function RiskIndexTab({ wardId, wardLabel }: { wardId: string; wardLabel: string
               </li>
             ))}
           </ul>
-        </Card>
+        </GovPanel>
 
-        <Card>
-          <CardHeader title={t('Index methodology')} description={t('The composite weighting is fixed and identical for every ward, published here for transparency.')} />
-          <DefinitionList className="mt-2">
+        <GovPanel title={t('Index methodology')} tone="green">
+          <p className="mb-2 text-xs leading-relaxed text-ink-500">
+            {t('The composite weighting is fixed and identical for every ward, published here for transparency.')}
+          </p>
+          <DefinitionList>
             {(Object.keys(WARD_INDEX_WEIGHTS) as Array<keyof typeof WARD_INDEX_WEIGHTS>).map((key) => (
               <DefinitionRow key={key} label={WARD_INDEX_LABELS[key]}>
                 {formatPercent(WARD_INDEX_WEIGHTS[key] * 100, 0)} weight
               </DefinitionRow>
             ))}
           </DefinitionList>
-        </Card>
+        </GovPanel>
         </div>
       </div>
     </div>
@@ -871,9 +858,9 @@ function CompareTab({ wards }: { wards: Ward[] }): React.JSX.Element {
   )
 
   const selectorPanel = (
-    <Card>
-      <CardHeader title={t('Select wards to compare')} description={t('Choose between 2 and 4 wards. {0} of 4 selected.', selection.selected.length)} />
-      <div className="scrollbar-slim mt-3 max-h-56 overflow-y-auto rounded-md border border-ink-100 p-2">
+    <GovPanel title={t('Select wards to compare')} subtitle={t('{0} of 4 selected', selection.selected.length)} tone="amber">
+      <p className="mb-3 text-xs leading-relaxed text-ink-500">{t('Choose between 2 and 4 wards.')}</p>
+      <div className="scrollbar-slim max-h-56 overflow-y-auto rounded-[2px] border border-ink-200 p-2">
         <div className="grid grid-cols-1 gap-1 sm:grid-cols-2 lg:grid-cols-3">
           {wards.map((w) => (
             <Checkbox
@@ -887,7 +874,7 @@ function CompareTab({ wards }: { wards: Ward[] }): React.JSX.Element {
         </div>
       </div>
       {selection.selected.length < 2 ? <p className="mt-2 text-[0.6875rem] text-warn-700">{t('Select at least two wards to see a comparison.')}</p> : null}
-    </Card>
+    </GovPanel>
   )
 
   if (wards.length < 2) {
@@ -954,12 +941,10 @@ function CompareTab({ wards }: { wards: Ward[] }): React.JSX.Element {
           single-metric comparison read beside them. */}
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
         <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
-        <Card flush>
-          <CardHeader
-            className="px-4 pt-4 pb-3"
-            title={t('Comparison table')}
-            description={t('The best figure per row is shown in positive tone, the worst in critical tone, respecting whether higher is better for that metric.')}
-          />
+        <GovPanel title={t('Comparison table')} subtitle={t('{0} wards', selectedWards.length)} tone="red" dense>
+          <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+            {t('The best figure per row is shown in positive tone, the worst in critical tone, respecting whether higher is better for that metric.')}
+          </p>
           <div className="scrollbar-slim overflow-x-auto">
             <table className="w-full min-w-[640px] border-collapse text-left text-xs">
               <thead>
@@ -1006,16 +991,15 @@ function CompareTab({ wards }: { wards: Ward[] }): React.JSX.Element {
               </tbody>
             </table>
           </div>
-        </Card>
+        </GovPanel>
         </div>
 
         <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
-        <Card>
-          <CardHeader
-            title={t('Relative standing')}
-            description={t('Each cell shows relative standing across the selected wards on a 0–100 scale, normalised per metric (100 = best performer for that metric). See the table above for exact figures.')}
-          />
-          <div className="mt-3" style={{ height: Math.max(260, rows.length * 26) }}>
+        <GovPanel title={t('Relative standing')} tone="amber">
+          <p className="mb-3 text-xs leading-relaxed text-ink-500">
+            {t('Each cell shows relative standing across the selected wards on a 0–100 scale, normalised per metric (100 = best performer for that metric). See the table above for exact figures.')}
+          </p>
+          <div style={{ height: Math.max(260, rows.length * 26) }}>
             <HeatmapMatrix
               rows={rows.map((r) => ({ id: r.id, label: r.label }))}
               columns={selectedWards.map((w) => ({ id: w.id, label: w.code }))}
@@ -1023,35 +1007,28 @@ function CompareTab({ wards }: { wards: Ward[] }): React.JSX.Element {
               values={heatmapValues}
             />
           </div>
-        </Card>
+        </GovPanel>
 
-        <Card>
-          <CardHeader
-            title={t('Grouped comparison')}
-            description={t('Compare a single metric across the selected wards.')}
-            actions={
-              <Select
-                value={chartMetric}
-                onChange={(e) => setChartMetric(e.target.value)}
-                options={rows.map((r) => ({ value: r.id, label: r.label }))}
-                className="w-auto min-w-[13rem]"
-                aria-label={t('Metric to chart')}
-              />
-            }
+        <GovPanel title={t('Grouped comparison')} tone="green">
+          <p className="mb-2 text-xs leading-relaxed text-ink-500">{t('Compare a single metric across the selected wards.')}</p>
+          <Select
+            value={chartMetric}
+            onChange={(e) => setChartMetric(e.target.value)}
+            options={rows.map((r) => ({ value: r.id, label: r.label }))}
+            className="mb-3 w-auto min-w-[13rem]"
+            aria-label={t('Metric to chart')}
           />
           {chartRow ? (
-            <div className="mt-3">
-              <ChartFrame title={chartRow.label} unit={chartRow.unit || 'value'} timeframe="Current reporting period" height={240}>
-                <CategoryBarChart
-                  data={selectedWards.map((w) => ({ label: w.code, value: chartRow.values[w.id] ?? 0 }))}
-                  series={[{ key: 'value', label: chartRow.label, colour: CHART_COLOURS.primary }]}
-                  layout="vertical"
-                  unit={chartRow.unit}
-                />
-              </ChartFrame>
-            </div>
+            <ChartFrame title={chartRow.label} unit={chartRow.unit || 'value'} timeframe="Current reporting period" height={240}>
+              <CategoryBarChart
+                data={selectedWards.map((w) => ({ label: w.code, value: chartRow.values[w.id] ?? 0 }))}
+                series={[{ key: 'value', label: chartRow.label, colour: CHART_COLOURS.primary }]}
+                layout="vertical"
+                unit={chartRow.unit}
+              />
+            </ChartFrame>
           ) : null}
-        </Card>
+        </GovPanel>
         </div>
       </div>
     </div>

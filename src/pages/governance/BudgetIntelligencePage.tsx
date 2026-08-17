@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react'
-import { AlertTriangle, HardHat, Landmark, TrendingDown, TrendingUp } from 'lucide-react'
+import { AlertTriangle, HardHat, TrendingDown, TrendingUp } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { useServiceAction, useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { financeService, projectService } from '@/services'
 import { useCurrentUser } from '@/stores/auth.store'
 import { usePageMasthead } from '@/stores/masthead.store'
+import { activeCorporation } from '@/config/municipality.config'
 import { allowed } from '@/security'
 import { ROUTES } from '@/config/navigation'
 import type { OperationalState } from '@/types/common'
@@ -18,7 +19,6 @@ import {
   Badge,
   Button,
   Card,
-  CardHeader,
   DataTable,
   DemonstrationNotice,
   EmptyState,
@@ -34,6 +34,7 @@ import {
 } from '@/components/ui'
 import { StateBadge } from '@/components/ui/badges'
 import { MetricCard } from '@/components/cards'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { ChartFrame, DonutChart, TrendChart } from '@/components/charts'
 import { t } from '@/i18n'
 import { registerLayer } from '@/data/runtime'
@@ -96,10 +97,7 @@ function round1(v: number): number {
 
 export function BudgetIntelligencePage(): React.JSX.Element {
   // The shell's masthead carries the screen's name; the page states the wording.
-  usePageMasthead(
-    t('Budget Intelligence'),
-    t('Municipal budget utilisation, department and ward variance against the phased plan, and a scenario engine for allocation, collection and contingency stress-testing. All expenditure figures are year-to-date; the financial year is approximately 31% elapsed at this reporting date.'),
-  )
+  usePageMasthead(t('Budget Intelligence'))
 
   const user = useCurrentUser()
   const [selectedDepartmentId, setSelectedDepartmentId] = useState<string | null>(null)
@@ -368,14 +366,27 @@ export function BudgetIntelligencePage(): React.JSX.Element {
 
       {!anyLoading && !anyError && totals ? (
         <>
-          <Card>
-            <CardHeader
-              eyebrow={t('FY 2026–27 · Year to date')}
-              title={t('City budget position')}
-              description={t('Revised allocation, booked expenditure and commitment position against the phased plan. Variance is measured against the phased (31% elapsed) plan, not the full annual allocation - positive means behind plan, negative means ahead of plan.')}
-            />
+          <GovPanel
+            title={t('City budget position')}
+            subtitle={t('FY 2026–27 · Year to date')}
+            tone="primary"
+          >
+            <p className="mb-3 text-xs leading-relaxed text-ink-500">
+              {t('Revised allocation, booked expenditure and commitment position against the phased plan. Variance is measured against the phased (31% elapsed) plan, not the full annual allocation - positive means behind plan, negative means ahead of plan.')}
+            </p>
             <MetricGrid columns={5} className="mt-4">
-              <MetricCard label={t('Revised budget')} value={formatCrore(totals.revised)} support={t('of {0} approved', formatCrore(totals.approved))} />
+              <MetricCard
+                label={t('Revised budget')}
+                value={formatCrore(totals.revised)}
+                support={t('of {0} approved', formatCrore(totals.approved))}
+                footer={
+                  activeCorporation.id === 'bmc' && activeCorporation.budgetCrore ? (
+                    <span className="text-[0.625rem] leading-snug text-ink-400">
+                      {t('For context: BMC\'s own {0} budget outlay is {1}, presented 25 Feb 2026 by the Commissioner - up 8.77% on {2}\'s ₹74,427.41 crore, and India\'s largest municipal budget. This total includes capital spend and borrowings, distinct from the revenue-income estimate elsewhere on this platform.', activeCorporation.budgetFinancialYear ?? '-', formatCrore(activeCorporation.budgetCrore), '2025-26')}
+                    </span>
+                  ) : undefined
+                }
+              />
               <MetricCard
                 label={t('Actual expenditure - YTD')}
                 value={formatCrore(totals.actual)}
@@ -395,7 +406,7 @@ export function BudgetIntelligencePage(): React.JSX.Element {
                 tone={varianceTone(cityVariancePct) === 'positive' ? 'default' : varianceTone(cityVariancePct) === 'warn' ? 'warn' : 'critical'}
               />
             </MetricGrid>
-          </Card>
+          </GovPanel>
 
           {/* Two columns. The registers an officer works down — departments,
               their heads, the wards behind them, then the works and the
@@ -405,12 +416,10 @@ export function BudgetIntelligencePage(): React.JSX.Element {
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
           <div className="flex min-w-0 flex-col gap-4 xl:order-2 xl:col-span-4">
           {(behindPlan.length > 0 || aheadOfPlan.length > 0) && (
-            <Card tone="warn">
-              <CardHeader
-                icon={<AlertTriangle className="h-4 w-4" />}
-                title={t('Departments materially off the phased plan')}
-                description={t('Departments whose year-to-date position diverges from the phased plan by more than 25 percentage points, with the institutional consequence stated.')}
-              />
+            <GovPanel title={t('Departments materially off the phased plan')} tone="critical">
+              <p className="mb-3 text-xs leading-relaxed text-ink-500">
+                {t('Departments whose year-to-date position diverges from the phased plan by more than 25 percentage points, with the institutional consequence stated.')}
+              </p>
               <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-1">
                 {behindPlan.map((d) => (
                   <div key={d.departmentId} className="flex items-start gap-2 rounded-md border border-crit-200 bg-crit-50/50 p-2.5">
@@ -431,7 +440,7 @@ export function BudgetIntelligencePage(): React.JSX.Element {
                   </div>
                 ))}
               </div>
-            </Card>
+            </GovPanel>
           )}
 
           <Card>
@@ -449,12 +458,10 @@ export function BudgetIntelligencePage(): React.JSX.Element {
           </div>
 
           <div className="flex min-w-0 flex-col gap-4 xl:order-1 xl:col-span-8">
-          <Card flush>
-            <CardHeader
-              bordered
-              title={t('Department variance')}
-              description={t('Sortable and searchable. Click a department to drill into its head breakdown, linked wards and projects below.')}
-            />
+          <GovPanel title={t('Department variance')} tone="red" dense>
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+              {t('Sortable and searchable. Click a department to drill into its head breakdown, linked wards and projects below.')}
+            </p>
             <DataTable
               rows={departmentRows}
               columns={departmentColumns}
@@ -466,24 +473,24 @@ export function BudgetIntelligencePage(): React.JSX.Element {
               onRowClick={(row) => setSelectedDepartmentId(row.departmentId === selectedDepartmentId ? null : row.departmentId)}
               activeRowKey={selectedDepartmentId ?? undefined}
             />
-          </Card>
+          </GovPanel>
 
-          <Card>
-            <CardHeader
-              title={selectedDepartmentId ? `Head, ward and project drilldown - ${departmentName(selectedDepartmentId)}` : 'Head breakdown - all departments'}
-              description={
-                selectedDepartmentId
-                  ? 'Budget heads, capital-linked wards and projects for the selected department. Select the department row again to clear.'
-                  : 'Revenue, capital, establishment and debt-service expenditure, city-wide. Select a department above to scope this view.'
-              }
-              actions={
-                selectedDepartmentId ? (
-                  <Button size="xs" variant="ghost" onClick={() => setSelectedDepartmentId(null)}>
-                    {t('Clear selection')}
-                  </Button>
-                ) : undefined
-              }
-            />
+          <GovPanel
+            title={selectedDepartmentId ? `Head, ward and project drilldown - ${departmentName(selectedDepartmentId)}` : 'Head breakdown - all departments'}
+            tone="amber"
+            actions={
+              selectedDepartmentId ? (
+                <Button size="xs" variant="ghost" onClick={() => setSelectedDepartmentId(null)}>
+                  {t('Clear selection')}
+                </Button>
+              ) : undefined
+            }
+          >
+            <p className="mb-3 text-xs leading-relaxed text-ink-500">
+              {selectedDepartmentId
+                ? 'Budget heads, capital-linked wards and projects for the selected department. Select the department row again to clear.'
+                : 'Revenue, capital, establishment and debt-service expenditure, city-wide. Select a department above to scope this view.'}
+            </p>
             <div className="mt-3 grid grid-cols-1 gap-4 lg:grid-cols-2">
               <div className="scrollbar-slim overflow-x-auto">
                 <table className="w-full min-w-[28rem] border-collapse text-left text-xs">
@@ -570,10 +577,12 @@ export function BudgetIntelligencePage(): React.JSX.Element {
                 </div>
               </div>
             ) : null}
-          </Card>
+          </GovPanel>
 
-            <Card flush>
-              <CardHeader bordered title={t('Ward variance')} description={t('Capital allocation and spend by ward, from the finance service ward variance view.')} />
+            <GovPanel title={t('Ward variance')} tone="green" dense>
+              <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+                {t('Capital allocation and spend by ward, from the finance service ward variance view.')}
+              </p>
               <DataTable
                 rows={wardVarianceQuery.data ?? []}
                 columns={[
@@ -617,14 +626,12 @@ export function BudgetIntelligencePage(): React.JSX.Element {
                 maxHeight="22rem"
                 searchPlaceholder="Search wards"
               />
-            </Card>
+            </GovPanel>
 
-          <Card flush>
-            <CardHeader
-              bordered
-              title={t('Project expenditure linkage')}
-              description={t('The largest active capital commitments by current cost, linking budget utilisation to physical delivery in Project Intelligence.')}
-            />
+          <GovPanel title={t('Project expenditure linkage')} tone="amber" dense>
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+              {t('The largest active capital commitments by current cost, linking budget utilisation to physical delivery in Project Intelligence.')}
+            </p>
             <DataTable
               rows={topProjectsByCost}
               columns={projectLinkageColumns}
@@ -632,15 +639,12 @@ export function BudgetIntelligencePage(): React.JSX.Element {
               searchable={false}
               pageSize={8}
             />
-          </Card>
+          </GovPanel>
 
-          <Card>
-            <CardHeader
-              icon={<Landmark className="h-4 w-4" />}
-              title={t('Budget scenario analysis')}
-              description={t('Model the effect of a capital allocation change, a revenue expenditure change, a collection efficiency change and an additional contingency reserve on city and departmental utilisation. This is a simulation constructed from published, deterministic logic - it is never a forecast and never a budget instruction.')}
-              actions={<SimulationBadge />}
-            />
+          <GovPanel title={t('Budget scenario analysis')} tone="red" actions={<SimulationBadge />}>
+            <p className="mb-3 text-xs leading-relaxed text-ink-500">
+              {t('Model the effect of a capital allocation change, a revenue expenditure change, a collection efficiency change and an additional contingency reserve on city and departmental utilisation. This is a simulation constructed from published, deterministic logic - it is never a forecast and never a budget instruction.')}
+            </p>
 
             <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-4">
               <div>
@@ -794,7 +798,7 @@ export function BudgetIntelligencePage(): React.JSX.Element {
                 </div>
               </div>
             ) : null}
-          </Card>
+          </GovPanel>
           </div>
           </div>
         </>

@@ -127,8 +127,6 @@ export const MR_PART_12: Record<string, string> = {
   'Municipal assets': 'महानगरपालिका मालमत्ता',
   'Municipal assets past design life or of high / critical criticality.':
     'रचनात्मक आयुर्मान संपलेल्या किंवा उच्च / अतितीव्र निकडीच्या महानगरपालिका मालमत्ता.',
-  'Municipal budget utilisation, department and ward variance against the phased plan, and a scenario engine for allocation, collection and contingency stress-testing. All expenditure figures are year-to-date; the financial year is approximately 31% elapsed at this reporting date.':
-    'महानगरपालिका अर्थसंकल्पाचा वापर, टप्प्याटप्प्याच्या आराखड्याच्या तुलनेत विभाग व प्रभाग फरक, आणि तरतूद, वसुली व आकस्मिकतेच्या ताण-तपासणीसाठी परिस्थिती प्रणाली. सर्व खर्चाचे आकडे वर्षारंभापासूनचे आहेत; या अहवाल दिनांकास आर्थिक वर्ष अंदाजे 31% सरले आहे.',
   'Municipal corporation deployments': 'महानगरपालिकांतील अंमलबजावणी',
   'Municipal facilities audited against the harmonised guidelines notified under the Rights of Persons with Disabilities Act, 2016, within your authorised ward scope.':
     'दिव्यांग व्यक्तींचे हक्क अधिनियम, 2016 अंतर्गत अधिसूचित सुसंगत मार्गदर्शक तत्त्वांवर तपासलेल्या महानगरपालिका सुविधा, तुमच्या अधिकृत प्रभाग व्याप्तीतील.',
@@ -143,8 +141,6 @@ export const MR_PART_12: Record<string, string> = {
   'Muting a notification type does not mute the obligation behind it. Escalation timers, SLA clocks and decision deadlines run on the institutional record, not on whether an officer chose to see a drawer entry — a muted critical alert is still a critical alert, still assigned, still counted in the alert register and still escalated on schedule.':
     'सूचनेचा प्रकार मूक केल्याने त्यामागील जबाबदारी मूक होत नाही. उन्नयन कालमापके, सेवा-हमी घड्याळे आणि निर्णयाच्या मुदती संस्थात्मक नोंदीवर चालतात, अधिकाऱ्याने कप्प्यातील नोंद पाहायचे ठरवले की नाही यावर नव्हे — मूक केलेला अतितीव्र इशारा तरीही अतितीव्र इशाराच राहतो, तरीही नेमून दिलेला राहतो, तरीही इशारा नोंदवहीत मोजला जातो आणि तरीही वेळापत्रकानुसार उन्नत होतो.',
   'My attention today': 'आज माझे लक्ष आवश्यक',
-  'Nallahs, closed drains and culverts across the storm water drainage network, read against pre-monsoon desilting targets and published blockage-risk drivers, together with the pumping station readiness that governs discharge during high-intensity rainfall.':
-    'पावसाळी जलनिस्सारण जाळ्यातील नाले, बंदिस्त गटारे आणि मोऱ्या — पावसाळापूर्व गाळ काढणी लक्ष्ये व प्रकाशित अडथळा-जोखीम कारकांच्या तुलनेत वाचलेले, तसेच तीव्र पर्जन्यवृष्टीदरम्यान निचरा ठरवणाऱ्या उपसा केंद्रांच्या सज्जतेसह.',
   'Nallahs, drains, culverts and pumping station readiness - the network that carries rainfall off the city and into these water bodies.':
     'नाले, गटारे, मोऱ्या आणि उपसा केंद्रांची सज्जता — शहरातील पावसाचे पाणी वाहून या जलाशयांपर्यंत नेणारे जाळे.',
   Name: 'नाव',
@@ -162,8 +158,6 @@ export const MR_PART_12: Record<string, string> = {
   'Neither list is exhaustive of every engineering detail, and completing the right-hand column is a multi-department, multi-quarter undertaking, not a release. The indicative scale on each workstream is a band rather than an estimate: a precise figure would be false when the critical path runs through signed agreements and completed reviews rather than through code. This page will be revised as work against each item begins and completes - no item moves from &quot;Required&quot; to &quot;Implemented&quot; here without the underlying capability actually existing.':
     'यापैकी कोणतीही यादी प्रत्येक अभियांत्रिकी तपशील समाविष्ट करत नाही, आणि उजवा स्तंभ पूर्ण करणे हे अनेक विभागांचे, अनेक तिमाहींचे काम आहे — एखादी आवृत्ती प्रकाशित करणे नव्हे. प्रत्येक कार्यप्रवाहावरील निर्देशक व्याप्ती हा अंदाज नसून पट्टा आहे: जेव्हा निर्णायक मार्ग संगणक आज्ञावलीतून नव्हे तर स्वाक्षरित करार व पूर्ण झालेल्या पुनरावलोकनांतून जातो, तेव्हा नेमका आकडा चुकीचाच ठरेल. प्रत्येक बाबीवरील काम सुरू होईल व पूर्ण होईल तसे हे पान सुधारले जाईल — मूळ क्षमता प्रत्यक्षात अस्तित्वात आल्याशिवाय येथे कोणतीही बाब &quot;आवश्यक&quot; वरून &quot;अंमलात&quot; कडे जात नाही.',
   'Net movement': 'निव्वळ बदल',
-  'Network condition and the explainable Road Defect Priority Engine that directs constrained rectification capacity, together with the asset-lifecycle position behind the resurfacing programme.':
-    'जाळ्याची स्थिती आणि मर्यादित दुरुस्ती क्षमता कोठे वापरायची हे ठरवणारी स्पष्टीकरणक्षम रस्ता दोष प्राधान्य प्रणाली, तसेच पुनःपृष्ठीकरण कार्यक्रमामागील मालमत्ता-आयुर्मान स्थिती.',
   'Network under management': 'व्यवस्थापनाखालील जाळे',
   Never: 'कधीही नाही',
   'New enrolments': 'नव्या नोंदण्या',
@@ -456,8 +450,6 @@ export const MR_PART_12: Record<string, string> = {
   'Not effective': 'परिणामकारक नाही',
   'Not flagged': 'खुणांकित नाही',
   'Not Found': 'सापडले नाही',
-  'Not how many complaints there are, but which ones keep coming back and what the corporation already holds a record of at that location. Recurrence is the signal that a service issue was closed without its cause being resolved.':
-    'तक्रारी किती आहेत हे नव्हे, तर कोणत्या तक्रारी पुन्हा पुन्हा येतात आणि त्या ठिकाणाबाबत महानगरपालिकेकडे आधीच काय नोंद आहे हे महत्त्वाचे. पुनरावृत्ती हा संकेत आहे की सेवेतील अडचण तिचे कारण दूर न करताच बंद केली गेली.',
   'Not present in this environment. Each is a named institutional or engineering workstream, not a configuration toggle. Showing {0} of {1}.':
     'या वातावरणात उपलब्ध नाही. यातील प्रत्येक बाब ही नामनिर्देशित संस्थात्मक किंवा अभियांत्रिकी कार्यप्रवाह आहे, संरचनेतील कळ नव्हे. {1} पैकी {0} दाखवत आहे.',
   'Not put': 'मतास टाकले नाही',

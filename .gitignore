@@ -23,3 +23,6 @@ vite.config.ts.timestamp-*
 .env.*
 !.env.example
 *.local
+
+# Pilot data ingestion (dev-server only, see scripts/pilot-api-plugin.ts)
+.pilot-data/

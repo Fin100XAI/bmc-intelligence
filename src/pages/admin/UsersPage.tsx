@@ -4,7 +4,6 @@ import { PageBody, PageHeader, SplitLayout } from '@/components/layout/PageHeade
 import { Badge, ClassificationBadge } from '@/components/ui/badges'
 import {
   Card,
-  CardHeader,
   DefinitionList,
   DefinitionRow,
   Divider,
@@ -12,6 +11,7 @@ import {
   MetricGrid,
   Select,
 } from '@/components/ui/primitives'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { DataTable, type Column } from '@/components/ui/DataTable'
 import { DemonstrationNotice, EmptyState, ErrorState, LoadingState } from '@/components/ui/states'
 import { Tabs } from '@/components/ui/overlays'
@@ -171,10 +171,7 @@ export function UsersPage(): React.JSX.Element {
   const [statusFilter, setStatusFilter] = useState<User['status'] | ''>('')
 
   // The shell renders the masthead; this page states what it should say.
-  usePageMasthead(
-    t('Users & Roles'),
-    t('Every principal provisioned in this demonstration environment, and the role catalogue that decides what each of them may reach. Permissions are listed in full against every role - there is no implicit or inherited grant anywhere in the platform - and no password, token or credential material is modelled.'),
-  )
+  usePageMasthead(t('Users & Roles'))
 
   const users = usersQuery.data ?? []
   const roles = rolesQuery.data ?? []
@@ -384,15 +381,15 @@ export function UsersPage(): React.JSX.Element {
         ) : (
           <>
             <MetricGrid columns={4}>
-              <Card>
+              <Card background="red">
                 <p className="label-institutional">{t('Principals')}</p>
                 <p className="numeric mt-2 text-metric font-semibold text-ink-900">{users.length}</p>
               </Card>
-              <Card tone={withoutMfa > 0 ? 'warn' : 'default'}>
+              <Card tone={withoutMfa > 0 ? 'warn' : 'default'} background="amber">
                 <p className="label-institutional">{t('Without MFA')}</p>
                 <p className="numeric mt-2 text-metric font-semibold text-ink-900">{withoutMfa}</p>
               </Card>
-              <Card>
+              <Card background="green">
                 <p className="label-institutional">{t('Active')}</p>
                 <p className="numeric mt-2 text-metric font-semibold text-ink-900">
                   {users.filter((u) => u.status === 'active').length}
@@ -406,8 +403,7 @@ export function UsersPage(): React.JSX.Element {
               </Card>
             </MetricGrid>
 
-            <Card flush>
-              <CardHeader className="p-4" icon={<UsersIcon className="h-4 w-4" />} title={t('User roster')} />
+            <GovPanel title={t('User roster')} tone="amber" dense>
               <SplitLayout
                 className="px-4 pb-4"
                 asideWidth="md"
@@ -535,7 +531,7 @@ export function UsersPage(): React.JSX.Element {
                   )
                 }
               />
-            </Card>
+            </GovPanel>
           </>
         )
       ) : roles.length === 0 ? (
@@ -546,17 +542,17 @@ export function UsersPage(): React.JSX.Element {
       ) : (
         <>
           <MetricGrid columns={5}>
-            <Card>
+            <Card background="red">
               <p className="label-institutional">{t('Roles configured')}</p>
               <p className="numeric mt-2 text-metric font-semibold text-ink-900">{roles.length}</p>
             </Card>
-            <Card>
+            <Card background="amber">
               <p className="label-institutional">{t('Executive band')}</p>
               <p className="numeric mt-2 text-metric font-semibold text-ink-900">
                 {roles.filter((r) => r.band === 'executive').length}
               </p>
             </Card>
-            <Card>
+            <Card background="green">
               <p className="label-institutional">{t('Oversight band')}</p>
               <p className="numeric mt-2 text-metric font-semibold text-ink-900">
                 {roles.filter((r) => r.band === 'oversight').length}
@@ -575,8 +571,7 @@ export function UsersPage(): React.JSX.Element {
             </Card>
           </MetricGrid>
 
-          <Card flush>
-            <CardHeader className="p-4" icon={<KeyRound className="h-4 w-4" />} title={t('Role register')} />
+          <GovPanel title={t('Role register')} tone="amber" dense>
             <SplitLayout
               className="px-4 pb-4"
               asideWidth="lg"
@@ -664,7 +659,7 @@ export function UsersPage(): React.JSX.Element {
                 )
               }
             />
-          </Card>
+          </GovPanel>
         </>
       )}
 

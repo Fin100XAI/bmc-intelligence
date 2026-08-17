@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react'
-import { Boxes, ShieldAlert } from 'lucide-react'
+import { Boxes } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { buildingService } from '@/services'
 import { useDrawerStore } from '@/stores/ui.store'
 import { usePageMasthead } from '@/stores/masthead.store'
+import { activeCorporation } from '@/config/municipality.config'
 import { ROUTES } from '@/config/navigation'
 import type { BuildingProposal, BuildingRecord } from '@/types/city-domains'
 import { wardName } from '@/data/reference'
@@ -14,7 +15,6 @@ import { formatNumber, formatRelative } from '@/utils/format'
 import {
   Badge,
   Card,
-  CardHeader,
   DataTable,
   DemonstrationNotice,
   EmptyState,
@@ -25,6 +25,7 @@ import {
   Select,
   type Column,
 } from '@/components/ui'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { SeverityBadge } from '@/components/ui/badges'
 import { MetricCard } from '@/components/cards'
 import { CategoryBarChart, ChartFrame, CompositionBar } from '@/components/charts'
@@ -96,10 +97,7 @@ registerLayer(() => {
 
 export function BuildingIntelligencePage(): React.JSX.Element {
   // The shell's masthead carries the screen's name; the page states the wording.
-  usePageMasthead(
-    t('Building Intelligence'),
-    t('Structural audits, dilapidation status and development-control proposals across the municipal building stock. Structures with a C1 dilapidation category or an overdue structural audit are treated as a life-safety exposure requiring priority attention.'),
-  )
+  usePageMasthead(t('Building Intelligence'))
 
   const openDrawer = useDrawerStore((s) => s.open)
   const [wardFilter, setWardFilter] = useState<string>('all')
@@ -219,9 +217,9 @@ export function BuildingIntelligencePage(): React.JSX.Element {
 
       {!buildingsQuery.isLoading && !proposalsQuery.isLoading && !buildingsQuery.error && !proposalsQuery.error && buildings.length > 0 ? (
         <>
-          <Card>
-            <CardHeader title={t('Register summary')} description={t('Scoped to the ward filter selected above.')} />
-            <MetricGrid columns={5} className="mt-4">
+          <GovPanel title={t('Register summary')} tone="primary">
+            <p className="mb-3 text-xs leading-relaxed text-ink-500">{t('Scoped to the ward filter selected above.')}</p>
+            <MetricGrid columns={5}>
               <MetricCard label={t('Structures tracked')} value={formatNumber(filteredBuildings.length)} />
               <MetricCard label={t('Audits overdue')} value={formatNumber(summary.auditsOverdue)} tone={summary.auditsOverdue > 0 ? 'warn' : 'default'} />
               <MetricCard
@@ -229,11 +227,18 @@ export function BuildingIntelligencePage(): React.JSX.Element {
                 value={formatNumber(summary.c1)}
                 support={t('Life-safety exposure - priority attention')}
                 tone={summary.c1 > 0 ? 'critical' : 'default'}
+                footer={
+                  activeCorporation.id === 'bmc' && activeCorporation.dangerousC1BuildingsCount ? (
+                    <span className="text-[0.625rem] leading-snug text-ink-400">
+                      {t('For context: BMC\'s {0} pre-monsoon list flagged {1} "most dangerous" C1 buildings citywide (23 MCGM-owned + 141 private + 10 government/MHADA-owned). This count fluctuates year to year rather than trending in one direction - 2024 was 188, 2025 was 134.', activeCorporation.dangerousC1BuildingsYear ?? '-', formatNumber(activeCorporation.dangerousC1BuildingsCount))}
+                    </span>
+                  ) : undefined
+                }
               />
               <MetricCard label={t('Proposals in scrutiny')} value={formatNumber(summary.inScrutiny)} support={t('of {0} on record', filteredProposals.length)} />
               <MetricCard label={t('SLA-breached proposals')} value={formatNumber(summary.slaBreached)} tone={summary.slaBreached > 0 ? 'critical' : 'default'} />
             </MetricGrid>
-          </Card>
+          </GovPanel>
 
           {/* Two columns. Life safety, then the two registers it is drawn
               from, read down the wide column in the order an officer works
@@ -242,13 +247,14 @@ export function BuildingIntelligencePage(): React.JSX.Element {
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
           <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
           {lifeSafety.length > 0 ? (
-            <Card tone="critical" flush>
-              <CardHeader
-                bordered
-                icon={<ShieldAlert className="h-4 w-4" />}
-                title={t('Life-safety exposure - {0} structure{1}', lifeSafety.length, lifeSafety.length === 1 ? '' : 's')}
-                description={t('C1-category structures and structures with an overdue statutory structural audit, surfaced ahead of the general register.')}
-              />
+            <GovPanel
+              title={t('Life-safety exposure - {0} structure{1}', lifeSafety.length, lifeSafety.length === 1 ? '' : 's')}
+              tone="critical"
+              dense
+            >
+              <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+                {t('C1-category structures and structures with an overdue statutory structural audit, surfaced ahead of the general register.')}
+              </p>
               <div className="scrollbar-slim max-h-64 overflow-y-auto p-2">
                 {lifeSafety.map((b) => (
                   <button
@@ -268,11 +274,13 @@ export function BuildingIntelligencePage(): React.JSX.Element {
                   </button>
                 ))}
               </div>
-            </Card>
+            </GovPanel>
           ) : null}
 
-          <Card flush>
-            <CardHeader bordered title={t('Structures register')} description={t('Sortable, filterable and paginated. Row click opens the structure\'s ward record.')} />
+          <GovPanel title={t('Structures register')} tone="red" dense>
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+              {t('Sortable, filterable and paginated. Row click opens the structure\'s ward record.')}
+            </p>
             <DataTable
               rows={filteredBuildings}
               columns={buildingColumns}
@@ -284,19 +292,21 @@ export function BuildingIntelligencePage(): React.JSX.Element {
               onRowClick={(r) => openDrawer({ kind: 'ward', id: r.wardId })}
               rowAccent={(r) => <SeverityRailFor severity={r.severity} />}
             />
-          </Card>
+          </GovPanel>
 
-          <Card flush>
-            <CardHeader bordered title={t('Building proposals')} description={t('Development-control proposals with SLA age and breach status.')} />
+          <GovPanel title={t('Building proposals')} tone="amber" dense>
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+              {t('Development-control proposals with SLA age and breach status.')}
+            </p>
             <DataTable rows={filteredProposals} columns={proposalColumns} rowKey={(r) => r.id} pageSize={10} stickyHeader maxHeight="26rem" searchPlaceholder="Search proposals" />
-          </Card>
+          </GovPanel>
           </div>
 
           <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
-            <Card>
-              <CardHeader title={t('Structural audit compliance')} description={t('Composition of the register by audit status.')} />
-              <CompositionBar segments={auditComposition} className="mt-4" />
-            </Card>
+            <GovPanel title={t('Structural audit compliance')} tone="red">
+              <p className="mb-3 text-xs leading-relaxed text-ink-500">{t('Composition of the register by audit status.')}</p>
+              <CompositionBar segments={auditComposition} />
+            </GovPanel>
             <Card>
               <ChartFrame title={t('Proposal ageing')} unit="proposals" timeframe="Current scope" description={t('Age distribution of open and closed proposals against their SLA band.')} freshness={FRESHNESS} height={220}>
                 <CategoryBarChart data={ageingData} categoryKey="label" series={[{ key: 'proposals', label: t('Proposals'), colour: '#2f6feb' }]} />

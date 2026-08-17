@@ -21,7 +21,6 @@ import { formatCrore, formatNumber, formatPercent } from '@/utils/format'
 import {
   Badge,
   Card,
-  CardHeader,
   DataTable,
   DemonstrationNotice,
   EmptyState,
@@ -33,6 +32,7 @@ import {
   Select,
   type Column,
 } from '@/components/ui'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { MetricCard } from '@/components/cards'
 import { ProjectCard } from '@/components/cards/domain-cards'
 import { CategoryBarChart, ChartFrame, ContributionBars, DonutChart, MiniBar, RankedBarChart } from '@/components/charts'
@@ -90,10 +90,7 @@ const ACTIVE_STATUSES: ProjectStatus[] = ['planned', 'tendered', 'awarded', 'in-
 
 export function ProjectIntelligencePage(): React.JSX.Element {
   // The shell's masthead carries the screen's name; the page states the wording.
-  usePageMasthead(
-    t('Project Intelligence'),
-    t('Capital project delivery across every category, with the explainable Project Risk Engine driving prioritisation. Every risk score is the transparent, published sum of seven weighted delivery-risk drivers - never a judgement of any person or organisation.'),
-  )
+  usePageMasthead(t('Project Intelligence'))
 
   const [searchParams] = useSearchParams()
   const openDrawer = useDrawerStore((s) => s.open)
@@ -415,9 +412,9 @@ export function ProjectIntelligencePage(): React.JSX.Element {
 
       {!anyLoading && !anyError && allRows.length > 0 ? (
         <>
-          <Card>
-            <CardHeader title={t('Portfolio summary')} description={t('Scoped to the filters selected above.')} />
-            <MetricGrid columns={5} className="mt-4">
+          <GovPanel title={t('Portfolio summary')} tone="primary">
+            <p className="mb-3 text-xs leading-relaxed text-ink-500">{t('Scoped to the filters selected above.')}</p>
+            <MetricGrid columns={5}>
               <MetricCard label={t('Active projects')} value={formatNumber(summary.active)} support={t('of {0} in this view', rows.length)} />
               <MetricCard label={t('Sanctioned value')} value={formatCrore(summary.sanctioned)} support={t('{0} current cost', formatCrore(summary.current))} />
               <MetricCard
@@ -429,7 +426,7 @@ export function ProjectIntelligencePage(): React.JSX.Element {
               <MetricCard label={t('Projects at risk')} value={formatNumber(summary.atRisk)} support={`${summary.delayed} delayed`} tone={summary.atRisk > 0 ? 'critical' : 'default'} />
               <MetricCard label={t('Open inspection observations')} value={formatNumber(summary.openInspections)} support={t('{0} linked citizen complaints', summary.complaints)} />
             </MetricGrid>
-          </Card>
+          </GovPanel>
 
           {/* Two columns. The portfolio is the record and holds the wide
               column; the engine's breakdown for the selected project sits
@@ -437,23 +434,25 @@ export function ProjectIntelligencePage(): React.JSX.Element {
               the four portfolio distributions beneath. */}
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
           <div className="min-w-0 xl:col-span-8">
-          <Card flush>
-            <CardHeader
-              bordered
-              title={t('Project portfolio')}
-              description={t('Sortable, searchable and paginated. Choose visible columns with the column picker. Click a row to select it for the Risk Engine below and open its full record.')}
-              actions={
-                <SegmentedControl
-                  value={view}
-                  onChange={setView}
-                  ariaLabel="Toggle table or card view"
-                  options={[
-                    { value: 'table', label: t('Table'), icon: <Table2 className="h-3 w-3" /> },
-                    { value: 'grid', label: t('Cards'), icon: <LayoutGrid className="h-3 w-3" /> },
-                  ]}
-                />
-              }
-            />
+          <GovPanel
+            title={t('Project portfolio')}
+            tone="red"
+            dense
+            actions={
+              <SegmentedControl
+                value={view}
+                onChange={setView}
+                ariaLabel="Toggle table or card view"
+                options={[
+                  { value: 'table', label: t('Table'), icon: <Table2 className="h-3 w-3" /> },
+                  { value: 'grid', label: t('Cards'), icon: <LayoutGrid className="h-3 w-3" /> },
+                ]}
+              />
+            }
+          >
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+              {t('Sortable, searchable and paginated. Choose visible columns with the column picker. Click a row to select it for the Risk Engine below and open its full record.')}
+            </p>
             {view === 'table' ? (
               <DataTable
                 rows={rows}
@@ -485,7 +484,7 @@ export function ProjectIntelligencePage(): React.JSX.Element {
                 ))}
               </div>
             )}
-          </Card>
+          </GovPanel>
           </div>
 
           <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
@@ -538,22 +537,25 @@ export function ProjectIntelligencePage(): React.JSX.Element {
             </Card>
           </div>
 
-          <Card className="order-1">
-            <CardHeader
-              title={t('Project Risk Engine')}
-              description={t('A published, deterministic composite: seven delivery-risk drivers, each independently weighted and explained. The score identifies delivery risk requiring management attention - it is not a finding against any person or organisation.')}
-              actions={
-                selectedProject ? (
-                  <LinkButton to={`${ROUTES.decisions}?from=project:${selectedProject.id}`} variant="primary" icon={<ClipboardCheck className="h-3.5 w-3.5" />}>
-                    {t('Create decision case')}
-                  </LinkButton>
-                ) : undefined
-              }
-            />
+          <GovPanel
+            title={t('Project Risk Engine')}
+            tone="amber"
+            className="order-1"
+            actions={
+              selectedProject ? (
+                <LinkButton to={`${ROUTES.decisions}?from=project:${selectedProject.id}`} variant="primary" icon={<ClipboardCheck className="h-3.5 w-3.5" />}>
+                  {t('Create decision case')}
+                </LinkButton>
+              ) : undefined
+            }
+          >
+            <p className="mb-3 text-xs leading-relaxed text-ink-500">
+              {t('A published, deterministic composite: seven delivery-risk drivers, each independently weighted and explained. The score identifies delivery risk requiring management attention - it is not a finding against any person or organisation.')}
+            </p>
             {!selectedProject ? (
-              <EmptyState title={t('Select a project')} detail="Choose a project from the table or card view above to see its risk engine breakdown." compact className="mt-4" />
+              <EmptyState title={t('Select a project')} detail="Choose a project from the table or card view above to see its risk engine breakdown." compact />
             ) : (
-              <div className="mt-4">
+              <div>
                 <div className="mb-3 flex flex-wrap items-center gap-2">
                   <Badge tone="neutral" className="font-mono">{selectedProject.reference}</Badge>
                   <span className="text-sm font-semibold text-ink-800">{selectedProject.name}</span>
@@ -568,7 +570,7 @@ export function ProjectIntelligencePage(): React.JSX.Element {
                 </p>
               </div>
             )}
-          </Card>
+          </GovPanel>
           </div>
           </div>
         </>

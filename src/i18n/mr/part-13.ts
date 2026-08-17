@@ -18,14 +18,10 @@ export const MR_PART_13: Record<string, string> = {
   'On the worklist': 'कार्यसूचीवर',
   'On this page': 'या पानावर',
   'On track': 'मार्गावर',
-  "One composite across twelve dimensions of the city's condition, each computed from the corporation's own records. Every score can be opened to its positive and negative contributors - this page never shows a number it cannot explain.":
-    'शहराच्या स्थितीच्या बारा मितींवरील एकच एकत्रित निर्देशांक, प्रत्येक मिती महानगरपालिकेच्या स्वतःच्या नोंदींवरून काढलेली. प्रत्येक गुण उघडून त्यामागील सकारात्मक व नकारात्मक घटक पाहता येतात — ज्याचे स्पष्टीकरण देता येत नाही असा आकडा हे पान कधीही दाखवत नाही.',
   'One run per model. Select a run to open its dimension scores.':
     'प्रति प्रारूप एक फेरी. मितिनिहाय गुण पाहण्यासाठी फेरी निवडा.',
   'One ward, one revenue stream, ninety days. These four measures are the whole of the scorecard: a pilot that reports twelve numbers reports none of them.':
     'एक प्रभाग, एक महसूल प्रवाह, नव्वद दिवस. ही चार मापे म्हणजेच संपूर्ण गुणपत्रक: बारा आकडे सांगणारा प्रायोगिक प्रकल्प त्यांपैकी एकही आकडा प्रत्यक्षात सांगत नाही.',
-  "One workspace for the platform's three deterministic scenario engines. Every output is a simulation produced by a declared rule model with published driver weights, applied to the current position - it is never a forecast, and it never changes a live municipal record on its own.":
-    'मंचाच्या तीन निर्धारित परिस्थिती प्रणालींसाठी एकच कार्यक्षेत्र. प्रत्येक निर्गत ही प्रकाशित कारक भारांसह घोषित नियम प्रारूपाने सद्यस्थितीवर लागू करून तयार केलेली नक्कल आहे — तो कधीही अंदाज नसतो, आणि तो स्वतःहून कधीही प्रत्यक्ष महानगरपालिका नोंद बदलत नाही.',
   'Open {0}': '{0} उघडा',
   'Open / monitored AI risks': 'प्रलंबित / देखरेखीखालील कृत्रिम बुद्धिमत्ता जोखमी',
   'Open AI incidents': 'प्रलंबित कृत्रिम बुद्धिमत्ता घटना',
@@ -108,8 +104,6 @@ export const MR_PART_13: Record<string, string> = {
   'Parcel-level land-use classification is not yet integrated into this service layer. These views are built from ward planning region and infrastructure-adequacy band instead.':
     'भूखंड पातळीवरील भूवापर वर्गीकरण अद्याप या सेवा स्तरात समाविष्ट केलेले नाही. त्याऐवजी ही दृश्ये प्रभाग नियोजन क्षेत्र आणि पायाभूत सुविधा पर्याप्तता पट्ट्यावरून उभारली आहेत.',
   'Parking is a demand-management instrument': 'वाहनतळ हे मागणी-व्यवस्थापनाचे साधन आहे',
-  'Parking lots, public conveniences, bus shelters, drinking water posts and community halls - what the corporation holds, what condition it is in, and how far it reaches the people it is meant to serve. Street lighting is reported separately.':
-    'वाहनतळ, सार्वजनिक स्वच्छतागृहे, बसथांबे, पिण्याच्या पाण्याची ठिकाणे आणि समाजमंदिरे — महानगरपालिकेकडे काय आहे, त्याची स्थिती काय आहे, आणि ज्यांच्यासाठी ते आहे त्या लोकांपर्यंत ते किती पोहोचते. पथदिव्यांचा अहवाल स्वतंत्रपणे दिला जातो.',
   'Partial match': 'अंशतः जुळणी',
   'Partially effective': 'अंशतः परिणामकारक',
   'Partially Protected': 'अंशतः संरक्षित',
@@ -176,8 +170,6 @@ export const MR_PART_13: Record<string, string> = {
   'Population exposed (estimate)': 'धोक्यात असलेली लोकसंख्या (अंदाज)',
   'Population exposed (modelled)': 'धोक्यात असलेली लोकसंख्या (प्रतिरूपित)',
   'Population in affected areas': 'बाधित भागांतील लोकसंख्या',
-  'Population pressure, infrastructure adequacy, transport access and capital planning exposure across every ward, with a scenario engine for population growth, capital investment, transport demand and extreme rainfall frequency.':
-    'प्रत्येक प्रभागातील लोकसंख्येचा ताण, पायाभूत सुविधांची पर्याप्तता, वाहतूक सुलभता आणि भांडवली नियोजनातील धोका, तसेच लोकसंख्या वाढ, भांडवली गुंतवणूक, वाहतूक मागणी व अतिवृष्टीची वारंवारता यासाठी परिस्थिती प्रणाली.',
   Position: 'पद',
   'Position by revenue stream and ward': 'महसूल प्रवाह व प्रभागनिहाय स्थिती',
   'Position in pipeline': 'प्रवाहसाखळीतील स्थान',

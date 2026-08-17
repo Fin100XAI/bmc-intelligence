@@ -696,6 +696,44 @@ const COLUMN_HUES = [
 ] as const
 
 /**
+ * The same four hues as `COLUMN_HUES`, read at a whisper instead of a shout -
+ * a pale wash for the CARD ITSELF, indexed the same way so a tile's ground
+ * always carries the same hue as its own icon badge. This is what turns a
+ * column of white cards with one coloured chip each into a page that reads as
+ * colourful at a glance, the way the rest of this platform's panels do.
+ *
+ * Two variants: the wash alone for a static container, and the wash with its
+ * own `hover` step for an element that is itself the click target. Written as
+ * whole class strings rather than composed from a hue name, for the same
+ * reason `COLUMN_HUES` is - Tailwind scans source text for class names, and a
+ * template literal would name classes it never generates.
+ */
+const CARD_WASH = [
+  'bg-google-blue-50',
+  'bg-google-red-50',
+  'bg-google-yellow-50',
+  'bg-google-green-50',
+] as const
+
+const CARD_WASH_HOVER = [
+  'bg-google-blue-50 hover:bg-google-blue-100',
+  'bg-google-red-50 hover:bg-google-red-100',
+  'bg-google-yellow-50 hover:bg-google-yellow-100',
+  'bg-google-green-50 hover:bg-google-green-100',
+] as const
+
+/** Paired one-to-one with `CARD_WASH`, for the two-item notice feature cards. */
+const NOTICE_ACCENT = ['border-b-google-blue-600', 'border-b-google-red-600'] as const
+
+/** The hero's own bullet markers, cycled the same way. */
+const HERO_DOT_HUES = [
+  'bg-google-blue-400',
+  'bg-google-red-400',
+  'bg-google-yellow-400',
+  'bg-google-green-400',
+] as const
+
+/**
  * The important-links grid, in the reference's own form.
  *
  * Separate white cards with the icon on the LEFT and the label beside it, and
@@ -715,7 +753,10 @@ function PortalLinkGrid({ tiles }: { tiles: PortalTile[] }): React.JSX.Element {
         <li key={tile.label}>
           <a
             href={signInFor(tile.to)}
-            className="interactive-surface flex h-full items-center gap-3 rounded-lg border border-ink-200 bg-surface px-4 py-3.5 shadow-card hover:border-google-blue-300 hover:bg-google-blue-50"
+            className={cn(
+              'interactive-surface flex h-full items-center gap-3 rounded-lg border border-ink-200 px-4 py-3.5 shadow-card transition-colors',
+              CARD_WASH_HOVER[index % CARD_WASH_HOVER.length],
+            )}
           >
             <span
               className={cn(
@@ -752,7 +793,10 @@ function PortalCardRow({ tiles }: { tiles: PortalTile[] }): React.JSX.Element {
         <li key={tile.label}>
           <a
             href={signInFor(tile.to)}
-            className="interactive-surface flex h-full flex-col items-center gap-3 rounded-lg border border-ink-200 bg-surface px-4 py-6 text-center shadow-card hover:border-google-blue-300 hover:bg-google-blue-50"
+            className={cn(
+              'interactive-surface flex h-full flex-col items-center gap-3 rounded-lg border border-ink-200 px-4 py-6 text-center shadow-card transition-colors',
+              CARD_WASH_HOVER[index % CARD_WASH_HOVER.length],
+            )}
           >
             <span
               className={cn(
@@ -1418,18 +1462,21 @@ export function PortalLandingPage(): React.JSX.Element {
                   aria-hidden={!active}
                 >
                   <div className="min-w-0">
-                    <Heading className="max-w-2xl text-[clamp(1.5rem,2.9vw,2.125rem)] leading-[1.25] font-bold tracking-[-0.015em] text-white">
+                    <Heading className="max-w-2xl text-[clamp(1.75rem,3.4vw,2.75rem)] leading-[1.18] font-extrabold tracking-[-0.02em] text-white">
                       {slide.heading}
                     </Heading>
 
                     <p className="mt-7 text-[1.0625rem] font-semibold text-white">{t('Key features:')}</p>
                     <ul className="mt-3 flex flex-col gap-2.5">
-                      {slide.features.map((feature) => (
+                      {slide.features.map((feature, index) => (
                         <li
                           key={feature}
                           className="flex items-start gap-3 text-[0.9375rem] leading-relaxed text-white/90"
                         >
-                          <span aria-hidden className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-white/70" />
+                          <span
+                            aria-hidden
+                            className={cn('mt-2 h-1.5 w-1.5 shrink-0 rounded-full', HERO_DOT_HUES[index % HERO_DOT_HUES.length])}
+                          />
                           {feature}
                         </li>
                       ))}
@@ -1438,7 +1485,7 @@ export function PortalLandingPage(): React.JSX.Element {
                     <a
                       href={signInFor(slide.to)}
                       tabIndex={active ? undefined : -1}
-                      className="interactive-surface mt-8 inline-flex items-center gap-2 rounded-md bg-white px-5 py-3 text-[0.875rem] font-semibold text-[color:var(--mcgm-ground-deep)] hover:bg-white/90"
+                      className="interactive-surface mt-8 inline-flex items-center gap-2 rounded-md bg-white px-6 py-3.5 text-[0.9375rem] font-bold text-[color:var(--mcgm-ground-deep)] shadow-lg transition-transform hover:scale-[1.02] hover:bg-white/90"
                     >
                       {slide.action}
                       <ArrowRight className="h-4 w-4" aria-hidden />
@@ -1617,7 +1664,10 @@ export function PortalLandingPage(): React.JSX.Element {
                 <li key={surface.label}>
                   <a
                     href={signInFor(surface.to)}
-                    className="interactive-surface flex h-full flex-col gap-2.5 bg-surface p-5 hover:bg-google-blue-50"
+                    className={cn(
+                      'interactive-surface flex h-full flex-col gap-2.5 p-5 transition-colors',
+                      CARD_WASH_HOVER[index % CARD_WASH_HOVER.length],
+                    )}
                   >
                     <span
                       className={cn(
@@ -1654,7 +1704,10 @@ export function PortalLandingPage(): React.JSX.Element {
 
             <ul className="mt-9 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
               {ASSURANCES.map((item, index) => (
-                <li key={item.label} className="rounded-lg border border-ink-200 bg-surface p-5 shadow-card">
+                <li
+                  key={item.label}
+                  className={cn('rounded-lg border border-ink-200 p-5 shadow-card', CARD_WASH[index % CARD_WASH.length])}
+                >
                   <span className="numeric text-[0.6875rem] font-bold tracking-[0.1em] text-ink-300">
                     {String(index + 1).padStart(2, '0')}
                   </span>
@@ -1692,10 +1745,14 @@ export function PortalLandingPage(): React.JSX.Element {
             <div className="mt-9 grid grid-cols-1 gap-6 lg:grid-cols-[5fr_7fr]">
               {/* ---- The two illustrated cards ----------------------- */}
               <ul className="flex flex-col gap-4">
-                {NOTICE_FEATURES.map((feature) => (
+                {NOTICE_FEATURES.map((feature, index) => (
                   <li
                     key={feature.title}
-                    className="flex flex-col rounded-lg border border-ink-200 border-b-2 border-b-google-blue-600 bg-surface p-4 shadow-card"
+                    className={cn(
+                      'flex flex-col rounded-lg border border-ink-200 border-b-2 p-4 shadow-card',
+                      NOTICE_ACCENT[index % NOTICE_ACCENT.length],
+                      CARD_WASH[index % CARD_WASH.length],
+                    )}
                   >
                     <div className="flex items-start gap-3.5">
                       <img

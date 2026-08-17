@@ -12,7 +12,6 @@ import { AI_USE_CASE_LABEL, type PromptTemplate } from '@/types/ai'
 import {
   Badge,
   Card,
-  CardHeader,
   DataTable,
   DemonstrationNotice,
   EmptyState,
@@ -24,6 +23,7 @@ import {
   type Column,
 } from '@/components/ui'
 import { MetricCard } from '@/components/cards'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { t } from '@/i18n'
 
 /**
@@ -59,10 +59,7 @@ const RISK_TONE: Record<PromptTemplate['riskClass'], 'positive' | 'warn' | 'crit
 
 export function PromptRegistryPage(): React.JSX.Element {
   // The shell's masthead states the screen's name; the page states the wording.
-  usePageMasthead(
-    t('Prompt Registry'),
-    t('Every prompt template available to the governed AI layer, with its approval status, declared guardrails and the roles authorised to invoke it. Prompts are versioned and approved; none is edited in place at runtime.'),
-  )
+  usePageMasthead(t('Prompt Registry'))
 
   const promptsQuery = useServiceQuery(queryKeys.ai('prompts'), (u) => aiService.prompts(u))
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -181,8 +178,10 @@ export function PromptRegistryPage(): React.JSX.Element {
                   />
                 </div>
 
-                <Card flush>
-                  <CardHeader bordered title={t('Prompt templates')} description={t('Select a template to view its full body and guardrails alongside.')} />
+                <GovPanel title={t('Prompt templates')} tone="amber" dense>
+                  <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+                    {t('Select a template to view its full body and guardrails alongside.')}
+                  </p>
                   <DataTable
                     rows={filtered}
                     columns={columns}
@@ -196,7 +195,7 @@ export function PromptRegistryPage(): React.JSX.Element {
                     emptyTitle={t('No prompts match these filters')}
                     emptyDetail="Adjust the approval or risk filters above."
                   />
-                </Card>
+                </GovPanel>
               </>
             )
           ) : null}
@@ -216,13 +215,15 @@ export function PromptRegistryPage(): React.JSX.Element {
             ) : null}
 
             {selected ? (
-              <Card>
-                <CardHeader
-                  eyebrow={t('{0} · v{1}', selected.id, selected.version)}
-                  title={selected.title}
-                  description={t('{0} · last modified {1}', AI_USE_CASE_LABEL[selected.useCase], formatRelative(selected.lastModifiedAt))}
-                  actions={<Badge tone={APPROVAL_TONE[selected.approvalStatus]} dot>{selected.approvalStatus.replace(/-/g, ' ')}</Badge>}
-                />
+              <GovPanel
+                title={selected.title}
+                subtitle={t('{0} · v{1}', selected.id, selected.version)}
+                tone="red"
+                actions={<Badge tone={APPROVAL_TONE[selected.approvalStatus]} dot>{selected.approvalStatus.replace(/-/g, ' ')}</Badge>}
+              >
+                <p className="mb-3 text-xs leading-relaxed text-ink-500">
+                  {t('{0} · last modified {1}', AI_USE_CASE_LABEL[selected.useCase], formatRelative(selected.lastModifiedAt))}
+                </p>
 
                 <div className="mt-3 flex flex-wrap items-center gap-1.5">
                   <Badge tone={RISK_TONE[selected.riskClass]}>{selected.riskClass} risk</Badge>
@@ -262,7 +263,7 @@ export function PromptRegistryPage(): React.JSX.Element {
                     ))}
                   </div>
                 </div>
-              </Card>
+              </GovPanel>
             ) : (
               <EmptyState title={t('No prompt selected')} detail="Select a prompt from the register to view its body and guardrails." />
             )}

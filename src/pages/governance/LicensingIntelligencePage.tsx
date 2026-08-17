@@ -4,7 +4,6 @@ import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import {
   Badge,
   Card,
-  CardHeader,
   DataTable,
   DemonstrationNotice,
   EmptyState,
@@ -14,6 +13,7 @@ import {
   StateBadge,
   type Column,
 } from '@/components/ui'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { MetricCard } from '@/components/cards'
 import { CategoryBarChart, CHART_COLOURS, DonutChart, RankedBarChart } from '@/components/charts'
 import { FilterBar } from '@/components/filters/FilterBar'
@@ -62,10 +62,7 @@ const CHARTER_THRESHOLD = 80
 
 export function LicensingIntelligencePage(): React.JSX.Element {
   // The shell's masthead carries the screen's name; the page states the wording.
-  usePageMasthead(
-    t('Licences & Trade'),
-    t('The licensing regime behind the licence-fee revenue head - what is current, what has lapsed, how long a decision takes against the citizens\' charter, and what enforcement follows.'),
-  )
+  usePageMasthead(t('Licences & Trade'))
 
   const filters = useFilterStore((s) => s.filters)
 
@@ -234,6 +231,7 @@ export function LicensingIntelligencePage(): React.JSX.Element {
           support={t('{0} lapsed · {1} pending decision', formatNumber(expired), formatNumber(pending))}
           icon={<ClipboardList className="h-4 w-4" />}
           origin="demonstration"
+          background="red"
         />
         <MetricCard
           label={t('Fee collection')}
@@ -243,6 +241,7 @@ export function LicensingIntelligencePage(): React.JSX.Element {
           progress={{ value: collected, max: Math.max(0.1, demanded) }}
           tone={collectionPct < 75 ? 'warn' : 'positive'}
           icon={<TrendingUp className="h-4 w-4" />}
+          background="amber"
         />
         <MetricCard
           label={t('Charter compliance')}
@@ -250,6 +249,8 @@ export function LicensingIntelligencePage(): React.JSX.Element {
           unit="%"
           support={t('Mean decision in {0} working days', meanDecision)}
           tone={charterCompliance < CHARTER_THRESHOLD ? 'warn' : 'positive'}
+          background="green"
+          footer={<span className="text-[0.625rem] leading-snug text-ink-400">{t('Mirrors Shop & Establishment licensing under the Maharashtra Right to Public Services Act — a simulated feed in this demonstration.')}</span>}
         />
         <MetricCard
           label={t('Unlicensed premises found')}
@@ -265,19 +266,14 @@ export function LicensingIntelligencePage(): React.JSX.Element {
           and by ward — read down beside it. */}
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
         <div className="min-w-0 xl:col-span-8">
-          <Card flush>
-            <CardHeader
-              bordered
-              icon={<ScrollText className="h-4 w-4" />}
-              title={t('Licence register by ward and category')}
-              description={t('Within your authorised ward scope.')}
-            />
+          <GovPanel title={t('Licence register by ward and category')} tone="amber" dense>
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">{t('Within your authorised ward scope.')}</p>
             {filtered.length === 0 ? (
               <EmptyState title={t('No licence registers match the current filters')} detail="Clear a filter to widen the register." />
             ) : (
               <DataTable rows={filtered} columns={columns} rowKey={(r) => r.id} pageSize={15} />
             )}
-          </Card>
+          </GovPanel>
         </div>
 
         <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
@@ -296,12 +292,10 @@ export function LicensingIntelligencePage(): React.JSX.Element {
           </div>
         </Card>
 
-        <Card flush className="flex flex-col">
-          <CardHeader
-            bordered
-            title={t('Current against lapsed, by category')}
-            description={t('A large lapsed count is a renewal-administration problem before it is an enforcement one.')}
-          />
+        <GovPanel title={t('Current against lapsed, by category')} tone="red" dense className="flex flex-col">
+          <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+            {t('A large lapsed count is a renewal-administration problem before it is an enforcement one.')}
+          </p>
           <div className="px-4 pb-4" style={{ height: 210 }}>
             <CategoryBarChart
               data={byCategory.map((c) => ({ label: LICENCE_CATEGORY_LABEL[c.category], active: c.active, expired: c.expired }))}
@@ -312,19 +306,16 @@ export function LicensingIntelligencePage(): React.JSX.Element {
               ]}
             />
           </div>
-        </Card>
+        </GovPanel>
 
-      <Card flush>
-        <CardHeader
-          bordered
-          icon={<ClipboardList className="h-4 w-4" />}
-          title={t('Wards by renewal lapse rate')}
-          description={t('Lapsed licences as a share of the ward\'s whole register. The revenue this represents is already assessed - it is uncollected, not unassessed.')}
-        />
+      <GovPanel title={t('Wards by renewal lapse rate')} tone="amber" dense>
+        <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+          {t('Lapsed licences as a share of the ward\'s whole register. The revenue this represents is already assessed - it is uncollected, not unassessed.')}
+        </p>
         <div className="px-4 pb-4" style={{ height: Math.max(210, lapseByWard.length * 26) }}>
           <RankedBarChart data={lapseByWard.map((w) => ({ label: wardShortName(w.wardId), value: w.lapsePct }))} unit="%" />
         </div>
-      </Card>
+      </GovPanel>
         </div>
       </div>
     </PageBody>

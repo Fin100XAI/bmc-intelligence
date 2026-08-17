@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react'
-import { AlertTriangle, Brain, CheckCircle2, ChevronRight, ShieldAlert } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import { Brain, CheckCircle2, ChevronRight, ShieldAlert } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
@@ -12,7 +13,6 @@ import type { AIModel } from '@/types/ai'
 import {
   Badge,
   Card,
-  CardHeader,
   DataTable,
   DemonstrationNotice,
   EmptyState,
@@ -24,6 +24,7 @@ import {
   type Column,
 } from '@/components/ui'
 import { MetricCard } from '@/components/cards'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { t } from '@/i18n'
 
 /**
@@ -69,16 +70,24 @@ const STATUS_TONE: Record<AIModel['status'], 'positive' | 'warn' | 'critical' | 
 
 export function ModelRegistryPage(): React.JSX.Element {
   // The shell's masthead states the screen's name; the page states the wording.
-  usePageMasthead(
-    t('AI Model Registry'),
-    t('Every model recognised by the governed AI layer, with approved and restricted use, risk classification, evaluation status and ownership. A model entering this registry does not thereby gain any authority to act - the platform\'s provider abstraction only ever analyses, recommends and explains.'),
-  )
+  usePageMasthead(t('AI Model Registry'))
 
   const modelsQuery = useServiceQuery(queryKeys.ai('models'), (u) => aiService.models(u))
+  const [searchParams] = useSearchParams()
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [riskFilter, setRiskFilter] = useState<'all' | AIModel['riskClass']>('all')
   const [statusFilter, setStatusFilter] = useState<'all' | AIModel['status']>('all')
   const [evalFilter, setEvalFilter] = useState<'all' | AIModel['evaluationStatus']>('all')
+
+  // `?model=<id>` selects that model on arrival - the entry point AI
+  // Recommendations and other governance surfaces link into, so a reviewer
+  // reaches the model behind a recommendation in one click.
+  useEffect(() => {
+    const id = searchParams.get('model')
+    if (id) setSelectedId(id)
+    // Only ever re-run if the URL parameter itself changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams])
 
   const models = modelsQuery.data ?? []
 
@@ -177,55 +186,57 @@ export function ModelRegistryPage(): React.JSX.Element {
               <EmptyState title={t('No models registered')} detail="No AI model records are visible within your authorised scope." />
             ) : (
               <>
-                <Card flush>
-                  <CardHeader
-                    bordered
-                    title={t('Model register')}
-                    description={t('Sortable and searchable. Select a row to view approved and restricted use in full below.')}
-                    actions={
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Select
-                          aria-label={t('Filter by risk class')}
-                          value={riskFilter}
-                          onChange={(e) => setRiskFilter(e.target.value as typeof riskFilter)}
-                          className="w-auto min-w-[9rem]"
-                          options={[
-                            { value: 'all', label: t('All risk classes') },
-                            { value: 'limited', label: t('Limited risk') },
-                            { value: 'moderate', label: t('Moderate risk') },
-                            { value: 'high', label: t('High risk') },
-                          ]}
-                        />
-                        <Select
-                          aria-label={t('Filter by evaluation status')}
-                          value={evalFilter}
-                          onChange={(e) => setEvalFilter(e.target.value as typeof evalFilter)}
-                          className="w-auto min-w-[10rem]"
-                          options={[
-                            { value: 'all', label: t('All evaluation states') },
-                            { value: 'passed', label: t('Passed') },
-                            { value: 'in-progress', label: t('In progress') },
-                            { value: 'not-started', label: t('Not started') },
-                            { value: 'failed', label: t('Failed') },
-                            { value: 're-evaluation-due', label: t('Re-evaluation due') },
-                          ]}
-                        />
-                        <Select
-                          aria-label={t('Filter by status')}
-                          value={statusFilter}
-                          onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
-                          className="w-auto min-w-[9rem]"
-                          options={[
-                            { value: 'all', label: t('All statuses') },
-                            { value: 'active', label: t('Active') },
-                            { value: 'restricted', label: t('Restricted') },
-                            { value: 'retired', label: t('Retired') },
-                            { value: 'pending-approval', label: t('Pending approval') },
-                          ]}
-                        />
-                      </div>
-                    }
-                  />
+                <GovPanel
+                  title={t('Model register')}
+                  tone="amber"
+                  dense
+                  actions={
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Select
+                        aria-label={t('Filter by risk class')}
+                        value={riskFilter}
+                        onChange={(e) => setRiskFilter(e.target.value as typeof riskFilter)}
+                        className="w-auto min-w-[9rem]"
+                        options={[
+                          { value: 'all', label: t('All risk classes') },
+                          { value: 'limited', label: t('Limited risk') },
+                          { value: 'moderate', label: t('Moderate risk') },
+                          { value: 'high', label: t('High risk') },
+                        ]}
+                      />
+                      <Select
+                        aria-label={t('Filter by evaluation status')}
+                        value={evalFilter}
+                        onChange={(e) => setEvalFilter(e.target.value as typeof evalFilter)}
+                        className="w-auto min-w-[10rem]"
+                        options={[
+                          { value: 'all', label: t('All evaluation states') },
+                          { value: 'passed', label: t('Passed') },
+                          { value: 'in-progress', label: t('In progress') },
+                          { value: 'not-started', label: t('Not started') },
+                          { value: 'failed', label: t('Failed') },
+                          { value: 're-evaluation-due', label: t('Re-evaluation due') },
+                        ]}
+                      />
+                      <Select
+                        aria-label={t('Filter by status')}
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
+                        className="w-auto min-w-[9rem]"
+                        options={[
+                          { value: 'all', label: t('All statuses') },
+                          { value: 'active', label: t('Active') },
+                          { value: 'restricted', label: t('Restricted') },
+                          { value: 'retired', label: t('Retired') },
+                          { value: 'pending-approval', label: t('Pending approval') },
+                        ]}
+                      />
+                    </div>
+                  }
+                >
+                  <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+                    {t('Sortable and searchable. Select a row to view approved and restricted use in full below.')}
+                  </p>
                   <DataTable
                     rows={filtered}
                     columns={columns}
@@ -239,23 +250,22 @@ export function ModelRegistryPage(): React.JSX.Element {
                     emptyTitle={t('No models match these filters')}
                     emptyDetail="Adjust the risk, evaluation or status filters above."
                   />
-                </Card>
+                </GovPanel>
 
                 {selected ? (
-                  <Card>
-                    <CardHeader
-                      icon={<Brain className="h-4 w-4" />}
-                      eyebrow={t('{0} · {1} · v{2}', selected.provider, selected.deployment, selected.version)}
-                      title={selected.name}
-                      description={selected.notes}
-                      actions={
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          <Badge tone={RISK_TONE[selected.riskClass]}>{selected.riskClass} risk</Badge>
-                          <Badge tone={EVAL_TONE[selected.evaluationStatus]}>{selected.evaluationStatus.replace(/-/g, ' ')}</Badge>
-                          <Badge tone={STATUS_TONE[selected.status]} dot>{selected.status.replace(/-/g, ' ')}</Badge>
-                        </div>
-                      }
-                    />
+                  <GovPanel
+                    title={selected.name}
+                    subtitle={t('{0} · {1} · v{2}', selected.provider, selected.deployment, selected.version)}
+                    tone="red"
+                    actions={
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <Badge tone={RISK_TONE[selected.riskClass]}>{selected.riskClass} risk</Badge>
+                        <Badge tone={EVAL_TONE[selected.evaluationStatus]}>{selected.evaluationStatus.replace(/-/g, ' ')}</Badge>
+                        <Badge tone={STATUS_TONE[selected.status]} dot>{selected.status.replace(/-/g, ' ')}</Badge>
+                      </div>
+                    }
+                  >
+                    <p className="mb-3 text-xs leading-relaxed text-ink-500">{selected.notes}</p>
                     <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
                       <div>
                         <Label>{t('Approved use')}</Label>
@@ -295,7 +305,7 @@ export function ModelRegistryPage(): React.JSX.Element {
                       <span>{t('Last evaluated {0}', formatRelative(selected.lastEvaluatedAt))}</span>
                       <span>{t('Environment: {0}', selected.environment)}</span>
                     </div>
-                  </Card>
+                  </GovPanel>
                 ) : null}
               </>
             )
@@ -321,12 +331,10 @@ export function ModelRegistryPage(): React.JSX.Element {
               </MetricGrid>
 
               {flagged.length > 0 ? (
-                <Card tone="warn">
-                  <CardHeader
-                    icon={<AlertTriangle className="h-4 w-4" />}
-                    title={t('Models requiring governance attention')}
-                    description={t('Evaluation has not passed, or a re-evaluation is due. Use of these models for a live governed deployment would require resolving this before wider approval.')}
-                  />
+                <GovPanel title={t('Models requiring governance attention')} tone="amber">
+                  <p className="mb-3 text-xs leading-relaxed text-ink-500">
+                    {t('Evaluation has not passed, or a re-evaluation is due. Use of these models for a live governed deployment would require resolving this before wider approval.')}
+                  </p>
                   <ul className="mt-3 space-y-1.5">
                     {flagged.map((m) => (
                       <li key={m.id} className="flex flex-wrap items-center gap-2 text-xs text-ink-700">
@@ -336,7 +344,7 @@ export function ModelRegistryPage(): React.JSX.Element {
                       </li>
                     ))}
                   </ul>
-                </Card>
+                </GovPanel>
               ) : null}
             </>
           ) : null}

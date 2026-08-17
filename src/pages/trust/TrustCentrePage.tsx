@@ -17,10 +17,11 @@ import {
 } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { Badge, type BadgeTone } from '@/components/ui/badges'
-import { Button, Card, CardHeader, MetricGrid } from '@/components/ui/primitives'
+import { Button, Card, MetricGrid } from '@/components/ui/primitives'
 import { Tabs } from '@/components/ui/overlays'
 import { DemonstrationNotice, ErrorState, LoadingState } from '@/components/ui/states'
 import { MetricCard } from '@/components/cards'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { useServiceQuery } from '@/hooks'
 import {
   adminService,
@@ -220,10 +221,7 @@ export function TrustCentrePage(): React.JSX.Element {
   const [runError, setRunError] = useState<string | null>(null)
 
   // The shell's masthead carries the screen's name; the page states the wording.
-  usePageMasthead(
-    t('Trust Centre'),
-    t('Security, privacy, AI governance, data lineage, evidence, access, integrations, audit and platform resilience - the full institutional accountability surface behind every intelligence screen in this platform.'),
-  )
+  usePageMasthead(t('Trust Centre'))
 
   const summaryQuery = useServiceQuery(['trust-centre', 'summary'], (u) => loadTrustSummary(u))
 
@@ -311,6 +309,7 @@ export function TrustCentrePage(): React.JSX.Element {
               support={t('{0} MFA coverage · {1} privileged without MFA', formatPercent(s.security.mfaCoveragePct, 0), s.security.privilegedWithoutMfa)}
               tone={s.security.privilegedWithoutMfa > 0 ? 'critical' : 'default'}
               to={ROUTES.security}
+              background="red"
             />
             <MetricCard
               icon={<Database className="h-3.5 w-3.5" />}
@@ -319,6 +318,7 @@ export function TrustCentrePage(): React.JSX.Element {
               unit="domains"
               support={t('governed data domains with published lineage')}
               to={ROUTES.privacy}
+              background="amber"
             />
             <MetricCard
               icon={<Bot className="h-3.5 w-3.5" />}
@@ -328,6 +328,7 @@ export function TrustCentrePage(): React.JSX.Element {
               support={t('{0} open or monitored AI risk(s)', s.aiOpenRisks)}
               tone={s.aiPendingOversight > 0 ? 'warn' : 'default'}
               to={ROUTES.aiGovernance}
+              background="green"
             />
             <MetricCard
               icon={<GitBranch className="h-3.5 w-3.5" />}
@@ -455,19 +456,15 @@ function VerificationTab({
 }): React.JSX.Element {
   return (
     <>
-      <Card tone="info">
-        <CardHeader
-          icon={<ShieldCheck className="h-4 w-4" />}
-          title={t('What this actually does')}
-          description={t('Not a status page. A verification pass.')}
-        />
-        <p className="mt-2 text-[0.8125rem] leading-relaxed text-ink-700">
+      <GovPanel title={t('What this actually does')} tone="amber">
+        <p className="mb-2 text-xs leading-relaxed text-ink-500">{t('Not a status page. A verification pass.')}</p>
+        <p className="text-[0.8125rem] leading-relaxed text-ink-700">
           {t('Every other page in this Trust Centre')}{' '}<em>describes</em>{' '}{t('a control. This one')}{' '}<em>runs</em>{' '}{t('them. Each check below calls the real permission engine, the real AI gateway and the real service layer, using your own credentials as')}{' '}{actingRole ?? 'the acting principal'}{t(', and reports what happened — including when what happened is a failure. A check that cannot be run on your role reports &quot;not applicable&quot; and says why; it never reports a pass it did not earn.')}
         </p>
         <p className="mt-2 text-[0.8125rem] leading-relaxed text-ink-700">
           {t('This is the platform testing itself, and it should be read as exactly that. It is not an independent assessment, and it produces no certification, accreditation or audit opinion — those require a third party, and this environment has none.')}
         </p>
-      </Card>
+      </GovPanel>
 
       {error ? (
         <ErrorState title={t('The verification pass could not complete')} detail={error} onRetry={onRun} />

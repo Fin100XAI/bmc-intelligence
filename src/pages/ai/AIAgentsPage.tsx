@@ -2,7 +2,8 @@ import { useMemo, useState } from 'react'
 import { Bot, CircleCheck, Ban, ShieldAlert, UserCheck } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { Badge, StateBadge } from '@/components/ui/badges'
-import { Card, CardHeader, DefinitionList, DefinitionRow, MetricGrid } from '@/components/ui/primitives'
+import { Card, DefinitionList, DefinitionRow, MetricGrid } from '@/components/ui/primitives'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { DemonstrationNotice, EmptyState, ErrorState, LoadingState } from '@/components/ui/states'
 import { MetricCard } from '@/components/cards/MetricCard'
 import { useServiceQuery } from '@/hooks'
@@ -101,10 +102,7 @@ function StageMeter({ stage }: { stage: AIAgentStage }): React.JSX.Element {
 
 export function AIAgentsPage(): React.JSX.Element {
   // The shell's masthead states the screen's name; the page states the wording.
-  usePageMasthead(
-    t('Controlled AI Agents'),
-    t('Every agent is advisory only and operates within one lifecycle: draft, AI analysis, human review, approved action. The transition to an approved action is always a named officer\'s act - no agent approves its own output, and every agent is barred from a fixed set of government acts.'),
-  )
+  usePageMasthead(t('Controlled AI Agents'))
 
   const query = useServiceQuery(queryKeys.ai('agents'), (u) => aiService.agents(u))
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -167,24 +165,28 @@ export function AIAgentsPage(): React.JSX.Element {
           </Card>
 
           <MetricGrid columns={3}>
-            <MetricCard label={t('Agents registered')} value={agents.length} support={`${active} active`} icon={<Bot className="h-4 w-4" />} />
+            <MetricCard label={t('Agents registered')} value={agents.length} support={`${active} active`} icon={<Bot className="h-4 w-4" />} background="red" />
             <MetricCard
               label={t('Awaiting human review')}
               value={atHumanReview}
               tone={atHumanReview > 0 ? 'warn' : 'default'}
               support={t('Cycles held for a named officer')}
               icon={<UserCheck className="h-4 w-4" />}
+              background="amber"
             />
             <MetricCard
               label={t('Mean human approval rate')}
               value={formatPercent(meanApproval)}
               support={t('Across all agents, last 30 days')}
               icon={<CircleCheck className="h-4 w-4" />}
+              background="green"
             />
           </MetricGrid>
 
-          <Card flush>
-            <CardHeader bordered title={t('Agent registry')} description={t('Each agent, its current lifecycle stage and 30-day activity.')} />
+          <GovPanel title={t('Agent registry')} tone="amber" dense>
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+              {t('Each agent, its current lifecycle stage and 30-day activity.')}
+            </p>
             <ul className="divide-y divide-ink-50">
               {agents.map((agent) => (
                 <li key={agent.id}>
@@ -217,7 +219,7 @@ export function AIAgentsPage(): React.JSX.Element {
                 </li>
               ))}
             </ul>
-          </Card>
+          </GovPanel>
         </div>
 
         {/* The whole column pins, not one panel of it: a `sticky` element stays
@@ -238,12 +240,8 @@ function AgentDetail({ agent }: { agent: AIAgent }): React.JSX.Element {
   const model = AI_MODEL_BY_ID.get(agent.modelId)
   return (
     <>
-      <Card>
-        <CardHeader
-          title={agent.name}
-          description={agent.purpose}
-          actions={<Badge tone="intel">{t('Advisory only')}</Badge>}
-        />
+      <GovPanel title={agent.name} tone="red" actions={<Badge tone="intel">{t('Advisory only')}</Badge>}>
+        <p className="mb-3 text-xs leading-relaxed text-ink-500">{agent.purpose}</p>
         <div className="mt-3">
           <p className="label-institutional mb-2">{t('Current lifecycle stage')}</p>
           <StageMeter stage={agent.stage} />
@@ -257,14 +255,12 @@ function AgentDetail({ agent }: { agent: AIAgent }): React.JSX.Element {
           <DefinitionRow label={t('Human approval rate')}>{formatPercent(agent.humanApprovalRate)}</DefinitionRow>
           <DefinitionRow label={t('Last run')}>{formatRelative(agent.lastRunAt)}</DefinitionRow>
         </DefinitionList>
-      </Card>
+      </GovPanel>
 
-      <Card>
-        <CardHeader
-          icon={<Ban className="h-4 w-4 text-crit-500" />}
-          title={t('Reserved acts')}
-          description={t('Government acts this agent is categorically barred from performing, regardless of confidence.')}
-        />
+      <GovPanel title={t('Reserved acts')} tone="amber">
+        <p className="mb-3 text-xs leading-relaxed text-ink-500">
+          {t('Government acts this agent is categorically barred from performing, regardless of confidence.')}
+        </p>
         <ul className="mt-3 space-y-1.5">
           {agent.reservedActs.map((act) => (
             <li key={act} className="flex items-start gap-2 rounded-[2px] border border-crit-100 bg-crit-50/40 px-2.5 py-1.5">
@@ -276,7 +272,7 @@ function AgentDetail({ agent }: { agent: AIAgent }): React.JSX.Element {
         <p className="mt-3 border-t border-ink-100 pt-2.5 text-[0.6875rem] leading-relaxed text-ink-500">
           {t('These are not advisory guidelines. The AI gateway blocks any request expressing one of these intents before it reaches a model, and this agent has no path to perform them.')}
         </p>
-      </Card>
+      </GovPanel>
     </>
   )
 }

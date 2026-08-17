@@ -1,10 +1,9 @@
 import { useState } from 'react'
-import { AlertTriangle, ArrowRight, Cloud, Droplets, Landmark, ShieldCheck, Siren, Trees, Waves } from 'lucide-react'
+import { ArrowRight, Cloud, Droplets, Landmark, ShieldCheck, Siren, Trees, Waves } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import {
   Badge,
   Card,
-  CardHeader,
   DataTable,
   DemonstrationNotice,
   EmptyState,
@@ -19,6 +18,7 @@ import {
   type Column,
 } from '@/components/ui'
 import { MetricCard } from '@/components/cards'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { ChartFrame, CompositionBar, MiniBar, RankedBarChart } from '@/components/charts'
 import { CityMap, wardMapPoint } from '@/components/map/CityMap'
 import { FilterBar } from '@/components/filters/FilterBar'
@@ -201,12 +201,10 @@ function CoastalNotApplicable({ corporation }: { corporation: CorporationRef }):
         </div>
       </Card>
 
-      <Card>
-        <CardHeader
-          icon={<Droplets className="h-4 w-4" />}
-          title={t('Water bodies this corporation does manage')}
-          description={t('The rivers, creeks, lakes and reservoirs recorded against this corporation in the reference roster. These are its published water features, not a coastal inventory.')}
-        />
+      <GovPanel title={t('Water bodies this corporation does manage')} tone="amber">
+        <p className="mb-3 text-xs leading-relaxed text-ink-500">
+          {t('The rivers, creeks, lakes and reservoirs recorded against this corporation in the reference roster. These are its published water features, not a coastal inventory.')}
+        </p>
         {waterBodies.length > 0 ? (
           <ul className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
             {waterBodies.map((body) => (
@@ -233,14 +231,12 @@ function CoastalNotApplicable({ corporation }: { corporation: CorporationRef }):
             {t('Protected green cover on record: {0}.', corporation.form.greenBelt)}
           </p>
         ) : null}
-      </Card>
+      </GovPanel>
 
-      <Card>
-        <CardHeader
-          icon={<ShieldCheck className="h-4 w-4" />}
-          title={t('Where this corporation\'s water is covered')}
-          description={t('The three modules that carry the drainage, flood and environmental position for the water bodies above. Nothing on this page is duplicated there - these are the surfaces that hold the real work.')}
-        />
+      <GovPanel title={t('Where this corporation\'s water is covered')} tone="red">
+        <p className="mb-3 text-xs leading-relaxed text-ink-500">
+          {t('The three modules that carry the drainage, flood and environmental position for the water bodies above. Nothing on this page is duplicated there - these are the surfaces that hold the real work.')}
+        </p>
         <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-3">
           {WATER_MODULE_ROUTES.map((module) => (
             <div
@@ -269,7 +265,7 @@ function CoastalNotApplicable({ corporation }: { corporation: CorporationRef }):
             </div>
           ))}
         </div>
-      </Card>
+      </GovPanel>
 
       <Card tone="sunken">
         <p className="text-[0.6875rem] leading-relaxed text-ink-500">
@@ -303,12 +299,7 @@ export function CoastalIntelligencePage(): React.JSX.Element {
   // is a different reading of the same screen, and the masthead has to carry
   // whichever one is on show. Declaring it in the child would lose the race —
   // child effects run before the parent's, so the parent would overwrite it.
-  usePageMasthead(
-    t('Coastal Intelligence'),
-    coastal
-      ? t('Shoreline segment-level exposure - beaches, seawalls, mangroves, creeks and promenades - read alongside tide behaviour and modelled monsoon flood exposure.')
-      : t('Coastal zone management covers the sea shoreline and tidal creek frontage a municipal corporation is responsible for. {0} has neither within its limits, so this module states that position rather than presenting a coastline the corporation does not hold.', municipality.shortName),
-  )
+  usePageMasthead(t('Coastal Intelligence'))
 
   const segmentsQuery = useServiceQuery(COASTAL_SEGMENTS_KEY, (u) => coastalService.segments(u), { enabled: coastal })
   const summaryQuery = useServiceQuery(COASTAL_SUMMARY_KEY, (u) => coastalService.coastalSummary(u), {
@@ -462,10 +453,34 @@ export function CoastalIntelligencePage(): React.JSX.Element {
       />
 
       <MetricGrid columns={3}>
-        <MetricCard label={t('Protected length')} value={`${summary.protectedKm} km`} support={t('of {0} km total coastline', summary.totalLengthKm)} icon={<ShieldCheck className="h-4 w-4" />} />
+        <MetricCard
+          label={t('Protected length')}
+          value={`${summary.protectedKm} km`}
+          support={t('of {0} km total coastline', summary.totalLengthKm)}
+          icon={<ShieldCheck className="h-4 w-4" />}
+          footer={
+            corporation.id === 'bmc' && corporation.coastlineLengthKm ? (
+              <span className="text-[0.625rem] leading-snug text-ink-400">
+                {t('For context: a 2025 academic study puts Mumbai\'s actual shoreline at ~{0} km - no official BMC or state figure for total coastline length was found.', corporation.coastlineLengthKm)}
+              </span>
+            ) : undefined
+          }
+        />
         <MetricCard label={t('Unprotected segments')} value={summary.unprotectedSegments} support={t('of {0} segments', segments.length)} tone={summary.unprotectedSegments > 0 ? 'critical' : 'default'} />
         <MetricCard label={t('Mean vulnerability index')} value={summary.meanVulnerability} unit="/100" tone={summary.meanVulnerability >= 65 ? 'critical' : summary.meanVulnerability >= 45 ? 'warn' : 'default'} icon={<Waves className="h-4 w-4" />} />
-        <MetricCard label={t('Mangrove cover')} value={summary.mangroveCoverHa} unit="ha" icon={<Trees className="h-4 w-4" />} />
+        <MetricCard
+          label={t('Mangrove cover')}
+          value={summary.mangroveCoverHa}
+          unit="ha"
+          icon={<Trees className="h-4 w-4" />}
+          footer={
+            corporation.id === 'bmc' && corporation.mangroveCoverSqKm ? (
+              <span className="text-[0.625rem] leading-snug text-ink-400">
+                {t('For context: the India State of Forest Report puts Mumbai\'s mangrove cover at ~{0} sq km ({1} ha), against a materially higher 65 sq km academic estimate with no stated measurement date - a genuine disagreement between a government forest survey and an academic study, not reconciled here.', corporation.mangroveCoverSqKm, corporation.mangroveCoverSqKm * 100)}
+              </span>
+            ) : undefined
+          }
+        />
         <MetricCard label={t('Modelled inundation exposure')} value={summary.inundationExposureHa} unit="ha" support={t('1m sea-level scenario')} />
         <MetricCard label={t('Segments requiring re-survey')} value={summary.segmentsRequiringSurvey} support={t('Last surveyed over two years ago')} tone={summary.segmentsRequiringSurvey > 0 ? 'warn' : 'default'} />
       </MetricGrid>
@@ -476,12 +491,10 @@ export function CoastalIntelligencePage(): React.JSX.Element {
           ranked vulnerability read beside them, not underneath. */}
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
         <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
-          <Card flush>
-            <CardHeader
-              className="px-4 pt-4 pb-3"
-              title={t('Coastal segment register')}
-              description={t('Sortable and filterable by type, protection status and ward. Select a row to open the ward profile for its primary ward.')}
-            />
+          <GovPanel title={t('Coastal segment register')} tone="amber" dense>
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+              {t('Sortable and filterable by type, protection status and ward. Select a row to open the ward profile for its primary ward.')}
+            </p>
             <div className="flex flex-wrap items-center gap-2 px-4 pb-3">
               <FilterBar show={['ward', 'search']} searchPlaceholder="Search segment or ward" compact />
               <div className="flex items-center gap-1.5">
@@ -522,10 +535,12 @@ export function CoastalIntelligencePage(): React.JSX.Element {
                 ariaLabel="Coastal segment register"
               />
             )}
-          </Card>
+          </GovPanel>
 
-          <Card>
-            <CardHeader title={t('Coastal ward map')} description={t('Ward shading reflects the average vulnerability index of the coastal segments recorded within it; markers mark wards carrying at least one coastal segment.')} />
+          <GovPanel title={t('Coastal ward map')} tone="red">
+            <p className="mb-3 text-xs leading-relaxed text-ink-500">
+              {t('Ward shading reflects the average vulnerability index of the coastal segments recorded within it; markers mark wards carrying at least one coastal segment.')}
+            </p>
             <div className="mt-3">
               <CityMap
                 layers={[
@@ -555,10 +570,12 @@ export function CoastalIntelligencePage(): React.JSX.Element {
                 showLabels={false}
               />
             </div>
-          </Card>
+          </GovPanel>
 
-          <Card>
-            <CardHeader icon={<AlertTriangle className="h-4 w-4" />} title={t('Coastal vulnerability, high tide and monsoon flood exposure')} description={t('A modelled exposure relationship, not a prediction of any specific flooding event.')} />
+          <GovPanel title={t('Coastal vulnerability, high tide and monsoon flood exposure')} tone="amber">
+            <p className="mb-3 text-xs leading-relaxed text-ink-500">
+              {t('A modelled exposure relationship, not a prediction of any specific flooding event.')}
+            </p>
             <div className="mt-3 grid grid-cols-1 gap-4 lg:grid-cols-[1fr_20rem]">
               <div>
                 {tidesQuery.isLoading ? (
@@ -595,12 +612,14 @@ export function CoastalIntelligencePage(): React.JSX.Element {
                 </p>
               </div>
             </div>
-          </Card>
+          </GovPanel>
         </div>
 
         <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
-          <Card>
-            <CardHeader title={t('Protection works status')} description={t('Coastline length and segment count by protection status, with the average vulnerability index recorded within each.')} />
+          <GovPanel title={t('Protection works status')} tone="green">
+            <p className="mb-3 text-xs leading-relaxed text-ink-500">
+              {t('Coastline length and segment count by protection status, with the average vulnerability index recorded within each.')}
+            </p>
             <div className="mt-3">
               <p className="label-institutional mb-2">{t('Length by protection status')}</p>
               <CompositionBar
@@ -618,10 +637,12 @@ export function CoastalIntelligencePage(): React.JSX.Element {
                 ))}
               </div>
             </div>
-          </Card>
+          </GovPanel>
 
-          <Card>
-            <CardHeader title={t('Vulnerability ranking')} description={t('Every coastal segment ranked by modelled vulnerability index.')} />
+          <GovPanel title={t('Vulnerability ranking')} tone="amber">
+            <p className="mb-3 text-xs leading-relaxed text-ink-500">
+              {t('Every coastal segment ranked by modelled vulnerability index.')}
+            </p>
             <div className="mt-3">
               <ChartFrame title={t('Segment vulnerability')} unit={t('Vulnerability index (0–100)')} timeframe="Most recent survey" height={Math.max(180, segments.length * 22)}>
                 <RankedBarChart
@@ -631,7 +652,7 @@ export function CoastalIntelligencePage(): React.JSX.Element {
                 />
               </ChartFrame>
             </div>
-          </Card>
+          </GovPanel>
         </div>
       </div>
 

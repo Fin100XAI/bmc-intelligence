@@ -447,18 +447,26 @@ registerLayer(() => {
 
   /** ------------------------------------------------------------- Hospitals */
 
-  // Hospital counts scale with residents served, with floors that keep the
-  // estate legible: even the smallest corporation runs a general hospital, a
-  // few peripheral units, a maternity home and dispensaries.
-  const majorCount = scaledCount(5, population, 1)
+  // Major hospitals, maternity homes and dispensaries anchor to the counts the
+  // Public Health Department actually publishes (`corporations.ts`) where the
+  // active corporation has one; only the peripheral tier - for which no
+  // published count exists - stays modelled from population. Real BMC runs
+  // several maternity homes and dispensaries per ward (30 and 192 across 24
+  // wards), so neither is capped at the ward count any more - the placement
+  // below cycles wards by modulo rather than assuming one facility per ward.
+  const majorCount = corp.majorHospitalsCount ?? scaledCount(5, population, 1)
   const peripheralCount = scaledCount(10, population, 3)
-  const maternityCount = Math.min(WARDS.length, scaledCount(10, population, 2))
-  const dispensaryCount = Math.min(WARDS.length, scaledCount(10, population, 3))
+  const maternityCount = corp.maternityHomesCount ?? Math.min(WARDS.length, scaledCount(10, population, 2))
+  const dispensaryCount = corp.dispensariesCount ?? Math.min(WARDS.length, scaledCount(10, population, 3))
 
   // Hospitals are named for the locality they stand in, which is how municipal
   // hospitals are actually identified once the honorifics are stripped. Drawing
-  // from a single distinct pool keeps two hospitals from sharing a name.
+  // from a single distinct pool per tier keeps two facilities from sharing a
+  // name even when a real count runs well past the corporation's own locality
+  // list (localityNames falls back to numbered sectors beyond it).
   const hospitalLocalities = localityNames(majorCount + peripheralCount)
+  const maternityLocalities = localityNames(maternityCount)
+  const dispensaryLocalities = localityNames(dispensaryCount)
 
   HOSPITALS = [
     ...hospitalLocalities
@@ -467,18 +475,22 @@ registerLayer(() => {
     ...hospitalLocalities
       .slice(majorCount)
       .map((locality, i) => buildHospital(`${locality} Municipal Hospital`, 'peripheral', i + 20)),
-    ...WARDS.slice(0, maternityCount).map((ward, i) =>
-      buildHospital(`${ward.name.split(' · ')[0]} Maternity Home`, 'maternity', i + 40, ward.id),
-    ),
-    ...Array.from({ length: dispensaryCount }, (_, i) => {
+    ...maternityLocalities.map((locality, i) => {
+      const ward = WARDS[i % WARDS.length]!
+      return buildHospital(`${locality} Maternity Home`, 'maternity', i + 40, ward.id)
+    }),
+    ...dispensaryLocalities.map((locality, i) => {
       const ward = WARDS[(i + maternityCount) % WARDS.length]!
-      return buildHospital(`${ward.name.split(' · ')[0]} Municipal Dispensary`, 'dispensary', i + 60, ward.id)
+      return buildHospital(`${locality} Municipal Dispensary`, 'dispensary', i + 60, ward.id)
     }),
   ]
 
   /** ----------------------------------------------------- Fire & emergency */
 
-  const fireStationCount = scaledCount(16, population, 4)
+  // Anchored to the Fire Brigade's own published station count where the
+  // active corporation reports one (54 for BMC - 35 major + 19 small); modelled
+  // from population otherwise.
+  const fireStationCount = corp.fireStationsCount ?? scaledCount(16, population, 4)
 
   // The control room covers the whole corporation, so its coverage radius is
   // the radius of a circle of the corporation's own area rather than a fixed

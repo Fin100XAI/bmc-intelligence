@@ -115,4 +115,7 @@ export const queryKeys = {
   civicParticipation: (scope?: string) => ['bmc-mii', 'civic-participation', scope ?? 'all'] as const,
   buildings: (scope?: string) => ['bmc-mii', 'buildings', scope ?? 'all'] as const,
   transparency: (scope?: string) => ['bmc-mii', 'transparency', scope ?? 'all'] as const,
+  notifiedServices: (scope?: string) => ['bmc-mii', 'notified-services', scope ?? 'all'] as const,
+  // The one live, non-demonstration connector - see `pilot.service.ts`.
+  pilotRevenue: () => ['bmc-mii', 'pilot-revenue'] as const,
 } as const

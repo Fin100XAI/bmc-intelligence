@@ -4,7 +4,6 @@ import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import {
   Badge,
   Card,
-  CardHeader,
   DataTable,
   DemonstrationNotice,
   EmptyState,
@@ -15,6 +14,7 @@ import {
   type Column,
 } from '@/components/ui'
 import { MetricCard } from '@/components/cards'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { CategoryBarChart, CHART_COLOURS, RankedBarChart } from '@/components/charts'
 import { FilterBar } from '@/components/filters/FilterBar'
 import { useServiceQuery } from '@/hooks'
@@ -22,6 +22,7 @@ import { queryKeys } from '@/app/queryClient'
 import { animalWelfareService } from '@/services'
 import { useFilterStore } from '@/stores/ui.store'
 import { usePageMasthead } from '@/stores/masthead.store'
+import { activeCorporation } from '@/config/municipality.config'
 import { WARD_BY_ID, wardName, wardShortName } from '@/data/reference'
 import {
   ANIMAL_WELFARE_OPERATOR_LABEL,
@@ -70,10 +71,7 @@ const BITE_RATE_CONCERN_PER_10K = 3.5
 export function AnimalWelfarePage(): React.JSX.Element {
   const filters = useFilterStore((s) => s.filters)
 
-  usePageMasthead(
-    t('Animal Welfare'),
-    t('Cattle pounds, birth control centres, shelters and anti-rabies clinics - what the corporation operates, and the dog bite rate each ward records against it.'),
-  )
+  usePageMasthead(t('Animal Welfare'))
 
   const unitsQuery = useServiceQuery(queryKeys.animalWelfare('units'), (u) => animalWelfareService.units(u))
   const signalsQuery = useServiceQuery(queryKeys.animalWelfare('ward-signals'), (u) =>
@@ -362,9 +360,17 @@ export function AnimalWelfarePage(): React.JSX.Element {
           unit="%"
           support={t('Of an estimated {0} free-roaming dogs', formatNumber(strayPopulation))}
           tone={sterilisedCoveragePct < 70 ? 'warn' : 'positive'}
+          footer={
+            activeCorporation.id === 'bmc' && activeCorporation.animalBirthControlCentresCount ? (
+              <span className="text-[0.625rem] leading-snug text-ink-400">
+                {t('For context: BMC runs just {0} ABC centres against an estimated 90,000+ stray dogs, per BMC officials (Nov 2025). 4,03,374 dogs have been sterilised 1994-Dec 2023, with a 45,000/year target and ₹23 crore allocated for the current drive.', activeCorporation.animalBirthControlCentresCount)}
+              </span>
+            ) : undefined
+          }
           progress={{ value: sterilisedCoveragePct, max: 100 }}
           icon={<ClipboardCheck className="h-4 w-4" />}
           explanation="Weighted by the stray population each ward carries rather than averaged across wards, so a small ward with high coverage cannot offset a dense ward with low coverage. Seventy per cent sustained is the threshold below which a population does not fall."
+          background="red"
         />
         <MetricCard
           label={t('Dog bites per 10k residents')}
@@ -375,6 +381,7 @@ export function AnimalWelfarePage(): React.JSX.Element {
           deltaHigherIsBetter={false}
           icon={<ShieldAlert className="h-4 w-4" />}
           explanation="The outcome residents actually experience. Cases are counted at municipal facilities and never described - no complainant, patient or address sits behind this figure."
+          background="amber"
         />
         <MetricCard
           label={t('Animals in care')}
@@ -383,6 +390,7 @@ export function AnimalWelfarePage(): React.JSX.Element {
           tone={overCapacity > 0 ? 'warn' : 'default'}
           icon={<PawPrint className="h-4 w-4" />}
           origin="demonstration"
+          background="green"
         />
         <MetricCard
           label={t('Sterilisations in 30 days')}
@@ -400,39 +408,35 @@ export function AnimalWelfarePage(): React.JSX.Element {
           beside them rather than pushing the registers down the page. */}
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
         <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
-          <Card flush>
-            <CardHeader
-              bordered
-              icon={<ShieldAlert className="h-4 w-4" />}
-              title={t('Ward outcome register')}
-              description={t('The result side of the function - sterilised share against the bite rate the ward records. The first is what the corporation did; the second is what residents felt.')}
-            />
+          <GovPanel title={t('Ward outcome register')} tone="amber" dense>
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+              {t('The result side of the function - sterilised share against the bite rate the ward records. The first is what the corporation did; the second is what residents felt.')}
+            </p>
             {filteredSignals.length === 0 ? (
               <EmptyState
+                className="mx-3 mb-3"
                 title={t('No ward outcome matches the current filters')}
                 detail="Clear a filter to widen the register."
               />
             ) : (
               <DataTable rows={filteredSignals} columns={signalColumns} rowKey={(w) => w.wardId} pageSize={12} />
             )}
-          </Card>
+          </GovPanel>
 
-          <Card flush>
-            <CardHeader
-              bordered
-              icon={<PawPrint className="h-4 w-4" />}
-              title={t('Animal welfare estate')}
-              description={t('Birth control centres, pounds, shelters and clinics within your authorised ward scope. {0} of {1} are run by NGO partners under contract, where the corporation\'s inspection record is its only assurance; {2} cattle pound{3} carry the traffic-safety side of the duty.', formatNumber(ngoOperated), formatNumber(filteredUnits.length), formatNumber(pounds), pounds === 1 ? '' : 's')}
-            />
+          <GovPanel title={t('Animal welfare estate')} tone="red" dense>
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+              {t('Birth control centres, pounds, shelters and clinics within your authorised ward scope. {0} of {1} are run by NGO partners under contract, where the corporation\'s inspection record is its only assurance; {2} cattle pound{3} carry the traffic-safety side of the duty.', formatNumber(ngoOperated), formatNumber(filteredUnits.length), formatNumber(pounds), pounds === 1 ? '' : 's')}
+            </p>
             {filteredUnits.length === 0 ? (
               <EmptyState
+                className="mx-3 mb-3"
                 title={t('No animal welfare units match the current filters')}
                 detail="Clear a filter to widen the register."
               />
             ) : (
               <DataTable rows={filteredUnits} columns={unitColumns} rowKey={(u) => u.id} pageSize={12} />
             )}
-          </Card>
+          </GovPanel>
 
           <Card className="flex flex-col">
             <p className="label-institutional mb-2">{t('Monthly sterilisations, vaccinations and dog bites')}</p>
@@ -467,12 +471,10 @@ export function AnimalWelfarePage(): React.JSX.Element {
             </div>
           </Card>
 
-          <Card flush className="flex flex-col">
-            <CardHeader
-              bordered
-              title={t('Wards with the highest bite rate')}
-              description={t('Bites per 10,000 residents in 30 days - where the programme has not yet reached.')}
-            />
+          <GovPanel title={t('Wards with the highest bite rate')} tone="amber" dense className="flex flex-col">
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+              {t('Bites per 10,000 residents in 30 days - where the programme has not yet reached.')}
+            </p>
             <div className="px-4 pb-4" style={{ height: Math.max(210, worstWards.length * 26) }}>
               {worstWards.length === 0 ? (
                 <EmptyState title={t('No ward outcome recorded')} detail="Clear a filter to widen the comparison." compact />
@@ -483,7 +485,7 @@ export function AnimalWelfarePage(): React.JSX.Element {
                 />
               )}
             </div>
-          </Card>
+          </GovPanel>
         </div>
       </div>
     </PageBody>

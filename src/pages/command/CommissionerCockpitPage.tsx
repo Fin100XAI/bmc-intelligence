@@ -1,32 +1,22 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import {
-  AlertTriangle,
   Ban,
-  Banknote,
   CalendarClock,
   CheckCircle2,
   ChevronRight,
   Clock,
-  Droplets,
   FileSearch,
-  Flame,
-  GitBranch,
-  HardHat,
-  HeartPulse,
-  History,
-  MapPinned,
   NotebookPen,
   Sparkles,
   UserPlus,
-  Users,
 } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
-import { Button, Card, CardHeader, IconButton, Label, MetricGrid, Select, Textarea } from '@/components/ui/primitives'
+import { Button, Card, IconButton, Label, MetricGrid, Select, Textarea } from '@/components/ui/primitives'
 import { Badge, ClassificationBadge, ConfidenceBadge, SeverityBadge } from '@/components/ui/badges'
 import { ConfirmDialog, Modal } from '@/components/ui/overlays'
 import { DemonstrationNotice, EmptyState, ErrorState, LoadingState } from '@/components/ui/states'
 import { MetricCard } from '@/components/cards/MetricCard'
-import { GovPanel } from '@/components/gov/GovPanel'
+import { GovPanel, panelToneForIndex } from '@/components/gov/GovPanel'
 import { useActivityLog, useServiceAction, useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { decisionService, healthService, incidentService, intelligenceService, projectService, revenueService } from '@/services'
@@ -71,14 +61,14 @@ interface AssignState {
 }
 
 function BriefingTile({
-  icon,
+  index,
   title,
   count,
   tone,
   to,
   children,
 }: {
-  icon: ReactNode
+  index: number
   title: string
   count: number
   tone?: 'critical' | 'warn' | 'default'
@@ -86,17 +76,17 @@ function BriefingTile({
   children: ReactNode
 }): React.JSX.Element {
   return (
-    <Card className="flex flex-col">
-      <CardHeader
-        icon={icon}
-        title={title}
-        actions={
-          <Badge tone={tone === 'critical' ? 'critical' : tone === 'warn' ? 'warn' : 'neutral'}>{count}</Badge>
-        }
-      />
-      <div className="mt-2.5 min-h-[2.5rem] flex-1 space-y-1.5">{children}</div>
+    <GovPanel
+      title={title}
+      tone={panelToneForIndex(index)}
+      className="flex flex-col"
+      actions={
+        <Badge tone={tone === 'critical' ? 'critical' : tone === 'warn' ? 'warn' : 'neutral'}>{count}</Badge>
+      }
+    >
+      <div className="min-h-[2.5rem] flex-1 space-y-1.5">{children}</div>
       <LinkButtonRow to={to} />
-    </Card>
+    </GovPanel>
   )
 }
 
@@ -124,10 +114,7 @@ export function CommissionerCockpitPage(): React.JSX.Element {
   const [openInsight, setOpenInsight] = useState<CrossDomainInsight | null>(null)
 
   // The shell renders the masthead; this page states what it should say.
-  usePageMasthead(
-    t('Commissioner Cockpit'),
-    t('Today\'s {0} in one scannable briefing, and the ranked queue of issues that need a Commissioner\'s decision. Every action below is written to the permanent audit trail and to the session log at the foot of this page.', corporation.city),
-  )
+  usePageMasthead(t('Commissioner Cockpit'))
 
   const cityPosition = useMemo(() => buildCityPosition(), [])
   const insights = useMemo(() => buildCrossDomainInsights(), [])
@@ -302,14 +289,15 @@ export function CommissionerCockpitPage(): React.JSX.Element {
       </MetricGrid>
 
       {/* Cross-domain insight strip - the platform's differentiator */}
-      <Card tone="info">
-        <CardHeader
-          icon={<GitBranch className="h-4 w-4" />}
-          eyebrow={t('Cross-domain intelligence')}
-          title={t('Exposures no single departmental view reveals')}
-          description={t('Correlation identifies a review candidate. It is never a finding, and never an assertion of cause.')}
-        />
-        <div className="scrollbar-slim mt-3 flex gap-3 overflow-x-auto pb-1">
+      <GovPanel
+        title={t('Exposures no single departmental view reveals')}
+        subtitle={t('Cross-domain intelligence')}
+        tone="amber"
+      >
+        <p className="mb-3 text-xs leading-relaxed text-ink-500">
+          {t('Correlation identifies a review candidate. It is never a finding, and never an assertion of cause.')}
+        </p>
+        <div className="scrollbar-slim flex gap-3 overflow-x-auto pb-1">
           {insights.map((insight) => (
             <button
               key={insight.id}
@@ -327,7 +315,7 @@ export function CommissionerCockpitPage(): React.JSX.Element {
             </button>
           ))}
         </div>
-      </Card>
+      </GovPanel>
 
       {/* ── Two columns ──────────────────────────────────────────────
           The Commissioner's morning reading, in the order it is actually
@@ -339,7 +327,7 @@ export function CommissionerCockpitPage(): React.JSX.Element {
         <div className="min-w-0 xl:col-span-8">
           <GovPanel title={`Today's ${corporation.city}`} tone="primary" dense bodyClassName="p-3">
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 2xl:grid-cols-3">
-              <BriefingTile icon={<AlertTriangle className="h-4 w-4" />} title={t('High-priority issues')} count={queue.length} tone={queue.length > 0 ? 'critical' : 'default'} to={ROUTES.intelligenceFeed}>
+              <BriefingTile index={0} title={t('High-priority issues')} count={queue.length} tone={queue.length > 0 ? 'critical' : 'default'} to={ROUTES.intelligenceFeed}>
                 {queue.slice(0, 3).map((i) => (
                   <p key={i.id} className="flex items-center gap-1.5 truncate text-xs text-ink-600">
                     <SeverityBadge severity={i.severity} size="xs" /> <span className="truncate">{i.title}</span>
@@ -348,7 +336,7 @@ export function CommissionerCockpitPage(): React.JSX.Element {
                 {queue.length === 0 ? <p className="text-xs text-ink-400">{t('No critical or high-severity items open.')}</p> : null}
               </BriefingTile>
 
-              <BriefingTile icon={<MapPinned className="h-4 w-4" />} title={t('High-risk wards')} count={cityPosition.wardPerformance.filter((w) => w.risk >= 60).length} tone="warn" to={ROUTES.wards}>
+              <BriefingTile index={1} title={t('High-risk wards')} count={cityPosition.wardPerformance.filter((w) => w.risk >= 60).length} tone="warn" to={ROUTES.wards}>
                 {cityPosition.wardPerformance.slice(0, 3).map((w) => (
                   <p key={w.wardId} className="flex items-center justify-between gap-2 text-xs text-ink-600">
                     <span className="truncate">{w.label}</span>
@@ -357,13 +345,13 @@ export function CommissionerCockpitPage(): React.JSX.Element {
                 ))}
               </BriefingTile>
 
-              <BriefingTile icon={<Droplets className="h-4 w-4" />} title={t('Critical infrastructure')} count={cityPosition.water.zonesAtRisk + cityPosition.monsoon.wardsBelowThreshold} tone="warn" to={ROUTES.water}>
+              <BriefingTile index={2} title={t('Critical infrastructure')} count={cityPosition.water.zonesAtRisk + cityPosition.monsoon.wardsBelowThreshold} tone="warn" to={ROUTES.water}>
                 <p className="text-xs text-ink-600">{t('Water zones at risk:')}{' '}<span className="font-semibold text-ink-800">{cityPosition.water.zonesAtRisk}</span></p>
                 <p className="text-xs text-ink-600">{t('Wards below monsoon readiness:')}{' '}<span className="font-semibold text-ink-800">{cityPosition.monsoon.wardsBelowThreshold}</span></p>
                 <p className="text-xs text-ink-600">{t('Chronic waterlogging locations:')}{' '}<span className="font-semibold text-ink-800">{cityPosition.monsoon.chronicLocations}</span></p>
               </BriefingTile>
 
-              <BriefingTile icon={<HardHat className="h-4 w-4" />} title={t('Significant project delays')} count={projectsAtRisk.length} tone={projectsAtRisk.length > 0 ? 'warn' : 'default'} to={ROUTES.projects}>
+              <BriefingTile index={3} title={t('Significant project delays')} count={projectsAtRisk.length} tone={projectsAtRisk.length > 0 ? 'warn' : 'default'} to={ROUTES.projects}>
                 {projectsAtRisk.slice(0, 3).map((p) => (
                   <p key={p.id} className="flex items-center justify-between gap-2 text-xs text-ink-600">
                     <span className="truncate">{p.name}</span>
@@ -373,7 +361,7 @@ export function CommissionerCockpitPage(): React.JSX.Element {
                 {projectsAtRisk.length === 0 ? <p className="text-xs text-ink-400">{t('No projects above the risk threshold.')}</p> : null}
               </BriefingTile>
 
-              <BriefingTile icon={<HeartPulse className="h-4 w-4" />} title={t('Health alerts')} count={healthSignals.length} tone={healthSignals.length > 0 ? 'warn' : 'default'} to={ROUTES.health}>
+              <BriefingTile index={4} title={t('Health alerts')} count={healthSignals.length} tone={healthSignals.length > 0 ? 'warn' : 'default'} to={ROUTES.health}>
                 {healthSignals.slice(0, 3).map((h) => (
                   <p key={h.id} className="flex items-center justify-between gap-2 text-xs text-ink-600">
                     <span className="truncate">{wardName(h.wardId)} - {h.disease}</span>
@@ -383,7 +371,7 @@ export function CommissionerCockpitPage(): React.JSX.Element {
                 {healthSignals.length === 0 ? <p className="text-xs text-ink-400">{t('No elevated outbreak signals.')}</p> : null}
               </BriefingTile>
 
-              <BriefingTile icon={<Flame className="h-4 w-4" />} title={t('Emergency events')} count={incidents.length} tone={incidents.length > 0 ? 'critical' : 'default'} to={ROUTES.situationRoom}>
+              <BriefingTile index={5} title={t('Emergency events')} count={incidents.length} tone={incidents.length > 0 ? 'critical' : 'default'} to={ROUTES.situationRoom}>
                 {incidents.slice(0, 3).map((inc) => (
                   <p key={inc.id} className="flex items-center gap-1.5 truncate text-xs text-ink-600">
                     <SeverityBadge severity={inc.severity} size="xs" /> <span className="truncate">{inc.title}</span>
@@ -392,7 +380,7 @@ export function CommissionerCockpitPage(): React.JSX.Element {
                 {incidents.length === 0 ? <p className="text-xs text-ink-400">{t('No active incidents.')}</p> : null}
               </BriefingTile>
 
-              <BriefingTile icon={<Banknote className="h-4 w-4" />} title={t('Revenue / budget exceptions')} count={revenueAnomalies.length} tone={revenueAnomalies.length > 0 ? 'warn' : 'default'} to={ROUTES.revenue}>
+              <BriefingTile index={6} title={t('Revenue / budget exceptions')} count={revenueAnomalies.length} tone={revenueAnomalies.length > 0 ? 'warn' : 'default'} to={ROUTES.revenue}>
                 <p className="text-xs text-ink-600">
                   {t('Collection efficiency:')}{' '}<span className="font-semibold text-ink-800">{formatPercent(cityPosition.revenue.efficiencyPct)}</span>
                 </p>
@@ -404,7 +392,7 @@ export function CommissionerCockpitPage(): React.JSX.Element {
                 ) : null}
               </BriefingTile>
 
-              <BriefingTile icon={<Users className="h-4 w-4" />} title={t('Citizen grievance escalation')} count={totalSlaBreached} tone={totalSlaBreached > 0 ? 'warn' : 'default'} to={ROUTES.wards}>
+              <BriefingTile index={7} title={t('Citizen grievance escalation')} count={totalSlaBreached} tone={totalSlaBreached > 0 ? 'warn' : 'default'} to={ROUTES.wards}>
                 <p className="text-xs text-ink-600">
                   {t('Open complaints (city-wide):')}{' '}<span className="font-semibold text-ink-800">{formatCompact(totalOpenComplaints)}</span>
                 </p>
@@ -416,7 +404,7 @@ export function CommissionerCockpitPage(): React.JSX.Element {
                 ))}
               </BriefingTile>
 
-              <BriefingTile icon={<CalendarClock className="h-4 w-4" />} title={t('Priority decisions')} count={cityPosition.priorityDecisions} tone={cityPosition.priorityDecisions > 0 ? 'warn' : 'default'} to={ROUTES.decisions}>
+              <BriefingTile index={8} title={t('Priority decisions')} count={cityPosition.priorityDecisions} tone={cityPosition.priorityDecisions > 0 ? 'warn' : 'default'} to={ROUTES.decisions}>
                 <p className="text-xs text-ink-600">{t('Draft or under review, awaiting a human decision.')}</p>
                 <p className="text-xs text-ink-600">
                   {t('Financial impact under decision:')}{' '}
@@ -487,9 +475,11 @@ export function CommissionerCockpitPage(): React.JSX.Element {
             )}
           </GovPanel>
 
-          <Card flush>
-            <CardHeader bordered eyebrow={t('Accountability')} title={t('Session activity log')} description={t('What you have done in this session, with timestamps. Every entry here also produced a permanent audit record.')} icon={<History className="h-4 w-4" />} />
-            <div className="max-h-72 overflow-y-auto p-4">
+          <GovPanel title={t('Session activity log')} subtitle={t('Accountability')} tone="amber" dense>
+            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
+              {t('What you have done in this session, with timestamps. Every entry here also produced a permanent audit record.')}
+            </p>
+            <div className="max-h-72 overflow-y-auto px-3 pb-3">
               {activity.entries.length === 0 ? (
                 <p className="text-xs text-ink-400">{t('No actions recorded yet in this session.')}</p>
               ) : (
@@ -508,7 +498,7 @@ export function CommissionerCockpitPage(): React.JSX.Element {
                 </ol>
               )}
             </div>
-          </Card>
+          </GovPanel>
         </div>
       </div>
 

@@ -2,8 +2,6 @@
 export const MR_PART_15: Record<string, string> = {
   'The largest active capital commitments by current cost, linking budget utilisation to physical delivery in Project Intelligence.':
     'सध्याच्या खर्चानुसार सर्वात मोठ्या चालू भांडवली बांधिलक्या — अर्थसंकल्प वापर आणि प्रकल्प बुद्धिमत्तेतील प्रत्यक्ष पूर्तता यांना जोडणाऱ्या.',
-  "The licensing regime behind the licence-fee revenue head - what is current, what has lapsed, how long a decision takes against the citizens' charter, and what enforcement follows.":
-    'परवाना-शुल्क या महसूल शीर्षामागील परवाना व्यवस्था - काय चालू आहे, काय संपुष्टात आले, नागरिकांच्या सनदेच्या तुलनेत निर्णयाला किती वेळ लागतो, आणि पुढे कोणती अंमलबजावणी होते.',
   'The lifecycle is the control': 'जीवनचक्र हेच नियंत्रण',
   'The mean of the five dimensions below — never an independent judgement. A single composite tells a steward nothing about what to fix; these five are what they act on.':
     'खालील पाच परिमाणांची सरासरी — कधीही स्वतंत्र निर्णय नव्हे. एकच एकत्रित आकडा काय दुरुस्त करावे याविषयी व्यवस्थापकाला काहीच सांगत नाही; ही पाच परिमाणेच त्यांच्या कृतीचा आधार असतात.',
@@ -13,8 +11,6 @@ export const MR_PART_15: Record<string, string> = {
   'The months-to-threshold figure is a straight-line extrapolation of recent movement. It is not a forecast. It carries no model of monsoon seasonality, no knowledge of works already sanctioned in the ward and no allowance for anything the corporation is about to do. It assumes nothing changes - which is precisely the assumption an intervention is meant to break. Read it as an approximate horizon for a decision, never as a date the ward is expected to reach.':
     'मर्यादेपर्यंतच्या महिन्यांचा आकडा हा अलीकडील हालचालीचा सरळरेषीय विस्तार आहे. तो अंदाज नाही. त्यात पावसाळी हंगामाचे कोणतेही प्रारूप नाही, प्रभागात आधीच मंजूर झालेल्या कामांची माहिती नाही आणि महानगरपालिका जे करणार आहे त्याची कोणतीही सवलत नाही. काहीही बदलणार नाही असे तो गृहीत धरतो - आणि नेमके हेच गृहीतक मोडण्यासाठी हस्तक्षेप केला जातो. निर्णयासाठीची अंदाजे कालमर्यादा म्हणून तो वाचावा, प्रभाग ज्या तारखेला पोहोचणे अपेक्षित आहे ती तारीख म्हणून कधीही नाही.',
   'The most recent audit events, newest first.': 'सर्वात अलीकडील लेखापरीक्षा घटना, नवीनतम प्रथम.',
-  "The municipal asset register - condition, age against design life and lifecycle exposure across every asset category. Assembled from every ward's asset holding within your authorised scope.":
-    'महानगरपालिका मालमत्ता नोंदवही - प्रत्येक मालमत्ता श्रेणीतील स्थिती, संकल्पित आयुर्मानाच्या तुलनेत वय आणि जीवनचक्र जोखीम. तुमच्या अधिकृत व्याप्तीतील प्रत्येक प्रभागाच्या मालमत्ता साठ्यातून संकलित.',
   'The nominated officer sees this candidate on their own worklist and is accountable for deciding it.':
     'नामनिर्देशित अधिकाऱ्याला हे प्रकरण त्यांच्या स्वतःच्या कामयादीत दिसते आणि त्यावर निर्णय घेण्याची जबाबदारी त्यांची असते.',
   'the notification preferences': 'सूचनांविषयक प्राधान्ये',
@@ -22,8 +18,6 @@ export const MR_PART_15: Record<string, string> = {
     'खालील निरीक्षणे ही उद्रेकाचा वाढीव संकेत ज्या प्रभागात व अहवाल कालावधीत नोंदवला गेला त्याच ठिकाणी एकत्र आढळलेल्या बाबी आहेत. क्षेत्रीय पडताळणीस दिशा मिळावी म्हणून ती दिली आहेत; तो कारणाचा निष्कर्ष नाही.',
   'The officer holding the densest, most flood-exposed ward in the city can always say that a straight ranking is unfair to them, and they are usually right. Once that objection has been made and not answered, the table stops being used. Adjusting for difficulty is what allows a ranking to survive contact with the people it ranks: the conditions are set aside first, and only the part of the result the conditions do not explain is put to the ward.':
     'शहरातील सर्वाधिक दाट व पुराचा सर्वाधिक धोका असलेला प्रभाग सांभाळणारा अधिकारी सरळ क्रमवारी आपल्यावर अन्याय करते असे नेहमी म्हणू शकतो, आणि तो सहसा बरोबरच असतो. एकदा ही हरकत घेतली गेली आणि तिचे उत्तर मिळाले नाही, की तो तक्ता वापरला जाणे बंद होते. अडचणीनुसार समायोजन केल्यानेच क्रमवारी ज्यांना क्रम देते त्यांच्यासमोर टिकून राहते: प्रथम परिस्थिती बाजूला ठेवली जाते, आणि निकालाचा जो भाग परिस्थितीने स्पष्ट होत नाही तेवढाच प्रभागासमोर मांडला जातो.',
-  'The operational ingestion register — every upstream feed the Urban Intelligence Core draws on, with the schema it ingests, the purpose it is held for, the retention it sits under and the metrics downstream of it. Enable or pause a source, change its cadence, classification or retention, run a sync, open it in full, add or remove one; changes apply immediately for this session. No source is connected to a live {0} system and every sync is simulated.':
-    'कामकाजातील ग्रहण नोंदवही — नागरी बुद्धिमत्ता गाभा ज्या प्रत्येक स्रोत प्रवाहावर अवलंबून आहे तो, त्याची ग्रहण होणारी रचना, तो कशासाठी ठेवला आहे तो हेतू, त्यावर लागू असलेला जतन कालावधी आणि त्याखालून निघणारे मापदंड यांसह. स्रोत सुरू करा किंवा थांबवा, त्याची वारंवारता, वर्गीकरण किंवा जतन कालावधी बदला, समक्रमण चालवा, तो पूर्ण उघडा, नवीन जोडा किंवा काढून टाका; बदल या सत्रापुरते तत्काळ लागू होतात. कोणताही स्रोत प्रत्यक्ष {0} प्रणालीशी जोडलेला नाही आणि प्रत्येक समक्रमण नक्कल आहे.',
   'The path': 'मार्ग',
   'The planning engine is deterministic and computes instantly - no gated service call is required to run it, only to persist its output against a decision.':
     'नियोजन यंत्रणा निश्चितात्मक असून तत्काळ गणना करते - ती चालवण्यासाठी कोणत्याही नियंत्रित सेवा-आवाहनाची गरज नाही; ते केवळ तिचा निष्कर्ष एखाद्या निर्णयाविरुद्ध जतन करण्यासाठी लागते.',
@@ -31,16 +25,12 @@ export const MR_PART_15: Record<string, string> = {
     'या अंमलबजावणीसाठी सुरू किंवा बंद करता येणाऱ्या मंच क्षमता, ज्या नगरपालिका संरचनेत ठेवल्या जातात जेणेकरून तोच गाभा प्रत्येक महानगरपालिकेसाठी वेगळा पडदा दाखवू शकेल. हा अंमलबजावणीचा गुणधर्म आहे, तुमचा नाही — इथले काहीही वैयक्तिक प्राधान्य नाही.',
   'The platform never writes back to a departmental system of record.':
     'मंच कोणत्याही विभागीय अभिलेख प्रणालीत परत काहीही लिहीत नाही.',
-  "The platform's continuity posture — backup, failover and resilience testing. Every item is labelled as target architecture, the production design, or demonstration status, what this environment provides. This page makes no claim of production disaster recovery.":
-    'मंचाची सातत्य स्थिती — बॅकअप, पर्यायी यंत्रणा आणि लवचिकता चाचणी. प्रत्येक बाब एकतर लक्ष्य संरचना, म्हणजे उत्पादन आराखडा, किंवा प्रात्यक्षिक स्थिती, म्हणजे हे वातावरण जे पुरवते ते, अशी नोंदवली आहे. हे पान उत्पादन स्तरावरील आपत्ती-पुनर्प्राप्तीचा कोणताही दावा करत नाही.',
   "The platform's modelled urban response-time standard is {0} minutes. Bands at or above this threshold are named in \"Catchments above standard\" below.":
     'मंचाचे प्रतिरूपित नागरी प्रतिसाद-वेळ मानक {0} मिनिटे आहे. या मर्यादेवर किंवा तिच्या बरोबरीचे पट्टे खाली "मानकापेक्षा अधिक क्षेत्रे" यात नमूद केले आहेत.',
   'The precise, exhaustive definition of every connector state this platform ever reports.':
     'हा मंच जी जी जोडणी स्थिती कधीही नोंदवतो तिची अचूक व संपूर्ण व्याख्या.',
   'the presentation preferences': 'सादरीकरणाविषयक प्राधान्ये',
   'The projection could not be retrieved': 'प्रक्षेपण मिळवता आले नाही',
-  'The property assessment base by ward and use-class segment - assessed units, assessed value, collection position and the reassessment backlog. This is the base register from which property tax realisation in Revenue Intelligence is drawn.':
-    'प्रभाग व वापर-वर्ग गटानुसार मालमत्ता आकारणीचा आधार - आकारणी झालेली एकके, आकारणी मूल्य, वसुलीची स्थिती आणि फेरआकारणीचा अनुशेष. महसूल बुद्धिमत्तेतील मालमत्ता कर वसुली याच आधार नोंदवहीतून घेतली जाते.',
   'The provenance chain': 'उगम साखळी',
   'The published rule catalogue': 'प्रकाशित नियम सूची',
   'The reason the right-hand column is not a sprint backlog.':
@@ -65,12 +55,8 @@ export const MR_PART_15: Record<string, string> = {
   'The spine this graph is built to make traceable, from asset to attached incident.':
     'मालमत्तेपासून तिच्याशी जोडलेल्या घटनेपर्यंतची जी साखळी माग काढण्याजोगी करण्यासाठी हा आलेख बांधला आहे, ती.',
   'The state chip on each band describes the': 'प्रत्येक पट्ट्यावरील स्थिती चिन्ह वर्णन करते',
-  'The state of every connector this deployment is capable of provisioning, and what that state actually means. No connector is connected to any live departmental system in this environment.':
-    'ही अंमलबजावणी ज्या ज्या जोडण्या उपलब्ध करून देऊ शकते त्यांची स्थिती, आणि त्या स्थितीचा नेमका अर्थ. या वातावरणात कोणतीही जोडणी कोणत्याही प्रत्यक्ष विभागीय प्रणालीशी जोडलेली नाही.',
   "The task is placed on the selected officer's own dashboard. Sign in as them to see it under Assigned to me.":
     'हे काम निवडलेल्या अधिकाऱ्याच्या स्वतःच्या डॅशबोर्डवर ठेवले जाते. ते "मला नेमून दिलेली" या अंतर्गत पाहण्यासाठी त्यांच्या नावाने प्रवेश करा.',
-  "The tasks assigned to you, and the tasks you have assigned to other officers. Assigning a task here places it directly on that officer's own dashboard — it is waiting for them the moment they sign in.":
-    'तुम्हाला नेमून दिलेली कामे, आणि तुम्ही इतर अधिकाऱ्यांना नेमून दिलेली कामे. येथे काम नेमून दिल्यास ते थेट त्या अधिकाऱ्याच्या स्वतःच्या डॅशबोर्डवर जाते — ते प्रवेश करताच त्यांची वाट पाहत असते.',
   'The three modules that carry the drainage, flood and environmental position for the water bodies above. Nothing on this page is duplicated there - these are the surfaces that hold the real work.':
     'वरील जलाशयांसाठीची जलनिस्सारण, पूर आणि पर्यावरण स्थिती सांभाळणारे तीन विभाग. या पानावरील काहीही तिथे पुन्हा दिलेले नाही - प्रत्यक्ष काम याच पडद्यांवर आहे.',
   'The threshold rule or model that evaluated the metric.':
@@ -180,8 +166,6 @@ export const MR_PART_15: Record<string, string> = {
   Title: 'शीर्षक',
   'to ask ·': 'विचारण्यासाठी ·',
   'To date': 'आजपर्यंत',
-  "Today's {0} in one scannable briefing, and the ranked queue of issues that need a Commissioner's decision. Every action below is written to the permanent audit trail and to the session log at the foot of this page.":
-    'आजचे {0} एकाच नजरेत वाचता येणाऱ्या माहितीपत्रात, आणि आयुक्तांचा निर्णय आवश्यक असलेल्या बाबींची क्रमवार रांग. खालील प्रत्येक कृती कायमस्वरूपी लेखापरीक्षा नोंदीत आणि या पानाच्या तळाशी असलेल्या सत्र नोंदीत लिहिली जाते.',
   'Toggle the layer selector to switch between infrastructure adequacy and population density shading.':
     'पायाभूत सुविधांची पर्याप्तता आणि लोकसंख्या घनता छटा यांमध्ये बदल करण्यासाठी स्तर निवडकर्ता वापरा.',
   'Toggling a flag here changes only your current session and is not saved. In a production deployment a feature-flag change is a governed configuration action, recorded in the audit trail against the officer who made it — never an unlogged switch. This screen demonstrates the surface, not that persistence.':
@@ -205,8 +189,6 @@ export const MR_PART_15: Record<string, string> = {
   'Total requests': 'एकूण विनंत्या',
   'Trace a derived figure back through its lineage, weights and contributing inputs.':
     'साधित आकड्याचा माग त्याची उगमसाखळी, भार आणि योगदान देणारे घटक यांतून मागे काढा.',
-  'Trace one piece of infrastructure through everything the corporation holds about it - the ward it sits in, the department accountable, the contractor and project delivering it, the budget funding it, and the complaints and incidents attached. The accountability chain, laid out as a chain.':
-    'एका पायाभूत सुविधेचा माग महानगरपालिकेकडे तिच्याबद्दल असलेल्या सर्व माहितीतून काढा - ती ज्या प्रभागात आहे तो, जबाबदार विभाग, ती उभारणारा कंत्राटदार व प्रकल्प, तिला निधी देणारा अर्थसंकल्प, आणि तिच्याशी जोडलेल्या तक्रारी व घटना. उत्तरदायित्वाची साखळी, साखळीच्याच रूपात मांडलेली.',
   'Trade effluent from a slaughter house, a tannery or a fish market is high-load organic and chemical waste. Where it is not treated to consent conditions it enters the storm water network, and the same premises reappear in the environment department&apos;s water-quality record downstream. These are hygiene findings and environmental findings at once, and closing them needs both departments in the room.':
     'कत्तलखाना, कातडी कारखाना किंवा मासळी बाजारातून येणारे व्यापारी सांडपाणी हे उच्च भाराचे सेंद्रिय व रासायनिक सांडपाणी असते. संमती अटींनुसार त्यावर प्रक्रिया झाली नाही तर ते पावसाळी पाण्याच्या जाळ्यात शिरते, आणि तीच आस्थापने पुढे पर्यावरण विभागाच्या पाणी गुणवत्ता नोंदीत पुन्हा दिसतात. हे एकाच वेळी स्वच्छताविषयक निष्कर्ष आणि पर्यावरणीय निष्कर्ष असतात, आणि ते निकाली काढण्यासाठी दोन्ही विभाग एकत्र बसणे आवश्यक असते.',
   'Traffic corridors and the highest-priority road defects.':
@@ -223,8 +205,6 @@ export const MR_PART_15: Record<string, string> = {
   'treatment facilit': 'प्रक्रिया केंद्र',
   'Treatment facilities only - trunk reaches carry no compliance figure. Ranked from lowest to highest against the departmental norm.':
     'केवळ प्रक्रिया केंद्रे - मुख्य वाहिनी भागांसाठी अनुपालन आकडा नसतो. विभागीय निकषाच्या तुलनेत सर्वात कमीपासून सर्वाधिकपर्यंत क्रमवारी.',
-  'Treatment facility capacity, loading and discharge compliance, trunk-sewer network condition by ward, and the wards where overflow events concentrate.':
-    'प्रक्रिया केंद्रांची क्षमता, भार व विसर्ग अनुपालन, प्रभागनिहाय मुख्य मलवाहिनी जाळ्याची स्थिती, आणि उतू जाण्याच्या घटना जिथे केंद्रित आहेत ते प्रभाग.',
   'Treatment facility register': 'प्रक्रिया केंद्र नोंदवही',
   'Treatment Plant': 'प्रक्रिया प्रकल्प',
   'Tree Authority position by ward': 'प्रभागनिहाय वृक्ष प्राधिकरण स्थिती',
@@ -300,8 +280,6 @@ export const MR_PART_15: Record<string, string> = {
   'Ward Officers and read-only roles can view monsoon data but do not hold Situation Room authority to run a city-wide scenario.':
     'प्रभाग अधिकारी आणि केवळ-वाचन भूमिका पावसाळी माहिती पाहू शकतात, परंतु शहरव्यापी परिस्थिती चालवण्याचा परिस्थिती कक्षाचा अधिकार त्यांच्याकडे नाही.',
   'Ward outcome register': 'प्रभाग निष्पत्ती नोंदवही',
-  'Ward outcomes read against the conditions each ward was handed. A raw ranking punishes whoever holds the hardest ward; this one separates how hard a ward is from how well it is being run.':
-    'प्रत्येक प्रभागाच्या वाट्याला आलेल्या परिस्थितीच्या तुलनेत वाचलेल्या प्रभाग निष्पत्ती. कच्ची क्रमवारी सर्वात कठीण प्रभाग सांभाळणाऱ्यालाच शिक्षा करते; ही क्रमवारी प्रभाग किती कठीण आहे आणि तो किती चांगल्या प्रकारे चालवला जात आहे या दोन गोष्टी वेगळ्या करते.',
   'Ward Overview': 'प्रभाग आढावा',
   'Ward planning table': 'प्रभाग नियोजन तक्ता',
   'Ward Preparedness': 'प्रभाग सज्जता',
@@ -410,8 +388,6 @@ export const MR_PART_15: Record<string, string> = {
   'What requires my attention today?': 'आज माझ्या लक्षाची आवश्यकता कशाला आहे?',
   'What the corporation did in comparable situations — with the basis for each match.':
     'तुलनात्मक परिस्थितीत महानगरपालिकेने काय केले — प्रत्येक जुळणीच्या आधारासह.',
-  'What the corporation has decided, faced and learned, kept as a durable record. When a situation recurs, an officer can read what was done last time and what it taught — continuity of institutional knowledge, not its rediscovery.':
-    'महानगरपालिकेने काय ठरवले, कशाला तोंड दिले आणि काय शिकली, याची टिकाऊ नोंद. परिस्थिती पुन्हा उद्भवल्यास मागील वेळी काय केले आणि त्यातून काय शिकायला मिळाले हे अधिकारी वाचू शकतो — संस्थात्मक ज्ञानाचे सातत्य, ते पुन्हा नव्याने शोधणे नव्हे.',
   'What the projection is, and what it is not': 'हे प्रक्षेपण काय आहे, आणि काय नाही',
   'What this actually does': 'हे प्रत्यक्षात काय करते',
   'What this feed carries. If the source stopped reporting, each of these would degrade before anything else in the platform did — which is what makes this list an impact assessment rather than a description.':
@@ -434,15 +410,11 @@ export const MR_PART_15: Record<string, string> = {
   'Where every matter tabled before the house currently stands.':
     'सभागृहासमोर मांडलेली प्रत्येक बाब सध्या कोणत्या टप्प्यावर आहे.',
   'Where service is deteriorating': 'सेवा कुठे खालावत आहे',
-  'Where several different problems are stacking up in one locality at once. A ward that reads acceptable on average can contain a street where drainage, waste and road failure are happening together - that street is what this screen finds.':
-    'एकाच भागात एकाच वेळी अनेक वेगवेगळ्या समस्या कुठे साचत आहेत. सरासरीने समाधानकारक दिसणाऱ्या प्रभागातही अशी एखादी गल्ली असू शकते जिथे जलनिस्सारण, कचरा आणि रस्त्याचा बिघाड एकत्र घडत आहेत - हा पडदा नेमकी तीच गल्ली शोधतो.',
   'Where the certificate shortfall falls': 'प्रमाणपत्रांची तूट कुठे आहे',
   'Where the composite is anchored and where it is moving.':
     'एकत्रित गुण कशावर आधारलेले आहेत आणि ते कोणत्या दिशेने जात आहेत.',
   "Where the corporation's capital programme actually stands.":
     'महानगरपालिकेचा भांडवली कार्यक्रम प्रत्यक्षात कोणत्या टप्प्यावर आहे.',
-  "Where the corporation's own registers disagree about the same property. Every rule in the catalogue is published in full - its condition, why it matters, and the lawful reasons it fires on a property where nothing is wrong - because an assessment the corporation cannot explain is an assessment it cannot defend at a hearing.":
-    'एकाच मालमत्तेबाबत महानगरपालिकेच्याच नोंदवह्या कुठे परस्परविरोधी आहेत. सूचीतील प्रत्येक नियम पूर्णपणे प्रकाशित केला आहे - त्याची अट, तो का महत्त्वाचा आहे, आणि काहीही चूक नसलेल्या मालमत्तेवरही तो का लागू होऊ शकतो याची वैध कारणे - कारण जी आकारणी महानगरपालिका स्पष्ट करू शकत नाही ती सुनावणीत तिला टिकवताही येत नाही.',
   'Where the entitlement is settled but the money has not yet arrived.':
     'हक्क निश्चित झाला आहे पण पैसे अद्याप पोहोचलेले नाहीत, अशी ठिकाणे.',
   'Where the gap between sanctioned and filled teaching posts is widest. A vacancy is a class without a teacher, not a line in an establishment register.':
@@ -452,19 +424,13 @@ export const MR_PART_15: Record<string, string> = {
     'शेवटच्या तपासणीत सर्वात वाईट स्थिती कुठे आढळली. फेरतपासणीने प्रथम याच आस्थापनांपर्यंत पोहोचावे.',
   'Where the work lands, ranked by weakest SLA position.':
     'काम कुठे येऊन पडते, सर्वात कमकुवत सेवा-हमी स्थितीनुसार क्रमवारी.',
-  "Where this corporation stands on Maharashtra's published municipal indicators. A figure on its own cannot be judged - a figure beside its peers can.":
-    'महाराष्ट्राच्या प्रकाशित नागरी निर्देशांकांवर या महानगरपालिकेचे स्थान. एकटा आकडा तपासता येत नाही - समकक्षांच्या शेजारी ठेवलेला आकडा तपासता येतो.',
   "Where this corporation's water is covered": 'या महानगरपालिकेचे पाणी कुठे समाविष्ट आहे',
   'Where this deployment sits within the broader Urban Intelligence Core hierarchy.':
     'व्यापक नागरी बुद्धिमत्ता गाभा उतरंडीत या अंमलबजावणीचे स्थान.',
-  "Whether the corporation's capital allocation follows the condition its own data records. Need is assembled from figures already held on each ward; provision is the same capital position Budget Intelligence reports, expressed per resident.":
-    'महानगरपालिकेची भांडवली तरतूद तिच्याच माहितीत नोंदलेल्या स्थितीनुसार होते का. प्रत्येक प्रभागाबाबत आधीच उपलब्ध असलेल्या आकड्यांतून गरज संकलित केली आहे; तरतूद ही अर्थसंकल्प बुद्धिमत्ता नोंदवते तीच भांडवली स्थिती असून ती दरडोई स्वरूपात दिली आहे.',
   'Which projects carry the highest schedule risk?':
     'कोणत्या प्रकल्पांना वेळापत्रकाची सर्वाधिक जोखीम आहे?',
   'Which road assets need intervention?': 'कोणत्या रस्ते मालमत्तांना हस्तक्षेपाची गरज आहे?',
   'Which services are below SLA in my ward?': 'माझ्या प्रभागात कोणत्या सेवा सेवा-हमीखाली आहेत?',
-  'Which wards are moving, how fast, and when the fitted rate would carry them below the {0}-point intervention threshold. Every other ward surface reports where a ward is; this one reports where it is heading.':
-    'कोणते प्रभाग हलत आहेत, किती वेगाने, आणि बसवलेल्या दराने ते {0}-गुणांच्या हस्तक्षेप मर्यादेखाली केव्हा जातील. इतर प्रत्येक प्रभाग पडदा प्रभाग कुठे आहे हे सांगतो; हा पडदा तो कुठे चालला आहे हे सांगतो.',
   'Which wards need the most attention?': 'कोणत्या प्रभागांना सर्वाधिक लक्ष देण्याची गरज आहे?',
   'Who holds the outstanding work': 'प्रलंबित काम कोणाकडे आहे',
   'Who this deployment serves and in whose vocabulary. A build-time artefact of the Urban Intelligence Core, shown read-only.':
@@ -504,8 +470,6 @@ export const MR_PART_15: Record<string, string> = {
   'Your assigned role is scoped to this ward only. Sign in as a different demonstration profile to view other wards.':
     'तुम्हाला नेमून दिलेली भूमिका केवळ याच प्रभागापुरती मर्यादित आहे. इतर प्रभाग पाहण्यासाठी वेगळ्या प्रात्यक्षिक प्रोफाइलने प्रवेश करा.',
   'Your authority': 'तुमचा अधिकार',
-  "Your interface preferences and this deployment's municipal configuration, on one page. Preferences are yours to change and take effect immediately; the deployment profile, feature flags and tenancy register below are build-time artefacts of the Urban Intelligence Core, presented for inspection.":
-    'तुमची आंतरपृष्ठ प्राधान्ये आणि या अंमलबजावणीची महानगरपालिका संरचना, एकाच पानावर. प्राधान्ये बदलण्याचा अधिकार तुमचा असून ती तत्काळ लागू होतात; खालील अंमलबजावणी प्रोफाइल, वैशिष्ट्य-ध्वज आणि संस्था नोंदवही हे नागरी बुद्धिमत्ता गाभ्याचे उभारणीच्या वेळचे घटक असून ते तपासणीसाठी सादर केले आहेत.',
   'Your role does not hold decision:create - this form cannot be submitted from your current session.':
     'तुमच्या भूमिकेकडे decision:create नाही - तुमच्या सध्याच्या सत्रातून हा अर्ज सादर करता येणार नाही.',
   Zone: 'झोन',
