@@ -86,4 +86,63 @@ export const MR_PART_35: Record<string, string> = {
     'महानगरपालिकेच्या स्थायी समितीवर २६ नगरसेवक असतात, जे सर्वसाधारण सभेकडून दरवर्षी निवडले जातात — या समितीला महानगरपालिकेचे \'आर्थिक केंद्र\' म्हटले जाते, जी अर्थसंकल्प, निविदा, करार व मोठ्या पायाभूत खर्चाची छाननी करते. मुंबई महानगरपालिका अधिनियम, १८८८ च्या कलम ४२-४३ नुसार एक पदसिद्ध सदस्यासह २७ सदस्यांची समिती वर्णिली आहे; हे मूळ अधिनियमाच्या मजकुराशी स्वतंत्रपणे पडताळता आले नाही.',
   "17 statutory Ward Committees group Mumbai's electoral wards for civic-service oversight (water supply, drainage, cleanliness, storm-water drains) — distinct from the 24 administrative ward offices (A–T). Mumbai has not constituted the Area Sabhas the same law also envisages.":
     'मुंबईच्या निर्वाचित प्रभागांना नागरी सेवा देखरेखीसाठी (पाणीपुरवठा, मलनि:सारण, स्वच्छता, वादळी पाणी वाहिन्या) एकत्र करणाऱ्या १७ वैधानिक प्रभाग समित्या आहेत — या २४ प्रशासकीय वॉर्ड कार्यालयांपेक्षा (A-T) वेगळ्या आहेत. मुंबईने त्याच कायद्याने अपेक्षित असलेल्या क्षेत्र सभांची स्थापना केलेली नाही.',
+
+  // Persistence, live-feel polling, Commissioner Cockpit briefing and the
+  // City Command Map (this session).
+  'City Command Map': 'शहर कमांड नकाशा',
+  '{0} Command Map': '{0} कमांड नकाशा',
+  '{0} active incidents · {1} projects at risk · {2} road defects':
+    '{0} सक्रिय घटना · {1} जोखीमग्रस्त प्रकल्प · {2} रस्ता दोष',
+  "{0} active incidents and {1} decisions past their due date - the Priority Queue on the right is where these get worked.":
+    '{0} सक्रिय घटना आणि {1} निर्णय त्यांच्या मुदतीनंतर प्रलंबित - उजवीकडील प्राधान्य रांगेत यावर कार्यवाही केली जाते.',
+  '{0} items are waiting on a decision.': '{0} बाबी निर्णयाच्या प्रतीक्षेत आहेत.',
+  "A dev-server-only store (`scripts/state-persistence-plugin.ts`) that survives a reload - closing the most visible gap in a demonstration without claiming to be the production database below. Falls back cleanly to the in-session store when unavailable, including in any production build.":
+    'पुनर्भारणानंतरही टिकणारा केवळ-विकास-सर्व्हर संग्रह (`scripts/state-persistence-plugin.ts`) - खालील उत्पादन डेटाबेस असल्याचा दावा न करता प्रात्यक्षिकातील सर्वाधिक दृश्यमान त्रुटी दूर करतो. उपलब्ध नसल्यास, कोणत्याही उत्पादन बांधणीसह, तो सुरळीतपणे सत्र-अंतर्गत संग्रहाकडे परत जातो.',
+  "A durable, backed-up, access-controlled data store - a real RDBMS on managed infrastructure, replacing the dev-only, single-machine, file-backed store this build now uses to survive a reload.":
+    'टिकाऊ, बॅकअप घेतलेला, प्रवेश-नियंत्रित डेटा संग्रह - व्यवस्थापित पायाभूत सुविधांवरील खरा RDBMS, जो सध्या पुनर्भारणानंतर टिकण्यासाठी वापरल्या जाणाऱ्या केवळ-विकास, एकल-यंत्र, फाइल-आधारित संग्रहाची जागा घेईल.',
+  "A tamper-evident, independently retained audit log on managed infrastructure. The current trail now survives a reload in development (see Implemented), but a git-ignored JSON file on one machine is not tamper-evident, backed up, or independently retained - it cannot alone satisfy an institutional assurance requirement.":
+    'व्यवस्थापित पायाभूत सुविधांवरील छेडछाड-सुस्पष्ट, स्वतंत्रपणे जतन केलेली लेखापरीक्षा नोंद. सध्याची नोंद आता विकासामध्ये पुनर्भारणानंतरही टिकते (अंमलात आणलेले पाहा), परंतु एका यंत्रावरील git-वगळलेली JSON फाइल छेडछाड-सुस्पष्ट, बॅकअप घेतलेली किंवा स्वतंत्रपणे जतन केलेली नाही - ती एकटी संस्थात्मक हमीची आवश्यकता पूर्ण करू शकत नाही.',
+  'Composite risk index across every domain, ward by ward.': 'प्रत्येक क्षेत्रातील, प्रभागनिहाय, संमिश्र जोखीम निर्देशांक.',
+  'Critical incidents pulse on the map - open one from the marker to jump into the Situation Room.':
+    'गंभीर घटना नकाशावर स्पंदन करतात - परिस्थिती कक्षात जाण्यासाठी चिन्हावरून एक उघडा.',
+  'Elevated risk - several domains need attention.': 'वाढलेली जोखीम - अनेक क्षेत्रांकडे लक्ष देणे आवश्यक आहे.',
+  'Enter Cockpit': 'कॉकपिटमध्ये प्रवेश करा',
+  'Good morning, {0}.': 'सुप्रभात, {0}.',
+  "Here is {0}'s position before you start the day.": 'दिवस सुरू करण्यापूर्वी ही आहे {0} ची सद्यस्थिती.',
+  'Holding, with pressure in a few domains.': 'स्थिर, काही क्षेत्रांत दबावासह.',
+  'Multiple domains under significant strain.': 'अनेक क्षेत्रे लक्षणीय ताणाखाली.',
+  'One thing no single department would have seen alone.': 'एक बाब जी कोणत्याही एका विभागाला एकट्याने दिसली नसती.',
+  'Road defects': 'रस्ता दोष',
+  'Show on map': 'नकाशावर दाखवा',
+  Skip: 'वगळा',
+  'Skip briefing': 'माहितीपर सत्र वगळा',
+  'Steady across most domains.': 'बहुतांश क्षेत्रांत स्थिर.',
+  'Updated {0}s ago': '{0} सेकंदांपूर्वी अद्यतनित',
+  'Updated just now': 'आत्ताच अद्यतनित',
+
+  // corporations.ts — Pune Municipal Corporation (second sourced corporation)
+  "Constituted 15 February 1950 under the Bombay Provincial Municipal Corporations Act, 1949.":
+    'मुंबई प्रांतिक महानगरपालिका अधिनियम, १९४९ अंतर्गत १५ फेब्रुवारी १९५० रोजी स्थापना.',
+  "MPCB official 'List of Municipal Corporation' classifies Pune Municipal Corporation as MC-CLASS A - the same official list BMC's own grade is sourced from.":
+    "MPCB च्या अधिकृत 'महानगरपालिकांची यादी'नुसार पुणे महानगरपालिकेचे वर्गीकरण MC-CLASS A असे आहे - हीच अधिकृत यादी BMC च्या स्वतःच्या श्रेणीसाठीही स्रोत आहे.",
+  "516.18 km² as of 30 June 2021, after 23 villages were merged into PMC limits - up from 331.56 km² after an 11-village merger in 2017, and 250.56 km² before that. Corroborated by a separate report (leaveandlicense.com) giving the same 2021 figure and merger history.":
+    '३० जून २०२१ पर्यंत ५१६.१८ चौ.कि.मी., २३ गावे महानगरपालिका हद्दीत विलीन झाल्यानंतर - २०१७ मध्ये ११ गावांच्या विलीनीकरणानंतरच्या ३३१.५६ चौ.कि.मी. आणि त्याआधीच्या २५०.५६ चौ.कि.मी. पेक्षा वाढ. leaveandlicense.com या स्वतंत्र अहवालाने हाच २०२१ चा आकडा व विलीनीकरणाचा इतिहास दुजोरा दिला आहे.',
+  "Census of India 2011: 3,124,458 within PMC limits at that time (1,603,675 male / 1,520,783 female). This predates both the 2017 and 2021 village mergers, so it materially understates the population of the corporation's current, larger jurisdiction - no citable official post-merger total was found, and none is estimated here in its place.":
+    'भारताची जनगणना २०११: त्यावेळच्या PMC हद्दीत ३१,२४,४५८ (पुरुष १६,०३,६७५ / स्त्री १५,२०,७८३). हा आकडा २०१७ आणि २०२१ या दोन्ही गाव-विलीनीकरणांपूर्वीचा आहे, त्यामुळे महानगरपालिकेच्या सध्याच्या मोठ्या हद्दीतील लोकसंख्या यात लक्षणीयरीत्या कमी दाखवली जाते - विलीनीकरणानंतरचा कोणताही अधिकृत, उद्धृत करण्यायोग्य एकूण आकडा आढळला नाही, आणि त्याऐवजी येथे कोणताही अंदाज वर्तवलेला नाही.',
+  "165 corporators elected January 2026 across 41 wards (40 four-member wards, one five-member ward) - up from 162 seats/41 wards at the 2017 election. BJP won 118 seats; Manjusha Nagpure (BJP) elected mayor.":
+    'जानेवारी २०२६ मध्ये ४१ प्रभागांतून (४० चार-सदस्यीय व एक पाच-सदस्यीय प्रभाग) १६५ नगरसेवक निवडून आले - २०१७ च्या निवडणुकीतील १६२ जागा/४१ प्रभागांपेक्षा वाढ. भाजपने ११८ जागा जिंकल्या; मंजुषा नागपुरे (भाजप) महापौर म्हणून निवडल्या गेल्या.',
+  "15 ward offices (e.g. Ghole Road, Hadapsar, Kasba Vishrambagwada, Kondhwa-Wanawadi, Kothrud, Nagar Road, Sahakarnagar, Tilak Road, Warje-Karvenagar, Yerwada), per a public-service aggregator rather than a page found directly on pmc.gov.in - carried at medium confidence, distinct from PCMC's 'Kshetriya Karyalaya' terminology which is a different, neighbouring corporation.":
+    "१५ वॉर्ड कार्यालये (उदा. घोले रोड, हडपसर, कसबा विश्रामबागवाडा, कोंढवा-वानवडी, कोथरूड, नगर रोड, सहकारनगर, टिळक रोड, वारजे-कर्वेनगर, येरवडा), pmc.gov.in वर थेट न सापडलेल्या सार्वजनिक-सेवा एकत्रीकरण संकेतस्थळाच्या आधारे - मध्यम विश्वासार्हतेने नोंदवले; हे शेजारील पिंपरी-चिंचवड महानगरपालिकेच्या 'क्षेत्रीय कार्यालय' या संज्ञेपेक्षा वेगळे आहे.",
+  "₹13,995 crore budget presented by Commissioner Naval Kishore Ram for FY2026-27 (Water Supply ₹2,077 cr, Roads ₹1,866 cr, Solid Waste ₹1,390 cr highest allocations) - corroborated by punekarnews.in and thebridgechronicle.com. A separately reported ₹15,669 crore figure (freepressjournal.in) is a revenue-collection TARGET a joint committee was formed to meet, not the presented budget outlay - the two are not the same thing and are carried as separate fields here (see `revenueIncomeCroreEstimate`).":
+    'आयुक्त नवल किशोर राम यांनी सादर केलेला २०२६-२७ आर्थिक वर्षासाठी ₹१३,९९५ कोटींचा अर्थसंकल्प (पाणीपुरवठा ₹२,०७७ कोटी, रस्ते ₹१,८६६ कोटी, घनकचरा व्यवस्थापन ₹१,३९० कोटी ही सर्वाधिक तरतूद) - punekarnews.in आणि thebridgechronicle.com यांनी दुजोरा दिला. स्वतंत्रपणे नोंदवलेला ₹१५,६६९ कोटींचा आकडा (freepressjournal.in) हे एका संयुक्त समितीने गाठायचे महसूल-संकलन उद्दिष्ट आहे, सादर केलेला अर्थसंकल्प नव्हे - हे दोन्ही एकसारखे नाहीत आणि येथे स्वतंत्र क्षेत्रांमध्ये (पाहा `revenueIncomeCroreEstimate`) नोंदवले आहेत.',
+  "Typically 1,400-1,500 MLD delivered from the Khadakwasla dam chain (Khadakwasla, Panshet, Varasgaon, Temghar) against roughly 1,500 MLD estimated demand; most areas receive 4-6 hours of rotational supply a day. As of June 2026 PMC moved to alternate-day supply after chain storage fell to about 5.87 TMC (roughly 3 TMC usable) - reported as the midpoint of the cited range, not a single official figure.":
+    'खडकवासला धरण साखळीतून (खडकवासला, पानशेत, वरसगाव, टेमघर) साधारणपणे १,४०० ते १,५०० MLD पुरवठा, अंदाजे १,५०० MLD मागणीच्या तुलनेत; बहुतांश भागांना दिवसातून ४-६ तास आवर्ती पाणीपुरवठा मिळतो. जून २०२६ पर्यंत साखळीतील साठा सुमारे ५.८७ TMC (त्यातील वापरण्यायोग्य सुमारे ३ TMC) इतका घटल्याने PMC ने एक-दिवसाआड पाणीपुरवठ्याकडे वळण घेतले - हा आकडा उद्धृत केलेल्या श्रेणीचा मध्यबिंदू म्हणून नोंदवला आहे, एकल अधिकृत आकडा नव्हे.',
+  "Approximately 477 MLD treatment capacity against roughly 980 MLD generated, per secondary reporting (not a primary PMC source). A separate report on the Mundhwa STP alone cites a 550 MLD design capacity for that one plant, which does not obviously reconcile with the citywide 477 MLD figure - carried here as a genuine, unresolved discrepancy between non-primary sources, at lower confidence than the BMC sewage figure.":
+    'दुय्यम वृत्तांकनानुसार (प्राथमिक PMC स्रोत नव्हे) अंदाजे ९८० MLD निर्मितीविरुद्ध सुमारे ४७७ MLD प्रक्रिया क्षमता. मुंढवा मलनि:सारण प्रक्रिया प्रकल्पाबाबतचा एक स्वतंत्र अहवाल त्या एकाच प्रकल्पासाठी ५५० MLD अभिकल्पित क्षमता नोंदवतो, जी शहरव्यापी ४७७ MLD आकड्याशी स्पष्टपणे जुळत नाही - हा दुय्यम स्रोतांमधील खरा, न सुटलेला विसंवाद म्हणून नोंदवला आहे, BMC च्या मलनि:सारण आकड्यापेक्षा कमी विश्वासार्हतेने.',
+  "₹2,365.31 crore collected in FY2024-25, short of a ₹2,847.23 crore target, up from ₹2,273 crore in FY2023-24 - from roughly 12.5 lakh assessed properties in the tax net. A partial-year FY2025-26 figure (₹1,556 crore as of 23 Aug 2025) exists but is not a full-year total and is not used here.":
+    '२०२४-२५ आर्थिक वर्षात ₹२,३६५.३१ कोटी संकलित, ₹२,८४७.२३ कोटींच्या उद्दिष्टापेक्षा कमी, २०२३-२४ मधील ₹२,२७३ कोटींपेक्षा वाढ - सुमारे १२.५ लाख मूल्यांकित मालमत्तांमधून. २०२५-२६ या आर्थिक वर्षाचा आंशिक आकडा (२३ ऑगस्ट २०२५ पर्यंत ₹१,५५६ कोटी) उपलब्ध आहे परंतु तो पूर्ण वर्षाची बेरीज नाही आणि येथे वापरलेला नाही.',
+  'Bulk supply drawn from the Khadakwasla dam chain - Khadakwasla, Panshet, Varasgaon and Temghar dams - on the Mula-Mutha river system.':
+    'मुळा-मुठा नदी प्रणालीवरील खडकवासला धरण साखळी - खडकवासला, पानशेत, वरसगाव आणि टेमघर धरणे - यांमधून मोठ्या प्रमाणात पाणीपुरवठा घेतला जातो.',
+  'Pune sits at the confluence of the Mula and Mutha rivers, which join to continue as the Mula-Mutha, flowing east to join the Bhima - landlocked, with no coastline.':
+    'पुणे शहर मुळा आणि मुठा नद्यांच्या संगमावर वसलेले आहे, ज्या एकत्र येऊन मुळा-मुठा नदी म्हणून पूर्वेकडे वाहत जाऊन भीमा नदीला मिळतात - हे शहर भूवेष्टित असून त्याला किनारपट्टी नाही.',
 }
