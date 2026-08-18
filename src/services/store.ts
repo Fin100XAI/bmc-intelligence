@@ -142,6 +142,18 @@ const PERSISTED_COLLECTIONS = new Set<CollectionKey>(['alerts', 'incidents', 'de
 let pendingHydration: Partial<StoreShape> | null = null
 
 /**
+ * The dev-only persistence plugin is reachable only as a same-origin path
+ * under a real browser - `fetch('/api/state/…')` throws `ERR_INVALID_URL` in
+ * a bare Node context (the smoke harnesses run application code exactly that
+ * way, via Vite's module runner, with no page origin to resolve a relative
+ * URL against). Neither `hydrateStore` nor `persistCollectionAsync` attempt
+ * the request outside a browser, rather than attempting it and relying on
+ * the existing catch/warn to hide the failure - a caught error is still
+ * console noise a Node harness has no reason to print.
+ */
+const inBrowser = typeof window !== 'undefined' && typeof window.location !== 'undefined'
+
+/**
  * Fetches whatever this tenant has persisted for each whitelisted collection
  * and stages it for the next `seedStore()` call. Must be awaited (racing a
  * short timeout is the caller's job - see `src/main.tsx`) before the first
@@ -154,6 +166,7 @@ let pendingHydration: Partial<StoreShape> | null = null
  * always has, so this is additive, never a new way for the app to break.
  */
 export async function hydrateStore(tenantId: string): Promise<void> {
+  if (!inBrowser) return
   // Built loosely-typed and cast once at the end: a `Partial<StoreShape>`
   // written through a `CollectionKey`-typed loop variable would require each
   // write to satisfy every collection's type at once (an intersection), which
@@ -181,6 +194,7 @@ export async function hydrateStore(tenantId: string): Promise<void> {
  * in-session store regardless of whether the dev-only persistence plugin is
  * reachable. */
 function persistCollectionAsync<K extends CollectionKey>(key: K, items: CollectionMap[K][]): void {
+  if (!inBrowser) return
   if (!PERSISTED_COLLECTIONS.has(key)) return
   const tenantId = (items[0] as { tenantId?: string } | undefined)?.tenantId
   if (!tenantId) return // Nothing to scope the write to - and nothing worth persisting.

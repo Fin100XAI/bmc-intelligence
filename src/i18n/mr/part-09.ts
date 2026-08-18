@@ -23,8 +23,6 @@ export const MR_PART_09: Record<string, string> = {
     'चालू कालावधीसाठी झोननिहाय आडवी तुलना - कालमालिका नव्हे.',
   'A determined hosting jurisdiction and infrastructure ownership model appropriate to municipal and citizen data sensitivity.':
     'महानगरपालिका व नागरिक माहितीच्या संवेदनशीलतेस अनुरूप असे निश्चित केलेले होस्टिंग कार्यक्षेत्र आणि पायाभूत सुविधा मालकी प्रारूप.',
-  'A durable, backed-up, access-controlled data store replacing the in-session, browser-lifetime demonstration store.':
-    'सत्रापुरत्या, न्याहाळकाच्या आयुष्यापुरत्या प्रात्यक्षिक कोशाच्या जागी टिकाऊ, प्रतिप्रत घेतलेला आणि प्रवेश-नियंत्रित माहिती कोश.',
   'A facility count is not a service': 'सुविधांची संख्या म्हणजे सेवा नव्हे',
   'A food-safety function before a revenue one': 'हे महसुलाचे नव्हे, आधी अन्नसुरक्षेचे काम आहे',
   'A formal privacy impact assessment against applicable data protection obligations for each dataset before it is connected.':
@@ -76,8 +74,6 @@ export const MR_PART_09: Record<string, string> = {
     'प्रत्येक वाचन व लेखनाच्या वेळी एकच `canAccess` फलन भूमिका अनुदाने आणि प्रभाग, विभाग, क्षेत्र व वर्गीकरण गुणधर्म एकत्रितपणे तपासते.',
   'A statistical departure is a signal for reconciliation, not an accusation.':
     'सांख्यिकीय विचलन हा ताळमेळासाठीचा संकेत आहे, आरोप नव्हे.',
-  'A tamper-evident, independently retained audit log - the current in-session trail resets on reload and cannot alone satisfy an institutional assurance requirement.':
-    'छेडछाड लक्षात येईल असे, स्वतंत्रपणे जतन केलेले लेखापरीक्षा नोंदपत्रक - सध्याची सत्रापुरती नोंदसाखळी पुनःभारणावर पुसली जाते आणि एकटी संस्थात्मक हमीची आवश्यकता पूर्ण करू शकत नाही.',
   'A tested recovery point and recovery time objective for every production data store and service.':
     'प्रत्येक प्रत्यक्ष माहिती कोश व सेवेसाठी तपासून पाहिलेले पुनर्प्राप्ती बिंदू व पुनर्प्राप्ती कालावधी उद्दिष्ट.',
   'A third-party penetration test and architecture review - this environment carries no security certification or attestation of any kind.':

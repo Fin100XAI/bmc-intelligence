@@ -129,6 +129,14 @@ export function statePersistencePlugin(): Plugin {
           }
         })()
       }, SIMULATION_INTERVAL_MS)
+      // `unref()` rather than relying solely on the `httpServer` close hook
+      // below: `vite.createServer({ server: { middlewareMode: true } })` -
+      // used by this repo's own smoke harnesses (`smoke-i18n.mjs`) - never
+      // creates an `httpServer` at all, so that hook would never fire and a
+      // live interval would keep the Node process running forever after the
+      // harness's own work was done. `unref()` makes the timer never hold
+      // the event loop open by itself, in every hosting mode.
+      timer.unref()
       server.httpServer?.on('close', () => {
         if (timer) clearInterval(timer)
       })

@@ -585,14 +585,20 @@ try {
 
   const bmcFingerprint = fingerprint()
 
-  await check('Roster carries Brihanmumbai and nothing else', () => {
+  await check('Roster carries Brihanmumbai and Pune, and nothing else yet', () => {
+    // Pune (PMC) joined as the second sourced corporation, proving the
+    // multi-tenant roster generalises rather than merely asserting it - see
+    // the corresponding item move from PRODUCTION_REQUIREMENTS to
+    // IMPLEMENTED-in-spirit on PlatformReadinessPage.tsx. Update this check
+    // again, the same way, the day a third corporation is added.
     assert(
-      corporations.CORPORATIONS.length === 1,
-      `expected 1 corporation, got ${corporations.CORPORATIONS.length}`,
+      corporations.CORPORATIONS.length === 2,
+      `expected 2 corporations, got ${corporations.CORPORATIONS.length}`,
     )
     const ids = new Set(corporations.CORPORATIONS.map((c) => c.id))
     assert(ids.size === corporations.CORPORATIONS.length, 'corporation ids must be unique')
     assert(ids.has('bmc'), 'the roster must carry Brihanmumbai')
+    assert(ids.has('pmc'), 'the roster must carry Pune')
     for (const c of corporations.CORPORATIONS) {
       assert(c.population2011 > 0, `${c.id} has no Census population`)
       assert(c.areaSqKm > 0, `${c.id} has no area`)
