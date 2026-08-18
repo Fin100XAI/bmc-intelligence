@@ -16,6 +16,7 @@ import { GovPanel } from '@/components/gov/GovPanel'
 import { Badge, SeverityBadge } from '@/components/ui/badges'
 import { ConfirmDialog } from '@/components/ui/overlays'
 import { DemonstrationNotice, EmptyState, ErrorState, LoadingState } from '@/components/ui/states'
+import { LiveIndicator } from '@/components/ui/LiveIndicator'
 import { MetricPill } from '@/components/cards/MetricCard'
 import { CityMap, jitteredWardPoint, type MapMarker } from '@/components/map/CityMap'
 import { useServiceAction, useServiceQuery } from '@/hooks'
@@ -149,10 +150,17 @@ export function SituationRoomPage(): React.JSX.Element {
   }, [situationMode, setSituationMode])
 
   const incidentsKey = queryKeys.incidents({ scope: 'situation-room', wardId: contextWardId })
-  const incidentsQuery = useServiceQuery(incidentsKey, (u) =>
-    incidentService.list(u, { wardId: contextWardId ?? undefined, pageSize: 300 }),
+  // Incidents are now durable and the dev-only live-simulation tick
+  // occasionally adds a new alert - polling keeps this room feeling live
+  // rather than a static snapshot from the moment the page was opened.
+  const incidentsQuery = useServiceQuery(
+    incidentsKey,
+    (u) => incidentService.list(u, { wardId: contextWardId ?? undefined, pageSize: 300 }),
+    { refetchInterval: 25_000 },
   )
-  const situationLogQuery = useServiceQuery(queryKeys.incidents('situation-log'), (u) => incidentService.situationLog(u, 60))
+  const situationLogQuery = useServiceQuery(queryKeys.incidents('situation-log'), (u) => incidentService.situationLog(u, 60), {
+    refetchInterval: 25_000,
+  })
   const wardsQuery = useServiceQuery(queryKeys.wards(), (u) => wardService.list(u))
   const pumpingQuery = useServiceQuery(queryKeys.monsoon('pumping'), (u) => monsoonService.pumpingStations(u))
   const readinessQuery = useServiceQuery(queryKeys.monsoon('readiness'), (u) => monsoonService.readiness(u))
@@ -334,6 +342,11 @@ export function SituationRoomPage(): React.JSX.Element {
         eyebrow={t('Command')}
         actions={
           <>
+            <LiveIndicator
+              dataUpdatedAt={incidentsQuery.dataUpdatedAt}
+              isFetching={incidentsQuery.isFetching || situationLogQuery.isFetching}
+              className="mr-1"
+            />
             <Button
               variant="outline"
               icon={situationMode ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
