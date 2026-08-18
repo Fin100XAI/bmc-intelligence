@@ -9,6 +9,7 @@ import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { incidentService, projectService, roadsService, wardService } from '@/services'
 import { useActiveCorporation } from '@/stores/corporation.store'
+import { cityName } from '@/config/corporations'
 import { usePageMasthead } from '@/stores/masthead.store'
 import { t } from '@/i18n'
 
@@ -41,7 +42,7 @@ function build$MARKER_LAYERS(): Record<MarkerLayerId, { label: string; icon: Rea
 
 export function CityCommandMapPage(): React.JSX.Element {
   const corporation = useActiveCorporation()
-  usePageMasthead(t('{0} Command Map', corporation.city))
+  usePageMasthead(t('{0} Command Map', cityName(corporation)))
 
   const [enabled, setEnabled] = useState<Record<MarkerLayerId, boolean>>({
     incidents: true,

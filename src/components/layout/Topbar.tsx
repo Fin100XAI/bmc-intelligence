@@ -25,6 +25,7 @@ import { Badge } from '@/components/ui/badges'
 import { Button, IconButton } from '@/components/ui/primitives'
 import { Tooltip } from '@/components/ui/overlays'
 import { useActiveCorporation } from '@/stores/corporation.store'
+import { cityName } from '@/config/corporations'
 import { LanguageSwitcher } from './LanguageSwitcher'
 import { FontSizeControl } from './FontSizeControl'
 import { ContrastToggle } from './ContrastToggle'
@@ -202,7 +203,7 @@ export function Topbar({ status }: { status: TopbarStatus }): React.JSX.Element 
         dotClass={stateDot[status.operationalState]}
         stateLabel={stateLabel[status.operationalState]}
         refreshedAt={status.lastRefreshedAt}
-        cityName={corporation.city}
+        cityName={cityName(corporation)}
       />
 
       {/* Ward context selector ---------------------------------------- */}
@@ -388,7 +389,7 @@ export function ContextBar({ children, className }: { children?: React.ReactNode
       <Badge tone="info" size="sm">
         {t('BMC Intelligence')}
       </Badge>
-      <span className="hidden shrink-0 text-[0.625rem] text-ink-400 lg:inline">{corporation.city}</span>
+      <span className="hidden shrink-0 text-[0.625rem] text-ink-400 lg:inline">{cityName(corporation)}</span>
       {wardId ? (
         <>
           <span className="shrink-0 text-ink-300">›</span>

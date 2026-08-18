@@ -251,7 +251,10 @@ export function urbanResilienceIndex(): UrbanResilienceIndex {
       { label: t('Segments monitored'), value: `${COASTAL_SEGMENTS.length}` },
       { label: t('Mean vulnerability'), value: `${meanVulnerability.toFixed(0)}/100` },
     ],
-    `Coastal resilience is the inverse of the mean erosion and inundation vulnerability across monitored shoreline segments - ${activeCorporation.city}’s exposure to sea-level and storm-surge risk.`,
+    t(
+      "Coastal resilience is the inverse of the mean erosion and inundation vulnerability across monitored shoreline segments - {0}'s exposure to sea-level and storm-surge risk.",
+      t(activeCorporation.city),
+    ),
   )
 
   // --- Fire --------------------------------------------------------------
@@ -361,7 +364,7 @@ export function urbanResilienceIndex(): UrbanResilienceIndex {
 
   const narrative =
     strongest && weakest
-      ? t('{0}\'s composite urban resilience stands at {1}/100. {2} The city is best prepared for {3} ({4}/100) and least prepared for {5} ({6}/100). {7} Every score here describes preparedness, not the likelihood of any hazard occurring.', activeCorporation.city, score, assessedLine, strongest.label.toLowerCase(), strongest.score, weakest.label.toLowerCase(), weakest.score, weakest.primaryGap)
+      ? t('{0}\'s composite urban resilience stands at {1}/100. {2} The city is best prepared for {3} ({4}/100) and least prepared for {5} ({6}/100). {7} Every score here describes preparedness, not the likelihood of any hazard occurring.', t(activeCorporation.city), score, assessedLine, strongest.label.toLowerCase(), strongest.score, weakest.label.toLowerCase(), weakest.score, weakest.primaryGap)
       : t('Composite urban resilience stands at {0}/100. {1}', score, assessedLine)
 
   return {

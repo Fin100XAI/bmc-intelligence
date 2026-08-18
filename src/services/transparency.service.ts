@@ -8,6 +8,7 @@ import { DOCUMENT_TYPE_LABEL, ISSUING_DEPARTMENT_LABEL, CORRESPONDENCE_STATUS_LA
 import { RESOLUTION_STATUS_LABEL } from '@/types/civic-services'
 import type { TransparencyOverview } from '@/types/transparency'
 import { isoDaysFromAnchor, isoFromAnchor } from '@/utils/deterministic'
+import { t } from '@/i18n'
 import { simulateLatency } from './client'
 
 /**
@@ -85,7 +86,7 @@ async function overview(): Promise<TransparencyOverview> {
 
   return {
     municipalityName: municipality.municipalityName,
-    city: activeCorporation.city,
+    city: t(activeCorporation.city),
     generatedAt: isoFromAnchor(0),
     budget: {
       financialYear: municipality.financialYear,

@@ -39,6 +39,7 @@ import type { DeployTeamInput, IncidentCreateInput, MonsoonScenarioPreset } from
 import { MONSOON_SCENARIO_PRESETS, DEFAULT_MONSOON_SCENARIO, SIMULATION_STATEMENT } from '@/domains'
 import { useCurrentUser } from '@/stores/auth.store'
 import { useActiveCorporation } from '@/stores/corporation.store'
+import { cityName } from '@/config/corporations'
 import { usePageMasthead } from '@/stores/masthead.store'
 import { useContextStore, useDrawerStore } from '@/stores/ui.store'
 import { allowed } from '@/security'
@@ -207,7 +208,7 @@ export function MonsoonIntelligencePage(): React.JSX.Element {
   const [committedInputs, setCommittedInputs] = useState<MonsoonScenarioInput>(DEFAULT_MONSOON_SCENARIO)
   const hasScenarioAccess = allowed(user, 'situation-room', 'edit', { domain: 'monsoon' })
 
-  usePageMasthead(t('{0} Monsoon Intelligence Centre', corporation.city))
+  usePageMasthead(t('{0} Monsoon Intelligence Centre', cityName(corporation)))
 
   const scenarioQuery = useServiceQuery(
     ['bmc-mii', 'monsoon-scenario', JSON.stringify(committedInputs)],

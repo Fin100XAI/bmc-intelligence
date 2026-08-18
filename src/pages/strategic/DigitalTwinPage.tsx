@@ -5,6 +5,7 @@ import { queryKeys } from '@/app/queryClient'
 import { healthService, incidentService, monsoonService, projectService, roadsService, wardService, waterService } from '@/services'
 import { useDrawerStore, type DrawerKind } from '@/stores/ui.store'
 import { useActiveCorporation } from '@/stores/corporation.store'
+import { cityName } from '@/config/corporations'
 import { usePageMasthead } from '@/stores/masthead.store'
 import { isoFromAnchor } from '@/utils/deterministic'
 import { formatCompact, formatRelative } from '@/utils/format'
@@ -77,7 +78,7 @@ export function DigitalTwinPage(): React.JSX.Element {
   const corporation = useActiveCorporation()
 
   // The shell's masthead states the screen's name; the page states the wording.
-  usePageMasthead(t('{0} Urban Digital Twin', corporation.city))
+  usePageMasthead(t('{0} Urban Digital Twin', cityName(corporation)))
 
   const [enabled, setEnabled] = useState<Record<LayerId, boolean>>({
     infrastructure: false,
@@ -357,7 +358,7 @@ export function DigitalTwinPage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('Strategic Urban Intelligence')}
-        breadcrumbs={[{ label: t('Strategic Urban Intelligence') }, { label: t('{0} Urban Digital Twin', corporation.city) }]}
+        breadcrumbs={[{ label: t('Strategic Urban Intelligence') }, { label: t('{0} Urban Digital Twin', cityName(corporation)) }]}
         freshness={FRESHNESS}
       />
 

@@ -1,4 +1,5 @@
 import { TENANT_ID, activeCorporation, municipality } from '@/config/municipality.config'
+import { corporationName } from '@/config/corporations'
 import type { IntelligenceDomain } from '@/types/common'
 import type {
   AccessPolicy,
@@ -359,7 +360,7 @@ function build$CONNECTOR_SPECS(): Array<{
   auth: Connector['authenticationMode']
 }> {
   const corp = activeCorporation
-  const own = corp.name
+  const own = corporationName(corp)
   const shortName = CORPORATION_SHORT_NAME
   // The corporation's published portal, with the scheme stripped: an operator
   // reading an integration register wants the host, not a link.

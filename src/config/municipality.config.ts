@@ -387,7 +387,7 @@ export interface MunicipalityProfile
 export function municipalityProfiles(): MunicipalityProfile[] {
   return CORPORATIONS.map((corp) => ({
     tenantId: corp.id,
-    municipalityName: corp.name,
+    municipalityName: corporationName(corp),
     shortName: corp.shortName,
     state: 'Maharashtra',
     division: corp.division,

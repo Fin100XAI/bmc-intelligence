@@ -30,6 +30,7 @@ import { buildCityPosition } from '@/domains'
 import { getAIProvider, type ExecutiveBrief, type ExecutiveBriefSection } from '@/ai'
 import { useDrawerStore } from '@/stores/ui.store'
 import { useActiveCorporation } from '@/stores/corporation.store'
+import { cityName } from '@/config/corporations'
 import { useCurrentUser } from '@/stores/auth.store'
 import { usePageMasthead } from '@/stores/masthead.store'
 import { ROUTES } from '@/config/navigation'
@@ -87,7 +88,7 @@ export function ExecutiveOverviewPage(): React.JSX.Element {
   const feed = useMemo(() => buildFeed(user, DEMO_NOW), [user])
 
   // The shell renders the masthead; this page states what it should say.
-  usePageMasthead(t('{0} Operational Intelligence', corporation.city))
+  usePageMasthead(t('{0} Operational Intelligence', cityName(corporation)))
 
   const wardsQuery = useServiceQuery(queryKeys.wards(), (u) => wardService.list(u))
   const readinessQuery = useServiceQuery(queryKeys.monsoon('exec-readiness'), (u) => monsoonService.readiness(u))

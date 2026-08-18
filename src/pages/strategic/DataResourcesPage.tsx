@@ -13,7 +13,7 @@ import {
 } from '@/components/ui'
 import { MetricCard } from '@/components/cards'
 import { GovPanel } from '@/components/gov/GovPanel'
-import { CORPORATIONS, type CorporationRef, type CorporationSource } from '@/config/corporations'
+import { CORPORATIONS, corporationName as resolveCorporationName, type CorporationRef, type CorporationSource } from '@/config/corporations'
 import { t } from '@/i18n'
 
 /**
@@ -100,7 +100,7 @@ export function DataResourcesPage(): React.JSX.Element {
           ...s,
           id: `${corp.id}-${s.field}-${i}`,
           corporationId: corp.id,
-          corporationName: corp.name,
+          corporationName: resolveCorporationName(corp),
           kind: classifySource(s.url),
         })),
       ),

@@ -194,7 +194,7 @@ registerLayer(() => {
     // drawn from the active corporation's own published localities.
     const name =
       i === CENTRAL_VETERINARY_INDEX
-        ? t('{0} Municipal Veterinary Hospital', corp.city)
+        ? t('{0} Municipal Veterinary Hospital', t(corp.city))
         : landmarkName(`animal-unit:${i}`, UNIT_PLACE_KIND[kind])
 
     return {

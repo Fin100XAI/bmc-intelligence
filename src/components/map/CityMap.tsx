@@ -4,6 +4,7 @@ import { municipality } from '@/config/municipality.config'
 import { MAP_BACKDROP_FEATURES, polygonCentroid, polygonPoints } from '@/data/geography'
 import { WARDS } from '@/data/reference'
 import { useActiveCorporation } from '@/stores/corporation.store'
+import { cityName } from '@/config/corporations'
 import type { Severity } from '@/types/common'
 import { cn } from '@/utils/cn'
 import { Badge } from '@/components/ui/badges'
@@ -231,7 +232,7 @@ export function CityMap({
           preserveAspectRatio="xMidYMid meet"
           className="h-full w-full"
           role="img"
-          aria-label={t('Illustrative map of {0} {1} showing {2}', corporation.city, municipality.terminology.primaryUnitPlural.toLowerCase(), layer?.label ?? `${municipality.terminology.primaryUnitSingular.toLowerCase()} status`)}
+          aria-label={t('Illustrative map of {0} {1} showing {2}', cityName(corporation), municipality.terminology.primaryUnitPlural.toLowerCase(), layer?.label ?? `${municipality.terminology.primaryUnitSingular.toLowerCase()} status`)}
         >
           {/* Backdrop features */}
           {MAP_BACKDROP_FEATURES.map((feature) => (

@@ -559,7 +559,10 @@ export function cityIntelligenceIndex(): CityIntelligenceIndex {
           detail: t('{0} of {1} wards sit below the 60-point readiness threshold.', wardsBelow, WARDS.length),
         },
       ],
-      explanation: `Urban resilience currently reflects monsoon readiness, which is ${activeCorporation.city}'s dominant recurring hazard. The full multi-hazard picture is on the Urban Resilience screen.`,
+      explanation: t(
+        "Urban resilience currently reflects monsoon readiness, which is {0}'s dominant recurring hazard. The full multi-hazard picture is on the Urban Resilience screen.",
+        t(activeCorporation.city),
+      ),
     }),
   )
 
