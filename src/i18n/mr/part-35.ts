@@ -145,4 +145,13 @@ export const MR_PART_35: Record<string, string> = {
     'मुळा-मुठा नदी प्रणालीवरील खडकवासला धरण साखळी - खडकवासला, पानशेत, वरसगाव आणि टेमघर धरणे - यांमधून मोठ्या प्रमाणात पाणीपुरवठा घेतला जातो.',
   'Pune sits at the confluence of the Mula and Mutha rivers, which join to continue as the Mula-Mutha, flowing east to join the Bhima - landlocked, with no coastline.':
     'पुणे शहर मुळा आणि मुठा नद्यांच्या संगमावर वसलेले आहे, ज्या एकत्र येऊन मुळा-मुठा नदी म्हणून पूर्वेकडे वाहत जाऊन भीमा नदीला मिळतात - हे शहर भूवेष्टित असून त्याला किनारपट्टी नाही.',
+
+  // PlatformReadinessPage.tsx — the Pune record moved two items from
+  // production-required to implemented; this closes the corresponding copy.
+  "Pune Municipal Corporation - area, population, budget, water supply and more, each field cited to a real published source in `corporations.ts`, following the same discipline Brihanmumbai's record uses. Fields with no citable source were left null rather than estimated. The roster generalising is now demonstrated, not merely asserted.":
+    'पुणे महानगरपालिका - क्षेत्रफळ, लोकसंख्या, अर्थसंकल्प, पाणीपुरवठा आणि बरेच काही, प्रत्येक क्षेत्र `corporations.ts` मध्ये वास्तविक प्रकाशित स्रोताशी उद्धृत, बृहन्मुंबईच्या नोंदीत वापरलेल्याच शिस्तीचे पालन करून. उद्धृत करण्यायोग्य स्रोत नसलेली क्षेत्रे अंदाज न लावता रिक्त (null) ठेवली आहेत. यादी सर्वसाधारणीकृत होते हे आता केवळ दावा नसून सिद्ध झाले आहे.',
+  "Pune is landlocked and riverine - the opposite city form to Brihanmumbai's coastline - and the schematic ward-tessellation generator has now actually produced a distinct, non-degenerate geography for it, checked by `scripts/preview-maps.mjs` and an automated test.":
+    'पुणे भूवेष्टित व नदीकाठावरील शहर आहे - बृहन्मुंबईच्या किनारपट्टीच्या अगदी विरुद्ध शहर-स्वरूप - आणि योजनाबद्ध वॉर्ड-विभाजन जनकाने आता त्यासाठी प्रत्यक्षात वेगळी, सुयोग्य भूमिती निर्माण केली आहे, जी `scripts/preview-maps.mjs` आणि एका स्वयंचलित चाचणीद्वारे तपासली गेली आहे.',
+  "Each additional corporation the engine serves needs its own data-sharing, hosting and access agreement - the reusable engine lowers the engineering cost of a second deployment, not the institutional one. Pune, like Brihanmumbai, has none: this record demonstrates the engine, not a live PMC deployment.":
+    'इंजिन सेवा देत असलेल्या प्रत्येक अतिरिक्त महानगरपालिकेला स्वतःचा माहिती-सामायिकरण, होस्टिंग व प्रवेश करार आवश्यक असतो - पुनर्वापरयोग्य इंजिन दुसऱ्या तैनातीचा अभियांत्रिकी खर्च कमी करते, संस्थात्मक खर्च नव्हे. बृहन्मुंबईप्रमाणेच पुण्याकडेही असा करार नाही: ही नोंद इंजिन दर्शवते, प्रत्यक्ष कार्यरत PMC तैनाती नव्हे.',
 }
