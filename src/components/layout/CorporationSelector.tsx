@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Building2, Check, ChevronDown, Search } from 'lucide-react'
-import { CORPORATIONS_BY_DIVISION, resolveWardCount, type CorporationRef } from '@/config/corporations'
+import { CORPORATIONS_BY_DIVISION, cityName, corporationName, resolveWardCount, type CorporationRef } from '@/config/corporations'
 import { useActiveCorporation, useCorporationStore } from '@/stores/corporation.store'
 import { formatCompact } from '@/utils/format'
 import { cn } from '@/utils/cn'
@@ -122,7 +122,7 @@ export function CorporationSelector({ className }: { className?: string }): Reac
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-haspopup="listbox"
-        aria-label={t('Active municipal corporation: {0}. Change corporation.', active.name)}
+        aria-label={t('Active municipal corporation: {0}. Change corporation.', corporationName(active))}
         className="flex h-8 max-w-[13rem] items-center gap-1.5 rounded-md border border-ink-200 bg-surface px-1.5 text-left shadow-xs transition-all hover:border-govt-300 hover:bg-surface-sunken focus:border-govt-400 focus:ring-2 focus:ring-govt-500/20 focus:outline-none sm:px-2"
       >
         <Building2 className="h-3.5 w-3.5 shrink-0 text-govt-600" aria-hidden />
@@ -132,7 +132,7 @@ export function CorporationSelector({ className }: { className?: string }): Reac
           <span className="block truncate text-[0.6875rem] leading-tight font-semibold text-ink-800">
             {active.shortName}
           </span>
-          <span className="hidden truncate text-[0.5625rem] leading-tight text-ink-400 sm:block">{active.city}</span>
+          <span className="hidden truncate text-[0.5625rem] leading-tight text-ink-400 sm:block">{cityName(active)}</span>
         </span>
         <ChevronDown className="h-3 w-3 shrink-0 text-ink-400" aria-hidden />
       </button>
@@ -200,10 +200,10 @@ export function CorporationSelector({ className }: { className?: string }): Reac
                           </span>
                           <span className="min-w-0 flex-1">
                             <span className="flex items-baseline gap-1.5">
-                              <span className="truncate text-[0.8125rem] font-medium text-ink-800">{corp.city}</span>
+                              <span className="truncate text-[0.8125rem] font-medium text-ink-800">{cityName(corp)}</span>
                               <span className="shrink-0 font-mono text-[0.625rem] text-ink-400">{corp.shortName}</span>
                             </span>
-                            <span className="block truncate text-[0.625rem] text-ink-500">{corp.name}</span>
+                            <span className="block truncate text-[0.625rem] text-ink-500">{corporationName(corp)}</span>
                             <span className="numeric mt-0.5 block text-[0.625rem] text-ink-400">
                               {t('{0} residents · {1} {2}{3}{4}', formatCompact(corp.population2011), resolveWardCount(corp), corp.wardTerminology.toLowerCase(), resolveWardCount(corp) === 1 ? '' : 's', corp.budgetCrore !== null ? ` · ₹${formatCompact(corp.budgetCrore)} cr` : '')}
                             </span>

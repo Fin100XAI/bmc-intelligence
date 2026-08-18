@@ -20,6 +20,7 @@ import { ServiceError } from '@/services/client'
 import { isApiEnabled } from '@/services/http'
 import { useAuthStore, useIsAuthenticated } from '@/stores/auth.store'
 import { useActiveCorporation } from '@/stores/corporation.store'
+import { cityName } from '@/config/corporations'
 import { useApplyLocale } from '@/stores/locale.store'
 import { LanguageSwitcher } from '@/components/layout/LanguageSwitcher'
 import { cn } from '@/utils/cn'
@@ -237,7 +238,7 @@ export function LoginPage(): React.JSX.Element {
           </p>
 
           <p className="mt-7 max-w-lg text-[0.8125rem] leading-relaxed text-white/70">
-            {t('A governed urban intelligence and decision-support layer connecting municipal operations, infrastructure, finances, wards, projects, risks, citizen services and institutional knowledge into one evidence-backed operating environment for {0}.', corporation.city)}
+            {t('A governed urban intelligence and decision-support layer connecting municipal operations, infrastructure, finances, wards, projects, risks, citizen services and institutional knowledge into one evidence-backed operating environment for {0}.', cityName(corporation))}
           </p>
         </div>
 

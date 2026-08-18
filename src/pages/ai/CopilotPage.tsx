@@ -47,6 +47,7 @@ import {
 } from '@/services'
 import { useCurrentUser } from '@/stores/auth.store'
 import { useActiveCorporation } from '@/stores/corporation.store'
+import { cityName } from '@/config/corporations'
 import { usePageMasthead } from '@/stores/masthead.store'
 import { useDrawerStore } from '@/stores/ui.store'
 import { useCopilotStore, type CopilotMessage, type MessageActionState } from '@/stores/copilot.store'
@@ -363,7 +364,7 @@ export function CopilotPage(): React.JSX.Element {
   // The shell's masthead states the screen's name; the page states the wording.
   // Declared here, above the unauthenticated guard, because a hook cannot sit
   // behind an early return.
-  usePageMasthead(t('{0} Municipal Copilot', corporation.city))
+  usePageMasthead(t('{0} Municipal Copilot', cityName(corporation)))
 
   // The thread, the ledger and the composer live in the session store, not in
   // this component. An operator who opens a decision case raised from an answer
@@ -519,7 +520,7 @@ export function CopilotPage(): React.JSX.Element {
     <PageBody width="full">
       <PageHeader
         eyebrow={t('AI & Automation')}
-        breadcrumbs={[{ label: t('AI & Automation') }, { label: t('{0} Municipal Copilot', corporation.city) }]}
+        breadcrumbs={[{ label: t('AI & Automation') }, { label: t('{0} Municipal Copilot', cityName(corporation)) }]}
         actions={
           <div className="flex flex-wrap items-center gap-2">
             <Button
@@ -549,7 +550,7 @@ export function CopilotPage(): React.JSX.Element {
 
           <div className="scrollbar-slim min-w-0 flex-1 overflow-y-auto">
             {messages.length === 0 ? (
-              <Hero city={corporation.city} prompts={prompts} roleName={role?.name} onAsk={(q) => void ask(q)} />
+              <Hero city={cityName(corporation)} prompts={prompts} roleName={role?.name} onAsk={(q) => void ask(q)} />
             ) : (
               <div className="mx-auto w-full max-w-4xl space-y-7 px-5 py-6 sm:px-7">
                 {messages.map((message) => (
@@ -608,7 +609,7 @@ export function CopilotPage(): React.JSX.Element {
                       void ask(input)
                     }
                   }}
-                  placeholder={t('Ask about {0}\'s risks, wards, projects, budget or service delivery…', corporation.city)}
+                  placeholder={t('Ask about {0}\'s risks, wards, projects, budget or service delivery…', cityName(corporation))}
                   className="resize-none border-0 bg-transparent px-2 py-1.5 text-[0.875rem] leading-6 shadow-none focus:ring-0"
                 />
                 <div className="flex items-center gap-2 px-2 pt-1">

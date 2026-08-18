@@ -28,6 +28,7 @@ import { incidentService } from '@/services/incident.service'
 import { useDrawerStore, useFilterStore } from '@/stores/ui.store'
 import { usePageMasthead } from '@/stores/masthead.store'
 import { useActiveCorporation } from '@/stores/corporation.store'
+import { cityName } from '@/config/corporations'
 import { WARD_BY_ID, wardName } from '@/data/reference'
 import type { DataFreshness } from '@/types/common'
 import type { EmergencyStation } from '@/types/city-domains'
@@ -84,7 +85,7 @@ export function FireEmergencyPage(): React.JSX.Element {
   const [typeFilter, setTypeFilter] = useState<'all' | EmergencyStation['type']>('all')
 
   /** The fire service's own name for this corporation - see `dept-fire`. */
-  const fireBrigadeName = `${corporation.city} Fire Brigade`
+  const fireBrigadeName = t('{0} Fire Brigade', cityName(corporation))
 
   usePageMasthead(t('Fire & Emergency'))
 

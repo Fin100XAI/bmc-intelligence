@@ -1,4 +1,4 @@
-import { CORPORATIONS, type CorporationRef } from '@/config/corporations'
+import { CORPORATIONS, cityName, corporationName, type CorporationRef } from '@/config/corporations'
 import { Deterministic } from '@/utils/deterministic'
 import type {
   BenchmarkMetric,
@@ -304,9 +304,9 @@ function build(): CorporationBenchmark[] {
   // Pass one: every raw value.
   const rows: CorporationBenchmark[] = CORPORATIONS.map((corp) => ({
     corporationId: corp.id,
-    name: corp.name,
+    name: corporationName(corp),
     shortName: corp.shortName,
-    city: corp.city,
+    city: cityName(corp),
     district: corp.district,
     division: corp.division,
     grade: corp.grade,

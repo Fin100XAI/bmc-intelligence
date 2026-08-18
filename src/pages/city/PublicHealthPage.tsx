@@ -27,6 +27,7 @@ import { healthService } from '@/services/health.service'
 import { alertService } from '@/services/alert.service'
 import { useDrawerStore } from '@/stores/ui.store'
 import { useActiveCorporation } from '@/stores/corporation.store'
+import { cityName } from '@/config/corporations'
 import { usePageMasthead } from '@/stores/masthead.store'
 import { ROUTES } from '@/config/navigation'
 import { WARDS, wardName, wardShortName } from '@/data/reference'
@@ -113,7 +114,7 @@ export function PublicHealthPage(): React.JSX.Element {
   const corporation = useActiveCorporation()
   const [focusedId, setFocusedId] = useState<string | null>(null)
 
-  usePageMasthead(t('{0} Public Health Intelligence', corporation.city))
+  usePageMasthead(t('{0} Public Health Intelligence', cityName(corporation)))
 
   const indicatorsQuery = useServiceQuery(queryKeys.health('indicators'), (u) => healthService.indicators(u))
   const outbreakQuery = useServiceQuery(queryKeys.health('outbreak-signals'), (u) => healthService.outbreakSignals(u))

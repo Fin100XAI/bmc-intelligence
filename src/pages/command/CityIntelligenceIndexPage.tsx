@@ -9,6 +9,7 @@ import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { cityIndexService } from '@/services'
 import { useActiveCorporation } from '@/stores/corporation.store'
+import { cityName } from '@/config/corporations'
 import { usePageMasthead } from '@/stores/masthead.store'
 import type { IndexDimension } from '@/domains/executive/intelligence-index'
 import { INDEX_WEIGHTS } from '@/domains/executive/intelligence-index'
@@ -49,7 +50,7 @@ export function CityIntelligenceIndexPage(): React.JSX.Element {
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
   // The shell renders the masthead; this page states what it should say.
-  usePageMasthead(t('{0} City Intelligence Index', corporation.city))
+  usePageMasthead(t('{0} City Intelligence Index', cityName(corporation)))
 
   const dimensions = useMemo(() => query.data?.dimensions ?? [], [query.data])
   const selected = useMemo(

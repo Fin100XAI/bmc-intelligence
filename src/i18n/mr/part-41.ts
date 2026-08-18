@@ -1,6 +1,11 @@
 /** Marathi catalogue, part 41. Keyed by the exact English source.
  * TestingPage.tsx coverage register and RouteGuard.tsx. */
 export const MR_PART_41: Record<string, string> = {
+  // Corporation `city` field values - passed to `t()` dynamically via
+  // `cityName()` in corporations.ts, so no static i18n-audit scan ever finds
+  // this call site; only a runtime sweep (or reading the source) surfaces it.
+  Mumbai: 'मुंबई',
+  Pune: 'पुणे',
   'Verified manually': 'स्वहस्ते पडताळणी केली',
   'Not yet covered': 'अद्याप समाविष्ट नाही',
   'Requires automation': 'स्वयंचलीकरण आवश्यक',
@@ -66,4 +71,14 @@ export const MR_PART_41: Record<string, string> = {
 
   'This route carries no declared permission, so it cannot be authorised. A routed screen must have a navigation entry stating what it requires before any principal can open it.':
     'या मार्गाला कोणतीही नमूद अनुमती नाही, त्यामुळे तो अधिकृत करता येत नाही. कोणताही प्रमुख उघडण्यापूर्वी मार्गित पडद्याला त्याला काय आवश्यक आहे हे सांगणारी नेव्हिगेशन नोंद असणे आवश्यक आहे.',
+
+  // Corporation-city interpolations that were raw template literals before
+  // this pass (bypassing `t()` entirely) - found only by driving pages in a
+  // real browser, since no static or runtime i18n check can see a template
+  // literal that never calls `t()` at all.
+  "Urban resilience currently reflects monsoon readiness, which is {0}'s dominant recurring hazard. The full multi-hazard picture is on the Urban Resilience screen.":
+    'शहरी सह्यता सध्या मान्सून सज्जता प्रतिबिंबित करते, जो {0} चा प्रमुख आवर्ती धोका आहे. संपूर्ण बहु-धोका चित्र नागरी सह्यता पडद्यावर उपलब्ध आहे.',
+  "Coastal resilience is the inverse of the mean erosion and inundation vulnerability across monitored shoreline segments - {0}'s exposure to sea-level and storm-surge risk.":
+    'किनारी सह्यता ही निरीक्षित किनारपट्टी विभागांतील सरासरी धूप व जलमग्नता असुरक्षिततेचा व्यस्तांक आहे - {0} चा समुद्र-पातळी व वादळी-लाट जोखिमेस असलेला संपर्क.',
+  "Today's {0}": 'आजचे {0}',
 }

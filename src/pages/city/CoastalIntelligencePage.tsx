@@ -26,7 +26,7 @@ import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { hasCoastalJurisdiction, municipality } from '@/config/municipality.config'
 import { ROUTES } from '@/config/navigation'
-import { CORPORATIONS, type CorporationRef } from '@/config/corporations'
+import { CORPORATIONS, corporationName, type CorporationRef } from '@/config/corporations'
 import { coastalService } from '@/services/coastal.service'
 import { monsoonService } from '@/services/monsoon.service'
 import { useActiveCorporation } from '@/stores/corporation.store'
@@ -192,7 +192,7 @@ function CoastalNotApplicable({ corporation }: { corporation: CorporationRef }):
           <div className="min-w-0">
             <h2 className="text-base font-semibold text-ink-900">{t('No coastal zone falls under this jurisdiction')}</h2>
             <p className="mt-1.5 max-w-3xl text-[0.8125rem] leading-relaxed text-ink-700">
-              {t('{0} is {1} in the {2} division. Its municipal limits contain no sea shoreline and no tidal creek, so the corporation holds no coastal zone jurisdiction: no beaches, seawalls, mangrove belts or shoreline promenades sit on its asset register, and no Coastal Regulation Zone obligation applies to it.', corporation.name, FORM_PHRASE[corporation.form.type], corporation.division)}
+              {t('{0} is {1} in the {2} division. Its municipal limits contain no sea shoreline and no tidal creek, so the corporation holds no coastal zone jurisdiction: no beaches, seawalls, mangrove belts or shoreline promenades sit on its asset register, and no Coastal Regulation Zone obligation applies to it.', corporationName(corporation), FORM_PHRASE[corporation.form.type], corporation.division)}
             </p>
             <p className="mt-2.5 max-w-3xl text-[0.8125rem] leading-relaxed text-ink-700">
               {t('This screen is deliberately empty of figures. Shoreline vulnerability, mangrove cover or tide windows rendered here would describe a coast this corporation does not have. A module is a statement about what an institution is answerable for, and the platform does not manufacture jurisdiction to fill a screen.')}

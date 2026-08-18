@@ -41,7 +41,11 @@ export let GREEN_BELT: string | null = null
 
 registerLayer(() => {
   const corp = activeCorporation
-  CITY_NAME = corp.city
+  // `t(corp.city)` rather than the raw field: this is the single place every
+  // generated facility, department and locality name in the data layer reads
+  // the city name from, so a raw English value here would leave "Mumbai"
+  // hard-coded into dozens of downstream strings regardless of language.
+  CITY_NAME = t(corp.city)
   CORPORATION_SHORT_NAME = corp.shortName
   LOCALITIES = [...corp.localities]
   WATER_BODIES = [...corp.form.waterBodies]

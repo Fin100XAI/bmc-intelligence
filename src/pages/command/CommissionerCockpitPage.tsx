@@ -24,6 +24,7 @@ import { buildCityPosition, buildCrossDomainInsights, type CrossDomainInsight } 
 import { CockpitBriefing } from '@/components/onboarding/CockpitBriefing'
 import { useDrawerStore } from '@/stores/ui.store'
 import { useActiveCorporation } from '@/stores/corporation.store'
+import { cityName } from '@/config/corporations'
 import { useCurrentUser } from '@/stores/auth.store'
 import { usePageMasthead } from '@/stores/masthead.store'
 import { useIsFlowDismissed, useOnboardingStore } from '@/stores/onboarding.store'
@@ -265,7 +266,7 @@ export function CommissionerCockpitPage(): React.JSX.Element {
       {!briefingDismissed && (
         <CockpitBriefing
           commissionerName={user?.name ?? t('Commissioner')}
-          cityName={corporation.city}
+          cityName={cityName(corporation)}
           healthScore={cityPosition.healthScore}
           priorityCount={queue.length}
           incidentCount={incidents.length}
@@ -355,7 +356,7 @@ export function CommissionerCockpitPage(): React.JSX.Element {
       <div className="grid grid-cols-1 gap-3 xl:grid-cols-12">
         {/* Column 1 — today's position ----------------------------- */}
         <div className="min-w-0 xl:col-span-8">
-          <GovPanel title={`Today's ${corporation.city}`} tone="primary" dense bodyClassName="p-3">
+          <GovPanel title={t("Today's {0}", cityName(corporation))} tone="primary" dense bodyClassName="p-3">
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 2xl:grid-cols-3">
               <BriefingTile index={0} title={t('High-priority issues')} count={queue.length} tone={queue.length > 0 ? 'critical' : 'default'} to={ROUTES.intelligenceFeed}>
                 {queue.slice(0, 3).map((i) => (

@@ -9,6 +9,7 @@ import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { resilienceService } from '@/services'
 import { useActiveCorporation } from '@/stores/corporation.store'
+import { cityName } from '@/config/corporations'
 import { usePageMasthead } from '@/stores/masthead.store'
 
 import { cn } from '@/utils/cn'
@@ -50,7 +51,7 @@ export function UrbanResiliencePage(): React.JSX.Element {
   // The shell's masthead states the screen's name; the page states the wording.
   // Declared above the loading guards because a hook cannot sit behind an early
   // return - `dimensions` is the same list `index.dimensions` resolves to.
-  usePageMasthead(t('{0} Urban Resilience Index', corporation.city))
+  usePageMasthead(t('{0} Urban Resilience Index', cityName(corporation)))
 
   if (query.isLoading) return <LoadingState variant="metrics" />
   if (query.error) return <ErrorState detail={query.error.message} onRetry={() => query.refetch()} />
