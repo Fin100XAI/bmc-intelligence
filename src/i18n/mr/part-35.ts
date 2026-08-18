@@ -2,8 +2,6 @@
 export const MR_PART_35: Record<string, string> = {
   "Mirrors the Property Tax Citizen Portal (ptaxportal.mcgm.gov.in) — a simulated feed in this demonstration.":
     'मालमत्ता कर नागरिक पोर्टल (ptaxportal.mcgm.gov.in) प्रतिबिंबित करते — या प्रात्यक्षिकात हा एक अनुकरणीय फीड आहे.',
-  'Mirrors the Central Complaint Registration System and 1916 helpline — a simulated feed in this demonstration.':
-    'केंद्रीय तक्रार नोंदणी प्रणाली आणि १९१६ हेल्पलाइन प्रतिबिंबित करते — या प्रात्यक्षिकात हा एक अनुकरणीय फीड आहे.',
   "Mirrors MCGM's birth/death certificate services — a simulated feed in this demonstration.":
     'बृहन्मुंबई महानगरपालिकेच्या जन्म/मृत्यू दाखला सेवा प्रतिबिंबित करते — या प्रात्यक्षिकात हा एक अनुकरणीय फीड आहे.',
   'Mirrors Shop & Establishment licensing under the Maharashtra Right to Public Services Act — a simulated feed in this demonstration.':
@@ -27,8 +25,6 @@ export const MR_PART_35: Record<string, string> = {
   'Upload a CSV above to see real, uploaded figures rendered here instead of demonstration data.':
     'प्रात्यक्षिक माहितीऐवजी येथे प्रत्यक्ष, अपलोड केलेले आकडे पाहण्यासाठी वरील CSV अपलोड करा.',
   'The file could not be ingested.': 'फाइल अंतर्ग्रहित करता आली नाही.',
-  'Upload a real CSV export and see it rendered — the one connector in this platform not backed by demonstration data.':
-    'प्रत्यक्ष CSV निर्यात फाइल अपलोड करा आणि ती सादर होताना पाहा — या मंचावरील प्रात्यक्षिक माहितीवर आधारित नसलेला हा एकमेव जोडणी बिंदू आहे.',
   'Ingest a real export': 'प्रत्यक्ष निर्यात फाइल अंतर्ग्रहित करा',
 
   // corporations.ts — new source citation notes (real-data spine extension)

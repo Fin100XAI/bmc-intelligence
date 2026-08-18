@@ -7,8 +7,6 @@
 export const MR_PART_34: Record<string, string> = {
   "A statutory delivery timeline, not a complaint SLA": "वैधानिक वितरण कालमर्यादा, तक्रार SLA नव्हे",
   "BMC reported {0} streetlights converted to LED across the western and eastern suburbs, ~97% of that conversion project complete (Jan 2023) — a suburbs-only published figure, not a citywide total; the citywide count and percentage above are modelled.": "पश्चिम व पूर्व उपनगरांमध्ये {0} पथदिवे एलईडीमध्ये रूपांतरित करण्यात आले, हा रूपांतरण प्रकल्प सुमारे 97% पूर्ण झाला (जानेवारी 2023), असे बृहन्मुंबई महानगरपालिकेने नोंदवले — हा केवळ उपनगरांपुरता प्रकाशित आकडा आहे, शहरव्यापी एकूण संख्या नव्हे; वरील शहरव्यापी संख्या व टक्केवारी मॉडेल केलेली आहे.",
-  "BMC runs just 8 Animal Birth Control centres against an estimated 90,000+ stray dogs citywide, per BMC officials (Nov 2025) — the coverage and estate figures above are modelled, not an official count.": "बृहन्मुंबई महानगरपालिका अधिकाऱ्यांच्या मते, शहरभरातील अंदाजे 90,000+ भटक्या कुत्र्यांच्या तुलनेत महानगरपालिका केवळ 8 प्राणी जन्म नियंत्रण केंद्रे चालवते (नोव्हेंबर 2025) — वरील व्याप्ती व आस्थापना आकडेवारी मॉडेल केलेली आहे, अधिकृत मोजणी नव्हे.",
-  "Census of India 2011 put {0}% of Mumbai's population in slum areas — a citywide published figure; the settlement-level counts and populations above are modelled, not counted.": "भारताच्या 2011 च्या जनगणनेनुसार मुंबईच्या लोकसंख्येपैकी {0}% लोकसंख्या झोपडपट्टी भागात राहते — हा शहरव्यापी प्रकाशित आकडा आहे; वरील वस्ती-स्तरीय संख्या व लोकसंख्या मॉडेल केलेली आहे, प्रत्यक्ष मोजणी नव्हे.",
   "Praja Foundation's RTI-based analysis counted an estimated {0} complaints for water supply, solid waste, sewerage, pollution and public conveniences combined, via BMC's Central Complaint Registration System in 2024 — a published cross-check for those five categories only, not the total shown here across every category.": "प्रजा फाउंडेशनच्या माहिती अधिकार (RTI) आधारित विश्लेषणानुसार, बृहन्मुंबई महानगरपालिकेच्या केंद्रीय तक्रार नोंदणी प्रणालीद्वारे 2024 मध्ये जलपुरवठा, घनकचरा, मलनिस्सारण, प्रदूषण आणि सार्वजनिक सुविधागृहे या एकत्रित पाच श्रेणींसाठी अंदाजे {0} तक्रारी नोंदल्या गेल्या — हा केवळ या पाच श्रेणींसाठीचा प्रकाशित पडताळणी आकडा आहे, येथे दर्शवलेल्या प्रत्येक श्रेणीतील एकूण संख्या नव्हे.",
   "A ward-level join today, a canonical Building ID tomorrow": "आज वॉर्ड-स्तरीय जोडणी, उद्या प्रमाणभूत इमारत ओळख क्रमांक (Building ID)",
   "AI model behind this recommendation": "या शिफारसीमागील एआय प्रतिमान (AI मॉडेल)",
@@ -16,7 +14,6 @@ export const MR_PART_34: Record<string, string> = {
   "Advertisement Hoarding Licence": "जाहिरात फलक परवाना",
   "All grades": "सर्व दर्जा",
   "All themes": "सर्व विषय",
-  "Anchored to BMC's published operational sewage-treatment capacity of 1,226 MLD (dry-weather, across 8 STPs; citizenmatters.in, 2022) - distinct from the 2,464 MLD MSDP-II capacity under construction. The total below also includes modelled trunk-sewer conveyance capacity.": "बृहन्मुंबई महानगरपालिकेच्या प्रकाशित कार्यरत मलनिस्सारण-प्रक्रिया क्षमतेवर आधारित - 1,226 MLD (कोरड्या हवामानातील, 8 मलप्रक्रिया केंद्रांची मिळून; citizenmatters.in, 2022) - ही बांधकामाधीन 2,464 MLD MSDP-II क्षमतेपेक्षा वेगळी आहे. खालील एकूण संख्येत मॉडेल केलेली मुख्य-वाहिनी वहन क्षमताही समाविष्ट आहे.",
   "Annual footfall": "वार्षिक भेटींची संख्या",
   "Applications (30d)": "अर्ज (30 दिवस)",
   "Applications pending decision, city-wide": "शहरभरातील निर्णयाच्या प्रतीक्षेतील अर्ज",
@@ -106,7 +103,6 @@ export const MR_PART_34: Record<string, string> = {
   "Listed Heritage Structure": "सूचीबद्ध वारसा वास्तू",
   "Listed heritage structures and precincts, museums, the zoo and the tourism-facing public realm.": "सूचीबद्ध वारसा वास्तू व परिसर, संग्रहालये, प्राणिसंग्रहालय आणि पर्यटनाभिमुख सार्वजनिक क्षेत्र.",
   "Mahim Nature Park": "माहीम निसर्ग उद्यान",
-  "MCGM's own Recreation Ground / Playground / Garden plot list (18 Sep 2023) counts 1,068 open-space plots citywide, of which 254 are gardens specifically — this register is scaled to that total; individual entries remain a simulated feed in this demonstration.": "बृहन्मुंबई महानगरपालिकेच्या स्वतःच्या रिक्रिएशन ग्राउंड / प्लेग्राउंड / गार्डन भूखंड सूचीनुसार (18 सप्टेंबर 2023) शहरभरात एकूण 1,068 मोकळ्या जागांचे भूखंड आहेत, त्यापैकी 254 विशेषतः उद्याने आहेत — ही नोंदवही त्याच एकूण संख्येनुसार समायोजित केली आहे; वैयक्तिक नोंदी या प्रात्यक्षिकात अनुकरणीय फीड आहेत.",
   "Managed by": "यांच्याद्वारे व्यवस्थापित",
   "Marine Drive Promenade": "मरीन ड्राइव्ह प्रोमेनाड",
   "Market Stall Licence (Gala Allotment)": "बाजार गाळा परवाना (गाळा वाटप)",
@@ -168,14 +164,12 @@ export const MR_PART_34: Record<string, string> = {
   "Site": "स्थळ",
   "Sites on register": "नोंदणीकृत स्थळे",
   "State Government": "राज्य शासन",
-  "Statutory certificates, licences and permits against their published turnaround, across every issuing department.": "प्रत्येक निर्गमक विभागाने प्रकाशित केलेल्या कालमर्यादेनुसार वैधानिक प्रमाणपत्रे, परवाने व अनुज्ञप्त्या.",
   "Statutory period": "वैधानिक कालमर्यादा",
   "Statutory public comment period on a proposed Development Plan reservation amendment.": "प्रस्तावित विकास आराखडा आरक्षण सुधारणेसंदर्भात वैधानिक सार्वजनिक अभिप्राय कालावधी.",
   "Submissions received (12m)": "प्राप्त सादरीकरणे (12 महिने)",
   "Submissions": "सादरीकरणे",
   "Suggestions invited on budget priorities ahead of the annual estimates.": "वार्षिक अंदाजपत्रकापूर्वी अर्थसंकल्प प्राधान्यक्रमांवर सूचना आमंत्रित.",
   "The most recently awarded municipal works and supply contracts.": "अलीकडेच प्रदान करण्यात आलेली महानगरपालिका कामे आणि पुरवठा कंत्राटे.",
-  "The retail-market estate above is scaled to BMC's own count of 136 municipal markets, per the most recent published count (2019/2022) — no more recent citywide recount was found. Wholesale yards, fish markets, slaughterhouses and tanneries have no comparable published census and remain modelled.": "वरील किरकोळ बाजार आस्थापना बृहन्मुंबई महानगरपालिकेच्या स्वतःच्या 136 महानगरपालिका बाजारांच्या संख्येनुसार समायोजित केली आहे, ही सर्वात अलीकडील प्रकाशित संख्या आहे (2019/2022) — त्यानंतरची शहरव्यापी पुनर्मोजणी आढळली नाही. घाऊक बाजार, मासळी बाजार, कत्तलखाने आणि कातडी कमावण्याचे कारखाने यांच्यासाठी तुलनीय प्रकाशित गणना उपलब्ध नसल्याने ते मॉडेल केलेलेच राहतात.",
   "Theme": "विषय",
   "Third-party compilation of BMC's own ward-by-ward heritage lists (updated 2012-2019): 1,271 graded properties (Grade I: 51, IIA: 282, IIB: 289, III: 606) - artdecomumbai.com. No single official MCGM document giving this aggregate was found.": "बृहन्मुंबई महानगरपालिकेच्या स्वतःच्या वॉर्डनिहाय वारसा यादींचे तृतीय-पक्षीय संकलन (2012-2019 दरम्यान अद्ययावत): 1,271 श्रेणीबद्ध मालमत्ता (दर्जा I: 51, IIA: 282, IIB: 289, III: 606) - artdecomumbai.com. ही एकत्रित संख्या देणारे कोणतेही एकल अधिकृत महानगरपालिका दस्तऐवज आढळले नाही.",
   "Trade Licence (Shop & Establishment)": "व्यापार परवाना (दुकाने व आस्थापना)",
@@ -208,14 +202,10 @@ export const MR_PART_34: Record<string, string> = {
 
   // Real-data spine wiring: flood-prone areas, AWS stations, vital statistics
   "Known chronic waterlogging locations": "ज्ञात दीर्घकालीन जलसाचन ठिकाणे",
-  "Named repeatedly across years of BMC monsoon reporting as the city's chronic waterlogging spots — a standing, publicly documented list, distinct from the incident register's live operational entries.":
-    "बृहन्मुंबई महानगरपालिकेच्या अनेक वर्षांच्या पावसाळी वृत्तांकनांत शहरातील दीर्घकालीन जलसाचनाची ठिकाणे म्हणून वारंवार नमूद होणारी - ही एक स्थायी, सार्वजनिकरीत्या दस्तऐवजीकरण केलेली यादी आहे, घटना नोंदवहीतील प्रत्यक्ष कार्यरत नोंदींपेक्षा वेगळी.",
   "Hindmata sits in a natural depression and floods almost every monsoon; Sion and King's Circle flooding is tied to Mithi River overflow — named repeatedly in BMC Commissioner pre-monsoon inspection reporting, not a modelled figure.":
     "हिंदमाता नैसर्गिक खोलगट भागात असल्याने जवळजवळ प्रत्येक पावसाळ्यात तेथे पाणी साचते; सायन व किंग्ज सर्कल येथील जलसाचन मिठी नदीच्या पूराशी संबंधित आहे — हे महानगरपालिका आयुक्तांच्या पावसाळापूर्व पाहणी वृत्तांकनांत वारंवार नमूद होते, हा मॉडेल केलेला आकडा नव्हे.",
   "Mirrors BMC Disaster Management Cell's confirmed {0} Automatic Weather Stations, on a ~15-minute refresh cadence — a simulated feed in this demonstration.":
     "बृहन्मुंबई महानगरपालिकेच्या आपत्ती व्यवस्थापन कक्षाची निश्चित {0} स्वयंचलित हवामान केंद्रे दर्शवते, जी अंदाजे १५ मिनिटांच्या अंतराने अद्ययावत होतात — या प्रात्यक्षिकात हा एक अनुकरणीय फीड आहे.",
-  "For reference, BMC registered approximately {0} deaths citywide in {1} (provisional) and approximately {2} births in {3}, the most recent year found published — annual citywide totals, a far wider window than the 30-day figure above and not directly comparable to it.":
-    "संदर्भासाठी: बृहन्मुंबई महानगरपालिकेने शहरभरात {1} मध्ये अंदाजे {0} मृत्यू (प्रारूप आकडा) आणि {3} मध्ये अंदाजे {2} जन्म नोंदवले, हे प्रकाशित झालेले सर्वात अलीकडील वर्ष आहे — हे शहरव्यापी वार्षिक एकूण आकडे आहेत, वरील ३०-दिवसांच्या आकड्यापेक्षा खूपच व्यापक कालमर्यादेचे असून त्याच्याशी थेट तुलना करता येत नाही.",
 
   // Real-data spine wiring: workforce establishment, Standing Committee, ward committees
   "BMC reported a sanctioned strength of {0} posts across departments (2 March 2026); the citywide total above is anchored to that figure — the department × cadre register below remains modelled.":
