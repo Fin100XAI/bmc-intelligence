@@ -4,7 +4,6 @@ import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { Badge } from '@/components/ui/badges'
 import { Card, CardHeader, MetricGrid, Select } from '@/components/ui/primitives'
 import { DemonstrationNotice } from '@/components/ui/states'
-import { CORPORATIONS } from '@/config/corporations'
 import { usePageMasthead } from '@/stores/masthead.store'
 import { cn } from '@/utils/cn'
 import { t } from '@/i18n'
@@ -14,25 +13,25 @@ import { t } from '@/i18n'
  *
  * Testing & Quality Assurance.
  *
- * This is not a CI dashboard reporting real pass/fail results, because none
- * exist: this repository carries no automated test framework - no `*.test.ts`
- * or `*.spec.ts` file, no Vitest/Jest configuration, no CI workflow. Stating
- * that plainly is the point of the page, in the same spirit as Platform
- * Readiness: a coverage claim this register cannot back with an actual run is
- * not made here.
+ * This is not a full CI dashboard: most rows are a manual verification pass
+ * run live against this build in the course of the work that produced it -
+ * sign-in through to the console, a feature exercised end-to-end, the
+ * permission engine's denial path deliberately triggered. A baseline
+ * automated suite (Vitest, `npm test`) now exists alongside that manual
+ * pass - see the Build Integrity category - but it does not cover most of
+ * this platform's business logic, and this register keeps saying so rather
+ * than rounding up. Each row below states plainly whether it was manually
+ * verified, not yet covered, or requires automation before this platform
+ * could responsibly claim comprehensive test coverage.
  *
- * What IS real: a manual verification pass run live against this build in the
- * course of the work that produced it - sign-in through to the console, the
- * two newest features exercised end-to-end, the permission engine's denial
- * path deliberately triggered twice. Each row below states plainly whether it
- * was manually verified, not yet covered, or requires automation before this
- * platform could responsibly claim test coverage in a production sense.
- *
- * REUSABLE-ENGINE SCOPE. Several rows are marked "single-tenant only" -
- * `CORPORATIONS` presently carries one record (Brihanmumbai), so nothing in
- * this build, manual or automated, has ever exercised the reusable engine
- * against a second corporation. That gap is stated once here rather than
- * silently assumed away.
+ * REUSABLE-ENGINE SCOPE. Rows marked "single-tenant only" have never been
+ * exercised beyond whichever one corporation they were checked against.
+ * `CORPORATIONS` now carries two records (Brihanmumbai and Pune), and
+ * `src/config/corporations.test.ts` runs the ward/zone resolvers against
+ * both generically - closing the resolver-level gap this section used to
+ * describe. The map-generator visual check and most manual passes are still
+ * Brihanmumbai-only; that narrower gap is stated on each row it still
+ * applies to, rather than assumed away.
  */
 
 type CoverageStatus = 'verified-manually' | 'not-covered' | 'requires-automation'
@@ -105,16 +104,16 @@ function build$ROWS(): CoverageRow[] {
     {
       category: 'multi-tenant-engine',
       title: t('Ward/zone resolution against a second corporation'),
-      detail: t('`resolveWardCount` and `resolveDivisions` are written generically, but `CORPORATIONS` carries exactly one record. No test, manual or automated, has run these resolvers against a corporation with a genuinely different ward-count regime, terminology or published division list.'),
-      status: 'not-covered',
-      singleTenantOnly: true,
+      detail: t('`CORPORATIONS` now carries two records - Brihanmumbai and Pune - and `src/config/corporations.test.ts` runs `resolveWardCount`, `resolveZoneCount` and `resolveDivisions` against both generically (Pune resolves to 15 wards from its published ward-office count, a genuinely different regime and terminology to Brihanmumbai\'s 24). Automated, not manual - the one row in this category with a real test behind it.'),
+      status: 'verified-manually',
+      singleTenantOnly: false,
     },
     {
       category: 'multi-tenant-engine',
       title: t('Geography generator against a non-coastal city form'),
-      detail: t('The boundary generator has only ever rendered Brihanmumbai\'s coastal shape. A landlocked or river-bisected corporation\'s `form.type` is declared in the schema but has never been generated or visually checked.'),
-      status: 'not-covered',
-      singleTenantOnly: true,
+      detail: t('Pune\'s `form.type` is `riverine` - landlocked, the opposite of Brihanmumbai\'s coastal shape. Generated via `scripts/preview-maps.mjs` and visually checked: a distinct, non-degenerate 15-ward tessellation with its own river backdrop, not a collapsed or overlapping shape. A manual check, not an automated one.'),
+      status: 'verified-manually',
+      singleTenantOnly: false,
     },
     {
       category: 'multi-tenant-engine',
@@ -177,9 +176,9 @@ function build$ROWS(): CoverageRow[] {
     },
     {
       category: 'build-integrity',
-      title: t('No automated test framework is installed'),
-      detail: t('Confirmed directly: zero `*.test.ts`/`*.test.tsx`/`*.spec.ts` files anywhere in the repository, no Vitest or Jest dependency in `package.json`, no `.github/workflows` directory. This is the honest baseline every other row in this register has to be read against.'),
-      status: 'not-covered',
+      title: t('A baseline automated test suite exists'),
+      detail: t('Vitest + React Testing Library, wired into `npm test` and `npm run verify`: 42 tests covering the workflow engine, the permission engine (`canAccess`), the deterministic RNG, the corporation resolvers and `LiveIndicator`. It does not cover most of this platform\'s 80+ pages or their business logic - read it as a real foundation, not comprehensive coverage.'),
+      status: 'verified-manually',
       singleTenantOnly: false,
     },
   ]
@@ -188,7 +187,7 @@ function build$ROWS(): CoverageRow[] {
 export function TestingPage(): React.JSX.Element {
   usePageMasthead(
     t('Testing & Quality Assurance'),
-    t('What has actually been verified against this build, how, and what has not - stated plainly rather than claimed. This platform carries no automated test suite; every row below says so where it applies.'),
+    t('What has actually been verified against this build, how, and what has not - stated plainly rather than claimed. This platform carries a baseline automated test suite, not comprehensive coverage; every row below says so where it applies.'),
   )
 
   const rows = useMemo(build$ROWS, [])
@@ -239,8 +238,8 @@ export function TestingPage(): React.JSX.Element {
       <Card tone="critical" className="flex items-start gap-3">
         <CircleAlert className="mt-0.5 h-4 w-4 shrink-0 text-crit-600" aria-hidden />
         <p className="text-xs leading-relaxed text-ink-700">
-          <span className="font-semibold">{t('No automated test suite exists in this repository.')}</span>{' '}
-          {t('Every "Verified manually" row below is a one-off check performed live during development, not a repeatable, CI-enforced guarantee. Treat this register as an honest starting point for building real coverage, not as evidence the platform is tested in a production sense.')}
+          <span className="font-semibold">{t('A baseline automated test suite exists, but coverage is not comprehensive.')}</span>{' '}
+          {t('42 Vitest tests run in CI-ready form via `npm test`, but most rows below are still one-off checks performed live during development, not repeatable, CI-enforced guarantees. Treat this register as real progress on an honest baseline, not as evidence the platform is fully tested in a production sense.')}
         </p>
       </Card>
 
@@ -301,15 +300,6 @@ export function TestingPage(): React.JSX.Element {
           })}
         </ul>
       </Card>
-
-      {CORPORATIONS.length === 1 ? (
-        <Card tone="info" className="flex items-start gap-3">
-          <Layers className="mt-0.5 h-4 w-4 shrink-0 text-govt-600" aria-hidden />
-          <p className="text-xs leading-relaxed text-ink-700">
-            {t('The corporation registry (`CORPORATIONS` in `src/config/corporations.ts`) currently carries one record. Every "reusable engine" mechanism this platform is built on - ward resolution, geography generation, the bilingual layer, tenant-scoped permissions - is written generically, but none of it has been proven against a second corporation. The most valuable single addition to this register would be a second, genuinely sourced corporation record and the manual pass that follows from standing it up.')}
-          </p>
-        </Card>
-      ) : null}
 
       <DemonstrationNotice />
     </PageBody>

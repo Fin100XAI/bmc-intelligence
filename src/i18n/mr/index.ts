@@ -34,6 +34,12 @@ import { MR_PART_32 } from './part-32'
 import { MR_PART_33 } from './part-33'
 import { MR_PART_34 } from './part-34'
 import { MR_PART_35 } from './part-35'
+import { MR_PART_36 } from './part-36'
+import { MR_PART_37 } from './part-37'
+import { MR_PART_38 } from './part-38'
+import { MR_PART_39 } from './part-39'
+import { MR_PART_40 } from './part-40'
+import { MR_PART_41 } from './part-41'
 
 /**
  * The Marathi catalogue.
@@ -83,3 +89,9 @@ registerMessages('mr', MR_PART_32)
 registerMessages('mr', MR_PART_33)
 registerMessages('mr', MR_PART_34)
 registerMessages('mr', MR_PART_35)
+registerMessages('mr', MR_PART_36)
+registerMessages('mr', MR_PART_37)
+registerMessages('mr', MR_PART_38)
+registerMessages('mr', MR_PART_39)
+registerMessages('mr', MR_PART_40)
+registerMessages('mr', MR_PART_41)
