@@ -25,6 +25,7 @@ const ExecutiveOverviewPage = lazy(() => import('@/pages/command/ExecutiveOvervi
 const CommissionerCockpitPage = lazy(() => import('@/pages/command/CommissionerCockpitPage'))
 const CityIntelligenceIndexPage = lazy(() => import('@/pages/command/CityIntelligenceIndexPage'))
 const SituationRoomPage = lazy(() => import('@/pages/command/SituationRoomPage'))
+const CityCommandMapPage = lazy(() => import('@/pages/command/CityCommandMapPage'))
 const IntelligenceFeedPage = lazy(() => import('@/pages/command/IntelligenceFeedPage'))
 const DecisionCentrePage = lazy(() => import('@/pages/command/DecisionCentrePage'))
 const MyTasksPage = lazy(() => import('@/pages/command/MyTasksPage'))
@@ -192,6 +193,7 @@ export const router = createBrowserRouter([
       { path: ROUTES.cockpit, element: guarded(<CommissionerCockpitPage />) },
       { path: ROUTES.cityIndex, element: guarded(<CityIntelligenceIndexPage />) },
       { path: ROUTES.situationRoom, element: guarded(<SituationRoomPage />) },
+      { path: ROUTES.cityCommandMap, element: guarded(<CityCommandMapPage />) },
       { path: ROUTES.intelligenceFeed, element: guarded(<IntelligenceFeedPage />) },
       { path: ROUTES.decisions, element: guarded(<DecisionCentrePage />) },
       { path: ROUTES.myTasks, element: guarded(<MyTasksPage />) },

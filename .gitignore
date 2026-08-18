@@ -26,3 +26,6 @@ vite.config.ts.timestamp-*
 
 # Pilot data ingestion (dev-server only, see scripts/pilot-api-plugin.ts)
 .pilot-data/
+
+# Persisted demonstration state (dev-server only, see scripts/state-persistence-plugin.ts)
+.data/

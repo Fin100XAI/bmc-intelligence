@@ -3,12 +3,14 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { fileURLToPath, URL } from 'node:url'
 import { pilotApiPlugin } from './scripts/pilot-api-plugin.js'
+import { statePersistencePlugin } from './scripts/state-persistence-plugin.js'
 
 // https://vite.dev/config/
 export default defineConfig({
-  // pilotApiPlugin only registers dev-server middleware (configureServer),
-  // so it is inert in a production build - there is no real backend there.
-  plugins: [react(), tailwindcss(), pilotApiPlugin()],
+  // pilotApiPlugin and statePersistencePlugin only register dev-server
+  // middleware (configureServer), so both are inert in a production build -
+  // there is no real backend there.
+  plugins: [react(), tailwindcss(), pilotApiPlugin(), statePersistencePlugin()],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),

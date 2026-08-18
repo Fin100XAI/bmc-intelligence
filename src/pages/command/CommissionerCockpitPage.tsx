@@ -21,10 +21,12 @@ import { useActivityLog, useServiceAction, useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { decisionService, healthService, incidentService, intelligenceService, projectService, revenueService } from '@/services'
 import { buildCityPosition, buildCrossDomainInsights, type CrossDomainInsight } from '@/domains'
+import { CockpitBriefing } from '@/components/onboarding/CockpitBriefing'
 import { useDrawerStore } from '@/stores/ui.store'
 import { useActiveCorporation } from '@/stores/corporation.store'
 import { useCurrentUser } from '@/stores/auth.store'
 import { usePageMasthead } from '@/stores/masthead.store'
+import { useIsFlowDismissed, useOnboardingStore } from '@/stores/onboarding.store'
 import { allowed } from '@/security'
 import { ROUTES } from '@/config/navigation'
 import { departmentName, officerDesignation, officerDisplayName, wardName } from '@/data/reference'
@@ -103,6 +105,9 @@ export function CommissionerCockpitPage(): React.JSX.Element {
   const corporation = useActiveCorporation()
   const openDrawer = useDrawerStore((s) => s.open)
   const activity = useActivityLog(user?.name ?? 'Municipal Commissioner')
+  const briefingDismissed = useIsFlowDismissed('cockpit-briefing')
+  const dismissFlow = useOnboardingStore((s) => s.dismiss)
+  const replayFlow = useOnboardingStore((s) => s.replay)
 
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [itemState, setItemState] = useState<Record<string, ItemState>>({})
@@ -122,7 +127,12 @@ export function CommissionerCockpitPage(): React.JSX.Element {
   const priorityQuery = useServiceQuery(queryKeys.intelligence('cockpit-priority'), (u) =>
     intelligenceService.list(u, { severity: ['critical', 'high'], status: ['new', 'reviewed', 'assigned', 'in-progress'], pageSize: 200 }),
   )
-  const incidentsQuery = useServiceQuery(queryKeys.incidents('cockpit-active'), (u) => incidentService.active(u))
+  // Incidents and decisions are now durable and can change from the
+  // dev-only live-simulation tick - polling keeps the day's opening picture
+  // from going stale the moment the Commissioner starts reading it.
+  const incidentsQuery = useServiceQuery(queryKeys.incidents('cockpit-active'), (u) => incidentService.active(u), {
+    refetchInterval: 25_000,
+  })
   const projectsAtRiskQuery = useServiceQuery(queryKeys.projects('cockpit-at-risk'), (u) => projectService.atRisk(u, 60))
   const healthSignalsQuery = useServiceQuery(queryKeys.health('cockpit-outbreak'), (u) => healthService.outbreakSignals(u))
   const revenueAnomaliesQuery = useServiceQuery(queryKeys.revenue('cockpit-anomalies'), (u) =>
@@ -252,9 +262,29 @@ export function CommissionerCockpitPage(): React.JSX.Element {
 
   return (
     <PageBody>
+      {!briefingDismissed && (
+        <CockpitBriefing
+          commissionerName={user?.name ?? t('Commissioner')}
+          cityName={corporation.city}
+          healthScore={cityPosition.healthScore}
+          priorityCount={queue.length}
+          incidentCount={incidents.length}
+          overdueDecisions={overdueDecisions}
+          topInsight={insights[0]}
+          onDismiss={() => dismissFlow('cockpit-briefing')}
+        />
+      )}
+
       <PageHeader
         eyebrow={t('Command')}
         breadcrumbs={[{ label: t('Command') }, { label: t('Commissioner Cockpit') }]}
+        actions={
+          briefingDismissed ? (
+            <Button variant="ghost" size="xs" icon={<Sparkles className="h-3 w-3" />} onClick={() => replayFlow('cockpit-briefing')}>
+              {t('Replay briefing')}
+            </Button>
+          ) : undefined
+        }
       />
 
       <MetricGrid columns={4}>

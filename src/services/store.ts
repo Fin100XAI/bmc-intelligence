@@ -116,8 +116,85 @@ type StoreShape = { [K in CollectionKey]: CollectionMap[K][] }
  */
 let store: StoreShape | null = null
 
+/**
+ * The collections `scripts/state-persistence-plugin.ts` (dev-server only)
+ * will read and write - the four both most visible in a demonstration and
+ * named on `PlatformReadinessPage.tsx` as resetting on reload today: escalated
+ * alerts, incident status, decision cases and the audit trail itself (every
+ * mutation across every service ultimately calls `appendAudit`, which routes
+ * through `setCollection('auditEvents', …)` below - so this one whitelist
+ * covers the whole platform's audit trail, not just these four collections'
+ * own state).
+ */
+const PERSISTED_COLLECTIONS = new Set<CollectionKey>(['alerts', 'incidents', 'decisions', 'auditEvents'])
+
+/**
+ * Populated by `hydrateStore()` before the store is first built. `seedStore`
+ * substitutes a persisted collection wholesale in place of the deterministic
+ * clone when one was found - `setCollection` always writes the FULL current
+ * array (never a delta), so whatever was last persisted for a collection
+ * already reflects every mutation made against it, not just the latest one.
+ * An empty persisted array is treated the same as "nothing persisted yet":
+ * these collections are never legitimately emptied by the app itself, so
+ * emptiness is a reliable signal that hydration found no file, not that the
+ * collection was cleared.
+ */
+let pendingHydration: Partial<StoreShape> | null = null
+
+/**
+ * Fetches whatever this tenant has persisted for each whitelisted collection
+ * and stages it for the next `seedStore()` call. Must be awaited (racing a
+ * short timeout is the caller's job - see `src/main.tsx`) before the first
+ * `getCollection`/`setCollection` call, or it has no effect: the store is
+ * built lazily, once, on first access.
+ *
+ * Failures (dev server not running this plugin, e.g. under `vite preview`,
+ * or a production build where `configureServer` never runs at all) are
+ * swallowed - the store falls back to the deterministic seed exactly as it
+ * always has, so this is additive, never a new way for the app to break.
+ */
+export async function hydrateStore(tenantId: string): Promise<void> {
+  // Built loosely-typed and cast once at the end: a `Partial<StoreShape>`
+  // written through a `CollectionKey`-typed loop variable would require each
+  // write to satisfy every collection's type at once (an intersection), which
+  // defeats the whole point of iterating a small fixed whitelist. The cast is
+  // safe because every key written here is one `hydrateStore` itself chose
+  // from `PERSISTED_COLLECTIONS`, immediately after fetching that same key.
+  const overlay: Record<string, unknown[]> = {}
+  await Promise.all(
+    Array.from(PERSISTED_COLLECTIONS).map(async (key) => {
+      try {
+        const res = await fetch(`/api/state/${key}?tenantId=${encodeURIComponent(tenantId)}`)
+        if (!res.ok) return
+        const { records } = (await res.json()) as { records?: unknown[] }
+        if (Array.isArray(records) && records.length > 0) overlay[key] = records
+      } catch {
+        // No persistence plugin available - fall back to the seed.
+      }
+    }),
+  )
+  if (Object.keys(overlay).length > 0) pendingHydration = overlay as Partial<StoreShape>
+}
+
+/** Fire-and-forget write-through for a whitelisted collection. Never throws
+ * and never blocks the caller - a mutation must always succeed against the
+ * in-session store regardless of whether the dev-only persistence plugin is
+ * reachable. */
+function persistCollectionAsync<K extends CollectionKey>(key: K, items: CollectionMap[K][]): void {
+  if (!PERSISTED_COLLECTIONS.has(key)) return
+  const tenantId = (items[0] as { tenantId?: string } | undefined)?.tenantId
+  if (!tenantId) return // Nothing to scope the write to - and nothing worth persisting.
+  fetch(`/api/state/${key}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ tenantId, records: items }),
+  }).catch((err: unknown) => {
+    console.warn(`[store] failed to persist "${key}" (continuing with in-session state only):`, err)
+  })
+}
+
 function seedStore(): StoreShape {
-  return {
+  const seeded: StoreShape = {
     intelligence: structuredClone(INTELLIGENCE_ITEMS),
     alerts: structuredClone(ALERTS),
     incidents: structuredClone(INCIDENTS),
@@ -138,6 +215,22 @@ function seedStore(): StoreShape {
     // shared with a seed module to clone away from.
     reconciliationExceptions: buildAssessmentExceptions(),
   }
+  if (pendingHydration) applyHydrationOverlay(seeded, pendingHydration)
+  return seeded
+}
+
+/**
+ * Written out per-key rather than as a loop over `PERSISTED_COLLECTIONS`:
+ * iterating a `Set<CollectionKey>` widens each `key` to the full union, which
+ * defeats TypeScript's ability to prove `seeded[key]` and `overlay[key]`
+ * agree on which member of the union they are - four keys is little enough
+ * that spelling them out is clearer than a generic workaround.
+ */
+function applyHydrationOverlay(seeded: StoreShape, overlay: Partial<StoreShape>): void {
+  if (overlay.alerts) seeded.alerts = overlay.alerts
+  if (overlay.incidents) seeded.incidents = overlay.incidents
+  if (overlay.decisions) seeded.decisions = overlay.decisions
+  if (overlay.auditEvents) seeded.auditEvents = overlay.auditEvents
 }
 
 function ensureStore(): StoreShape {
@@ -160,6 +253,12 @@ function ensureStore(): StoreShape {
 export function resetStore(): void {
   store = null
   auditSequence = 0
+  // A corporation switch changes the tenant `pendingHydration` was fetched
+  // for - carrying it over would apply one corporation's persisted alerts,
+  // decisions and audit trail onto another's seed. The demonstration has
+  // always reset to a fresh seed on corporation switch; persistence is
+  // scoped to the tenant active at boot, not re-fetched mid-session.
+  pendingHydration = null
   emitChange()
 }
 
@@ -183,6 +282,7 @@ export function setCollection<K extends CollectionKey>(key: K, items: Collection
   // `StoreShape[K]` is structurally identical to `CollectionMap[K][]`, but TS
   // cannot prove that through a generic mapped-type index - the cast is safe.
   ensureStore()[key] = items as StoreShape[K]
+  persistCollectionAsync(key, items)
 }
 
 /** ---------------------------------------------------------------------

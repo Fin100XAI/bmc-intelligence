@@ -18,6 +18,7 @@ import { Badge, ConfidenceBadge, SeverityBadge, SeverityRail } from '@/component
 import { DataTable, type Column } from '@/components/ui/DataTable'
 import { ConfirmDialog, Modal } from '@/components/ui/overlays'
 import { DemonstrationNotice, EmptyState, ErrorState, LoadingState } from '@/components/ui/states'
+import { LiveIndicator } from '@/components/ui/LiveIndicator'
 import { ActiveFilterChips, FilterBar } from '@/components/filters/FilterBar'
 import { MetricCard } from '@/components/cards/MetricCard'
 import { AlertCard } from '@/components/cards/domain-cards'
@@ -136,7 +137,12 @@ export function AlertsPage(): React.JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const alertsQuery = useServiceQuery(queryKeys.alerts(), (u) => alertService.list(u, { pageSize: 500 }))
+  // Alerts are now durable (see `state-persistence-plugin.ts`) and the
+  // dev-only live-simulation tick occasionally adds one - polling here is
+  // what makes that actually visible rather than requiring a manual refresh.
+  const alertsQuery = useServiceQuery(queryKeys.alerts(), (u) => alertService.list(u, { pageSize: 500 }), {
+    refetchInterval: 25_000,
+  })
   const slaQuery = useServiceQuery(queryKeys.alerts('sla-summary'), (u) => alertService.slaSummary(u))
 
   const doAcknowledge = useServiceAction(
@@ -477,15 +483,18 @@ export function AlertsPage(): React.JSX.Element {
         eyebrow={t('Command')}
         breadcrumbs={[{ label: t('Command') }, { label: t('Alerts & Escalations') }]}
         actions={
-          <SegmentedControl
-            ariaLabel="View"
-            value={view}
-            onChange={setView}
-            options={[
-              { value: 'table', label: t('Table'), icon: <Table2 className="h-3 w-3" /> },
-              { value: 'cards', label: t('Cards'), icon: <LayoutGrid className="h-3 w-3" /> },
-            ]}
-          />
+          <div className="flex items-center gap-3">
+            <LiveIndicator dataUpdatedAt={alertsQuery.dataUpdatedAt} isFetching={alertsQuery.isFetching} />
+            <SegmentedControl
+              ariaLabel="View"
+              value={view}
+              onChange={setView}
+              options={[
+                { value: 'table', label: t('Table'), icon: <Table2 className="h-3 w-3" /> },
+                { value: 'cards', label: t('Cards'), icon: <LayoutGrid className="h-3 w-3" /> },
+              ]}
+            />
+          </div>
         }
         controls={
           <FilterBar

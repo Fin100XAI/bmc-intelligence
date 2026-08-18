@@ -17,7 +17,7 @@ import { useCurrentUser } from '@/stores/auth.store'
 export function useServiceQuery<T>(
   key: QueryKey,
   fetcher: (user: User) => Promise<T>,
-  options: { enabled?: boolean; staleTime?: number } = {},
+  options: { enabled?: boolean; staleTime?: number; refetchInterval?: number } = {},
 ): UseQueryResult<T, Error> {
   const user = useCurrentUser()
 
@@ -29,6 +29,12 @@ export function useServiceQuery<T>(
     },
     enabled: Boolean(user) && (options.enabled ?? true),
     staleTime: options.staleTime,
+    // Opt-in only - the global default leaves this undefined, so every
+    // existing call site keeps the "never silently reshuffle beneath an
+    // operator" behaviour. A caller passes this only where the underlying
+    // collection is genuinely live (see `LiveIndicator`).
+    refetchInterval: options.refetchInterval,
+    refetchIntervalInBackground: false,
   })
 }
 
