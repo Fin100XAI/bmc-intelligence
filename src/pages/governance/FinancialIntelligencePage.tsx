@@ -7,12 +7,16 @@ import { DataTable, type Column } from '@/components/ui/DataTable'
 import { DemonstrationNotice, ErrorState, LoadingState, PartialDataWarning } from '@/components/ui/states'
 import { MetricCard } from '@/components/cards/MetricCard'
 import { ContributionBars } from '@/components/charts'
+import { FilterBar } from '@/components/filters/FilterBar'
 import { useServiceQuery } from '@/hooks'
 import { usePageMasthead } from '@/stores/masthead.store'
+import { useFilterStore } from '@/stores/ui.store'
+import type { FilterState } from '@/stores/ui.store'
 import { queryKeys } from '@/app/queryClient'
 import { financialIntelligenceService } from '@/services'
 import type { DepartmentFinancialRow } from '@/domains/finance/health-index'
 import { FINANCIAL_HEALTH_WEIGHTS } from '@/domains/finance/health-index'
+import { OPERATIONAL_STATE_LABEL } from '@/types/common'
 import { formatCrore, formatPercent } from '@/utils/format'
 import { isoFromAnchor } from '@/utils/deterministic'
 import { t } from '@/i18n'
@@ -41,9 +45,21 @@ const FRESHNESS = {
   stale: false,
 }
 
+function matchesGlobalFilters(d: DepartmentFinancialRow, filters: FilterState): boolean {
+  if (filters.departmentIds.length > 0 && !filters.departmentIds.includes(d.departmentId)) return false
+  if (filters.statuses.length > 0 && !filters.statuses.includes(d.state)) return false
+  if (filters.search.trim()) {
+    const q = filters.search.trim().toLowerCase()
+    if (!d.label.toLowerCase().includes(q)) return false
+  }
+  return true
+}
+
 export function FinancialIntelligencePage(): React.JSX.Element {
   // The shell's masthead carries the screen's name; the page states the wording.
   usePageMasthead(t('Municipal Financial Intelligence'))
+
+  const filters = useFilterStore((s) => s.filters)
 
   const query = useServiceQuery(queryKeys.finance('intelligence'), (u) => financialIntelligenceService.position(u))
 
@@ -54,6 +70,11 @@ export function FinancialIntelligencePage(): React.JSX.Element {
   if (!result) return <LoadingState variant="metrics" />
 
   const { position, components, leakageIndicators, departments } = result
+  const filteredDepartments = departments.filter((d) => matchesGlobalFilters(d, filters))
+  const stateOptions = Array.from(new Set(departments.map((d) => d.state))).map((s) => ({
+    value: s,
+    label: OPERATIONAL_STATE_LABEL[s],
+  }))
 
   const deptColumns: Array<Column<DepartmentFinancialRow>> = [
     {
@@ -119,9 +140,10 @@ export function FinancialIntelligencePage(): React.JSX.Element {
   return (
     <PageBody>
       <PageHeader
-        eyebrow={t('Governance & Finance')}
-        breadcrumbs={[{ label: t('Governance & Finance') }, { label: t('Financial Intelligence') }]}
+        eyebrow={t('Revenue & Municipal Finance')}
+        breadcrumbs={[{ label: t('Revenue & Municipal Finance') }, { label: t('Financial Intelligence') }]}
         freshness={FRESHNESS}
+        controls={<FilterBar show={['department', 'status', 'search']} statusOptions={stateOptions} />}
       />
 
       <DemonstrationNotice />
@@ -210,13 +232,13 @@ export function FinancialIntelligencePage(): React.JSX.Element {
               {t('Ranked by the widest variance against the phased plan, either direction.')}
             </p>
             <DataTable
-              rows={departments}
+              rows={filteredDepartments}
               columns={deptColumns}
               rowKey={(d) => d.departmentId}
               pageSize={14}
               stickyHeader
               maxHeight="30rem"
-              searchPlaceholder="Search department"
+              searchable={false}
             />
           </GovPanel>
         }

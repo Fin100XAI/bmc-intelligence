@@ -6,16 +6,18 @@ import { Input, MetricGrid, Select } from '@/components/ui/primitives'
 import { DemonstrationNotice, EmptyState, ErrorState, LoadingState } from '@/components/ui/states'
 import { MetricCard } from '@/components/cards/MetricCard'
 import { GovPanel } from '@/components/gov/GovPanel'
+import { FilterBar } from '@/components/filters/FilterBar'
 import { useServiceQuery, useDebounced } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { knowledgeService } from '@/services'
+import { useFilterStore, type FilterState } from '@/stores/ui.store'
 import { usePageMasthead } from '@/stores/masthead.store'
-import { MEMORY_KIND_LABEL, type MemoryKind } from '@/types/knowledge'
+import { MEMORY_KIND_LABEL, type MemoryKind, type MemoryRecord } from '@/types/knowledge'
 import { departmentName } from '@/data/reference'
-import { DOMAIN_LABEL } from '@/types/common'
+import { DOMAIN_LABEL, type DateRangeKey, type IntelligenceDomain } from '@/types/common'
 import { formatRelative } from '@/utils/format'
 import { cn } from '@/utils/cn'
-import { isoFromAnchor } from '@/utils/deterministic'
+import { DEMO_NOW, isoFromAnchor } from '@/utils/deterministic'
 import { t } from '@/i18n'
 
 /**
@@ -39,6 +41,32 @@ const FRESHNESS = {
   stale: false,
 }
 
+const DATE_RANGE_HOURS: Record<DateRangeKey, number> = {
+  '24h': 24,
+  '7d': 24 * 7,
+  '30d': 24 * 30,
+  '90d': 24 * 90,
+  fy: 24 * 365,
+}
+
+function withinDateRange(iso: string, range: DateRangeKey): boolean {
+  const ageMs = DEMO_NOW.getTime() - new Date(iso).getTime()
+  return ageMs <= DATE_RANGE_HOURS[range] * 3_600_000
+}
+
+// Search is deliberately not part of this predicate: the page already has a
+// dedicated search box (above) that drives the server-side record query
+// directly. A second, global search field narrowing the same title/summary
+// text would duplicate that control without adding a distinct capability.
+function matchesGlobalFilters(record: MemoryRecord, filters: FilterState): boolean {
+  if (filters.wardIds.length > 0 && !record.wardIds.some((w) => filters.wardIds.includes(w))) return false
+  if (filters.departmentIds.length > 0 && !filters.departmentIds.includes(record.departmentId)) return false
+  if (filters.domains.length > 0 && !filters.domains.includes(record.domain)) return false
+  if (filters.severities.length > 0 && !filters.severities.includes(record.significance)) return false
+  if (!withinDateRange(record.occurredAt, filters.dateRange)) return false
+  return true
+}
+
 const KIND_TONE: Record<MemoryKind, string> = {
   decision: 'bg-govt-100 text-govt-700',
   incident: 'bg-crit-100 text-crit-700',
@@ -58,18 +86,28 @@ export function InstitutionalMemoryPage(): React.JSX.Element {
   const [searchInput, setSearchInput] = useState('')
   const search = useDebounced(searchInput, 200)
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const filters = useFilterStore((s) => s.filters)
 
-  const filters = useMemo(
+  const queryFilters = useMemo(
     () => ({ ...(kind ? { kind: kind as MemoryKind } : {}), ...(search ? { search } : {}) }),
     [kind, search],
   )
 
   const summaryQuery = useServiceQuery(queryKeys.knowledge('summary'), (u) => knowledgeService.summary(u))
   const recordsQuery = useServiceQuery(queryKeys.knowledge(`records:${kind}:${search}`), (u) =>
-    knowledgeService.records(u, filters),
+    knowledgeService.records(u, queryFilters),
   )
 
-  const records = useMemo(() => recordsQuery.data ?? [], [recordsQuery.data])
+  const rawRecords = useMemo(() => recordsQuery.data ?? [], [recordsQuery.data])
+  const domainOptions = useMemo<IntelligenceDomain[]>(
+    () => Array.from(new Set(rawRecords.map((r) => r.domain))).sort((a, b) => DOMAIN_LABEL[a].localeCompare(DOMAIN_LABEL[b])),
+    [rawRecords],
+  )
+  // The global filter bar (ward, department, domain, severity, date) narrows
+  // the record kind/search results the server already returned, applied here
+  // so every downstream figure - the register, the selected record and its
+  // similar-record panel - agrees on what is in scope.
+  const records = useMemo(() => rawRecords.filter((r) => matchesGlobalFilters(r, filters)), [rawRecords, filters])
   const selected = useMemo(
     () => records.find((r) => r.id === selectedId) ?? records[0] ?? null,
     [records, selectedId],
@@ -113,6 +151,7 @@ export function InstitutionalMemoryPage(): React.JSX.Element {
             <div className="w-full max-w-[14rem]">
               <Select value={kind} onChange={(e) => setKind(e.target.value)} aria-label={t('Filter by record kind')} options={kindOptions} />
             </div>
+            <FilterBar show={['ward', 'department', 'domain', 'severity', 'date']} domainOptions={domainOptions} />
           </>
         }
       />
@@ -209,7 +248,7 @@ export function InstitutionalMemoryPage(): React.JSX.Element {
                       <p className="label-institutional mb-1">{t('What was done')}</p>
                       <p className="text-xs leading-relaxed text-ink-600">{selected.outcome}</p>
                     </div>
-                    <div className="rounded-[2px] border border-ok-100 bg-ok-50/40 p-2.5">
+                    <div className="rounded-lg border border-ok-100 bg-ok-50/40 p-2.5">
                       <p className="label-institutional mb-1 flex items-center gap-1 text-ok-700">
                         <Lightbulb className="h-3 w-3" />{' '}{t('Lesson carried forward')}
                       </p>
@@ -240,7 +279,7 @@ export function InstitutionalMemoryPage(): React.JSX.Element {
                           <button
                             type="button"
                             onClick={() => setSelectedId(s.record.id)}
-                            className="w-full rounded-[2px] border border-ink-100 p-2.5 text-left transition-colors hover:bg-ink-50/70"
+                            className="w-full rounded-lg border border-ink-100 p-2.5 text-left transition-colors hover:bg-ink-50/70"
                           >
                             <div className="flex items-start justify-between gap-2">
                               <p className="min-w-0 text-[0.8125rem] font-medium text-ink-800">{s.record.title}</p>

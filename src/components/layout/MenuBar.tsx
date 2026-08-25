@@ -328,13 +328,13 @@ export function MenuBar({ badges }: { badges: SidebarBadges }): React.JSX.Elemen
   return (
     <nav
       aria-label={t('Primary navigation')}
-      /* The masthead's exact blue — the institutional navy `govt-900` — not a
-         second one. The white top bar between them is what separates the two,
-         and two near-but-not-equal blues a row apart read as a mistake rather
-         than as a hierarchy.
+      /* The masthead's exact blue — the corporation's civic `portal-700` —
+         not a second one. The white top bar between them is what separates
+         the two, and two near-but-not-equal blues a row apart read as a
+         mistake rather than as a hierarchy.
          The hairline is white at low opacity rather than a darker step of any
          ramp, so no third colour enters the band. */
-      className="relative z-30 hidden shrink-0 border-b border-white/10 bg-govt-900 lg:block"
+      className="relative z-30 hidden shrink-0 border-b border-white/10 bg-portal-700 lg:block"
     >
       <div className="mx-auto max-w-[1600px] px-3">
         <div ref={barRef} className="relative flex items-center">

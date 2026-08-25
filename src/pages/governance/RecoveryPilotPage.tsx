@@ -5,6 +5,8 @@ import { useServiceAction, useServiceQuery } from '@/hooks'
 import { usePageMasthead } from '@/stores/masthead.store'
 import { queryKeys } from '@/app/queryClient'
 import { reconciliationService } from '@/services'
+import { FilterBar } from '@/components/filters/FilterBar'
+import { useFilterStore, type FilterState } from '@/stores/ui.store'
 import { ROUTES } from '@/config/navigation'
 import { isoFromAnchor } from '@/utils/deterministic'
 import { formatDateTime, formatNumber, formatPercent, formatRupees } from '@/utils/format'
@@ -67,10 +69,27 @@ const FRESHNESS = {
 
 const generateReturn = (user: User) => reconciliationService.statutoryReturn(user)
 
+/**
+ * `PilotMetrics` carries only a ward dimension - no department, status,
+ * severity or date field exists on this ward-level rollup - so the global
+ * filter bar narrows the ranking table below by ward and by free-text search
+ * against the ward's label. It never affects which ward the scorecard above
+ * is scoped to; that remains the operator's own pilot-ward selection.
+ */
+function matchesGlobalFilters(candidate: PilotMetrics, filters: FilterState): boolean {
+  if (filters.wardIds.length > 0 && !filters.wardIds.includes(candidate.wardId)) return false
+  if (filters.search.trim()) {
+    const q = filters.search.trim().toLowerCase()
+    if (!candidate.wardLabel.toLowerCase().includes(q)) return false
+  }
+  return true
+}
+
 export function RecoveryPilotPage(): React.JSX.Element {
   // The shell's masthead carries the screen's name; the page states the wording.
   usePageMasthead(t('Recovery Pilot & Statutory Return'))
 
+  const filters = useFilterStore((s) => s.filters)
   const [wardId, setWardId] = useState<string>('')
   const [statutory, setStatutory] = useState<StatutoryReturn | null>(null)
   const [returnError, setReturnError] = useState<string | null>(null)
@@ -80,6 +99,10 @@ export function RecoveryPilotPage(): React.JSX.Element {
     reconciliationService.pilotWards(user),
   )
   const candidates = useMemo(() => wardsQuery.data ?? [], [wardsQuery.data])
+  const rankedCandidates = useMemo(
+    () => candidates.filter((c) => matchesGlobalFilters(c, filters)),
+    [candidates, filters],
+  )
 
   // Default to the ward carrying the largest exposure - the one a pilot would
   // actually be scoped on, rather than whichever happens to sort first.
@@ -165,8 +188,8 @@ export function RecoveryPilotPage(): React.JSX.Element {
   return (
     <PageBody>
       <PageHeader
-        eyebrow={t('Governance & Finance')}
-        breadcrumbs={[{ label: t('Governance & Finance') }, { label: t('Recovery Pilot & Statutory Return') }]}
+        eyebrow={t('Revenue & Municipal Finance')}
+        breadcrumbs={[{ label: t('Revenue & Municipal Finance') }, { label: t('Recovery Pilot & Returns') }]}
         freshness={FRESHNESS}
         actions={
           <>
@@ -179,18 +202,21 @@ export function RecoveryPilotPage(): React.JSX.Element {
           </>
         }
         controls={
-          candidates.length > 0 ? (
-            <Select
-              aria-label={t('Pilot ward')}
-              value={wardId}
-              onChange={(e) => setWardId(e.target.value)}
-              options={candidates.map((c) => ({
-                value: c.wardId,
-                label: t('{0} - {1} candidates', c.wardLabel, formatNumber(c.raised)),
-              }))}
-              className="w-auto"
-            />
-          ) : undefined
+          <>
+            {candidates.length > 0 ? (
+              <Select
+                aria-label={t('Pilot ward')}
+                value={wardId}
+                onChange={(e) => setWardId(e.target.value)}
+                options={candidates.map((c) => ({
+                  value: c.wardId,
+                  label: t('{0} - {1} candidates', c.wardLabel, formatNumber(c.raised)),
+                }))}
+                className="w-auto"
+              />
+            ) : null}
+            <FilterBar show={['ward', 'search']} compact />
+          </>
         }
       />
 
@@ -255,7 +281,7 @@ export function RecoveryPilotPage(): React.JSX.Element {
             {t('Every ward carrying a review candidate, ranked by indicative annual value. Row click scopes the scorecard above.')}
           </p>
           <DataTable
-            rows={candidates}
+            rows={rankedCandidates}
             columns={wardColumns}
             rowKey={(r) => r.wardId}
             pageSize={10}

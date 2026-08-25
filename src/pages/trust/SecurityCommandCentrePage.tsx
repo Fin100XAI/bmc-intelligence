@@ -21,13 +21,14 @@ import { DemonstrationNotice, EmptyState, ErrorState, LoadingState } from '@/com
 import { ConfirmDialog, Tabs } from '@/components/ui/overlays'
 import { ChartFrame } from '@/components/charts/ChartFrame'
 import { GovPanel } from '@/components/gov/GovPanel'
+import { FilterBar } from '@/components/filters/FilterBar'
 import { CATEGORICAL_SERIES, DonutChart, RankedBarChart } from '@/components/charts/charts'
 import { useServiceQuery, useServiceAction } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { securityService } from '@/services'
 import { allowed, getRole } from '@/security'
 import { useCurrentUser } from '@/stores/auth.store'
-import { useDrawerStore } from '@/stores/ui.store'
+import { useDrawerStore, useFilterStore, type FilterState } from '@/stores/ui.store'
 import { usePageMasthead } from '@/stores/masthead.store'
 import { userDisplayName } from '@/auth/demo-users'
 import { formatDate, formatDateTime, formatPercent, formatRelative } from '@/utils/format'
@@ -53,10 +54,33 @@ const STATUS_TONE: Record<SecurityEvent['status'], 'critical' | 'warn' | 'info' 
   closed: 'positive',
   'false-positive': 'muted',
 }
+const USER_STATUS_OPTIONS: User['status'][] = ['active', 'suspended', 'review-required']
+
+function matchesSecurityEventGlobalFilters(e: SecurityEvent, filters: FilterState): boolean {
+  if (filters.severities.length > 0 && !filters.severities.includes(e.severity)) return false
+  if (filters.statuses.length > 0 && !filters.statuses.includes(e.status)) return false
+  if (filters.search.trim()) {
+    const q = filters.search.trim().toLowerCase()
+    if (!e.subjectUserName.toLowerCase().includes(q) && !e.description.toLowerCase().includes(q) && !e.reference.toLowerCase().includes(q)) return false
+  }
+  return true
+}
+
+function matchesPrincipalGlobalFilters(u: User, filters: FilterState): boolean {
+  if (filters.wardIds.length > 0 && (!u.wardId || !filters.wardIds.includes(u.wardId))) return false
+  if (filters.departmentIds.length > 0 && !filters.departmentIds.includes(u.departmentId)) return false
+  if (filters.statuses.length > 0 && !filters.statuses.includes(u.status)) return false
+  if (filters.search.trim()) {
+    const q = filters.search.trim().toLowerCase()
+    if (!u.name.toLowerCase().includes(q) && !u.designation.toLowerCase().includes(q)) return false
+  }
+  return true
+}
 
 export function SecurityCommandCentrePage(): React.JSX.Element {
   const currentUser = useCurrentUser()
   const openDrawer = useDrawerStore((s) => s.open)
+  const globalFilters = useFilterStore((s) => s.filters)
   const [tab, setTab] = useState<'events' | 'identity'>('events')
 
   // The shell's masthead carries the screen's name; the page states the wording.
@@ -82,9 +106,12 @@ export function SecurityCommandCentrePage(): React.JSX.Element {
   const filteredEvents = useMemo(
     () =>
       events.filter(
-        (e) => (!severityFilter || e.severity === severityFilter) && (!statusFilter || e.status === statusFilter),
+        (e) =>
+          (!severityFilter || e.severity === severityFilter) &&
+          (!statusFilter || e.status === statusFilter) &&
+          matchesSecurityEventGlobalFilters(e, globalFilters),
       ),
-    [events, severityFilter, statusFilter],
+    [events, severityFilter, statusFilter, globalFilters],
   )
 
   const canEditEvents = allowed(currentUser, 'security', 'edit', { domain: 'security' })
@@ -193,6 +220,16 @@ export function SecurityCommandCentrePage(): React.JSX.Element {
       <PageHeader
         eyebrow={t('Trust Centre - Flagship')}
         breadcrumbs={[{ label: t('Trust Centre'), to: '/trust' }, { label: t('Security Command Centre') }]}
+        controls={
+          <FilterBar
+            show={tab === 'events' ? ['severity', 'status', 'search'] : ['ward', 'department', 'status', 'search']}
+            statusOptions={
+              tab === 'events'
+                ? STATUS_OPTIONS.map((s) => ({ value: s, label: s.replace(/-/g, ' ') }))
+                : USER_STATUS_OPTIONS.map((s) => ({ value: s, label: s.replace(/-/g, ' ') }))
+            }
+          />
+        }
       />
 
       {/* ---------------------------------------------------------------- Posture */}
@@ -376,7 +413,7 @@ export function SecurityCommandCentrePage(): React.JSX.Element {
             ) : (
               <div>
                 <DataTable
-                  rows={usersQuery.data ?? []}
+                  rows={(usersQuery.data ?? []).filter((u) => matchesPrincipalGlobalFilters(u, globalFilters))}
                   rowKey={(u: User) => u.id}
                   searchable
                   searchPlaceholder="Search principals"

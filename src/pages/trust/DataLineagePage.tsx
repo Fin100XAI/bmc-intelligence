@@ -16,10 +16,12 @@ import { DataTable, type Column } from '@/components/ui/DataTable'
 import { Drawer } from '@/components/ui/overlays'
 import { DemonstrationNotice, EmptyState, ErrorState, LoadingState } from '@/components/ui/states'
 import { GovPanel } from '@/components/gov/GovPanel'
+import { FilterBar } from '@/components/filters/FilterBar'
 import { useServiceQuery } from '@/hooks'
 import { governanceService } from '@/services'
+import { useFilterStore } from '@/stores/ui.store'
 import { usePageMasthead } from '@/stores/masthead.store'
-import { DOMAIN_LABEL, type IntelligenceDomain } from '@/types/common'
+import { DOMAIN_LABEL } from '@/types/common'
 import { LINEAGE_STAGE_LABEL, type LineageGraph, type LineageStage } from '@/types/governance'
 import { formatDate, formatRelative } from '@/utils/format'
 import { DEMO_NOW } from '@/utils/deterministic'
@@ -95,23 +97,32 @@ export function DataLineagePage(): React.JSX.Element {
   usePageMasthead(t('Data Lineage'))
 
   const lineageQuery = useServiceQuery(['trust-data-lineage', 'all-graphs'], (u) => governanceService.lineageGraphs(u))
+  const globalFilters = useFilterStore((s) => s.filters)
 
   const [view, setView] = useState<'graph' | 'catalogue'>('graph')
   const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [domainFilter, setDomainFilter] = useState<IntelligenceDomain | ''>('')
   const [currencyFilter, setCurrencyFilter] = useState<'' | 'current' | 'ageing' | 'stale'>('')
   const [openStage, setOpenStage] = useState<LineageStage | null>(null)
 
-  const graphs = useMemo(() => lineageQuery.data ?? [], [lineageQuery.data])
+  // Global domain and search filters are applied as early as possible, so the
+  // rollup, the banner and both views below all honour them - not only the
+  // catalogue table's own local domain/currency selects.
+  const graphs = useMemo(() => {
+    const q = globalFilters.search.trim().toLowerCase()
+    return (lineageQuery.data ?? []).filter((g) => {
+      if (globalFilters.domains.length > 0 && !globalFilters.domains.includes(g.domain)) return false
+      if (q && !g.metricLabel.toLowerCase().includes(q) && !g.id.toLowerCase().includes(q)) return false
+      return true
+    })
+  }, [lineageQuery.data, globalFilters])
 
   const filtered = useMemo(
     () =>
       graphs.filter((g) => {
-        if (domainFilter && g.domain !== domainFilter) return false
         if (currencyFilter && currencyOf(g) !== currencyFilter) return false
         return true
       }),
-    [graphs, domainFilter, currencyFilter],
+    [graphs, currencyFilter],
   )
 
   const rollup = useMemo(() => {
@@ -233,6 +244,12 @@ export function DataLineagePage(): React.JSX.Element {
         breadcrumbs={[{ label: t('Trust Centre'), to: '/trust' }, { label: t('Data Lineage') }]}
         controls={
           <div className="flex w-full flex-wrap items-center gap-2">
+            <FilterBar
+              show={['domain', 'search']}
+              domainOptions={Array.from(new Set((lineageQuery.data ?? []).map((g) => g.domain))).sort((a, b) =>
+                DOMAIN_LABEL[a].localeCompare(DOMAIN_LABEL[b]),
+              )}
+            />
             <SegmentedControl<'graph' | 'catalogue'>
               value={view}
               onChange={setView}
@@ -240,17 +257,6 @@ export function DataLineagePage(): React.JSX.Element {
               options={[
                 { value: 'graph', label: t('Pipeline'), icon: <GitBranch className="h-3.5 w-3.5" /> },
                 { value: 'catalogue', label: t('Catalogue'), icon: <Table2 className="h-3.5 w-3.5" /> },
-              ]}
-            />
-            <Select
-              aria-label={t('Filter by domain')}
-              value={domainFilter}
-              onChange={(e) => setDomainFilter(e.target.value as IntelligenceDomain | '')}
-              options={[
-                { value: '', label: t('All domains') },
-                ...Array.from(new Set(graphs.map((g) => g.domain)))
-                  .sort((a, b) => DOMAIN_LABEL[a].localeCompare(DOMAIN_LABEL[b]))
-                  .map((d) => ({ value: d, label: DOMAIN_LABEL[d] })),
               ]}
             />
             <Select
@@ -413,7 +419,7 @@ export function DataLineagePage(): React.JSX.Element {
 
             {weakestStage ? (
               <p className="mt-3 border-t border-ink-100 pt-3 text-[0.6875rem] leading-relaxed text-ink-500">
-                {t('The weakest link governs the chain. This pipeline&apos;s lowest-scoring stage is')}{' '}
+                {t("The weakest link governs the chain. This pipeline's lowest-scoring stage is")}{' '}
                 <span className="font-medium text-ink-700">{weakestStage.name}</span> at{' '}
                 <span className="numeric font-medium text-ink-700">{weakestStage.quality}/100</span>{' '}{t('— the mean of')}{' '}
                 {averageQuality(selected)} across {selected.stages.length}{' '}{t('stages is the more flattering number, and the one an operator should trust less.')}

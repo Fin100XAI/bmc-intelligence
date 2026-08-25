@@ -19,9 +19,11 @@ import {
 import { MetricCard } from '@/components/cards'
 import { GovPanel } from '@/components/gov/GovPanel'
 import { ContributionBars, MiniBar, RankedBarChart } from '@/components/charts'
+import { FilterBar } from '@/components/filters/FilterBar'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { usePageMasthead } from '@/stores/masthead.store'
+import { useFilterStore, type FilterState } from '@/stores/ui.store'
 import { wardPerformanceService } from '@/services/ward-performance.service'
 import {
   QUARTILE_SHORT_LABEL,
@@ -34,6 +36,20 @@ import { DEMO_NOW } from '@/utils/deterministic'
 import { formatNumber } from '@/utils/format'
 import { t } from '@/i18n'
 import { registerLayer } from '@/data/runtime'
+
+/** The difficulty cohort is already covered by this page's own segmented
+ *  control; the global bar adds ward, the verdict against the line (as
+ *  "status") and free text. Narrowing here changes which wards are listed,
+ *  exactly like the cohort control - never the fitted expectation line. */
+function matchesGlobalFilters(r: WardLikeForLikeRow, filters: FilterState): boolean {
+  if (filters.wardIds.length > 0 && !filters.wardIds.includes(r.wardId)) return false
+  if (filters.statuses.length > 0 && !filters.statuses.includes(r.verdict)) return false
+  if (filters.search.trim()) {
+    const q = filters.search.trim().toLowerCase()
+    if (!r.wardLabel.toLowerCase().includes(q) && !r.wardCode.toLowerCase().includes(q) && !r.region.toLowerCase().includes(q)) return false
+  }
+  return true
+}
 
 /**
  * src/pages/city/WardPerformancePage.tsx
@@ -106,6 +122,13 @@ export function WardPerformancePage(): React.JSX.Element {
   usePageMasthead(t('Like-for-Like Ward Performance'))
 
   const [cohort, setCohort] = useState<CohortFilter>('all')
+  const filters = useFilterStore((s) => s.filters)
+  // Computed on every render (not module scope) so a language switch, which
+  // reassigns VERDICT_LABEL in place, is reflected immediately here too.
+  const verdictStatusOptions = (Object.keys(VERDICT_LABEL) as ExpectationVerdict[]).map((v) => ({
+    value: v,
+    label: VERDICT_LABEL[v],
+  }))
 
   const assessmentQuery = useServiceQuery(queryKeys.wardPerformance('assessment'), (u) =>
     wardPerformanceService.assessment(u),
@@ -118,8 +141,11 @@ export function WardPerformancePage(): React.JSX.Element {
   const rows = useMemo(() => assessment?.rows ?? [], [assessment])
 
   const filtered = useMemo(
-    () => (cohort === 'all' ? rows : rows.filter((r) => String(r.quartile) === cohort)),
-    [rows, cohort],
+    () =>
+      rows
+        .filter((r) => cohort === 'all' || String(r.quartile) === cohort)
+        .filter((r) => matchesGlobalFilters(r, filters)),
+    [rows, cohort, filters],
   )
 
   /**
@@ -151,6 +177,7 @@ export function WardPerformancePage(): React.JSX.Element {
         sourceState: 'operational',
         stale: false,
       } satisfies DataFreshness}
+      controls={<FilterBar show={['ward', 'status', 'search']} statusOptions={verdictStatusOptions} searchPlaceholder="Search ward, code or region" />}
     />
   )
 
@@ -473,7 +500,7 @@ export function WardPerformancePage(): React.JSX.Element {
                     }))}
                   />
                   <p className="mt-3 text-[0.6875rem] leading-relaxed text-ink-500">
-                    {t('Bars show the corporation-mean score on each condition and the points it puts on the board once weighted. Each condition is placed on a fixed 0-100 band rather than on the observed spread, so a ward&apos;s difficulty does not move when a different ward is added or removed.')}
+                    {t("Bars show the corporation-mean score on each condition and the points it puts on the board once weighted. Each condition is placed on a fixed 0-100 band rather than on the observed spread, so a ward's difficulty does not move when a different ward is added or removed.")}
                   </p>
                 </div>
               </GovPanel>
@@ -512,7 +539,7 @@ export function WardPerformancePage(): React.JSX.Element {
               <div className="min-w-0">
                 <p className="text-[0.8125rem] font-semibold text-warn-700">{t('The difficulty model is illustrative')}</p>
                 <p className="mt-1 text-xs leading-relaxed text-ink-600">
-                  {t('The four weights above are a reasonable prior, not a finding. They were chosen so that a reader can reconstruct every figure on this page by hand, which matters more at this stage than being precisely right. A real deployment would fit both the difficulty weighting and the expectation line on the corporation&apos;s own historic record - several years of ward returns - and would revise them each year as the ground itself changes. Until that is done, treat the residuals as a way of choosing where to send the next visit, and not as a settled judgement on any ward office.{0}', assessment.outOfScopeCount > 0
+                  {t("The four weights above are a reasonable prior, not a finding. They were chosen so that a reader can reconstruct every figure on this page by hand, which matters more at this stage than being precisely right. A real deployment would fit both the difficulty weighting and the expectation line on the corporation's own historic record - several years of ward returns - and would revise them each year as the ground itself changes. Until that is done, treat the residuals as a way of choosing where to send the next visit, and not as a settled judgement on any ward office.{0}", assessment.outOfScopeCount > 0
                     ? ` The line was fitted on ${fit.fittedOn} wards, of which ${assessment.outOfScopeCount} fall outside your authorised scope and are not listed here.`
                     : '')}
                 </p>

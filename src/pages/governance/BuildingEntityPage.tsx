@@ -16,12 +16,33 @@ import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { buildingService, enforcementService, licenceService, revenueService } from '@/services'
 import { usePageMasthead } from '@/stores/masthead.store'
+import { useFilterStore } from '@/stores/ui.store'
+import type { FilterState } from '@/stores/ui.store'
 import { wardName } from '@/data/reference'
 import { LICENCE_CATEGORY_LABEL } from '@/types/civic-services'
 import { ENCROACHMENT_CATEGORY_LABEL, ENFORCEMENT_STATUS_LABEL } from '@/types/enforcement'
 import type { BuildingRecord } from '@/types/city-domains'
 import { formatCrore, formatDate, formatPercent } from '@/utils/format'
+import { FilterBar } from '@/components/filters/FilterBar'
 import { t } from '@/i18n'
+
+const PERMISSION_STATUS_OPTIONS: Array<BuildingRecord['permissionStatus']> = [
+  'approved',
+  'under-scrutiny',
+  'notice-issued',
+  'unauthorised-alleged',
+]
+
+function matchesGlobalFilters(building: BuildingRecord, filters: FilterState): boolean {
+  if (filters.wardIds.length > 0 && !filters.wardIds.includes(building.wardId)) return false
+  if (filters.severities.length > 0 && !filters.severities.includes(building.severity)) return false
+  if (filters.statuses.length > 0 && !filters.statuses.includes(building.permissionStatus)) return false
+  if (filters.search.trim()) {
+    const q = filters.search.trim().toLowerCase()
+    if (!building.name.toLowerCase().includes(q) && !building.reference.toLowerCase().includes(q)) return false
+  }
+  return true
+}
 
 /**
  * src/pages/governance/BuildingEntityPage.tsx
@@ -46,8 +67,12 @@ export function BuildingEntityPage(): React.JSX.Element {
 
   usePageMasthead(t('Building Entity'))
 
+  const filters = useFilterStore((s) => s.filters)
   const buildingsQuery = useServiceQuery(queryKeys.buildings('all'), (u) => buildingService.buildings(u))
-  const buildings = useMemo(() => buildingsQuery.data ?? [], [buildingsQuery.data])
+  const buildings = useMemo(
+    () => (buildingsQuery.data ?? []).filter((b) => matchesGlobalFilters(b, filters)),
+    [buildingsQuery.data, filters],
+  )
   const selected = useMemo(() => buildings.find((b) => b.id === selectedId) ?? buildings[0] ?? null, [buildings, selectedId])
 
   const propertyQuery = useServiceQuery(
@@ -69,7 +94,7 @@ export function BuildingEntityPage(): React.JSX.Element {
   if (buildingsQuery.isLoading) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('Planning & Development')} breadcrumbs={[{ label: t('Planning & Development') }, { label: t('Building Entity') }]} />
+        <PageHeader eyebrow={t('Planning & Development Control')} breadcrumbs={[{ label: t('Planning & Development Control') }, { label: t('Building Entity') }]} />
         <LoadingState variant="table" rows={10} />
       </PageBody>
     )
@@ -77,7 +102,7 @@ export function BuildingEntityPage(): React.JSX.Element {
   if (buildingsQuery.error) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('Planning & Development')} breadcrumbs={[{ label: t('Planning & Development') }, { label: t('Building Entity') }]} />
+        <PageHeader eyebrow={t('Planning & Development Control')} breadcrumbs={[{ label: t('Planning & Development Control') }, { label: t('Building Entity') }]} />
         <ErrorState detail={buildingsQuery.error.message} onRetry={() => void buildingsQuery.refetch()} />
       </PageBody>
     )
@@ -121,12 +146,25 @@ export function BuildingEntityPage(): React.JSX.Element {
 
   const enforcement = (enforcementQuery.data ?? []).filter((c) => c.category === 'unauthorised-construction')
 
+  const permissionStatusLabel: Record<BuildingRecord['permissionStatus'], string> = {
+    approved: t('Approved'),
+    'under-scrutiny': t('Under Scrutiny'),
+    'notice-issued': t('Notice Issued'),
+    'unauthorised-alleged': t('Unauthorised (Alleged)'),
+  }
+
   return (
     <PageBody>
       <PageHeader
-        eyebrow={t('Planning & Development')}
-        breadcrumbs={[{ label: t('Planning & Development') }, { label: t('Building Entity') }]}
+        eyebrow={t('Planning & Development Control')}
+        breadcrumbs={[{ label: t('Planning & Development Control') }, { label: t('Building Entity') }]}
         hideProvenance
+        controls={
+          <FilterBar
+            show={['ward', 'severity', 'status', 'search']}
+            statusOptions={PERMISSION_STATUS_OPTIONS.map((v) => ({ value: v, label: permissionStatusLabel[v] }))}
+          />
+        }
       />
       <DemonstrationNotice />
 

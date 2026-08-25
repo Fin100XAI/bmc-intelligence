@@ -801,7 +801,7 @@ export function AIRecommendationCard({
                     type="button"
                     onClick={() => onOpenEvidenceItem(evidenceId)}
                     title={title}
-                    className="inline-flex max-w-[11rem] items-center gap-1 rounded-[2px] border border-ink-200 bg-surface px-1.5 py-1 text-[0.6875rem] text-ink-600 transition-colors hover:border-govt-300 hover:bg-govt-50/50"
+                    className="inline-flex max-w-[11rem] items-center gap-1 rounded-md border border-ink-200 bg-surface px-1.5 py-1 text-[0.6875rem] text-ink-600 transition-colors hover:border-govt-300 hover:bg-govt-50/50"
                   >
                     <FileSearch className="h-3 w-3 shrink-0 text-ink-400" />
                     <span className="truncate">{title}</span>

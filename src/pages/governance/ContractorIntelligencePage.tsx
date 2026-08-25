@@ -16,13 +16,17 @@ import { DataTable, type Column } from '@/components/ui/DataTable'
 import { DemonstrationNotice, EmptyState, ErrorState, LoadingState, PartialDataWarning } from '@/components/ui/states'
 import { MetricCard } from '@/components/cards/MetricCard'
 import { ContributionBars, MiniBar } from '@/components/charts'
+import { FilterBar } from '@/components/filters/FilterBar'
 import { useServiceQuery } from '@/hooks'
 import { usePageMasthead } from '@/stores/masthead.store'
+import { useFilterStore } from '@/stores/ui.store'
+import type { FilterState } from '@/stores/ui.store'
 import { queryKeys } from '@/app/queryClient'
 import { contractorService } from '@/services'
 import type { ContractorProfile } from '@/domains/contractors/performance'
 import { CONTRACTOR_PERFORMANCE_WEIGHTS } from '@/domains/contractors/performance'
 import { departmentName, wardName } from '@/data/reference'
+import { OPERATIONAL_STATE_LABEL } from '@/types/common'
 import { formatCrore, formatPercent } from '@/utils/format'
 import { isoFromAnchor } from '@/utils/deterministic'
 import { t } from '@/i18n'
@@ -49,9 +53,23 @@ const FRESHNESS = {
   stale: false,
 }
 
+function matchesGlobalFilters(p: ContractorProfile, filters: FilterState): boolean {
+  if (filters.wardIds.length > 0 && !p.wards.some((w) => filters.wardIds.includes(w))) return false
+  if (filters.departmentIds.length > 0 && !p.departments.some((d) => filters.departmentIds.includes(d))) return false
+  if (filters.severities.length > 0 && !p.riskIndicators.some((r) => filters.severities.includes(r.severity))) return false
+  if (filters.statuses.length > 0 && !filters.statuses.includes(p.state)) return false
+  if (filters.search.trim()) {
+    const q = filters.search.trim().toLowerCase()
+    if (!p.contractor.name.toLowerCase().includes(q) && !p.contractor.registrationRef.toLowerCase().includes(q)) return false
+  }
+  return true
+}
+
 export function ContractorIntelligencePage(): React.JSX.Element {
   // The shell's masthead carries the screen's name; the page states the wording.
   usePageMasthead(t('Contractor Intelligence'))
+
+  const filters = useFilterStore((s) => s.filters)
 
   const portfolioQuery = useServiceQuery(queryKeys.contractors('portfolio'), (u) => contractorService.portfolio(u))
   const profilesQuery = useServiceQuery(queryKeys.contractors('profiles'), (u) => contractorService.profiles(u))
@@ -68,14 +86,20 @@ export function ContractorIntelligencePage(): React.JSX.Element {
     [profiles],
   )
 
+  const stateOptions = useMemo(
+    () => Array.from(new Set(profiles.map((p) => p.state))).map((s) => ({ value: s, label: OPERATIONAL_STATE_LABEL[s] })),
+    [profiles],
+  )
+
   const filtered = useMemo(
     () =>
       profiles.filter((p) => {
+        if (!matchesGlobalFilters(p, filters)) return false
         if (riskOnly === 'risk' && p.riskIndicators.length === 0) return false
         if (categoryFilter && !p.categories.includes(categoryFilter as never)) return false
         return true
       }),
-    [profiles, riskOnly, categoryFilter],
+    [profiles, filters, riskOnly, categoryFilter],
   )
 
   const selected = useMemo(
@@ -168,11 +192,12 @@ export function ContractorIntelligencePage(): React.JSX.Element {
   return (
     <PageBody>
       <PageHeader
-        eyebrow={t('Governance & Finance')}
-        breadcrumbs={[{ label: t('Governance & Finance') }, { label: t('Contractor Intelligence') }]}
+        eyebrow={t('Projects, Procurement & Assets')}
+        breadcrumbs={[{ label: t('Projects, Procurement & Assets') }, { label: t('Contractor Intelligence') }]}
         freshness={FRESHNESS}
         controls={
           <>
+            <FilterBar show={['ward', 'department', 'severity', 'status', 'search']} statusOptions={stateOptions} />
             <div className="w-full max-w-[13rem]">
               <Label htmlFor="ctr-category">{t('Category')}</Label>
               <Select
@@ -286,7 +311,7 @@ export function ContractorIntelligencePage(): React.JSX.Element {
                 pageSize={12}
                 stickyHeader
                 maxHeight="32rem"
-                searchPlaceholder="Search supplier or registration reference"
+                searchable={false}
                 onRowClick={(p) => setSelectedId(p.contractor.id)}
                 activeRowKey={selected?.contractor.id}
               />

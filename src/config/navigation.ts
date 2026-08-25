@@ -139,6 +139,7 @@ export const ROUTES = {
   cityIndex: '/command/city-index',
   situationRoom: '/command/situation-room',
   cityCommandMap: '/command/city-map',
+  resolutionIntelligence: '/command/resolution-intelligence',
   intelligenceFeed: '/command/intelligence',
   decisions: '/command/decisions',
   myTasks: '/command/my-tasks',
@@ -414,6 +415,27 @@ function build$NAV_SECTIONS(): NavSection[] {
         icon: FileStack,
         requires: { resource: 'report', action: 'view' },
         description: t('Institutional reports in a print-ready format.'),
+      },
+    ],
+  },
+  {
+    // A dedicated top-level entry rather than a line inside Command Centre's
+    // dropdown - the wedge this platform is being pitched on deserves its own
+    // place in the bar, not a buried mention. It also appears a second time
+    // inside Citizen Services & Social Development, beside Citizen Service
+    // Intelligence, since that is where the complaints it reasons over are
+    // read day to day.
+    id: 'resolution',
+    label: t('Resolution Intelligence'),
+    items: [
+      {
+        id: 'resolution-intelligence',
+        label: t('Resolution Intelligence'),
+        to: ROUTES.resolutionIntelligence,
+        icon: Workflow,
+        requires: { resource: 'intelligence', action: 'view' },
+        domain: 'citizen-services',
+        description: t('Every complaint as a resolution case - explainable ownership, multi-department orchestration and transfer-loop detection.'),
       },
     ],
   },
@@ -745,6 +767,15 @@ function build$NAV_SECTIONS(): NavSection[] {
         requires: { resource: 'intelligence', action: 'view' },
         domain: 'citizen-services',
         description: t('Recurring complaints, root-cause association and SLA position.'),
+      },
+      {
+        id: 'resolution-intelligence-citizen',
+        label: t('Resolution Intelligence'),
+        to: ROUTES.resolutionIntelligence,
+        icon: GitBranch,
+        requires: { resource: 'intelligence', action: 'view' },
+        domain: 'citizen-services',
+        description: t('Where a complaint\'s ownership is contested, decomposed across departments, or bouncing between them instead of resolving.'),
       },
       {
         id: 'civic-participation',

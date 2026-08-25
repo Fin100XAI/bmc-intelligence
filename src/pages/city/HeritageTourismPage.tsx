@@ -16,10 +16,12 @@ import {
 } from '@/components/ui'
 import { MetricCard } from '@/components/cards'
 import { GovPanel } from '@/components/gov/GovPanel'
+import { FilterBar } from '@/components/filters/FilterBar'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { heritageService } from '@/services'
 import { usePageMasthead } from '@/stores/masthead.store'
+import { useFilterStore, type FilterState } from '@/stores/ui.store'
 import { activeCorporation } from '@/config/municipality.config'
 import { wardName } from '@/data/reference'
 import {
@@ -33,6 +35,17 @@ import {
 } from '@/types/heritage'
 import { formatCompact, formatDate, formatNumber } from '@/utils/format'
 import { t } from '@/i18n'
+
+/** Grade and conservation status are already covered by this page's own
+ *  selects; the global bar adds ward and free text. */
+function matchesGlobalFilters(s: HeritageSite, filters: FilterState): boolean {
+  if (filters.wardIds.length > 0 && !filters.wardIds.includes(s.wardId)) return false
+  if (filters.search.trim()) {
+    const q = filters.search.trim().toLowerCase()
+    if (!s.name.toLowerCase().includes(q) && !wardName(s.wardId).toLowerCase().includes(q)) return false
+  }
+  return true
+}
 
 /**
  * src/pages/city/HeritageTourismPage.tsx
@@ -56,6 +69,7 @@ const STATUS_TONE: Record<ConservationStatus, BadgeTone> = {
 export function HeritageTourismPage(): React.JSX.Element {
   const [gradeFilter, setGradeFilter] = useState<HeritageGrade | ''>('')
   const [statusFilter, setStatusFilter] = useState<ConservationStatus | ''>('')
+  const filters = useFilterStore((s) => s.filters)
 
   usePageMasthead(t('Heritage & Tourism'))
 
@@ -68,9 +82,10 @@ export function HeritageTourismPage(): React.JSX.Element {
       sites.filter((s) => {
         if (gradeFilter && s.heritageGrade !== gradeFilter) return false
         if (statusFilter && s.conservationStatus !== statusFilter) return false
+        if (!matchesGlobalFilters(s, filters)) return false
         return true
       }),
-    [sites, gradeFilter, statusFilter],
+    [sites, gradeFilter, statusFilter, filters],
   )
 
   const loading = positionQuery.isLoading || sitesQuery.isLoading
@@ -152,6 +167,7 @@ export function HeritageTourismPage(): React.JSX.Element {
         eyebrow={t('Environment & Public Realm')}
         breadcrumbs={[{ label: t('Environment & Public Realm') }, { label: t('Heritage & Tourism') }]}
         hideProvenance
+        controls={<FilterBar show={['ward', 'search']} searchPlaceholder="Search heritage sites" />}
       />
       <DemonstrationNotice />
 

@@ -16,12 +16,16 @@ import {
 } from '@/components/ui'
 import { GovPanel } from '@/components/gov/GovPanel'
 import { MetricCard } from '@/components/cards'
+import { FilterBar } from '@/components/filters/FilterBar'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { enforcementService } from '@/services'
 import { usePageMasthead } from '@/stores/masthead.store'
+import { useFilterStore } from '@/stores/ui.store'
+import type { FilterState } from '@/stores/ui.store'
 import { activeCorporation } from '@/config/municipality.config'
 import { wardName } from '@/data/reference'
+import type { DateRangeKey } from '@/types/common'
 import {
   ENCROACHMENT_CATEGORY_LABEL,
   ENFORCEMENT_STATUS_LABEL,
@@ -31,6 +35,7 @@ import {
   type EnforcementCase,
   type EnforcementStatus,
 } from '@/types/enforcement'
+import { DEMO_NOW } from '@/utils/deterministic'
 import { formatDate, formatRelative } from '@/utils/format'
 import { t } from '@/i18n'
 
@@ -63,9 +68,35 @@ const STATUS_TONE: Record<EnforcementStatus, BadgeTone> = {
   withdrawn: 'neutral',
 }
 
+const DATE_RANGE_HOURS: Record<DateRangeKey, number> = {
+  '24h': 24,
+  '7d': 24 * 7,
+  '30d': 24 * 30,
+  '90d': 24 * 90,
+  fy: 24 * 365,
+}
+
+function withinDateRange(iso: string, range: DateRangeKey): boolean {
+  const ageMs = DEMO_NOW.getTime() - new Date(iso).getTime()
+  return ageMs <= DATE_RANGE_HOURS[range] * 3_600_000
+}
+
+function matchesGlobalFilters(c: EnforcementCase, filters: FilterState): boolean {
+  if (filters.wardIds.length > 0 && !filters.wardIds.includes(c.wardId)) return false
+  if (filters.departmentIds.length > 0 && !filters.departmentIds.includes(c.departmentId)) return false
+  if (filters.statuses.length > 0 && !filters.statuses.includes(c.status)) return false
+  if (!withinDateRange(c.noticeIssuedAt, filters.dateRange)) return false
+  if (filters.search.trim()) {
+    const q = filters.search.trim().toLowerCase()
+    if (!c.reference.toLowerCase().includes(q) && !c.locationDescription.toLowerCase().includes(q)) return false
+  }
+  return true
+}
+
 export function EnforcementPage(): React.JSX.Element {
   const [categoryFilter, setCategoryFilter] = useState<EncroachmentCategory | ''>('')
   const [statusFilter, setStatusFilter] = useState<EnforcementStatus | ''>('')
+  const filters = useFilterStore((s) => s.filters)
 
   usePageMasthead(t('Encroachment & Enforcement'))
 
@@ -79,11 +110,12 @@ export function EnforcementPage(): React.JSX.Element {
   const filtered = useMemo(
     () =>
       cases.filter((c) => {
+        if (!matchesGlobalFilters(c, filters)) return false
         if (categoryFilter && c.category !== categoryFilter) return false
         if (statusFilter && c.status !== statusFilter) return false
         return true
       }),
-    [cases, categoryFilter, statusFilter],
+    [cases, filters, categoryFilter, statusFilter],
   )
 
   const loading = positionQuery.isLoading || casesQuery.isLoading || drivesQuery.isLoading
@@ -92,7 +124,7 @@ export function EnforcementPage(): React.JSX.Element {
   if (loading) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('Planning & Development')} breadcrumbs={[{ label: t('Planning & Development') }, { label: t('Encroachment & Enforcement') }]} />
+        <PageHeader eyebrow={t('Planning & Development Control')} breadcrumbs={[{ label: t('Planning & Development Control') }, { label: t('Encroachment & Enforcement') }]} />
         <LoadingState variant="metrics" />
         <LoadingState variant="table" rows={8} />
       </PageBody>
@@ -101,7 +133,7 @@ export function EnforcementPage(): React.JSX.Element {
   if (anyError) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('Planning & Development')} breadcrumbs={[{ label: t('Planning & Development') }, { label: t('Encroachment & Enforcement') }]} />
+        <PageHeader eyebrow={t('Planning & Development Control')} breadcrumbs={[{ label: t('Planning & Development Control') }, { label: t('Encroachment & Enforcement') }]} />
         <ErrorState
           detail={anyError.message}
           onRetry={() => {
@@ -182,9 +214,15 @@ export function EnforcementPage(): React.JSX.Element {
   return (
     <PageBody>
       <PageHeader
-        eyebrow={t('Planning & Development')}
-        breadcrumbs={[{ label: t('Planning & Development') }, { label: t('Encroachment & Enforcement') }]}
+        eyebrow={t('Planning & Development Control')}
+        breadcrumbs={[{ label: t('Planning & Development Control') }, { label: t('Encroachment & Enforcement') }]}
         hideProvenance
+        controls={
+          <FilterBar
+            show={['date', 'ward', 'department', 'status', 'search']}
+            statusOptions={STATUSES.map((s) => ({ value: s, label: ENFORCEMENT_STATUS_LABEL[s] }))}
+          />
+        }
       />
 
       <DemonstrationNotice />
@@ -269,7 +307,7 @@ export function EnforcementPage(): React.JSX.Element {
             {filtered.length === 0 ? (
               <EmptyState title={t('No matters match the current filters')} detail="Clear a filter to widen the register." />
             ) : (
-              <DataTable rows={filtered} columns={columns} rowKey={(c) => c.id} pageSize={14} />
+              <DataTable rows={filtered} columns={columns} rowKey={(c) => c.id} pageSize={14} searchable={false} />
             )}
           </GovPanel>
         </div>

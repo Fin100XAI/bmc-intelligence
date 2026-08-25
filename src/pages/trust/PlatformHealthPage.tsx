@@ -17,17 +17,37 @@ import { DemonstrationNotice, EmptyState, ErrorState, LoadingState } from '@/com
 import { ChartFrame } from '@/components/charts/ChartFrame'
 import { RankedBarChart, Sparkline, TrendChart } from '@/components/charts/charts'
 import { GovPanel } from '@/components/gov/GovPanel'
+import { FilterBar } from '@/components/filters/FilterBar'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { platformService } from '@/services'
+import { useFilterStore, type FilterState } from '@/stores/ui.store'
 import { usePageMasthead } from '@/stores/masthead.store'
-import { DOMAIN_LABEL, type SeriesPoint } from '@/types/common'
+import { DOMAIN_LABEL, OPERATIONAL_STATE_LABEL, type SeriesPoint } from '@/types/common'
 import { DEMO_NOW, det, isoFromAnchor } from '@/utils/deterministic'
 import { formatDateTime, formatNumber, formatPercent, formatRelative, formatShortDate } from '@/utils/format'
 import type { PipelineJob, PlatformService } from '@/types/governance'
 import { cn } from '@/utils/cn'
 import { t } from '@/i18n'
 import { registerLayer } from '@/data/runtime'
+
+/** Services carry a genuine operational state; jobs carry a genuine domain. */
+function matchesServiceGlobalFilters(s: PlatformService, filters: FilterState): boolean {
+  if (filters.statuses.length > 0 && !filters.statuses.includes(s.state)) return false
+  if (filters.search.trim()) {
+    const q = filters.search.trim().toLowerCase()
+    if (!s.name.toLowerCase().includes(q) && !s.note.toLowerCase().includes(q)) return false
+  }
+  return true
+}
+function matchesJobGlobalFilters(j: PipelineJob, filters: FilterState): boolean {
+  if (filters.domains.length > 0 && !filters.domains.includes(j.domain)) return false
+  if (filters.search.trim()) {
+    const q = filters.search.trim().toLowerCase()
+    if (!j.name.toLowerCase().includes(q) && !j.schedule.toLowerCase().includes(q)) return false
+  }
+  return true
+}
 
 /**
  * src/pages/trust/PlatformHealthPage.tsx
@@ -110,6 +130,7 @@ export function PlatformHealthPage(): React.JSX.Element {
   const servicesQuery = useServiceQuery(queryKeys.platform(), (u) => platformService.services(u))
   const jobsQuery = useServiceQuery(['trust-platform-health', 'jobs'], (u) => platformService.jobs(u))
   const summaryQuery = useServiceQuery(['trust-platform-health', 'summary'], (u) => platformService.summary(u))
+  const globalFilters = useFilterStore((s) => s.filters)
 
   const [categoryFilter, setCategoryFilter] = useState<PlatformService['category'] | ''>('')
   const [originFilter, setOriginFilter] = useState<'' | 'simulated' | 'direct'>('')
@@ -117,8 +138,17 @@ export function PlatformHealthPage(): React.JSX.Element {
   const [runningJobs, setRunningJobs] = useState<string[]>([])
   const [reruns, setReruns] = useState<Record<string, JobRerun>>({})
 
-  const services = useMemo(() => servicesQuery.data ?? [], [servicesQuery.data])
-  const jobs = useMemo(() => jobsQuery.data ?? [], [jobsQuery.data])
+  // The global filter bar's status applies to services, domain applies to
+  // pipeline jobs - the two registers on this page - applied as early as
+  // possible so the metrics above both tables honour it too.
+  const services = useMemo(
+    () => (servicesQuery.data ?? []).filter((s) => matchesServiceGlobalFilters(s, globalFilters)),
+    [servicesQuery.data, globalFilters],
+  )
+  const jobs = useMemo(
+    () => (jobsQuery.data ?? []).filter((j) => matchesJobGlobalFilters(j, globalFilters)),
+    [jobsQuery.data, globalFilters],
+  )
 
   const filteredServices = useMemo(
     () =>
@@ -359,6 +389,18 @@ export function PlatformHealthPage(): React.JSX.Element {
             ) : null}
           </div>
         }
+        controls={
+          <FilterBar
+            show={['domain', 'status', 'search']}
+            statusOptions={Array.from(new Set((servicesQuery.data ?? []).map((s) => s.state))).map((state) => ({
+              value: state,
+              label: OPERATIONAL_STATE_LABEL[state],
+            }))}
+            domainOptions={Array.from(new Set((jobsQuery.data ?? []).map((j) => j.domain))).sort((a, b) =>
+              DOMAIN_LABEL[a].localeCompare(DOMAIN_LABEL[b]),
+            )}
+          />
+        }
       />
 
       <MetricGrid columns={4}>
@@ -519,7 +561,7 @@ export function PlatformHealthPage(): React.JSX.Element {
         <div className="flex items-start gap-2.5">
           <Activity className="mt-0.5 h-4 w-4 shrink-0 text-govt-700" />
           <p className="text-xs leading-relaxed text-ink-700">
-            {t('Components marked &quot;Simulated component&quot; above run entirely within this application using deterministic local logic - the AI gateway, connector runtime, audit service, event processing and search index are all simulated in this environment. Components marked &quot;Runs directly&quot; are genuinely served by the deployment target (the application shell and the intelligence engine evaluating this demonstration&apos;s deterministic data). No figure on this page implies a production service-level commitment.')}
+            {t('Components marked "Simulated component" above run entirely within this application using deterministic local logic - the AI gateway, connector runtime, audit service, event processing and search index are all simulated in this environment. Components marked "Runs directly" are genuinely served by the deployment target (the application shell and the intelligence engine evaluating this demonstration\'s deterministic data). No figure on this page implies a production service-level commitment.')}
           </p>
         </div>
       </Card>

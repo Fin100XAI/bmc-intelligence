@@ -17,9 +17,11 @@ import { DemonstrationNotice, EmptyState, ErrorState, LoadingState } from '@/com
 import { ChartFrame } from '@/components/charts/ChartFrame'
 import { DonutChart } from '@/components/charts/charts'
 import { GovPanel } from '@/components/gov/GovPanel'
+import { FilterBar } from '@/components/filters/FilterBar'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { connectorService } from '@/services'
+import { useFilterStore, type FilterState } from '@/stores/ui.store'
 import { usePageMasthead } from '@/stores/masthead.store'
 import { departmentName, officerDisplayName } from '@/data/reference'
 import { formatRelative } from '@/utils/format'
@@ -28,6 +30,23 @@ import { CONNECTOR_TYPE_LABEL, type Connector } from '@/types/governance'
 import type { DataClassification, OperationalState } from '@/types/common'
 import { t } from '@/i18n'
 import { registerLayer } from '@/data/runtime'
+
+/** Every connector carries a genuine domain, owner department and health state. */
+function matchesConnectorGlobalFilters(c: Connector, filters: FilterState): boolean {
+  if (filters.domains.length > 0 && !filters.domains.includes(c.domain)) return false
+  if (filters.departmentIds.length > 0 && !filters.departmentIds.includes(c.ownerDepartmentId)) return false
+  if (filters.statuses.length > 0 && !filters.statuses.includes(c.health)) return false
+  if (filters.search.trim()) {
+    const q = filters.search.trim().toLowerCase()
+    if (
+      !c.name.toLowerCase().includes(q) &&
+      !c.targetSystem.toLowerCase().includes(q) &&
+      !c.sourceAuthority.toLowerCase().includes(q)
+    )
+      return false
+  }
+  return true
+}
 
 /**
  * src/pages/trust/IntegrationHealthPage.tsx
@@ -129,6 +148,7 @@ export function IntegrationHealthPage(): React.JSX.Element {
 
   const connectorsQuery = useServiceQuery(queryKeys.connectors(), (u) => connectorService.list(u))
   const healthQuery = useServiceQuery(['trust-integration-health', 'health'], (u) => connectorService.health(u))
+  const globalFilters = useFilterStore((s) => s.filters)
 
   const [healthFilter, setHealthFilter] = useState<ConnectorHealth | ''>('')
   const [classificationFilter, setClassificationFilter] = useState<DataClassification | ''>('')
@@ -136,7 +156,12 @@ export function IntegrationHealthPage(): React.JSX.Element {
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [detailId, setDetailId] = useState<string | null>(null)
 
-  const connectors = useMemo(() => connectorsQuery.data ?? [], [connectorsQuery.data])
+  // The global filter bar's domain/department/status/search are applied as
+  // early as possible, so the metrics, the donut and the register all agree.
+  const connectors = useMemo(
+    () => (connectorsQuery.data ?? []).filter((c) => matchesConnectorGlobalFilters(c, globalFilters)),
+    [connectorsQuery.data, globalFilters],
+  )
 
   const filtered = useMemo(
     () =>
@@ -285,6 +310,15 @@ export function IntegrationHealthPage(): React.JSX.Element {
             ) : null}
           </div>
         }
+        controls={
+          <FilterBar
+            show={['domain', 'department', 'status', 'search']}
+            statusOptions={(Object.keys(HEALTH_LABEL) as ConnectorHealth[]).map((k) => ({ value: k, label: HEALTH_LABEL[k] }))}
+            domainOptions={Array.from(new Set((connectorsQuery.data ?? []).map((c) => c.domain))).sort((a, b) =>
+              DOMAIN_LABEL[a].localeCompare(DOMAIN_LABEL[b]),
+            )}
+          />
+        }
       />
 
       <Card tone="warn">
@@ -293,7 +327,7 @@ export function IntegrationHealthPage(): React.JSX.Element {
           <div className="min-w-0">
             <p className="text-[0.8125rem] font-semibold text-warn-700">{t('No connector is live')}</p>
             <p className="mt-1 text-xs leading-relaxed text-ink-700">
-              {t('This deployment does not exchange data with any departmental system. Every connector below is either a deterministic demonstration simulation, an adapter built and tested but not yet provisioned against a live endpoint, awaiting a security review, or not yet started. The state vocabulary is deliberate and precise - the word &quot;live&quot; is never used to describe a connector in this environment.')}
+              {t('This deployment does not exchange data with any departmental system. Every connector below is either a deterministic demonstration simulation, an adapter built and tested but not yet provisioned against a live endpoint, awaiting a security review, or not yet started. The state vocabulary is deliberate and precise - the word "live" is never used to describe a connector in this environment.')}
             </p>
           </div>
         </div>

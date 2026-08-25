@@ -268,7 +268,7 @@ export function LiveFeed({
                         {entry.tag}
                       </span>
                       {isNew ? (
-                        <span className="rounded-[2px] bg-crit-500 px-1 py-px text-[0.5rem] font-bold tracking-wide text-white uppercase">
+                        <span className="rounded-sm bg-crit-500 px-1 py-px text-[0.5rem] font-bold tracking-wide text-white uppercase">
                           {t('New')}
                         </span>
                       ) : null}
@@ -302,7 +302,7 @@ export function LiveFeed({
         <button
           type="button"
           onClick={() => setPaused((p) => !p)}
-          className="absolute right-2 bottom-2 flex items-center gap-1 rounded-[2px] border border-ink-200 bg-surface/95 px-1.5 py-0.5 text-[0.625rem] font-medium text-ink-500 shadow-xs transition-colors hover:text-ink-800"
+          className="absolute right-2 bottom-2 flex items-center gap-1 rounded-md border border-ink-200 bg-surface/95 px-1.5 py-0.5 text-[0.625rem] font-medium text-ink-500 shadow-xs transition-colors hover:text-ink-800"
           aria-label={paused ? t('Resume the updates feed') : t('Pause the updates feed')}
         >
           {paused ? <Play className="h-2.5 w-2.5" /> : <Pause className="h-2.5 w-2.5" />}

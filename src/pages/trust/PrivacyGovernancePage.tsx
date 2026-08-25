@@ -7,8 +7,10 @@ import { Card, DefinitionList, DefinitionRow, Input, Label, MetricGrid, Select }
 import { DataTable, type Column } from '@/components/ui/DataTable'
 import { DemonstrationNotice, EmptyState, ErrorState, LoadingState } from '@/components/ui/states'
 import { GovPanel } from '@/components/gov/GovPanel'
+import { FilterBar } from '@/components/filters/FilterBar'
 import { governanceService, securityService, type DatasetFilters } from '@/services'
 import { useServiceQuery } from '@/hooks'
+import { useFilterStore, type FilterState } from '@/stores/ui.store'
 import { usePageMasthead } from '@/stores/masthead.store'
 import { getRole } from '@/security'
 import { departmentName, officerDisplayName } from '@/data/reference'
@@ -18,6 +20,17 @@ import type { Dataset } from '@/types/governance'
 import { ROUTES } from '@/config/navigation'
 import { t } from '@/i18n'
 import { registerLayer } from '@/data/runtime'
+
+/** The dataset register carries a genuine domain, owner department and free text. */
+function matchesDatasetGlobalFilters(d: Dataset, filters: FilterState): boolean {
+  if (filters.domains.length > 0 && !filters.domains.includes(d.domain)) return false
+  if (filters.departmentIds.length > 0 && !filters.departmentIds.includes(d.ownerDepartmentId)) return false
+  if (filters.search.trim()) {
+    const q = filters.search.trim().toLowerCase()
+    if (!d.name.toLowerCase().includes(q) && !d.description.toLowerCase().includes(q) && !d.purpose.toLowerCase().includes(q)) return false
+  }
+  return true
+}
 
 /**
  * src/pages/trust/PrivacyGovernancePage.tsx
@@ -61,6 +74,7 @@ export function PrivacyGovernancePage(): React.JSX.Element {
   // The shell's masthead carries the screen's name; the page states the wording.
   usePageMasthead(t('Privacy & Data Governance'))
 
+  const globalFilters = useFilterStore((s) => s.filters)
   const [domainFilter, setDomainFilter] = useState<IntelligenceDomain | ''>('')
   const [classificationFilter, setClassificationFilter] = useState<DataClassification | ''>('')
   const [personalDataFilter, setPersonalDataFilter] = useState<'' | 'yes' | 'no'>('')
@@ -88,7 +102,7 @@ export function PrivacyGovernancePage(): React.JSX.Element {
   if (datasetsQuery.error) return <ErrorState detail={datasetsQuery.error.message} onRetry={() => datasetsQuery.refetch()} />
   if (summaryQuery.error) return <ErrorState detail={summaryQuery.error.message} onRetry={() => summaryQuery.refetch()} />
 
-  const datasets = datasetsQuery.data ?? []
+  const datasets = (datasetsQuery.data ?? []).filter((d) => matchesDatasetGlobalFilters(d, globalFilters))
   const summary = summaryQuery.data
   const personalData = personalDataQuery.data ?? []
   const selected = datasets.find((d) => d.id === selectedId) ?? datasets[0]
@@ -181,6 +195,14 @@ export function PrivacyGovernancePage(): React.JSX.Element {
       <PageHeader
         eyebrow={t('Trust Centre')}
         breadcrumbs={[{ label: t('Trust Centre'), to: '/trust' }, { label: t('Privacy & Data Governance') }]}
+        controls={
+          <FilterBar
+            show={['domain', 'department', 'search']}
+            domainOptions={Array.from(new Set((datasetsQuery.data ?? []).map((d) => d.domain))).sort((a, b) =>
+              DOMAIN_LABEL[a].localeCompare(DOMAIN_LABEL[b]),
+            )}
+          />
+        }
       />
 
       {summary ? (
@@ -217,7 +239,7 @@ export function PrivacyGovernancePage(): React.JSX.Element {
           <div className="flex items-start gap-2.5">
             <EyeOff className="mt-0.5 h-4 w-4 shrink-0 text-crit-700" />
             <p className="text-[0.8125rem] leading-relaxed text-ink-800">
-              <span className="font-semibold">{t('{0} dataset(s)', summary.withheldFromPrincipal)}</span>{' '}{t('exist in this platform&apos;s governance register that your current role and classification ceiling do not permit you to read. Consistent with least privilege, this page does not disclose which - a dataset you may not read is omitted entirely, not shown redacted. If you believe this is incorrect for your responsibilities, raise a scope review through Access Governance.')}
+              <span className="font-semibold">{t('{0} dataset(s)', summary.withheldFromPrincipal)}</span>{' '}{t("exist in this platform's governance register that your current role and classification ceiling do not permit you to read. Consistent with least privilege, this page does not disclose which - a dataset you may not read is omitted entirely, not shown redacted. If you believe this is incorrect for your responsibilities, raise a scope review through Access Governance.")}
             </p>
           </div>
         </Card>
@@ -237,7 +259,7 @@ export function PrivacyGovernancePage(): React.JSX.Element {
           <div className="flex items-start gap-2.5">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warn-700" />
             <p className="text-[0.8125rem] leading-relaxed text-ink-800">
-              <span className="font-semibold">{t('{0} dataset(s)', summary.unminimisedPersonalData)}</span>{' '}{t('reachable by your principal contain personal data with no minimisation measure currently recorded against them - see &quot;Datasets containing personal data&quot; below for exactly which.')}
+              <span className="font-semibold">{t('{0} dataset(s)', summary.unminimisedPersonalData)}</span>{' '}{t('reachable by your principal contain personal data with no minimisation measure currently recorded against them - see "Datasets containing personal data" below for exactly which.')}
             </p>
           </div>
         </Card>
@@ -413,7 +435,7 @@ export function PrivacyGovernancePage(): React.JSX.Element {
         <GovPanel title={t('Purpose limitation')} tone="amber">
           <p className="text-[0.8125rem] leading-relaxed text-ink-700">
             {t('Every dataset in the register above is provisioned against a single declared purpose - the institutional reason the corporation is entitled to hold and process it')}
-            {selected ? <>{' '}{t('- for example,')}{' '}{departmentName(selected.ownerDepartmentId)}{t('&apos;s')}{' '}<span className="font-medium">{selected.name}</span>{' '}{t('is held for: &quot;')}{selected.purpose}{t('&quot;')}</> : null}{t('. Intelligence, alerts and decisions derived from a source are used only within that declared purpose; there is no general-purpose data lake in this architecture that records fall into once ingested.')}
+            {selected ? <>{' '}{t('- for example,')}{' '}{departmentName(selected.ownerDepartmentId)}{t("'s")}{' '}<span className="font-medium">{selected.name}</span>{' '}{t('is held for: "')}{selected.purpose}{t('"')}</> : null}{t('. Intelligence, alerts and decisions derived from a source are used only within that declared purpose; there is no general-purpose data lake in this architecture that records fall into once ingested.')}
           </p>
         </GovPanel>
         <GovPanel title={t('Minimisation')} tone="red">
@@ -423,7 +445,7 @@ export function PrivacyGovernancePage(): React.JSX.Element {
         </GovPanel>
         <GovPanel title={t('Retention')} tone="amber">
           <p className="text-[0.8125rem] leading-relaxed text-ink-700">
-            {t('Every dataset carries a declared retention period in months - the shortest currently in the register is {0} months. This demonstration environment does not implement automated deletion at the retention boundary: the in-session store described in Evidence &amp; Audit exists for the lifetime of the browser session, not on a retention schedule. A production deployment must implement enforced deletion, not merely a documented retention figure.', summary?.shortestRetentionMonths ?? '-')}
+            {t('Every dataset carries a declared retention period in months - the shortest currently in the register is {0} months. This demonstration environment does not implement automated deletion at the retention boundary: the in-session store described in Evidence & Audit exists for the lifetime of the browser session, not on a retention schedule. A production deployment must implement enforced deletion, not merely a documented retention figure.', summary?.shortestRetentionMonths ?? '-')}
           </p>
         </GovPanel>
         <GovPanel title={t('Access controls')} tone="green">
@@ -456,7 +478,7 @@ export function PrivacyGovernancePage(): React.JSX.Element {
 
       <Card tone="warn">
         <p className="text-xs leading-relaxed text-ink-700">
-          <span className="font-semibold text-ink-800">{t('Auditability.')}</span>{' '}{t('Opening any evidence record tied to a governed dataset is itself a recorded audit event, attributed to the requesting officer, session and timestamp - see Evidence &amp; Audit for the live trail. No regulatory certification, data protection accreditation or formal privacy attestation is claimed for this environment.')}
+          <span className="font-semibold text-ink-800">{t('Auditability.')}</span>{' '}{t('Opening any evidence record tied to a governed dataset is itself a recorded audit event, attributed to the requesting officer, session and timestamp - see Evidence & Audit for the live trail. No regulatory certification, data protection accreditation or formal privacy attestation is claimed for this environment.')}
         </p>
       </Card>
         </div>

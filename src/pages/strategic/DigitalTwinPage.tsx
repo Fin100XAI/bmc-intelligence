@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
+import { FilterBar } from '@/components/filters/FilterBar'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { healthService, incidentService, monsoonService, projectService, roadsService, wardService, waterService } from '@/services'
-import { useDrawerStore, type DrawerKind } from '@/stores/ui.store'
+import { useDrawerStore, useFilterStore, type DrawerKind } from '@/stores/ui.store'
 import { useActiveCorporation } from '@/stores/corporation.store'
 import { cityName } from '@/config/corporations'
 import { usePageMasthead } from '@/stores/masthead.store'
@@ -73,9 +74,22 @@ interface SelectedEntity {
   drawer?: { kind: DrawerKind; id: string }
 }
 
+/** True when the entity's ward is within the ward filter (or no ward filter is set). */
+function passesWard(filters: { wardIds: string[] }, wardId: string | undefined): boolean {
+  if (!wardId) return true
+  return filters.wardIds.length === 0 || filters.wardIds.includes(wardId)
+}
+
+/** True when the entity's name/label matches the search filter (or no search is set). */
+function passesSearch(filters: { search: string }, text: string): boolean {
+  const q = filters.search.trim().toLowerCase()
+  return !q || text.toLowerCase().includes(q)
+}
+
 export function DigitalTwinPage(): React.JSX.Element {
   const openDrawer = useDrawerStore((s) => s.open)
   const corporation = useActiveCorporation()
+  const filters = useFilterStore((s) => s.filters)
 
   // The shell's masthead states the screen's name; the page states the wording.
   usePageMasthead(t('{0} Urban Digital Twin', cityName(corporation)))
@@ -117,20 +131,50 @@ export function DigitalTwinPage(): React.JSX.Element {
   const anyLoading = wardsQuery.isLoading
   const anyError = wardsQuery.error
 
+  // The ward and search filters from the global filter bar are applied here,
+  // at the earliest point each entity list is assembled, so the layer
+  // toggles, the entity-inventory counts and the map markers below all agree
+  // about what is currently in scope. `wards` itself stays unscoped - the
+  // choropleth it feeds shades every ward, not only the ones matching a
+  // ward filter meant to narrow markers and lists.
   const wards = wardsQuery.data ?? []
-  const activeProjects = (projectsQuery.data?.items ?? []).filter((p) => p.status !== 'completed' && p.status !== 'closed')
-  const openIncidents = (incidentsQuery.data?.items ?? []).filter((i) => i.status !== 'resolved' && i.status !== 'reviewed')
-  const exposedAssets = (assetsQuery.data ?? []).filter((a) => a.criticality === 'critical' || a.criticality === 'high')
-  const exceedingNoise = (noiseQuery.data ?? []).filter((n) => n.exceedance)
-  const poorAir = (airQualityQuery.data ?? []).filter((s) => s.category === 'poor' || s.category === 'very-poor' || s.category === 'severe')
-  const riskWards = [...wards].sort((a, b) => b.riskScore - a.riskScore).slice(0, 5)
+  const activeProjects = (projectsQuery.data?.items ?? []).filter(
+    (p) =>
+      p.status !== 'completed' &&
+      p.status !== 'closed' &&
+      (filters.wardIds.length === 0 || p.wardIds.some((w) => filters.wardIds.includes(w))) &&
+      passesSearch(filters, p.name),
+  )
+  const openIncidents = (incidentsQuery.data?.items ?? []).filter(
+    (i) => i.status !== 'resolved' && i.status !== 'reviewed' && passesWard(filters, i.wardId) && passesSearch(filters, i.title),
+  )
+  const exposedAssets = (assetsQuery.data ?? []).filter(
+    (a) => (a.criticality === 'critical' || a.criticality === 'high') && passesWard(filters, a.wardId) && passesSearch(filters, a.name),
+  )
+  const waterAssets = (waterAssetsQuery.data ?? []).filter((a) => passesWard(filters, a.wardId) && passesSearch(filters, a.name))
+  const drains = (drainsQuery.data ?? []).filter((d) => passesWard(filters, d.wardId) && passesSearch(filters, d.name))
+  const pumpingStations = (pumpingQuery.data ?? []).filter((p) => passesWard(filters, p.wardId) && passesSearch(filters, p.name))
+  const waterloggingSpots = (spotsQuery.data ?? []).filter((s) => passesWard(filters, s.wardId) && passesSearch(filters, s.name))
+  const corridors = (corridorsQuery.data ?? []).filter((c) => passesSearch(filters, c.name))
+  const rankedDefects = (defectsQuery.data ?? []).filter((d) => passesWard(filters, d.wardId))
+  const hospitals = (hospitalsQuery.data ?? []).filter((h) => passesWard(filters, h.wardId) && passesSearch(filters, h.name))
+  const emergencyStations = (emergencyQuery.data ?? []).filter((s) => passesWard(filters, s.wardId) && passesSearch(filters, s.name))
+  const exceedingNoise = (noiseQuery.data ?? []).filter((n) => n.exceedance && passesWard(filters, n.wardId) && passesSearch(filters, n.location))
+  const poorAir = (airQualityQuery.data ?? []).filter(
+    (s) =>
+      (s.category === 'poor' || s.category === 'very-poor' || s.category === 'severe') &&
+      passesWard(filters, s.wardId) &&
+      passesSearch(filters, s.name),
+  )
+  const scopedWards = wards.filter((w) => passesWard(filters, w.id) && passesSearch(filters, w.name))
+  const riskWards = [...scopedWards].sort((a, b) => b.riskScore - a.riskScore).slice(0, 5)
 
   const counts: Record<LayerId, number> = {
     infrastructure: exposedAssets.length,
-    water: waterAssetsQuery.data?.length ?? 0,
-    stormwater: (drainsQuery.data?.length ?? 0) + (pumpingQuery.data?.length ?? 0) + (spotsQuery.data?.length ?? 0),
-    roads: (corridorsQuery.data?.length ?? 0) + (defectsQuery.data?.length ?? 0),
-    health: (hospitalsQuery.data?.length ?? 0) + (emergencyQuery.data?.length ?? 0),
+    water: waterAssets.length,
+    stormwater: drains.length + pumpingStations.length + waterloggingSpots.length,
+    roads: corridors.length + rankedDefects.length,
+    health: hospitals.length + emergencyStations.length,
     projects: activeProjects.length,
     incidents: openIncidents.length,
     risk: riskWards.length,
@@ -174,7 +218,7 @@ export function DigitalTwinPage(): React.JSX.Element {
   }
 
   if (enabled.water) {
-    for (const asset of waterAssetsQuery.data ?? []) {
+    for (const asset of waterAssets) {
       const pt = nextPoint(asset.wardId)
       markers.push({
         id: `water-${asset.id}`,
@@ -189,7 +233,7 @@ export function DigitalTwinPage(): React.JSX.Element {
   }
 
   if (enabled.stormwater) {
-    for (const drain of drainsQuery.data ?? []) {
+    for (const drain of drains) {
       const pt = nextPoint(drain.wardId)
       markers.push({
         id: `drain-${drain.id}`,
@@ -201,7 +245,7 @@ export function DigitalTwinPage(): React.JSX.Element {
         onClick: () => setSelected({ className: 'Storm water drain', label: drain.name, detail: t('{0} · {1} km · desilting {2}% · blockage risk {3}/100', drain.type, drain.lengthKm, drain.desiltingCompletionPct, drain.blockageRisk) }),
       })
     }
-    for (const station of pumpingQuery.data ?? []) {
+    for (const station of pumpingStations) {
       const pt = nextPoint(station.wardId)
       markers.push({
         id: `pump-${station.id}`,
@@ -212,7 +256,7 @@ export function DigitalTwinPage(): React.JSX.Element {
         onClick: () => setSelected({ className: 'Pumping station', label: station.name, detail: `${station.pumpsOperational}/${station.pumpsTotal} pumps operational · readiness ${station.readinessIndex}/100 · standby power ${station.standbyPowerAvailable ? 'available' : 'not available'}` }),
       })
     }
-    for (const spot of spotsQuery.data ?? []) {
+    for (const spot of waterloggingSpots) {
       const pt = nextPoint(spot.wardId)
       markers.push({
         id: `spot-${spot.id}`,
@@ -227,10 +271,10 @@ export function DigitalTwinPage(): React.JSX.Element {
   }
 
   if (enabled.roads) {
-    for (const corridor of corridorsQuery.data ?? []) {
+    for (const corridor of corridors) {
       paths.push({ id: `corridor-${corridor.id}`, points: corridor.path, label: t('{0} · congestion {1}', corridor.name, corridor.congestionIndex), tone: corridor.congestionIndex >= 65 ? 'critical' : 'primary' })
     }
-    for (const defect of defectsQuery.data ?? []) {
+    for (const defect of rankedDefects) {
       const pt = nextPoint(defect.wardId)
       markers.push({
         id: `defect-${defect.id}`,
@@ -245,7 +289,7 @@ export function DigitalTwinPage(): React.JSX.Element {
   }
 
   if (enabled.health) {
-    for (const hospital of hospitalsQuery.data ?? []) {
+    for (const hospital of hospitals) {
       const pt = nextPoint(hospital.wardId)
       markers.push({
         id: `hospital-${hospital.id}`,
@@ -257,7 +301,7 @@ export function DigitalTwinPage(): React.JSX.Element {
         onClick: () => setSelected({ className: 'Hospital', label: hospital.name, detail: t('{0} · {1}/{2} beds occupied · ICU {3}/{4} · accessibility {5}/100', hospital.type, hospital.bedsOccupied, hospital.bedsTotal, hospital.icuOccupied, hospital.icuTotal, hospital.accessibilityIndex) }),
       })
     }
-    for (const station of emergencyQuery.data ?? []) {
+    for (const station of emergencyStations) {
       const pt = nextPoint(station.wardId)
       markers.push({
         id: `emergency-${station.id}`,
@@ -360,6 +404,7 @@ export function DigitalTwinPage(): React.JSX.Element {
         eyebrow={t('Strategic Urban Intelligence')}
         breadcrumbs={[{ label: t('Strategic Urban Intelligence') }, { label: t('{0} Urban Digital Twin', cityName(corporation)) }]}
         freshness={FRESHNESS}
+        controls={<FilterBar show={['ward', 'search']} />}
       />
 
       {anyLoading ? <LoadingState variant="metrics" /> : null}
@@ -384,7 +429,7 @@ export function DigitalTwinPage(): React.JSX.Element {
                       key={id}
                       title={LAYER_META[id].description}
                       className={
-                        'flex cursor-pointer flex-col gap-1 rounded-[2px] border p-2 transition-colors ' +
+                        'flex cursor-pointer flex-col gap-1 rounded-lg border p-2 transition-colors ' +
                         (enabled[id] ? 'border-govt-300 bg-govt-50/60' : 'border-ink-100 bg-surface-sunken hover:bg-ink-50')
                       }
                     >

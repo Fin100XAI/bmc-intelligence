@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import {
   Activity,
   ChevronDown,
@@ -12,14 +12,17 @@ import {
   Workflow as WorkflowIcon,
 } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
+import { FilterBar } from '@/components/filters/FilterBar'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { aiService } from '@/services'
 import { usePageMasthead } from '@/stores/masthead.store'
+import { useFilterStore } from '@/stores/ui.store'
+import type { FilterState } from '@/stores/ui.store'
 import { officerDisplayName } from '@/data/reference'
-import { isoFromAnchor } from '@/utils/deterministic'
+import { DEMO_NOW, isoFromAnchor } from '@/utils/deterministic'
 import { formatPercent, formatRelative } from '@/utils/format'
-import { DOMAIN_LABEL } from '@/types/common'
+import { DOMAIN_LABEL, type DateRangeKey, type IntelligenceDomain } from '@/types/common'
 import type { AgentWorkflow } from '@/types/ai'
 import {
   Badge,
@@ -82,6 +85,30 @@ const STATUS_TONE: Record<AgentWorkflow['status'], 'positive' | 'warn' | 'neutra
   draft: 'neutral',
 }
 
+const DATE_RANGE_HOURS: Record<DateRangeKey, number> = {
+  '24h': 24,
+  '7d': 24 * 7,
+  '30d': 24 * 30,
+  '90d': 24 * 90,
+  fy: 24 * 365,
+}
+
+function withinDateRange(iso: string, range: DateRangeKey): boolean {
+  const ageMs = DEMO_NOW.getTime() - new Date(iso).getTime()
+  return ageMs <= DATE_RANGE_HOURS[range] * 3_600_000
+}
+
+function matchesGlobalFilters(workflow: AgentWorkflow, filters: FilterState): boolean {
+  if (filters.domains.length > 0 && !filters.domains.includes(workflow.domain)) return false
+  if (filters.statuses.length > 0 && !filters.statuses.includes(workflow.status)) return false
+  if (!withinDateRange(workflow.lastRunAt, filters.dateRange)) return false
+  if (filters.search.trim()) {
+    const q = filters.search.trim().toLowerCase()
+    if (!workflow.name.toLowerCase().includes(q) && !workflow.description.toLowerCase().includes(q)) return false
+  }
+  return true
+}
+
 export function AgentWorkflowsPage(): React.JSX.Element {
   // The shell's masthead states the screen's name; the page states the wording.
   usePageMasthead(t('Agent Workflows'))
@@ -89,8 +116,22 @@ export function AgentWorkflowsPage(): React.JSX.Element {
   const workflowsQuery = useServiceQuery(queryKeys.ai('agent-workflows'), (u) => aiService.agentWorkflows(u))
   const [expandedWorkflow, setExpandedWorkflow] = useState<string | null>(null)
   const [expandedStep, setExpandedStep] = useState<string | null>(null)
+  const filters = useFilterStore((s) => s.filters)
 
-  const workflows = workflowsQuery.data ?? []
+  const rawWorkflows = workflowsQuery.data ?? []
+  const domainOptions = useMemo<IntelligenceDomain[]>(
+    () => Array.from(new Set(rawWorkflows.map((w) => w.domain))).sort((a, b) => DOMAIN_LABEL[a].localeCompare(DOMAIN_LABEL[b])),
+    [rawWorkflows],
+  )
+  const statusOptions = useMemo(
+    () => [
+      { value: 'active', label: t('Active') },
+      { value: 'paused', label: t('Paused') },
+      { value: 'draft', label: t('Draft') },
+    ],
+    [],
+  )
+  const workflows = useMemo(() => rawWorkflows.filter((w) => matchesGlobalFilters(w, filters)), [rawWorkflows, filters])
   const totalRuns = workflows.reduce((s, w) => s + w.runsLast30d, 0)
   const meanApproval =
     workflows.length > 0 ? workflows.reduce((s, w) => s + w.humanApprovalRate, 0) / workflows.length : 0
@@ -102,6 +143,7 @@ export function AgentWorkflowsPage(): React.JSX.Element {
         eyebrow={t('AI & Automation')}
         breadcrumbs={[{ label: t('AI & Automation') }, { label: t('Agent Workflows') }]}
         freshness={FRESHNESS}
+        controls={<FilterBar show={['date', 'domain', 'status', 'search']} statusOptions={statusOptions} domainOptions={domainOptions} />}
       />
 
       {workflowsQuery.isLoading ? <LoadingState variant="metrics" /> : null}
@@ -115,8 +157,10 @@ export function AgentWorkflowsPage(): React.JSX.Element {
       <div className="grid grid-cols-1 gap-3 xl:grid-cols-12">
         <div className="flex min-w-0 flex-col gap-3 xl:col-span-8">
           {!workflowsQuery.isLoading && !workflowsQuery.error ? (
-            workflows.length === 0 ? (
+            rawWorkflows.length === 0 ? (
               <EmptyState title={t('No agent workflows configured')} detail="No agent workflow records are visible within your authorised scope." />
+            ) : workflows.length === 0 ? (
+              <EmptyState title={t('No workflows match the current filters')} detail="Widen the date range or clear a filter to see more results." />
             ) : (
               <>
                 <p className="text-xs text-ink-400">
@@ -173,8 +217,8 @@ export function AgentWorkflowsPage(): React.JSX.Element {
                                     aria-expanded={stepOpen}
                                     className={
                                       step.requiresHuman
-                                        ? 'flex w-44 shrink-0 flex-col rounded-[2px] border-2 border-intel-300 bg-intel-50/50 p-2.5 text-left shadow-xs'
-                                        : 'flex w-40 shrink-0 flex-col rounded-[2px] border border-ink-100 bg-surface-sunken p-2.5 text-left'
+                                        ? 'flex w-44 shrink-0 flex-col rounded-lg border-2 border-intel-300 bg-intel-50/50 p-2.5 text-left shadow-xs'
+                                        : 'flex w-40 shrink-0 flex-col rounded-lg border border-ink-100 bg-surface-sunken p-2.5 text-left'
                                     }
                                   >
                                     <div className="flex items-center gap-1.5">
@@ -204,7 +248,7 @@ export function AgentWorkflowsPage(): React.JSX.Element {
                               const step = workflow.steps.find((s) => `${workflow.id}:${s.id}` === expandedStep)
                               if (!step) return null
                               return (
-                                <div className="mt-3 rounded-[2px] border border-ink-100 bg-surface-sunken p-3">
+                                <div className="mt-3 rounded-lg border border-ink-100 bg-surface-sunken p-3">
                                   <p className="text-xs font-semibold text-ink-800">
                                     {STEP_LABEL[step.kind]} - {step.name}
                                   </p>

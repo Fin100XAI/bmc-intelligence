@@ -2,13 +2,17 @@ import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Brain, CheckCircle2, ChevronRight, ShieldAlert } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
+import { FilterBar } from '@/components/filters/FilterBar'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { aiService } from '@/services'
 import { usePageMasthead } from '@/stores/masthead.store'
+import { useFilterStore } from '@/stores/ui.store'
+import type { FilterState } from '@/stores/ui.store'
 import { officerDisplayName } from '@/data/reference'
-import { isoFromAnchor } from '@/utils/deterministic'
+import { DEMO_NOW, isoFromAnchor } from '@/utils/deterministic'
 import { formatRelative, truncate } from '@/utils/format'
+import type { DateRangeKey } from '@/types/common'
 import type { AIModel } from '@/types/ai'
 import {
   Badge,
@@ -68,6 +72,33 @@ const STATUS_TONE: Record<AIModel['status'], 'positive' | 'warn' | 'critical' | 
   'pending-approval': 'warn',
 }
 
+const DATE_RANGE_HOURS: Record<DateRangeKey, number> = {
+  '24h': 24,
+  '7d': 24 * 7,
+  '30d': 24 * 30,
+  '90d': 24 * 90,
+  fy: 24 * 365,
+}
+
+function withinDateRange(iso: string, range: DateRangeKey): boolean {
+  const ageMs = DEMO_NOW.getTime() - new Date(iso).getTime()
+  return ageMs <= DATE_RANGE_HOURS[range] * 3_600_000
+}
+
+function matchesGlobalFilters(model: AIModel, filters: FilterState): boolean {
+  if (!withinDateRange(model.lastEvaluatedAt, filters.dateRange)) return false
+  if (filters.search.trim()) {
+    const q = filters.search.trim().toLowerCase()
+    if (
+      !model.name.toLowerCase().includes(q) &&
+      !model.provider.toLowerCase().includes(q) &&
+      !model.notes.toLowerCase().includes(q)
+    )
+      return false
+  }
+  return true
+}
+
 export function ModelRegistryPage(): React.JSX.Element {
   // The shell's masthead states the screen's name; the page states the wording.
   usePageMasthead(t('AI Model Registry'))
@@ -78,6 +109,7 @@ export function ModelRegistryPage(): React.JSX.Element {
   const [riskFilter, setRiskFilter] = useState<'all' | AIModel['riskClass']>('all')
   const [statusFilter, setStatusFilter] = useState<'all' | AIModel['status']>('all')
   const [evalFilter, setEvalFilter] = useState<'all' | AIModel['evaluationStatus']>('all')
+  const filters = useFilterStore((s) => s.filters)
 
   // `?model=<id>` selects that model on arrival - the entry point AI
   // Recommendations and other governance surfaces link into, so a reviewer
@@ -89,7 +121,8 @@ export function ModelRegistryPage(): React.JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams])
 
-  const models = modelsQuery.data ?? []
+  const rawModels = modelsQuery.data ?? []
+  const models = useMemo(() => rawModels.filter((m) => matchesGlobalFilters(m, filters)), [rawModels, filters])
 
   const filtered = useMemo(
     () =>
@@ -169,6 +202,7 @@ export function ModelRegistryPage(): React.JSX.Element {
         eyebrow={t('AI & Automation')}
         breadcrumbs={[{ label: t('AI & Automation') }, { label: t('AI Model Registry') }]}
         freshness={FRESHNESS}
+        controls={<FilterBar show={['date', 'search']} />}
       />
 
       {modelsQuery.isLoading ? <LoadingState variant="metrics" /> : null}
@@ -182,7 +216,7 @@ export function ModelRegistryPage(): React.JSX.Element {
       <div className="grid grid-cols-1 gap-3 xl:grid-cols-12">
         <div className="flex min-w-0 flex-col gap-3 xl:col-span-8">
           {!modelsQuery.isLoading && !modelsQuery.error ? (
-            models.length === 0 ? (
+            rawModels.length === 0 ? (
               <EmptyState title={t('No models registered')} detail="No AI model records are visible within your authorised scope." />
             ) : (
               <>
@@ -244,6 +278,7 @@ export function ModelRegistryPage(): React.JSX.Element {
                     pageSize={8}
                     stickyHeader
                     maxHeight="24rem"
+                    searchable={false}
                     searchPlaceholder="Search models"
                     onRowClick={(row) => setSelectedId(row.id)}
                     activeRowKey={selected?.id}

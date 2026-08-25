@@ -375,7 +375,7 @@ export function DeathcarePage(): React.JSX.Element {
             <div className="min-w-0">
               <p className="text-[0.8125rem] font-semibold text-govt-800">{t('Land for the dead is finite and cannot be replaced')}</p>
               <p className="mt-1 text-xs leading-relaxed text-ink-600">
-                {t('Every interment consumes ground that is not returned. A ground that fills does not refill, so a facility reaching capacity is a crisis that arrives without warning and cannot be answered quickly - acquiring land for a burial ground needs a willing seller, a consenting neighbourhood and a community that accepts the site, and the lead time is measured in years. The years-remaining column is therefore a planning instruction, not a statistic. This page holds facilities and capacity only: no interment record, no name and no plot allotment appears anywhere behind it, because the register of the dead belongs to the Registrar and to each ground&apos;s own managing committee.')}
+                {t("Every interment consumes ground that is not returned. A ground that fills does not refill, so a facility reaching capacity is a crisis that arrives without warning and cannot be answered quickly - acquiring land for a burial ground needs a willing seller, a consenting neighbourhood and a community that accepts the site, and the lead time is measured in years. The years-remaining column is therefore a planning instruction, not a statistic. This page holds facilities and capacity only: no interment record, no name and no plot allotment appears anywhere behind it, because the register of the dead belongs to the Registrar and to each ground's own managing committee.")}
               </p>
             </div>
           </Card>

@@ -13,7 +13,13 @@
 
 @theme {
   /* --- Neutral / surface scale ------------------------------------------ */
-  --color-canvas: #eef2f7;
+  /* As close to white as the page can go while still reading as a surface
+     distinct from the cards on it - the previous pale blue-grey sat too
+     close in both hue and lightness to the pastel card washes
+     (`google-blue-50`, `intel-50` and the like), so a tinted card read as
+     barely separated from the page behind it. Cards stay legible against
+     this regardless of which pastel wash they carry. */
+  --color-canvas: #fbfcfd;
   --color-surface: #ffffff;
   --color-surface-sunken: #f6f8fc;
   --color-surface-raised: #ffffff;

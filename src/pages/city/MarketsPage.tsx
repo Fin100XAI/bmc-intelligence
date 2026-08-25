@@ -386,7 +386,7 @@ export function MarketsPage(): React.JSX.Element {
             <div className="min-w-0">
               <p className="text-[0.8125rem] font-semibold text-govt-800">{t('A food-safety function before a revenue one')}</p>
               <p className="mt-1 text-xs leading-relaxed text-ink-600">
-                {t('The Twelfth Schedule assigns the corporation regulation of slaughter houses and tanneries, not merely the letting of stalls. An uninspected slaughter house is a public-health exposure inside the city&apos;s meat supply whether or not its licence fee has been paid, which is why the interval since the last inspection leads this page and the rent roll does not. The interval - not the inspection count - is the control that matters: a rising monthly total achieved by revisiting the same compliant markets leaves exactly the same premises unvisited as no inspections at all. Effluent compliance is where a slaughter house or a tannery becomes an environmental matter as well as a hygiene one, since untreated trade effluent reaches a nullah and from there a creek.')}
+                {t("The Twelfth Schedule assigns the corporation regulation of slaughter houses and tanneries, not merely the letting of stalls. An uninspected slaughter house is a public-health exposure inside the city's meat supply whether or not its licence fee has been paid, which is why the interval since the last inspection leads this page and the rent roll does not. The interval - not the inspection count - is the control that matters: a rising monthly total achieved by revisiting the same compliant markets leaves exactly the same premises unvisited as no inspections at all. Effluent compliance is where a slaughter house or a tannery becomes an environmental matter as well as a hygiene one, since untreated trade effluent reaches a nullah and from there a creek.")}
               </p>
             </div>
           </Card>
@@ -399,7 +399,7 @@ export function MarketsPage(): React.JSX.Element {
                   {t('{0} facilities discharging outside consent conditions', formatNumber(effluentBreaches.length))}
                 </p>
                 <p className="mt-1 text-xs leading-relaxed text-ink-600">
-                  {t('Trade effluent from a slaughter house, a tannery or a fish market is high-load organic and chemical waste. Where it is not treated to consent conditions it enters the storm water network, and the same premises reappear in the environment department&apos;s water-quality record downstream. These are hygiene findings and environmental findings at once, and closing them needs both departments in the room.')}
+                  {t("Trade effluent from a slaughter house, a tannery or a fish market is high-load organic and chemical waste. Where it is not treated to consent conditions it enters the storm water network, and the same premises reappear in the environment department's water-quality record downstream. These are hygiene findings and environmental findings at once, and closing them needs both departments in the room.")}
                 </p>
               </div>
             </Card>

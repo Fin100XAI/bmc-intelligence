@@ -4,8 +4,10 @@ import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { projectService, wardService } from '@/services'
-import { useDrawerStore } from '@/stores/ui.store'
+import { useDrawerStore, useFilterStore } from '@/stores/ui.store'
+import type { FilterState } from '@/stores/ui.store'
 import { usePageMasthead } from '@/stores/masthead.store'
+import { FilterBar } from '@/components/filters/FilterBar'
 import { ROUTES } from '@/config/navigation'
 import { ASSET_CATEGORY_LABEL, type AssetCategory, type MunicipalAsset } from '@/types/operations'
 import type { ProjectCategory, ProjectStatus } from '@/types/finance'
@@ -82,13 +84,24 @@ function pastDesignLife(asset: MunicipalAsset): boolean {
   return ageOf(asset) > asset.designLifeYears
 }
 
+function matchesGlobalFilters(asset: MunicipalAsset, filters: FilterState): boolean {
+  if (filters.wardIds.length > 0 && !filters.wardIds.includes(asset.wardId)) return false
+  if (filters.departmentIds.length > 0 && !filters.departmentIds.includes(asset.departmentId)) return false
+  if (filters.severities.length > 0 && !filters.severities.includes(asset.criticality)) return false
+  if (filters.search.trim()) {
+    const q = filters.search.trim().toLowerCase()
+    if (!asset.name.toLowerCase().includes(q)) return false
+  }
+  return true
+}
+
 export function AssetIntelligencePage(): React.JSX.Element {
   // The shell's masthead carries the screen's name; the page states the wording.
   usePageMasthead(t('Asset Intelligence'))
 
   const openDrawer = useDrawerStore((s) => s.open)
+  const filters = useFilterStore((s) => s.filters)
   const [categoryFilter, setCategoryFilter] = useState<'all' | AssetCategory>('all')
-  const [wardFilter, setWardFilter] = useState<string>('all')
 
   const assetsQuery = useServiceQuery(queryKeys.wards('all-assets'), async (user) => {
     const wards = await wardService.list(user)
@@ -104,9 +117,9 @@ export function AssetIntelligencePage(): React.JSX.Element {
   const filtered = useMemo(
     () =>
       assets.filter(
-        (a) => (categoryFilter === 'all' || a.category === categoryFilter) && (wardFilter === 'all' || a.wardId === wardFilter),
+        (a) => (categoryFilter === 'all' || a.category === categoryFilter) && matchesGlobalFilters(a, filters),
       ),
-    [assets, categoryFilter, wardFilter],
+    [assets, categoryFilter, filters],
   )
 
   function hasMatchingProgramme(asset: MunicipalAsset): boolean {
@@ -282,8 +295,8 @@ export function AssetIntelligencePage(): React.JSX.Element {
   return (
     <PageBody>
       <PageHeader
-        eyebrow={t('Governance & Finance')}
-        breadcrumbs={[{ label: t('Governance & Finance') }, { label: t('Asset Intelligence') }]}
+        eyebrow={t('Projects, Procurement & Assets')}
+        breadcrumbs={[{ label: t('Projects, Procurement & Assets') }, { label: t('Asset Intelligence') }]}
         freshness={FRESHNESS}
         actions={
           <LinkButton to={ROUTES.buildings} variant="outline" icon={<PackageSearch className="h-3.5 w-3.5" />}>
@@ -299,13 +312,7 @@ export function AssetIntelligencePage(): React.JSX.Element {
               options={[{ value: 'all', label: t('All categories') }, ...Object.entries(ASSET_CATEGORY_LABEL).map(([value, label]) => ({ value, label }))]}
               className="w-auto"
             />
-            <Select
-              aria-label={t('Filter by ward')}
-              value={wardFilter}
-              onChange={(e) => setWardFilter(e.target.value)}
-              options={[{ value: 'all', label: t('All wards') }, ...(wardsQuery.data ?? []).map((w) => ({ value: w.id, label: `${w.code} - ${w.name.split(' · ')[0]}` }))]}
-              className="w-auto"
-            />
+            <FilterBar show={['ward', 'department', 'severity', 'search']} />
           </>
         }
       />

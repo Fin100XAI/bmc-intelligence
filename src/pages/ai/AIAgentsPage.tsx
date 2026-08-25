@@ -6,17 +6,20 @@ import { Card, DefinitionList, DefinitionRow, MetricGrid } from '@/components/ui
 import { GovPanel } from '@/components/gov/GovPanel'
 import { DemonstrationNotice, EmptyState, ErrorState, LoadingState } from '@/components/ui/states'
 import { MetricCard } from '@/components/cards/MetricCard'
+import { FilterBar } from '@/components/filters/FilterBar'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { aiService } from '@/services'
 import { usePageMasthead } from '@/stores/masthead.store'
+import { useFilterStore } from '@/stores/ui.store'
+import type { FilterState } from '@/stores/ui.store'
 import type { AIAgent, AIAgentStage } from '@/types/ai'
 import { AI_MODEL_BY_ID } from '@/data/ai.data'
 import { OFFICER_BY_ID } from '@/data/reference'
-import { DOMAIN_LABEL } from '@/types/common'
+import { DOMAIN_LABEL, type DateRangeKey, type IntelligenceDomain } from '@/types/common'
 import { formatPercent, formatRelative } from '@/utils/format'
 import { cn } from '@/utils/cn'
-import { isoFromAnchor } from '@/utils/deterministic'
+import { DEMO_NOW, isoFromAnchor } from '@/utils/deterministic'
 import { t } from '@/i18n'
 import { registerLayer } from '@/data/runtime'
 
@@ -71,6 +74,30 @@ registerLayer(() => {
   STAGE_DESCRIPTION = build$STAGE_DESCRIPTION()
 })
 
+const DATE_RANGE_HOURS: Record<DateRangeKey, number> = {
+  '24h': 24,
+  '7d': 24 * 7,
+  '30d': 24 * 30,
+  '90d': 24 * 90,
+  fy: 24 * 365,
+}
+
+function withinDateRange(iso: string, range: DateRangeKey): boolean {
+  const ageMs = DEMO_NOW.getTime() - new Date(iso).getTime()
+  return ageMs <= DATE_RANGE_HOURS[range] * 3_600_000
+}
+
+function matchesGlobalFilters(agent: AIAgent, filters: FilterState): boolean {
+  if (filters.domains.length > 0 && !filters.domains.includes(agent.domain)) return false
+  if (filters.statuses.length > 0 && !filters.statuses.includes(agent.status)) return false
+  if (!withinDateRange(agent.lastRunAt, filters.dateRange)) return false
+  if (filters.search.trim()) {
+    const q = filters.search.trim().toLowerCase()
+    if (!agent.name.toLowerCase().includes(q) && !agent.purpose.toLowerCase().includes(q)) return false
+  }
+  return true
+}
+
 function StageMeter({ stage }: { stage: AIAgentStage }): React.JSX.Element {
   const activeIndex = STAGES.indexOf(stage)
   return (
@@ -82,7 +109,7 @@ function StageMeter({ stage }: { stage: AIAgentStage }): React.JSX.Element {
           <li key={s} className="flex min-w-0 flex-1 items-center gap-1">
             <div
               className={cn(
-                'flex h-6 w-full items-center justify-center gap-1 rounded-[2px] border px-1.5 text-[0.625rem] font-medium',
+                'flex h-6 w-full items-center justify-center gap-1 rounded-lg border px-1.5 text-[0.625rem] font-medium',
                 reached
                   ? isHuman
                     ? 'border-ok-200 bg-ok-50 text-ok-700'
@@ -106,20 +133,36 @@ export function AIAgentsPage(): React.JSX.Element {
 
   const query = useServiceQuery(queryKeys.ai('agents'), (u) => aiService.agents(u))
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const filters = useFilterStore((s) => s.filters)
 
   const agents = useMemo(() => query.data ?? [], [query.data])
+  const domainOptions = useMemo<IntelligenceDomain[]>(
+    () => Array.from(new Set(agents.map((a) => a.domain))).sort((a, b) => DOMAIN_LABEL[a].localeCompare(DOMAIN_LABEL[b])),
+    [agents],
+  )
+  const statusOptions = useMemo(
+    () => [
+      { value: 'active', label: t('Active') },
+      { value: 'paused', label: t('Paused') },
+      { value: 'draft', label: t('Draft') },
+    ],
+    [],
+  )
+  const filteredAgents = useMemo(() => agents.filter((a) => matchesGlobalFilters(a, filters)), [agents, filters])
   const selected = useMemo(
-    () => agents.find((a) => a.id === selectedId) ?? agents[0] ?? null,
-    [agents, selectedId],
+    () => filteredAgents.find((a) => a.id === selectedId) ?? filteredAgents[0] ?? null,
+    [filteredAgents, selectedId],
   )
 
   if (query.isLoading) return <LoadingState variant="block" rows={6} />
   if (query.error) return <ErrorState detail={query.error.message} onRetry={() => query.refetch()} />
 
-  const active = agents.filter((a) => a.status === 'active').length
-  const atHumanReview = agents.filter((a) => a.stage === 'human-review').length
+  const active = filteredAgents.filter((a) => a.status === 'active').length
+  const atHumanReview = filteredAgents.filter((a) => a.stage === 'human-review').length
   const meanApproval =
-    agents.length > 0 ? Math.round(agents.reduce((s, a) => s + a.humanApprovalRate, 0) / agents.length) : 0
+    filteredAgents.length > 0
+      ? Math.round(filteredAgents.reduce((s, a) => s + a.humanApprovalRate, 0) / filteredAgents.length)
+      : 0
 
   return (
     <PageBody>
@@ -127,6 +170,13 @@ export function AIAgentsPage(): React.JSX.Element {
         eyebrow={t('AI & Automation')}
         breadcrumbs={[{ label: t('AI & Automation') }, { label: t('AI Agents') }]}
         freshness={FRESHNESS}
+        controls={
+          <FilterBar
+            show={['date', 'domain', 'status', 'search']}
+            statusOptions={statusOptions}
+            domainOptions={domainOptions}
+          />
+        }
       />
 
       {/* ── Two columns ─────────────────────────────────────────────
@@ -150,7 +200,7 @@ export function AIAgentsPage(): React.JSX.Element {
                     <div
                       key={s}
                       className={cn(
-                        'rounded-[2px] border p-2',
+                        'rounded-lg border p-2',
                         s === 'approved-action' ? 'border-ok-200 bg-ok-50/50' : 'border-ink-100 bg-surface',
                       )}
                     >
@@ -165,7 +215,7 @@ export function AIAgentsPage(): React.JSX.Element {
           </Card>
 
           <MetricGrid columns={3}>
-            <MetricCard label={t('Agents registered')} value={agents.length} support={`${active} active`} icon={<Bot className="h-4 w-4" />} background="red" />
+            <MetricCard label={t('Agents registered')} value={filteredAgents.length} support={`${active} active`} icon={<Bot className="h-4 w-4" />} background="red" />
             <MetricCard
               label={t('Awaiting human review')}
               value={atHumanReview}
@@ -187,8 +237,11 @@ export function AIAgentsPage(): React.JSX.Element {
             <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
               {t('Each agent, its current lifecycle stage and 30-day activity.')}
             </p>
+            {filteredAgents.length === 0 ? (
+              <EmptyState className="m-3" title={t('No agents match the current filters')} detail="Widen the date range or clear a filter to see more results." />
+            ) : (
             <ul className="divide-y divide-ink-50">
-              {agents.map((agent) => (
+              {filteredAgents.map((agent) => (
                 <li key={agent.id}>
                   <button
                     type="button"
@@ -219,6 +272,7 @@ export function AIAgentsPage(): React.JSX.Element {
                 </li>
               ))}
             </ul>
+            )}
           </GovPanel>
         </div>
 
@@ -263,7 +317,7 @@ function AgentDetail({ agent }: { agent: AIAgent }): React.JSX.Element {
         </p>
         <ul className="mt-3 space-y-1.5">
           {agent.reservedActs.map((act) => (
-            <li key={act} className="flex items-start gap-2 rounded-[2px] border border-crit-100 bg-crit-50/40 px-2.5 py-1.5">
+            <li key={act} className="flex items-start gap-2 rounded-lg border border-crit-100 bg-crit-50/40 px-2.5 py-1.5">
               <Ban className="mt-0.5 h-3 w-3 shrink-0 text-crit-500" aria-hidden />
               <span className="text-[0.6875rem] leading-relaxed text-ink-700">{act}</span>
             </li>

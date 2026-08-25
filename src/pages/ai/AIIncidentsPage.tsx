@@ -6,16 +6,20 @@ import { DefinitionList, DefinitionRow, MetricGrid } from '@/components/ui/primi
 import { GovPanel } from '@/components/gov/GovPanel'
 import { DemonstrationNotice, EmptyState, ErrorState, LoadingState } from '@/components/ui/states'
 import { MetricCard } from '@/components/cards/MetricCard'
+import { FilterBar } from '@/components/filters/FilterBar'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { aiService } from '@/services'
 import { usePageMasthead } from '@/stores/masthead.store'
+import { useFilterStore } from '@/stores/ui.store'
+import type { FilterState } from '@/stores/ui.store'
 import type { AIIncident } from '@/types/ai'
 import { AI_RISK_LABEL } from '@/types/ai'
+import type { DateRangeKey } from '@/types/common'
 import { AI_MODEL_BY_ID } from '@/data/ai.data'
 import { formatRelative } from '@/utils/format'
 import { cn } from '@/utils/cn'
-import { isoFromAnchor } from '@/utils/deterministic'
+import { DEMO_NOW, isoFromAnchor } from '@/utils/deterministic'
 import { t } from '@/i18n'
 import { registerLayer } from '@/data/runtime'
 
@@ -59,6 +63,35 @@ registerLayer(() => {
   STAGE_LABEL = build$STAGE_LABEL()
 })
 
+const DATE_RANGE_HOURS: Record<DateRangeKey, number> = {
+  '24h': 24,
+  '7d': 24 * 7,
+  '30d': 24 * 30,
+  '90d': 24 * 90,
+  fy: 24 * 365,
+}
+
+function withinDateRange(iso: string, range: DateRangeKey): boolean {
+  const ageMs = DEMO_NOW.getTime() - new Date(iso).getTime()
+  return ageMs <= DATE_RANGE_HOURS[range] * 3_600_000
+}
+
+function matchesGlobalFilters(incident: AIIncident, filters: FilterState): boolean {
+  if (filters.severities.length > 0 && !filters.severities.includes(incident.severity)) return false
+  if (filters.statuses.length > 0 && !filters.statuses.includes(incident.status)) return false
+  if (!withinDateRange(incident.detectedAt, filters.dateRange)) return false
+  if (filters.search.trim()) {
+    const q = filters.search.trim().toLowerCase()
+    if (
+      !incident.title.toLowerCase().includes(q) &&
+      !incident.description.toLowerCase().includes(q) &&
+      !incident.reference.toLowerCase().includes(q)
+    )
+      return false
+  }
+  return true
+}
+
 function IncidentStages({ status }: { status: AIIncident['status'] }): React.JSX.Element {
   const activeIndex = STAGES.indexOf(status)
   return (
@@ -69,7 +102,7 @@ function IncidentStages({ status }: { status: AIIncident['status'] }): React.JSX
           <li key={s} className="min-w-0 flex-1">
             <div
               className={cn(
-                'flex h-6 items-center justify-center rounded-[2px] border px-1 text-[0.625rem] font-medium',
+                'flex h-6 items-center justify-center rounded-lg border px-1 text-[0.625rem] font-medium',
                 reached ? 'border-govt-200 bg-govt-50 text-govt-700' : 'border-ink-100 bg-surface text-ink-400',
               )}
             >
@@ -89,11 +122,17 @@ export function AIIncidentsPage(): React.JSX.Element {
   const query = useServiceQuery(queryKeys.ai('incidents-page'), (u) => aiService.incidents(u))
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [openOnly, setOpenOnly] = useState(false)
+  const filters = useFilterStore((s) => s.filters)
 
   const incidents = useMemo(() => query.data ?? [], [query.data])
+  const statusOptions = useMemo(() => STAGES.map((s) => ({ value: s, label: STAGE_LABEL[s] })), [])
+  const globallyFiltered = useMemo(
+    () => incidents.filter((i) => matchesGlobalFilters(i, filters)),
+    [incidents, filters],
+  )
   const filtered = useMemo(
-    () => (openOnly ? incidents.filter((i) => i.status !== 'resolved' && i.status !== 'reviewed') : incidents),
-    [incidents, openOnly],
+    () => (openOnly ? globallyFiltered.filter((i) => i.status !== 'resolved' && i.status !== 'reviewed') : globallyFiltered),
+    [globallyFiltered, openOnly],
   )
   const selected = useMemo(
     () => filtered.find((i) => i.id === selectedId) ?? filtered[0] ?? null,
@@ -103,9 +142,9 @@ export function AIIncidentsPage(): React.JSX.Element {
   if (query.isLoading) return <LoadingState variant="block" rows={6} />
   if (query.error) return <ErrorState detail={query.error.message} onRetry={() => query.refetch()} />
 
-  const open = incidents.filter((i) => i.status !== 'resolved' && i.status !== 'reviewed').length
-  const critical = incidents.filter((i) => i.severity === 'critical' || i.severity === 'high').length
-  const reviewed = incidents.filter((i) => i.status === 'reviewed').length
+  const open = globallyFiltered.filter((i) => i.status !== 'resolved' && i.status !== 'reviewed').length
+  const critical = globallyFiltered.filter((i) => i.severity === 'critical' || i.severity === 'high').length
+  const reviewed = globallyFiltered.filter((i) => i.status === 'reviewed').length
 
   return (
     <PageBody>
@@ -113,12 +152,13 @@ export function AIIncidentsPage(): React.JSX.Element {
         eyebrow={t('AI & Automation')}
         breadcrumbs={[{ label: t('AI & Automation') }, { label: t('AI Incidents') }]}
         freshness={FRESHNESS}
+        controls={<FilterBar show={['date', 'severity', 'status', 'search']} statusOptions={statusOptions} />}
         actions={
           <button
             type="button"
             onClick={() => setOpenOnly((v) => !v)}
             className={cn(
-              'inline-flex h-7 items-center gap-1.5 rounded-[2px] border px-2.5 text-xs font-medium transition-colors',
+              'inline-flex h-7 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-medium transition-colors',
               openOnly ? 'border-govt-300 bg-govt-50 text-govt-700' : 'border-ink-200 text-ink-600 hover:bg-ink-50',
             )}
           >
@@ -152,7 +192,16 @@ export function AIIncidentsPage(): React.JSX.Element {
               {t('Every recorded AI incident and its lifecycle position.')}
             </p>
             {filtered.length === 0 ? (
-              <EmptyState title={t('No incidents')} detail={openOnly ? 'No open incidents. Clear the filter to see closed ones.' : 'No AI incidents are on the register.'} />
+              <EmptyState
+                title={t('No incidents')}
+                detail={
+                  openOnly
+                    ? 'No open incidents. Clear the filter to see closed ones.'
+                    : incidents.length > 0
+                      ? 'No incidents match the current filters. Widen the date range or clear a filter to see more results.'
+                      : 'No AI incidents are on the register.'
+                }
+              />
             ) : (
               <ul className="divide-y divide-ink-50">
                 {filtered.map((incident) => (

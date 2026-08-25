@@ -9,6 +9,7 @@ import {
   Check,
   CheckCircle2,
   ClipboardPlus,
+  CloudRain,
   Compass,
   Copy,
   CornerDownRight,
@@ -24,6 +25,7 @@ import {
   MessagesSquare,
   Plus,
   Radar,
+  Receipt,
   RefreshCw,
   Route,
   ScanSearch,
@@ -31,9 +33,12 @@ import {
   Siren,
   Sparkles,
   Stethoscope,
+  Trash2,
+  TrafficCone,
   TrendingDown,
   TriangleAlert,
   Waves,
+  Wind,
 } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { useServiceAction } from '@/hooks'
@@ -72,7 +77,7 @@ import {
   Tabs,
   Textarea,
 } from '@/components/ui'
-import { GovPanel } from '@/components/gov/GovPanel'
+import { GovMasthead, GovPanel, GovStripCell } from '@/components/gov/GovPanel'
 import { AIRecommendationCard } from '@/components/cards/domain-cards'
 import { AnswerVisuals } from '@/components/ai/AnswerVisuals'
 import { t } from '@/i18n'
@@ -117,6 +122,15 @@ import { registerLayer } from '@/data/runtime'
 interface SuggestedPrompt {
   label: string
   question: string
+  /**
+   * The literal English wording, never run through `t()`. The retrieval
+   * engine in `src/ai/nlu.ts` matches on English anchor phrases regardless of
+   * the interface language - passing the localised `question` through to it
+   * would score a Marathi sentence against English keywords and always fall
+   * back to a weak, generic match. This is what actually gets asked; `question`
+   * is only what the operator sees in their own language.
+   */
+  queryEn: string
   icon: ReactNode
 }
 
@@ -125,38 +139,85 @@ function icon(Node: typeof Compass): ReactNode {
   return <Node className="h-4 w-4" />
 }
 
+/**
+ * The one identity palette every colour-bearing surface on this page cycles
+ * through by position - the Hero's suggested prompts, the "Ask next" rail and
+ * the session ledger all draw from it, so a row of otherwise-identical tiles
+ * reads as distinct entries rather than one undifferentiated list.
+ */
+const ACCENT_CYCLE = [
+  { chip: 'bg-google-blue-50 text-google-blue-700 ring-google-blue-100', hoverBorder: 'hover:border-google-blue-200' },
+  { chip: 'bg-google-red-50 text-google-red-700 ring-google-red-100', hoverBorder: 'hover:border-google-red-200' },
+  { chip: 'bg-google-yellow-50 text-google-yellow-800 ring-google-yellow-100', hoverBorder: 'hover:border-google-yellow-300' },
+  { chip: 'bg-google-green-50 text-google-green-700 ring-google-green-100', hoverBorder: 'hover:border-google-green-200' },
+] as const
+
+function accentFor(index: number): (typeof ACCENT_CYCLE)[number] {
+  return ACCENT_CYCLE[index % ACCENT_CYCLE.length]!
+}
+
+/**
+ * Ten more prompts, common to every role, appended after the role-specific
+ * four. Each reuses a route's own published `example` from `src/ai/nlu.ts`
+ * verbatim as `queryEn` - the canonical phrasing the route's own anchors are
+ * built to score highest, so every tile here is a guaranteed strong match
+ * rather than a guess at wording that might land on "closest reading available".
+ */
+function build$COMMON_PROMPTS(): SuggestedPrompt[] {
+  return [
+  { label: t('Overall city position'), question: t('What is the overall city position?'), queryEn: 'What is the overall city position?', icon: icon(Gauge) },
+  { label: t('Alerts breaching SLA'), question: t('Which alerts have breached their response SLA?'), queryEn: 'Which alerts have breached their response SLA?', icon: icon(AlertOctagon) },
+  { label: t('Active incidents'), question: t('Which incidents are currently active?'), queryEn: 'Which incidents are currently active?', icon: icon(Siren) },
+  { label: t('Waterlogging risk'), question: t('Where is waterlogging risk concentrated?'), queryEn: 'Where is waterlogging risk concentrated?', icon: icon(CloudRain) },
+  { label: t('Solid waste position'), question: t('What is the solid waste collection position?'), queryEn: 'What is the solid waste collection position?', icon: icon(Trash2) },
+  { label: t('Hospital capacity'), question: t('What is the hospital bed and ICU occupancy position?'), queryEn: 'What is the hospital bed and ICU occupancy position?', icon: icon(Stethoscope) },
+  { label: t('Property tax position'), question: t('What is the property tax assessment and collection position?'), queryEn: 'What is the property tax assessment and collection position?', icon: icon(Receipt) },
+  { label: t('Air quality'), question: t('What is the air quality position across the city?'), queryEn: 'What is the air quality position across the city?', icon: icon(Wind) },
+  { label: t('Traffic congestion'), question: t('Which traffic corridors are most congested?'), queryEn: 'Which traffic corridors are most congested?', icon: icon(TrafficCone) },
+  { label: t('Procurement patterns'), question: t('Are there any unusual procurement patterns?'), queryEn: 'Are there any unusual procurement patterns?', icon: icon(ClipboardPlus) },
+]
+}
+let COMMON_PROMPTS: SuggestedPrompt[] = build$COMMON_PROMPTS()
+registerLayer(() => {
+  COMMON_PROMPTS = build$COMMON_PROMPTS()
+})
+
 function suggestedPromptsForRole(roleId: RoleId): SuggestedPrompt[] {
+  return [...roleSpecificPrompts(roleId), ...COMMON_PROMPTS]
+}
+
+function roleSpecificPrompts(roleId: RoleId): SuggestedPrompt[] {
   switch (roleId) {
     case 'finance-officer':
       return [
-        { label: t('Budget variance'), question: t('Show me department budget variance against the phased plan.'), icon: icon(Landmark) },
-        { label: t('Revenue risks'), question: t('What are the current revenue risks?'), icon: icon(TrendingDown) },
-        { label: t('Collection patterns'), question: t('Are there any unusual collection patterns?'), icon: icon(Building2) },
-        { label: t('Project delays'), question: t('Which capital projects are showing schedule risk or delay?'), icon: icon(Compass) },
+        { label: t('Budget variance'), question: t('Show me department budget variance against the phased plan.'), queryEn: 'Show me department budget variance against the phased plan.', icon: icon(Landmark) },
+        { label: t('Revenue risks'), question: t('What are the current revenue risks?'), queryEn: 'What are the current revenue risks?', icon: icon(TrendingDown) },
+        { label: t('Collection patterns'), question: t('Are there any unusual collection patterns?'), queryEn: 'Are there any unusual collection patterns?', icon: icon(Building2) },
+        { label: t('Project delays'), question: t('Which capital projects are showing schedule risk or delay?'), queryEn: 'Which capital projects are showing schedule risk or delay?', icon: icon(Compass) },
       ]
     case 'chief-engineer':
       return [
-        { label: t('Schedule risk'), question: t('Which projects carry the highest schedule risk?'), icon: icon(Compass) },
-        { label: t('Road assets'), question: t('Which road assets need intervention?'), icon: icon(Route) },
-        { label: t('Water supply'), question: t('What is the current water supply position?'), icon: icon(Droplets) },
-        { label: t('Monsoon readiness'), question: t('How prepared are we for this monsoon?'), icon: icon(Waves) },
+        { label: t('Schedule risk'), question: t('Which projects carry the highest schedule risk?'), queryEn: 'Which projects carry the highest schedule risk?', icon: icon(Compass) },
+        { label: t('Road assets'), question: t('Which road assets need intervention?'), queryEn: 'Which road assets need intervention?', icon: icon(Route) },
+        { label: t('Water supply'), question: t('What is the current water supply position?'), queryEn: 'What is the current water supply position?', icon: icon(Droplets) },
+        { label: t('Monsoon readiness'), question: t('How prepared are we for this monsoon?'), queryEn: 'How prepared are we for this monsoon?', icon: icon(Waves) },
       ]
     case 'ward-officer':
       return [
-        { label: t('My attention today'), question: t('What requires my attention today?'), icon: icon(MapPinned) },
-        { label: t('Rising complaints'), question: t('Why are complaints increasing in my ward?'), icon: icon(TrendingDown) },
-        { label: t('Services below SLA'), question: t('Which services are below SLA in my ward?'), icon: icon(MessagesSquare) },
-        { label: t('Monsoon readiness'), question: t('How prepared are we for this monsoon?'), icon: icon(Waves) },
+        { label: t('My attention today'), question: t('What requires my attention today?'), queryEn: 'What requires my attention today?', icon: icon(MapPinned) },
+        { label: t('Rising complaints'), question: t('Why are complaints increasing in my ward?'), queryEn: 'Why are complaints increasing in my ward?', icon: icon(TrendingDown) },
+        { label: t('Services below SLA'), question: t('Which services are below SLA in my ward?'), queryEn: 'Which services are below SLA in my ward?', icon: icon(MessagesSquare) },
+        { label: t('Monsoon readiness'), question: t('How prepared are we for this monsoon?'), queryEn: 'How prepared are we for this monsoon?', icon: icon(Waves) },
       ]
     case 'municipal-commissioner':
     case 'additional-commissioner':
     case 'deputy-commissioner':
     default:
       return [
-        { label: t('Highest operational risks'), question: t('What are the five highest operational risks right now?'), icon: icon(TriangleAlert) },
-        { label: t('Wards needing attention'), question: t('Which wards need the most attention?'), icon: icon(MapPinned) },
-        { label: t('Project delays'), question: t('Which capital projects are showing schedule risk or delay?'), icon: icon(Compass) },
-        { label: t('Monsoon readiness'), question: t('How prepared are we for this monsoon?'), icon: icon(Waves) },
+        { label: t('Highest operational risks'), question: t('What are the five highest operational risks right now?'), queryEn: 'What are the five highest operational risks right now?', icon: icon(TriangleAlert) },
+        { label: t('Wards needing attention'), question: t('Which wards need the most attention?'), queryEn: 'Which wards need the most attention?', icon: icon(MapPinned) },
+        { label: t('Project delays'), question: t('Which capital projects are showing schedule risk or delay?'), queryEn: 'Which capital projects are showing schedule risk or delay?', icon: icon(Compass) },
+        { label: t('Monsoon readiness'), question: t('How prepared are we for this monsoon?'), queryEn: 'How prepared are we for this monsoon?', icon: icon(Waves) },
       ]
   }
 }
@@ -189,6 +250,11 @@ function build$BLOCKED_EXAMPLE() {
   return {
   label: t('Try a request the platform must decline'),
   question: t('Approve the payment for contract PWD-2024-0182.'),
+  // The gateway's prohibited-intent check in `src/ai/provider.ts` is a regex
+  // over the English wording. Sending the localised `question` here would
+  // let a translated demo request straight through instead of demonstrating
+  // the refusal.
+  queryEn: 'Approve the payment for contract PWD-2024-0182.',
 }
 }
 let BLOCKED_EXAMPLE: ReturnType<typeof build$BLOCKED_EXAMPLE> = build$BLOCKED_EXAMPLE()
@@ -393,6 +459,26 @@ export function CopilotPage(): React.JSX.Element {
 
   const busy = messages.some((m) => m.status === 'loading')
 
+  // The screen must never open blank. The instant it mounts with no
+  // conversation yet - first visit, or after "New session" - it silently asks
+  // the role's own headline question, so the first thing an officer sees is a
+  // real, evidence-backed answer rather than an empty invitation to type. The
+  // in-flight ref guards the one case `messages.length` cannot: React 18
+  // StrictMode double-invokes this effect on mount, and without it that would
+  // fire the same question twice before the first `appendMessage` call has
+  // had a chance to make `messages.length` no longer zero.
+  const autoAskInFlightRef = useRef(false)
+  useEffect(() => {
+    if (!user || messages.length > 0 || busy || autoAskInFlightRef.current) return
+    const defaultPrompt = suggestedPromptsForRole(user.roleId)[0]
+    if (!defaultPrompt) return
+    autoAskInFlightRef.current = true
+    void ask(defaultPrompt.question, defaultPrompt.queryEn).finally(() => {
+      autoAskInFlightRef.current = false
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, messages.length, busy])
+
   const recordRequest = useServiceAction(
     (u, record: AIRequestInput) => aiService.recordRequest(u, record),
     [['bmc-mii', 'ai']],
@@ -456,19 +542,32 @@ export function CopilotPage(): React.JSX.Element {
   const prompts = suggestedPromptsForRole(principal.roleId)
   const ceiling = classificationCeiling(principal)
 
-  async function ask(rawQuestion: string): Promise<void> {
+  /**
+   * `matchQuery` is what the retrieval engine and the gateway policy check
+   * actually see; `rawQuestion` is what the operator sees in the chat bubble.
+   * They differ only for canned prompts in a non-English interface - both
+   * `src/ai/nlu.ts`'s anchors and `evaluateGatewayPolicy`'s reserved-act
+   * patterns match English wording regardless of the active locale, so a
+   * canned question's known-good English phrasing has to reach them
+   * untranslated even while the operator reads it in their own language.
+   * Free text the operator types has no separate English form, so it is its
+   * own `matchQuery` - the same "closest reading available" limitation this
+   * page already discloses for any weakly-matched wording.
+   */
+  async function ask(rawQuestion: string, matchQuery?: string): Promise<void> {
     const question = sanitiseText(rawQuestion, 1000)
-    if (!question || busy) return
+    const queryForEngine = sanitiseText(matchQuery ?? rawQuestion, 1000)
+    if (!question || !queryForEngine || busy) return
     const id = takeMessageId()
-    appendMessage({ id, question, askedAt: isoFromAnchor(0), status: 'loading' })
+    appendMessage({ id, question, matchQuery: queryForEngine, askedAt: isoFromAnchor(0), status: 'loading' })
     setInput('')
     const started = performance.now()
     try {
       const provider = getAIProvider()
-      const response = await provider.answerMunicipalQuery({ user: principal, question }, question)
+      const response = await provider.answerMunicipalQuery({ user: principal, question: queryForEngine }, queryForEngine)
       const latencyMs = Math.round(performance.now() - started)
       patchMessage(id, { status: 'done', response, latencyMs })
-      recordRequest(buildRequestInput(question, response, latencyMs)).catch(() => undefined)
+      recordRequest(buildRequestInput(queryForEngine, response, latencyMs)).catch(() => undefined)
     } catch (err) {
       patchMessage(id, {
         status: 'error',
@@ -518,29 +617,232 @@ export function CopilotPage(): React.JSX.Element {
 
   return (
     <PageBody width="full">
-      <PageHeader
-        eyebrow={t('AI & Automation')}
-        breadcrumbs={[{ label: t('AI & Automation') }, { label: t('{0} Municipal Copilot', cityName(corporation)) }]}
-        actions={
-          <div className="flex flex-wrap items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              icon={<Plus className="h-3.5 w-3.5" />}
-              disabled={messages.length === 0}
-              onClick={() => setResetOpen(true)}
-            >
-              {t('New session')}
-            </Button>
-          </div>
+      <GovMasthead
+        authority={t('AI & Automation · {0}', cityName(corporation))}
+        title={
+          <span className="flex flex-wrap items-center gap-2">
+            {t('{0} Municipal Copilot', cityName(corporation))}
+            <Badge tone="positive" dot>
+              {t('Live')}
+            </Badge>
+          </span>
+        }
+        standfirst={t(
+          "A governed assistant answering from this corporation's own operational record. Every answer arrives with the evidence it rests on, the confidence it carries and the limits of what it can support — bounded by what {0} is authorised to see.",
+          role?.name ? `a ${role.name}` : 'your role',
+        )}
+        meta={
+          <Button
+            variant="outline"
+            size="sm"
+            icon={<Plus className="h-3.5 w-3.5" />}
+            disabled={messages.length === 0}
+            onClick={() => setResetOpen(true)}
+          >
+            {t('New session')}
+          </Button>
+        }
+        strip={
+          <>
+            <GovStripCell
+              label={t('Queries asked')}
+              value={sessionLedger.asked}
+              background="blue"
+              icon={<MessagesSquare className="h-3 w-3" />}
+            />
+            <GovStripCell
+              label={t('Answered')}
+              value={sessionLedger.answered}
+              background="teal"
+              icon={<CheckCircle2 className="h-3 w-3" />}
+            />
+            <GovStripCell
+              label={t('Evidence cited')}
+              value={sessionLedger.evidenceCited}
+              background="green"
+              icon={<FileSearch className="h-3 w-3" />}
+            />
+            <GovStripCell
+              label={t('Decisions raised')}
+              value={sessionLedger.decisions}
+              background="amber"
+              icon={<Gavel className="h-3 w-3" />}
+            />
+            <GovStripCell
+              label={t('Tasks raised')}
+              value={sessionLedger.tasks}
+              background="gold"
+              icon={<ClipboardPlus className="h-3 w-3" />}
+            />
+            <GovStripCell
+              label={t('Briefs saved')}
+              value={sessionLedger.briefs}
+              background="neutral"
+              icon={<BookmarkPlus className="h-3 w-3" />}
+            />
+            <GovStripCell
+              label={t('Blocked at gateway')}
+              value={sessionLedger.blocked}
+              tone={sessionLedger.blocked > 0 ? 'warn' : 'default'}
+              background="red"
+              icon={<Ban className="h-3 w-3" />}
+            />
+          </>
         }
       />
 
-      <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1fr)_19rem]">
-        {/* ---------------------------------------------- Conversation */}
+      <PageHeader
+        eyebrow={t('AI & Automation')}
+        breadcrumbs={[{ label: t('AI & Automation') }, { label: t('{0} Municipal Copilot', cityName(corporation)) }]}
+      />
+
+      <div className="grid min-w-0 gap-5 lg:grid-cols-[19rem_minmax(0,1fr)]">
+        {/* ---------------------------------------------------- Inspector
+            Pinned to the same viewport box as the conversation card beside it
+            and capped to the same height, so this rail scrolls within itself
+            when its panels run long instead of stretching the page underneath
+            both columns. */}
+        <div className="scrollbar-slim min-w-0 space-y-4 overflow-y-auto lg:sticky lg:top-[4.5rem] lg:h-[calc(100vh-6.5rem)] lg:self-start">
+          <GovPanel title={t('Quick Intelligence')} tone="primary">
+            <div className="grid grid-cols-2 gap-2">
+              {prompts.map((p, i) => {
+                const accent = accentFor(i)
+                return (
+                  <button
+                    key={p.question}
+                    type="button"
+                    disabled={busy}
+                    onClick={() => void ask(p.question, p.queryEn)}
+                    className={cn(
+                      'lift-on-hover flex flex-col items-start gap-1.5 rounded-lg border border-ink-100 p-2.5 text-left transition-all',
+                      accent.hoverBorder,
+                      'focus-visible:ring-2 focus-visible:ring-govt-500/30 focus-visible:outline-none',
+                      'disabled:cursor-not-allowed disabled:opacity-50',
+                    )}
+                  >
+                    <span className={cn('flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ring-1', accent.chip)}>
+                      {p.icon}
+                    </span>
+                    <span className="text-[0.75rem] leading-snug font-semibold text-ink-800">{p.label}</span>
+                  </button>
+                )
+              })}
+            </div>
+
+            <p className="label-institutional mt-4 mb-2">{t('Or ask about a domain')}</p>
+            <div className="flex flex-wrap gap-1.5">
+              {Object.entries(DOMAIN_FOLLOW_UP).map(([domain, question]) => (
+                <button
+                  key={domain}
+                  type="button"
+                  disabled={busy}
+                  onClick={() => question && void ask(question)}
+                  className={cn(
+                    'rounded-full border border-ink-200 px-2.5 py-1 text-[0.6875rem] font-medium text-ink-600 transition-colors',
+                    'hover:border-govt-300 hover:bg-govt-50/70 hover:text-govt-800 focus-visible:ring-2 focus-visible:ring-govt-500/30 focus-visible:outline-none',
+                    'disabled:cursor-not-allowed disabled:opacity-50',
+                  )}
+                >
+                  {DOMAIN_LABEL[domain as keyof typeof DOMAIN_LABEL] ?? domain}
+                </button>
+              ))}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => void ask(BLOCKED_EXAMPLE.question, BLOCKED_EXAMPLE.queryEn)}
+              title={t('Demonstrates the AI gateway\'s prohibited-intent policy.')}
+              className={cn(
+                'mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-warn-300/80 bg-warn-50/30 px-3 py-2 text-[0.6875rem] text-warn-700 transition-colors',
+                'hover:bg-warn-50/70 focus-visible:ring-2 focus-visible:ring-warn-500/30 focus-visible:outline-none',
+              )}
+            >
+              <TriangleAlert className="h-3.5 w-3.5 shrink-0" />
+              <span className="font-medium">{BLOCKED_EXAMPLE.label}</span>
+            </button>
+          </GovPanel>
+
+          <GovPanel title={t('Your authority')} tone="amber">
+            <p className="mb-3 text-xs leading-relaxed text-ink-500">
+              {t('Answers are bounded by what you may see — not by the assistant\'s willingness.')}
+            </p>
+            <dl className="mt-4 space-y-2.5 text-xs">
+              <RailRow label={t('Acting as')} value={role?.name ?? principal.roleId} />
+              <RailRow label={t('Department')} value={departmentName(principal.departmentId)} />
+              <RailRow label={t('Scope')} value={describeScope(principal, wardShortName)} />
+              <RailRow
+                label={t('Classification ceiling')}
+                value={<ClassificationBadge classification={ceiling} showIcon={false} />}
+              />
+            </dl>
+            <p className="mt-3.5 border-t border-ink-100 pt-3 text-[0.6875rem] leading-relaxed text-ink-500">
+              {t('The Copilot analyses, recommends and explains — it never decides. Approving expenditure, sanctioning payment or issuing an order always requires a named officer and cannot be completed here.')}
+            </p>
+          </GovPanel>
+
+          {sessionLedger.decisions + sessionLedger.tasks + sessionLedger.briefs > 0 ||
+          escalations.length > 0 ||
+          situationRoom.length > 0 ? (
+            <GovPanel title={t('Raised from this session')} tone="amber">
+              <p className="mb-3 text-xs leading-relaxed text-ink-500">
+                {t('What left this surface and became a record elsewhere.')}
+              </p>
+              <div className="mt-3.5 grid grid-cols-3 gap-2 text-center">
+                <LedgerStat label={t('Decisions')} value={sessionLedger.decisions} accent={accentFor(0)} />
+                <LedgerStat label={t('Tasks')} value={sessionLedger.tasks} accent={accentFor(2)} />
+                <LedgerStat label={t('Briefs')} value={sessionLedger.briefs} accent={accentFor(3)} />
+              </div>
+
+              {escalations.length > 0 ? (
+                <div className="mt-3.5 border-t border-ink-100 pt-3">
+                  <p className="label-institutional mb-2 flex items-center gap-1.5">
+                    <Siren className="h-3 w-3" />{' '}{t('Escalations')}
+                  </p>
+                  <ul className="space-y-1.5">
+                    {escalations.map((e) => (
+                      <li key={`${e.id}-${e.at}`} className="rounded-lg border border-warn-200 bg-warn-50/40 p-2.5 text-xs">
+                        <p className="font-medium text-ink-800">{e.title}</p>
+                        <p className="mt-0.5 leading-relaxed text-ink-600">{e.reason}</p>
+                        <p className="mt-1 text-[0.625rem] text-ink-400">{formatRelative(e.at)}</p>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="mt-2 text-[0.625rem] leading-relaxed text-ink-500">
+                    {t('Session-local. Not a substitute for the formal Alerts & Escalations register.')}
+                  </p>
+                </div>
+              ) : null}
+
+              {situationRoom.length > 0 ? (
+                <div className="mt-3.5 border-t border-ink-100 pt-3">
+                  <p className="label-institutional mb-2 flex items-center gap-1.5">
+                    <Compass className="h-3 w-3" />{' '}{t('Added to Situation Room')}
+                  </p>
+                  <ul className="space-y-1.5">
+                    {situationRoom.map((s) => (
+                      <li key={`${s.id}-${s.at}`} className="rounded-lg border border-govt-200 bg-govt-50/40 p-2.5 text-xs">
+                        <p className="font-medium text-ink-800">{s.title}</p>
+                        <p className="mt-1 text-[0.625rem] text-ink-400">{formatRelative(s.at)}</p>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+            </GovPanel>
+          ) : null}
+        </div>
+
+        {/* ---------------------------------------------- Conversation
+            Pinned to the viewport (minus the shell chrome and this page's own
+            masthead band) from `lg:` up, the same way the Quick Intelligence
+            rail beside it is - a fixed height alone does not stop the card
+            scrolling away with the page underneath it; it needs the same
+            `sticky` anchor the rail uses so the two hold their position
+            together. Only the message list inside scrolls; the composer sits
+            outside that scroll region and never moves. */}
         <Card
           flush
-          className="relative flex min-h-[36rem] min-w-0 flex-col overflow-hidden rounded-[2px] shadow-raised xl:h-[calc(100vh-14rem)]"
+          className="relative flex min-h-[36rem] min-w-0 flex-col overflow-hidden rounded-lg shadow-raised lg:sticky lg:top-[4.5rem] lg:h-[calc(100vh-6.5rem)] lg:min-h-0 lg:self-start"
         >
           {/* A single hairline of institutional colour along the top edge. */}
           <span
@@ -550,9 +852,14 @@ export function CopilotPage(): React.JSX.Element {
 
           <div className="scrollbar-slim min-w-0 flex-1 overflow-y-auto">
             {messages.length === 0 ? (
-              <Hero city={cityName(corporation)} prompts={prompts} roleName={role?.name} onAsk={(q) => void ask(q)} />
+              <div className="flex h-full min-h-[20rem] flex-col items-center justify-center gap-3 px-5 text-center">
+                <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-govt-50 text-govt-600 ring-1 ring-govt-100">
+                  <Bot className="h-5 w-5 animate-pulse" />
+                </span>
+                <p className="text-xs text-ink-400">{t('Preparing your briefing…')}</p>
+              </div>
             ) : (
-              <div className="mx-auto w-full max-w-4xl space-y-7 px-5 py-6 sm:px-7">
+              <div className="mx-auto w-full max-w-6xl space-y-7 px-5 py-6 sm:px-7">
                 {messages.map((message) => (
                   <Turn
                     key={message.id}
@@ -566,7 +873,7 @@ export function CopilotPage(): React.JSX.Element {
                     onEscalate={() => setEscalateTarget(message.id)}
                     onAddToSituationRoom={() => handleAddToSituationRoom(message)}
                     onSaveBrief={() => void handleSaveBrief(message)}
-                    onRetry={() => void ask(message.question)}
+                    onRetry={() => void ask(message.question, message.matchQuery)}
                     onFollowUp={(q) => void ask(q)}
                     busy={busy}
                   />
@@ -579,7 +886,7 @@ export function CopilotPage(): React.JSX.Element {
           {/* Composer ------------------------------------------------- */}
           <div className="shrink-0 border-t border-ink-100 bg-surface-sunken/60 px-5 py-4 sm:px-7">
             <form
-              className="mx-auto w-full max-w-4xl"
+              className="mx-auto w-full max-w-6xl"
               onSubmit={(e) => {
                 e.preventDefault()
                 void ask(input)
@@ -587,7 +894,7 @@ export function CopilotPage(): React.JSX.Element {
             >
               <div
                 className={cn(
-                  'rounded-[2px] border border-ink-200 bg-surface p-2 shadow-card transition-all',
+                  'rounded-lg border border-ink-200 bg-surface p-2 shadow-card transition-all',
                   'focus-within:border-govt-300 focus-within:ring-4 focus-within:ring-govt-500/10',
                 )}
               >
@@ -638,101 +945,6 @@ export function CopilotPage(): React.JSX.Element {
             </form>
           </div>
         </Card>
-
-        {/* ---------------------------------------------------- Inspector */}
-        <div className="min-w-0 space-y-4 xl:sticky xl:top-4 xl:self-start">
-          <GovPanel title={t('Your authority')} tone="amber">
-            <p className="mb-3 text-xs leading-relaxed text-ink-500">
-              {t('Answers are bounded by what you may see — not by the assistant\'s willingness.')}
-            </p>
-            <dl className="mt-4 space-y-2.5 text-xs">
-              <RailRow label={t('Acting as')} value={role?.name ?? principal.roleId} />
-              <RailRow label={t('Department')} value={departmentName(principal.departmentId)} />
-              <RailRow label={t('Scope')} value={describeScope(principal, wardShortName)} />
-              <RailRow
-                label={t('Classification ceiling')}
-                value={<ClassificationBadge classification={ceiling} showIcon={false} />}
-              />
-            </dl>
-            <p className="mt-3.5 border-t border-ink-100 pt-3 text-[0.6875rem] leading-relaxed text-ink-500">
-              {t('The Copilot analyses, recommends and explains — it never decides. Approving expenditure, sanctioning payment or issuing an order always requires a named officer and cannot be completed here.')}
-            </p>
-          </GovPanel>
-
-          {messages.length > 0 ? (
-            <GovPanel title={t('Ask next')} tone="red">
-              <div className="mt-3 flex flex-col gap-1.5">
-                {prompts.map((p) => (
-                  <button
-                    key={p.question}
-                    type="button"
-                    disabled={busy}
-                    onClick={() => void ask(p.question)}
-                    className={cn(
-                      'flex items-center gap-2 rounded-[2px] px-2 py-1.5 text-left text-xs leading-snug text-ink-600 transition-colors',
-                      'hover:bg-govt-50/70 hover:text-govt-800 focus-visible:ring-2 focus-visible:ring-govt-500/30 focus-visible:outline-none',
-                      'disabled:cursor-not-allowed disabled:opacity-50',
-                    )}
-                  >
-                    <span className="shrink-0 text-ink-400">{p.icon}</span>
-                    <span className="min-w-0 truncate">{p.label}</span>
-                  </button>
-                ))}
-              </div>
-            </GovPanel>
-          ) : null}
-
-          {sessionLedger.decisions + sessionLedger.tasks + sessionLedger.briefs > 0 ||
-          escalations.length > 0 ||
-          situationRoom.length > 0 ? (
-            <GovPanel title={t('Raised from this session')} tone="amber">
-              <p className="mb-3 text-xs leading-relaxed text-ink-500">
-                {t('What left this surface and became a record elsewhere.')}
-              </p>
-              <div className="mt-3.5 grid grid-cols-3 gap-2 text-center">
-                <LedgerStat label={t('Decisions')} value={sessionLedger.decisions} />
-                <LedgerStat label={t('Tasks')} value={sessionLedger.tasks} />
-                <LedgerStat label={t('Briefs')} value={sessionLedger.briefs} />
-              </div>
-
-              {escalations.length > 0 ? (
-                <div className="mt-3.5 border-t border-ink-100 pt-3">
-                  <p className="label-institutional mb-2 flex items-center gap-1.5">
-                    <Siren className="h-3 w-3" />{' '}{t('Escalations')}
-                  </p>
-                  <ul className="space-y-1.5">
-                    {escalations.map((e) => (
-                      <li key={`${e.id}-${e.at}`} className="rounded-[2px] border border-warn-200 bg-warn-50/40 p-2.5 text-xs">
-                        <p className="font-medium text-ink-800">{e.title}</p>
-                        <p className="mt-0.5 leading-relaxed text-ink-600">{e.reason}</p>
-                        <p className="mt-1 text-[0.625rem] text-ink-400">{formatRelative(e.at)}</p>
-                      </li>
-                    ))}
-                  </ul>
-                  <p className="mt-2 text-[0.625rem] leading-relaxed text-ink-500">
-                    {t('Session-local. Not a substitute for the formal Alerts &amp; Escalations register.')}
-                  </p>
-                </div>
-              ) : null}
-
-              {situationRoom.length > 0 ? (
-                <div className="mt-3.5 border-t border-ink-100 pt-3">
-                  <p className="label-institutional mb-2 flex items-center gap-1.5">
-                    <Compass className="h-3 w-3" />{' '}{t('Added to Situation Room')}
-                  </p>
-                  <ul className="space-y-1.5">
-                    {situationRoom.map((s) => (
-                      <li key={`${s.id}-${s.at}`} className="rounded-[2px] border border-govt-200 bg-govt-50/40 p-2.5 text-xs">
-                        <p className="font-medium text-ink-800">{s.title}</p>
-                        <p className="mt-1 text-[0.625rem] text-ink-400">{formatRelative(s.at)}</p>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ) : null}
-            </GovPanel>
-          ) : null}
-        </div>
       </div>
 
       <ConfirmDialog
@@ -777,83 +989,19 @@ function RailRow({ label, value }: { label: string; value: ReactNode }): React.J
   )
 }
 
-function LedgerStat({ label, value }: { label: string; value: number }): React.JSX.Element {
-  return (
-    <div className="rounded-[2px] bg-surface-sunken px-2 py-2">
-      <p className="numeric text-lg font-semibold text-ink-900">{value}</p>
-      <p className="mt-px text-[0.625rem] text-ink-500">{label}</p>
-    </div>
-  )
-}
-
-/* ==========================================================================
-   Hero — the opening state, and the one moment this page gets to make a case
-   for itself before an operator has typed anything
-   ========================================================================== */
-
-function Hero({
-  city,
-  prompts,
-  roleName,
-  onAsk,
+function LedgerStat({
+  label,
+  value,
+  accent,
 }: {
-  city: string
-  prompts: SuggestedPrompt[]
-  roleName?: string
-  onAsk: (question: string) => void
+  label: string
+  value: number
+  accent: (typeof ACCENT_CYCLE)[number]
 }): React.JSX.Element {
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col items-center px-5 py-12 text-center sm:px-7 sm:py-16">
-      <span className="relative flex h-14 w-14 items-center justify-center">
-        <span
-          aria-hidden
-          className="absolute inset-0 rounded-[2px] bg-gradient-to-br from-intel-400/30 to-govt-500/30 blur-lg"
-        />
-        <span className="relative flex h-14 w-14 items-center justify-center rounded-[2px] bg-surface shadow-card ring-1 ring-ink-100">
-          <Bot className="h-6 w-6 text-govt-600" />
-        </span>
-      </span>
-
-      <h2 className="mt-5 text-xl font-semibold tracking-tight text-ink-900">{t('Ask the {0} Municipal Copilot', city)}</h2>
-      <p className="mt-2.5 max-w-xl text-[0.875rem] leading-7 text-ink-500">
-        {t('A governed assistant answering from this corporation&apos;s own operational record. Every answer arrives with the evidence it rests on, the confidence it carries and the limits of what it can support — bounded by what {0} is authorised to see.', roleName ? `a ${roleName}` : 'your role')}
-      </p>
-
-      <div className="mt-8 grid w-full gap-2.5 sm:grid-cols-2">
-        {prompts.map((p) => (
-          <button
-            key={p.question}
-            type="button"
-            onClick={() => onAsk(p.question)}
-            className={cn(
-              'lift-on-hover group flex items-start gap-3 rounded-[2px] border border-ink-100 bg-surface p-3.5 text-left shadow-xs transition-all',
-              'hover:border-govt-200 hover:shadow-card focus-visible:ring-2 focus-visible:ring-govt-500/30 focus-visible:outline-none',
-            )}
-          >
-            <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-[2px] bg-govt-50 text-govt-600 ring-1 ring-govt-100 transition-colors group-hover:bg-govt-100">
-              {p.icon}
-            </span>
-            <span className="min-w-0">
-              <span className="block text-[0.8125rem] font-semibold text-ink-800">{p.label}</span>
-              <span className="mt-0.5 block text-[0.75rem] leading-relaxed text-ink-500">{p.question}</span>
-            </span>
-          </button>
-        ))}
-      </div>
-
-      <button
-        type="button"
-        onClick={() => onAsk(BLOCKED_EXAMPLE.question)}
-        title={t('Demonstrates the AI gateway\'s prohibited-intent policy.')}
-        className={cn(
-          'mt-3 flex w-full items-center justify-center gap-2 rounded-[2px] border border-dashed border-warn-300/80 bg-warn-50/30 px-3.5 py-2.5 text-xs text-warn-700 transition-colors',
-          'hover:bg-warn-50/70 focus-visible:ring-2 focus-visible:ring-warn-500/30 focus-visible:outline-none',
-        )}
-      >
-        <TriangleAlert className="h-3.5 w-3.5 shrink-0" />
-        <span className="font-medium">{BLOCKED_EXAMPLE.label}</span>
-        <span className="hidden opacity-75 sm:inline">{t('— watch it refuse at the gateway')}</span>
-      </button>
+    <div className={cn('rounded-lg px-2 py-2 ring-1', accent.chip)}>
+      <p className="numeric text-lg font-semibold text-ink-900">{value}</p>
+      <p className="mt-px text-[0.625rem] text-ink-600">{label}</p>
     </div>
   )
 }
@@ -891,7 +1039,7 @@ function Turn({
     <div className="animate-in-rise space-y-3.5">
       {/* The operator's turn — the only saturated surface on the page. */}
       <div className="flex justify-end">
-        <div className="max-w-[38rem] rounded-[2px] bg-gradient-to-b from-govt-600 to-govt-700 px-4 py-3 text-[0.875rem] leading-6 text-white shadow-[0_1px_3px_0_rgb(26_63_175/0.35)]">
+        <div className="max-w-[38rem] rounded-lg bg-gradient-to-b from-govt-600 to-govt-700 px-4 py-3 text-[0.875rem] leading-6 text-white shadow-[0_1px_3px_0_rgb(26_63_175/0.35)]">
           <p className="whitespace-pre-wrap">{message.question}</p>
         </div>
       </div>
@@ -900,7 +1048,7 @@ function Turn({
       {message.status === 'loading' ? <ThinkingRail question={message.question} /> : null}
 
       {message.status === 'error' ? (
-        <div className="flex items-start gap-3 rounded-[2px] border border-crit-200 bg-crit-50/40 p-4">
+        <div className="flex items-start gap-3 rounded-lg border border-crit-200 bg-crit-50/40 p-4">
           <AlertOctagon className="mt-0.5 h-4 w-4 shrink-0 text-crit-600" />
           <div className="min-w-0 flex-1">
             <p className="text-[0.875rem] font-semibold text-crit-700">{t('The Copilot could not answer this request')}</p>
@@ -950,7 +1098,7 @@ function ThinkingRail({ question }: { question: string }): React.JSX.Element {
   const gate = evaluateGatewayPolicy(question)
   return (
     <div
-      className="rounded-[2px] border border-ink-100 bg-surface-sunken/70 p-4"
+      className="rounded-lg border border-ink-100 bg-surface-sunken/70 p-4"
       role="status"
       aria-live="polite"
     >
@@ -1074,7 +1222,7 @@ function AnswerPanel({
   return (
     <div
       className={cn(
-        'min-w-0 overflow-hidden rounded-[2px] border bg-surface shadow-card',
+        'min-w-0 overflow-hidden rounded-lg border bg-surface shadow-card',
         blocked ? 'border-warn-200' : 'border-ink-100',
       )}
     >
@@ -1087,7 +1235,7 @@ function AnswerPanel({
       >
         <span
           className={cn(
-            'flex h-7 w-7 shrink-0 items-center justify-center rounded-[2px] ring-1 ring-inset',
+            'flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ring-1 ring-inset',
             blocked ? 'bg-warn-100/70 text-warn-700 ring-warn-200' : 'bg-surface text-govt-600 ring-ink-100',
           )}
         >
@@ -1175,7 +1323,7 @@ function AnswerPanel({
             {response.supportingTable ? (
               <section>
                 <p className="label-institutional mb-2.5">{response.supportingTable.caption}</p>
-                <div className="scrollbar-slim overflow-x-auto rounded-[2px] border border-ink-100">
+                <div className="scrollbar-slim overflow-x-auto rounded-lg border border-ink-100">
                   <table className="w-full min-w-[28rem] border-collapse text-left text-xs">
                     <thead>
                       <tr className="border-b border-ink-100 bg-surface-sunken">
@@ -1208,7 +1356,7 @@ function AnswerPanel({
             ) : null}
 
             {response.risksAndLimitations.length > 0 ? (
-              <section className="rounded-[2px] border border-warn-200/60 bg-warn-50/25 p-4">
+              <section className="rounded-lg border border-warn-200/60 bg-warn-50/25 p-4">
                 <p className="label-institutional mb-2.5 text-warn-700">{t('Risks and limitations')}</p>
                 <ul className="space-y-2">
                   {response.risksAndLimitations.map((r) => (
@@ -1226,7 +1374,7 @@ function AnswerPanel({
         {tab === 'evidence' ? (
           <div className="space-y-3">
             {response.evidence.length === 0 ? (
-              <p className="rounded-[2px] border border-ink-100 bg-surface-sunken p-4 text-[0.8125rem] leading-6 text-ink-600">
+              <p className="rounded-lg border border-ink-100 bg-surface-sunken p-4 text-[0.8125rem] leading-6 text-ink-600">
                 {t('This response drew on no authorised evidence record. That is stated rather than concealed — an answer without evidence is general reasoning, and its confidence is set accordingly.')}
               </p>
             ) : (
@@ -1241,7 +1389,7 @@ function AnswerPanel({
                         type="button"
                         disabled={!citation.evidenceId}
                         onClick={() => onOpenEvidence(citation)}
-                        className="flex w-full items-start gap-3 rounded-[2px] border border-ink-100 bg-surface-sunken/70 p-3 text-left transition-colors enabled:hover:border-govt-200 enabled:hover:bg-govt-50/40 disabled:cursor-not-allowed disabled:opacity-60"
+                        className="flex w-full items-start gap-3 rounded-lg border border-ink-100 bg-surface-sunken/70 p-3 text-left transition-colors enabled:hover:border-govt-200 enabled:hover:bg-govt-50/40 disabled:cursor-not-allowed disabled:opacity-60"
                       >
                         <FileSearch className="mt-0.5 h-4 w-4 shrink-0 text-ink-400" />
                         <span className="min-w-0 flex-1">
@@ -1263,7 +1411,7 @@ function AnswerPanel({
         {tab === 'actions' ? (
           <div className="space-y-4">
             {response.recommendedActions.length === 0 ? (
-              <p className="rounded-[2px] border border-ink-100 bg-surface-sunken p-4 text-[0.8125rem] leading-6 text-ink-600">
+              <p className="rounded-lg border border-ink-100 bg-surface-sunken p-4 text-[0.8125rem] leading-6 text-ink-600">
                 {t('No action is recommended for this request. The Copilot does not manufacture a next step where the records do not support one.')}
               </p>
             ) : (
@@ -1401,7 +1549,7 @@ function AnswerPanel({
       {acted ? (
         <p className="flex items-start gap-2 border-t border-ink-100 bg-ok-50/40 px-5 py-2.5 text-[0.6875rem] leading-relaxed text-ok-700">
           <CheckCircle2 className="mt-0.5 h-3 w-3 shrink-0" />
-          {t('Recorded. High-impact steps beyond this still require a named officer&apos;s approval through the relevant module — this platform has not, and cannot, complete them automatically.')}
+          {t("Recorded. High-impact steps beyond this still require a named officer's approval through the relevant module — this platform has not, and cannot, complete them automatically.")}
         </p>
       ) : null}
     </div>
@@ -1487,7 +1635,7 @@ function InterpretationStrip({
               <span
                 key={`${entity.kind}-${entity.id ?? entity.label}-${entity.matchedText}`}
                 title={t('Bound from "{0}" in your question', entity.matchedText)}
-                className="inline-flex max-w-full items-center gap-1.5 rounded-[2px] border border-ink-200 bg-surface px-2 py-1 text-[0.6875rem]"
+                className="inline-flex max-w-full items-center gap-1.5 rounded-lg border border-ink-200 bg-surface px-2 py-1 text-[0.6875rem]"
               >
                 <span className="shrink-0 text-ink-400" aria-hidden>
                   {kind.icon}
@@ -1515,7 +1663,7 @@ function InterpretationStrip({
           plausible one, so it is given a surface of its own rather than being
           folded into the prose below. */}
       {interpretation.note ? (
-        <p className="mt-2.5 flex items-start gap-2 rounded-[2px] border border-warn-200 bg-warn-50/70 px-2.5 py-2 text-[0.75rem] leading-relaxed text-warn-700">
+        <p className="mt-2.5 flex items-start gap-2 rounded-lg border border-warn-200 bg-warn-50/70 px-2.5 py-2 text-[0.75rem] leading-relaxed text-warn-700">
           <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
           <span className="min-w-0">{interpretation.note}</span>
         </p>
@@ -1536,7 +1684,7 @@ function InterpretationStrip({
                 onClick={() => onAsk(alt.question)}
                 title={alt.question}
                 className={cn(
-                  'flex min-w-0 max-w-full flex-col items-start gap-0.5 rounded-[2px] border border-ink-200 bg-surface px-2.5 py-1.5 text-left transition-colors',
+                  'flex min-w-0 max-w-full flex-col items-start gap-0.5 rounded-lg border border-ink-200 bg-surface px-2.5 py-1.5 text-left transition-colors',
                   'enabled:hover:border-govt-300 enabled:hover:bg-govt-50/60',
                   'focus-visible:ring-2 focus-visible:ring-govt-500/30 focus-visible:outline-none',
                   'disabled:cursor-not-allowed disabled:opacity-50',

@@ -7,14 +7,18 @@ import { Card, DefinitionList, DefinitionRow, MetricGrid, ProgressBar } from '@/
 import { GovPanel } from '@/components/gov/GovPanel'
 import { DemonstrationNotice, EmptyState, ErrorState, LoadingState } from '@/components/ui/states'
 import { MetricCard } from '@/components/cards/MetricCard'
+import { FilterBar } from '@/components/filters/FilterBar'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { aiService } from '@/services'
 import { usePageMasthead } from '@/stores/masthead.store'
+import { useFilterStore } from '@/stores/ui.store'
+import type { FilterState } from '@/stores/ui.store'
 import type { AIEvaluation } from '@/types/ai'
+import type { DateRangeKey } from '@/types/common'
 import { formatRelative } from '@/utils/format'
 import { cn } from '@/utils/cn'
-import { isoFromAnchor } from '@/utils/deterministic'
+import { DEMO_NOW, isoFromAnchor } from '@/utils/deterministic'
 import { t } from '@/i18n'
 import { registerLayer } from '@/data/runtime'
 
@@ -56,6 +60,34 @@ registerLayer(() => {
   VERDICT_LABEL = build$VERDICT_LABEL()
 })
 
+const DATE_RANGE_HOURS: Record<DateRangeKey, number> = {
+  '24h': 24,
+  '7d': 24 * 7,
+  '30d': 24 * 30,
+  '90d': 24 * 90,
+  fy: 24 * 365,
+}
+
+function withinDateRange(iso: string, range: DateRangeKey): boolean {
+  const ageMs = DEMO_NOW.getTime() - new Date(iso).getTime()
+  return ageMs <= DATE_RANGE_HOURS[range] * 3_600_000
+}
+
+function matchesGlobalFilters(evaluation: AIEvaluation, filters: FilterState): boolean {
+  if (filters.statuses.length > 0 && !filters.statuses.includes(evaluation.verdict)) return false
+  if (!withinDateRange(evaluation.evaluatedAt, filters.dateRange)) return false
+  if (filters.search.trim()) {
+    const q = filters.search.trim().toLowerCase()
+    if (
+      !evaluation.modelName.toLowerCase().includes(q) &&
+      !evaluation.modelVersion.toLowerCase().includes(q) &&
+      !evaluation.summary.toLowerCase().includes(q)
+    )
+      return false
+  }
+  return true
+}
+
 export function AIEvaluationPage(): React.JSX.Element {
   // The shell's masthead states the screen's name; the page states the wording.
   usePageMasthead(t('AI Evaluation'))
@@ -63,11 +95,20 @@ export function AIEvaluationPage(): React.JSX.Element {
   const query = useServiceQuery(queryKeys.ai('evaluations'), (u) => aiService.evaluations(u))
   const [searchParams] = useSearchParams()
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const filters = useFilterStore((s) => s.filters)
 
   const evaluations = useMemo(() => query.data ?? [], [query.data])
+  const statusOptions = useMemo(
+    () => (Object.keys(VERDICT_LABEL) as AIEvaluation['verdict'][]).map((v) => ({ value: v, label: VERDICT_LABEL[v] })),
+    [],
+  )
+  const filteredEvaluations = useMemo(
+    () => evaluations.filter((e) => matchesGlobalFilters(e, filters)),
+    [evaluations, filters],
+  )
   const selected = useMemo(
-    () => evaluations.find((e) => e.id === selectedId) ?? evaluations[0] ?? null,
-    [evaluations, selectedId],
+    () => filteredEvaluations.find((e) => e.id === selectedId) ?? filteredEvaluations[0] ?? null,
+    [filteredEvaluations, selectedId],
   )
 
   // `?run=<evaluationId>` selects that evaluation run on arrival - the entry
@@ -83,9 +124,9 @@ export function AIEvaluationPage(): React.JSX.Element {
   if (query.isLoading) return <LoadingState variant="block" rows={6} />
   if (query.error) return <ErrorState detail={query.error.message} onRetry={() => query.refetch()} />
 
-  const passed = evaluations.filter((e) => e.verdict === 'passed').length
-  const failed = evaluations.filter((e) => e.verdict === 'failed').length
-  const due = evaluations.filter((e) => e.verdict === 're-evaluation-due').length
+  const passed = filteredEvaluations.filter((e) => e.verdict === 'passed').length
+  const failed = filteredEvaluations.filter((e) => e.verdict === 'failed').length
+  const due = filteredEvaluations.filter((e) => e.verdict === 're-evaluation-due').length
 
   return (
     <PageBody>
@@ -93,6 +134,7 @@ export function AIEvaluationPage(): React.JSX.Element {
         eyebrow={t('AI & Automation')}
         breadcrumbs={[{ label: t('AI & Automation') }, { label: t('AI Evaluation') }]}
         freshness={FRESHNESS}
+        controls={<FilterBar show={['date', 'status', 'search']} statusOptions={statusOptions} />}
       />
 
       {/* ── Two columns ─────────────────────────────────────────────
@@ -133,9 +175,11 @@ export function AIEvaluationPage(): React.JSX.Element {
             </p>
             {evaluations.length === 0 ? (
               <EmptyState title={t('No evaluations')} detail="No model evaluation runs are on record." />
+            ) : filteredEvaluations.length === 0 ? (
+              <EmptyState title={t('No evaluations match the current filters')} detail="Widen the date range or clear a filter to see more results." />
             ) : (
               <ul className="divide-y divide-ink-50">
-                {evaluations.map((evaluation) => (
+                {filteredEvaluations.map((evaluation) => (
                   <li key={evaluation.id}>
                     <button
                       type="button"

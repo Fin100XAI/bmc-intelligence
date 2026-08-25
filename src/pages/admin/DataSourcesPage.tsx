@@ -32,6 +32,7 @@ import { ChartFrame } from '@/components/charts/ChartFrame'
 import { DonutChart, MiniBar, RankedBarChart } from '@/components/charts/charts'
 import { ConfirmDialog, Drawer, Modal, Tabs } from '@/components/ui/overlays'
 import { DemonstrationNotice, EmptyState, ErrorState, LoadingState } from '@/components/ui/states'
+import { FilterBar } from '@/components/filters/FilterBar'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { adminService } from '@/services'
@@ -42,6 +43,7 @@ import {
   type SyncResult,
 } from '@/stores/data-source.store'
 import { usePageMasthead } from '@/stores/masthead.store'
+import { useFilterStore, type FilterState } from '@/stores/ui.store'
 import { DEPARTMENTS_ORDERED, departmentName, officerDisplayName } from '@/data/reference'
 import { DEMO_NOW, det, isoFromAnchor } from '@/utils/deterministic'
 import { formatCompact, formatDateTime, formatDuration, formatNumber, formatRelative } from '@/utils/format'
@@ -153,6 +155,25 @@ function breachesSla(source: DataSource): boolean {
   return ageMinutes > source.slaMinutes
 }
 
+/**
+ * The dimensions this register shares with every other intelligence page:
+ * owner department, domain, operational status and free text. Category,
+ * classification and the composite "state" quick-filter below are unique to
+ * this register and stay page-local rather than being forced into the global
+ * shape.
+ */
+function matchesGlobalFilters(source: DataSource, filters: FilterState): boolean {
+  if (filters.departmentIds.length > 0 && !filters.departmentIds.includes(source.ownerDepartmentId)) return false
+  if (filters.domains.length > 0 && !filters.domains.includes(source.domain)) return false
+  if (filters.statuses.length > 0 && !filters.statuses.includes(source.status)) return false
+  if (filters.search.trim()) {
+    const q = filters.search.trim().toLowerCase()
+    const haystack = `${source.name} ${departmentName(source.ownerDepartmentId)} ${source.purpose ?? ''} ${(source.downstream ?? []).join(' ')}`.toLowerCase()
+    if (!haystack.includes(q)) return false
+  }
+  return true
+}
+
 interface DraftSource {
   name: string
   category: DataSourceCategory
@@ -212,12 +233,14 @@ export function DataSourcesPage(): React.JSX.Element {
   // The shell renders the masthead; this page states what it should say.
   usePageMasthead(t('Data Sources'))
 
-  // Filters
+  // Category, classification and the composite "state" quick-filter are
+  // unique to this register and stay local. Owner department, domain, status
+  // and free text are shared with every other intelligence page, so they now
+  // read from the global filter bar instead - see `matchesGlobalFilters`.
   const [categoryFilter, setCategoryFilter] = useState<DataSourceCategory | ''>('')
-  const [statusFilter, setStatusFilter] = useState<DataSourceStatus | ''>('')
-  const [domainFilter, setDomainFilter] = useState<IntelligenceDomain | ''>('')
   const [classificationFilter, setClassificationFilter] = useState<DataClassification | ''>('')
   const [stateFilter, setStateFilter] = useState<'' | 'enabled' | 'paused' | 'attention' | 'personal' | 'sla'>('')
+  const filters = useFilterStore((s) => s.filters)
 
   const timers = useRef<Record<string, number>>({})
 
@@ -234,12 +257,20 @@ export function DataSourcesPage(): React.JSX.Element {
     [seedQuery.data, overrides, added, removed],
   )
 
+  const domainOptions = useMemo<IntelligenceDomain[]>(
+    () => Array.from(new Set(sources.map((s) => s.domain))).sort((a, b) => DOMAIN_LABEL[a].localeCompare(DOMAIN_LABEL[b])),
+    [sources],
+  )
+  const statusOptions = useMemo(
+    () => (Object.keys(DATA_SOURCE_STATUS_LABEL) as DataSourceStatus[]).map((s) => ({ value: s, label: DATA_SOURCE_STATUS_LABEL[s] })),
+    [],
+  )
+
   const filtered = useMemo(
     () =>
       sources.filter((s) => {
+        if (!matchesGlobalFilters(s, filters)) return false
         if (categoryFilter && s.category !== categoryFilter) return false
-        if (statusFilter && s.status !== statusFilter) return false
-        if (domainFilter && s.domain !== domainFilter) return false
         if (classificationFilter && s.classification !== classificationFilter) return false
         if (stateFilter === 'enabled' && !s.enabled) return false
         if (stateFilter === 'paused' && s.enabled) return false
@@ -248,13 +279,11 @@ export function DataSourcesPage(): React.JSX.Element {
         if (stateFilter === 'sla' && !breachesSla(s)) return false
         return true
       }),
-    [sources, categoryFilter, statusFilter, domainFilter, classificationFilter, stateFilter],
+    [sources, filters, categoryFilter, classificationFilter, stateFilter],
   )
 
   const activeFilterCount =
     (categoryFilter ? 1 : 0) +
-    (statusFilter ? 1 : 0) +
-    (domainFilter ? 1 : 0) +
     (classificationFilter ? 1 : 0) +
     (stateFilter ? 1 : 0)
 
@@ -533,6 +562,9 @@ export function DataSourcesPage(): React.JSX.Element {
       <PageHeader
         eyebrow={t('Administration')}
         breadcrumbs={[{ label: t('Administration') }, { label: t('Data Sources') }]}
+        controls={
+          <FilterBar show={['department', 'domain', 'status', 'search']} statusOptions={statusOptions} domainOptions={domainOptions} />
+        }
         actions={
           <div className="flex flex-wrap items-center gap-2">
             {hasChanges ? (
@@ -665,8 +697,6 @@ export function DataSourcesPage(): React.JSX.Element {
               icon={<RotateCcw className="h-3 w-3" />}
               onClick={() => {
                 setCategoryFilter('')
-                setStatusFilter('')
-                setDomainFilter('')
                 setClassificationFilter('')
                 setStateFilter('')
               }}
@@ -688,29 +718,6 @@ export function DataSourcesPage(): React.JSX.Element {
             options={[
               { value: '', label: t('All categories') },
               ...CATEGORY_OPTIONS.map((c) => ({ value: c, label: DATA_SOURCE_CATEGORY_LABEL[c] })),
-            ]}
-          />
-          <Select
-            aria-label={t('Filter by status')}
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as DataSourceStatus | '')}
-            options={[
-              { value: '', label: t('All statuses') },
-              ...(Object.keys(DATA_SOURCE_STATUS_LABEL) as DataSourceStatus[]).map((s) => ({
-                value: s,
-                label: DATA_SOURCE_STATUS_LABEL[s],
-              })),
-            ]}
-          />
-          <Select
-            aria-label={t('Filter by domain')}
-            value={domainFilter}
-            onChange={(e) => setDomainFilter(e.target.value as IntelligenceDomain | '')}
-            options={[
-              { value: '', label: t('All domains') },
-              ...Array.from(new Set(sources.map((s) => s.domain)))
-                .sort((a, b) => DOMAIN_LABEL[a].localeCompare(DOMAIN_LABEL[b]))
-                .map((d) => ({ value: d, label: DOMAIN_LABEL[d] })),
             ]}
           />
           <Select
@@ -748,8 +755,7 @@ export function DataSourcesPage(): React.JSX.Element {
               rows={filtered}
               columns={columns}
               rowKey={(s) => s.id}
-              searchable
-              searchPlaceholder="Search by name, owner, purpose or downstream metric"
+              searchable={false}
               pageSize={12}
               activeRowKey={detailId ?? undefined}
               onRowClick={(s) => {
@@ -1034,7 +1040,7 @@ export function DataSourcesPage(): React.JSX.Element {
             </div>
             {editTarget?.personalData && editDraft.classification === 'public' ? (
               <p className="rounded-md bg-crit-50 px-3 py-2 text-[0.6875rem] leading-relaxed text-crit-700 sm:col-span-2">
-                {t('This source declares a personal field. Classifying it public would place personal data in the platform&apos;s least protected tier — in a production deployment that reclassification would require a completed privacy review, not an operator&apos;s judgement alone.')}
+                {t("This source declares a personal field. Classifying it public would place personal data in the platform's least protected tier — in a production deployment that reclassification would require a completed privacy review, not an operator's judgement alone.")}
               </p>
             ) : null}
           </div>
@@ -1373,7 +1379,7 @@ function DataSourceDetail({
         <div className="flex items-start gap-2.5">
           <Table2 className="mt-0.5 h-4 w-4 shrink-0 text-warn-700" />
           <p className="text-xs leading-relaxed text-ink-700">
-            {t('Pausing or removing this source does not recompute or hide the metrics above. In a live deployment they would continue to publish their last value with an ageing freshness label until it exceeded the platform&apos;s staleness threshold, at which point they would be withheld rather than shown stale — the platform never presents an aged figure as current.')}
+            {t("Pausing or removing this source does not recompute or hide the metrics above. In a live deployment they would continue to publish their last value with an ageing freshness label until it exceeded the platform's staleness threshold, at which point they would be withheld rather than shown stale — the platform never presents an aged figure as current.")}
           </p>
         </div>
       </Card>

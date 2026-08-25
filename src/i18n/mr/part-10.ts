@@ -78,7 +78,7 @@ export const MR_PART_10: Record<string, string> = {
   'Closed contracts': 'बंद करार',
   'Closed Drain': 'बंदिस्त गटार',
   'closure(s).': 'बंद रस्ते.',
-    'Coastal Intelligence is enabled only where the corporation&apos;s recorded physical form is coastal or creek-side. {0} of the {1} municipal corporations this build can be deployed against meet that test; the rest, this one among them, see this position instead. Switching the active corporation from the deployment selector in the command bar re-evaluates it.':
+    "Coastal Intelligence is enabled only where the corporation's recorded physical form is coastal or creek-side. {0} of the {1} municipal corporations this build can be deployed against meet that test; the rest, this one among them, see this position instead. Switching the active corporation from the deployment selector in the command bar re-evaluates it.":
     'किनारी बुद्धिमत्ता केवळ जेथे महानगरपालिकेचे नोंदवलेले भौगोलिक स्वरूप किनारी किंवा खाडीलगतचे आहे तेथेच उपलब्ध असते. ही आवृत्ती ज्या {1} महानगरपालिकांवर तैनात करता येते त्यांपैकी {0} या कसोटीत बसतात; उर्वरित, त्यांत ही एक, त्याऐवजी ही स्थिती पाहतात. आदेश पट्टीतील तैनाती निवडकातून सक्रिय महानगरपालिका बदलल्यास याचे पुनर्मूल्यांकन होते.',
   'Coastal segment register': 'किनारी भाग नोंदवही',
   'Coastal Segment Vulnerability': 'किनारी भागाची असुरक्षितता',
@@ -141,8 +141,8 @@ export const MR_PART_10: Record<string, string> = {
   'Compliance %': 'अनुपालन %',
   'Compliance shortfall.': 'अनुपालनातील तूट.',
   'Component contribution': 'घटकाचे योगदान',
-  'Components marked &quot;Simulated component&quot; above run entirely within this application using deterministic local logic - the AI gateway, connector runtime, audit service, event processing and search index are all simulated in this environment. Components marked &quot;Runs directly&quot; are genuinely served by the deployment target (the application shell and the intelligence engine evaluating this demonstration&apos;s deterministic data). No figure on this page implies a production service-level commitment.':
-    'वर &quot;नक्कल केलेला घटक&quot; असे चिन्हांकित घटक पूर्णपणे या अनुप्रयोगातच निश्चित परिणामी स्थानिक तर्कावर चालतात - कृत्रिम बुद्धिमत्ता प्रवेशद्वार, जोडणी कार्यप्रणाली, लेखापरीक्षा सेवा, घटना प्रक्रिया आणि शोध निर्देशिका हे सर्व या वातावरणात नक्कल स्वरूपातच आहेत. &quot;थेट चालतो&quot; असे चिन्हांकित घटक मात्र प्रत्यक्षात तैनाती लक्ष्याकडून चालवले जातात (अनुप्रयोग आवरण आणि या प्रात्यक्षिकाच्या निश्चित परिणामी माहितीचे मूल्यमापन करणारी बुद्धिमत्ता प्रणाली). या पानावरील कोणताही आकडा उत्पादन सेवास्तर वचनबद्धता दर्शवत नाही.',
+  'Components marked "Simulated component" above run entirely within this application using deterministic local logic - the AI gateway, connector runtime, audit service, event processing and search index are all simulated in this environment. Components marked "Runs directly" are genuinely served by the deployment target (the application shell and the intelligence engine evaluating this demonstration\'s deterministic data). No figure on this page implies a production service-level commitment.':
+    'वर "नक्कल केलेला घटक" असे चिन्हांकित घटक पूर्णपणे या अनुप्रयोगातच निश्चित परिणामी स्थानिक तर्कावर चालतात - कृत्रिम बुद्धिमत्ता प्रवेशद्वार, जोडणी कार्यप्रणाली, लेखापरीक्षा सेवा, घटना प्रक्रिया आणि शोध निर्देशिका हे सर्व या वातावरणात नक्कल स्वरूपातच आहेत. "थेट चालतो" असे चिन्हांकित घटक मात्र प्रत्यक्षात तैनाती लक्ष्याकडून चालवले जातात (अनुप्रयोग आवरण आणि या प्रात्यक्षिकाच्या निश्चित परिणामी माहितीचे मूल्यमापन करणारी बुद्धिमत्ता प्रणाली). या पानावरील कोणताही आकडा उत्पादन सेवास्तर वचनबद्धता दर्शवत नाही.',
   'Composite infrastructure adequacy against projected demand, from the planning scenario engine.':
     'नियोजन परिस्थिती प्रणालीनुसार, अपेक्षित मागणीच्या तुलनेत एकत्रित पायाभूत सुविधा पर्याप्तता.',
   'Composite monsoon preparedness score for the ward.': 'प्रभागाचा एकत्रित पावसाळी सज्जता गुण.',
@@ -243,7 +243,7 @@ export const MR_PART_10: Record<string, string> = {
     'वर निवडलेल्या विभाग व्याप्तीसाठी, प्रत्येक वसुली-कार्यक्षमता पट्ट्यात येणाऱ्या प्रभाग–विभाग आकारणी नोंदींची संख्या.',
   'Counterpart register': 'प्रतिपक्ष नोंदवही',
   'Counts currently represented on the map, by class.': 'नकाशावर सध्या दर्शवलेल्या संख्या, वर्गानुसार.',
-  'Counts the energy difference only, at roughly a third of the draw of the fitting replaced. Nothing is claimed here for lamp life, maintenance or failure rates - all real, none quantifiable without the corporation&apos;s own contract terms.':
+  "Counts the energy difference only, at roughly a third of the draw of the fitting replaced. Nothing is claimed here for lamp life, maintenance or failure rates - all real, none quantifiable without the corporation's own contract terms.":
     'केवळ ऊर्जेतील फरक मोजला जातो, जो बदललेल्या दिव्याच्या साधारण एक तृतीयांश वापरावर आधारित आहे. दिव्याचे आयुर्मान, देखभाल किंवा बिघाड दर यांबाबत येथे कोणताही दावा केलेला नाही - हे सर्व खरे असले तरी महानगरपालिकेच्या स्वतःच्या करार अटींशिवाय त्यांचे मोजमाप करता येत नाही.',
   'Coverage map': 'व्याप्ती नकाशा',
   'Crack': 'तडा',

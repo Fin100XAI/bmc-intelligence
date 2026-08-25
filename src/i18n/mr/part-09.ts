@@ -27,7 +27,7 @@ export const MR_PART_09: Record<string, string> = {
   'A food-safety function before a revenue one': 'हे महसुलाचे नव्हे, आधी अन्नसुरक्षेचे काम आहे',
   'A formal privacy impact assessment against applicable data protection obligations for each dataset before it is connected.':
     'प्रत्येक माहितीसंच जोडण्यापूर्वी लागू माहिती-संरक्षण बंधनांच्या तुलनेत त्याचे औपचारिक गोपनीयता परिणाम मूल्यांकन.',
-  'A governed assistant answering from this corporation&apos;s own operational record. Every answer arrives with the evidence it rests on, the confidence it carries and the limits of what it can support — bounded by what {0} is authorised to see.':
+  "A governed assistant answering from this corporation's own operational record. Every answer arrives with the evidence it rests on, the confidence it carries and the limits of what it can support — bounded by what {0} is authorised to see.":
     'या महानगरपालिकेच्या स्वतःच्या कामकाज नोंदींवरून उत्तर देणारा नियंत्रित सहायक. प्रत्येक उत्तरासोबत ते ज्यावर आधारित आहे तो पुरावा, त्याची विश्वासार्हता आणि ते कशापर्यंत पुष्टी देऊ शकते याच्या मर्यादा येतात — आणि हे सर्व {0} यांना पाहण्याची परवानगी असलेल्या माहितीपुरतेच मर्यादित असते.',
   'A governed urban intelligence and decision-support layer connecting municipal operations, infrastructure, finances, wards, projects, risks, citizen services and institutional knowledge into one evidence-backed operating environment for {0}.':
     '{0} साठी महानगरपालिकेचे कामकाज, पायाभूत सुविधा, वित्त, प्रभाग, प्रकल्प, जोखीम, नागरिक सेवा आणि संस्थात्मक ज्ञान एकाच पुरावा-आधारित कार्यवातावरणात जोडणारा नियंत्रित नागरी बुद्धिमत्ता व निर्णय-साहाय्य स्तर.',
@@ -291,8 +291,6 @@ export const MR_PART_09: Record<string, string> = {
   Ask: 'विचारा',
   "Ask about {0}'s risks, wards, projects, budget or service delivery…":
     '{0} च्या जोखीम, प्रभाग, प्रकल्प, अर्थसंकल्प किंवा सेवा वितरणाबद्दल विचारा…',
-  'Ask next': 'पुढे हे विचारा',
-  'Ask the {0} Municipal Copilot': '{0} महानगरपालिका सहायकाला विचारा',
   'Ask the Copilot': 'सहायकाला विचारा',
   Asphalt: 'डांबर',
   'Assessed area': 'आकारणी केलेले क्षेत्र',
@@ -320,7 +318,7 @@ export const MR_PART_09: Record<string, string> = {
   'At rest': 'साठवणुकीत',
   'At risk (score ≥ 60)': 'जोखमीत (गुण ≥ 60)',
   'at zero difficulty': 'शून्य अडचणीवर',
-  'Attendance and dropout below are school-level rates. No child&apos;s record, name or individual attendance is held anywhere behind this page, and the education service exposes no method that could return one. A corporation&apos;s duty here is to the school estate and the teaching establishment; the child&apos;s record belongs to the school and stays there.':
+  "Attendance and dropout below are school-level rates. No child's record, name or individual attendance is held anywhere behind this page, and the education service exposes no method that could return one. A corporation's duty here is to the school estate and the teaching establishment; the child's record belongs to the school and stays there.":
     'खालील उपस्थिती व गळती हे शाळा-स्तरीय दर आहेत. कोणत्याही मुलाची नोंद, नाव किंवा वैयक्तिक उपस्थिती या पृष्ठामागे कोठेही ठेवलेली नाही, आणि ती परत मिळवता येईल अशी कोणतीही पद्धत शिक्षण सेवा उपलब्ध करून देत नाही. येथे महानगरपालिकेचे कर्तव्य शाळा मालमत्तेप्रति आणि शिक्षक आस्थापनेप्रति आहे; मुलाची नोंद शाळेची आहे आणि तिथेच राहते.',
   'Audit events in scope': 'व्याप्तीतील लेखापरीक्षा घटना',
   'Audit trail': 'लेखापरीक्षा नोंदसाखळी',
@@ -390,7 +388,7 @@ export const MR_PART_09: Record<string, string> = {
     'महानगरपालिकेला पुरवठादाराची कामगिरी कळवताना वापरली जाणारी पट्टानिहाय विभागणी.',
   'Bar colour is banded for 0-100 indices, so on a raw complaint count the bars carry length only. Read the order and the length, not the hue.':
     'पट्ट्यांचा रंग 0-100 निर्देशांकांसाठी पट्टानिहाय ठरतो, त्यामुळे केवळ तक्रारींच्या संख्येवर पट्ट्यांना फक्त लांबीच असते. रंग नव्हे, तर क्रम आणि लांबी वाचा.',
-  'Bars show the corporation-mean score on each condition and the points it puts on the board once weighted. Each condition is placed on a fixed 0-100 band rather than on the observed spread, so a ward&apos;s difficulty does not move when a different ward is added or removed.':
+  "Bars show the corporation-mean score on each condition and the points it puts on the board once weighted. Each condition is placed on a fixed 0-100 band rather than on the observed spread, so a ward's difficulty does not move when a different ward is added or removed.":
     'पट्टे प्रत्येक स्थितीवरील महानगरपालिका-सरासरी गुण आणि भार दिल्यानंतर तो फलकावर किती गुण नोंदवतो हे दाखवतात. प्रत्येक स्थिती नोंदवलेल्या पसरावर नव्हे, तर ठरलेल्या 0-100 पट्ट्यावर मांडली जाते, त्यामुळे दुसरा प्रभाग जोडला किंवा वगळला तरी एखाद्या प्रभागाची अडचण बदलत नाही.',
   'Bars to the right of zero are wards doing better than their conditions predict. Bars to the left are wards doing worse.':
     'शून्याच्या उजवीकडील पट्टे म्हणजे आपल्या स्थितीवरून अपेक्षित असलेल्यापेक्षा चांगली कामगिरी करणारे प्रभाग. डावीकडील पट्टे म्हणजे त्याहून वाईट कामगिरी करणारे प्रभाग.',

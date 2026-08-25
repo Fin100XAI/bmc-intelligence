@@ -61,8 +61,8 @@ export const MR_PART_13: Record<string, string> = {
   'Open vulnerabilities by severity': 'तीव्रतेनुसार प्रलंबित सुरक्षा त्रुटी',
   'Open ward profile for {0}': '{0} ची प्रभाग माहिती उघडा',
   'open, average resolution': 'प्रलंबित, सरासरी निराकरण',
-  'Opening any evidence record tied to a governed dataset is itself a recorded audit event, attributed to the requesting officer, session and timestamp - see Evidence &amp; Audit for the live trail. No regulatory certification, data protection accreditation or formal privacy attestation is claimed for this environment.':
-    'कारभाराखालील माहितीसंचाशी जोडलेली कोणतीही पुरावा नोंद उघडणे हीच स्वतः एक नोंदवलेली लेखापरीक्षा घटना असते — ती विनंती करणारा अधिकारी, सत्र आणि वेळमुद्रेसह नोंदवली जाते; प्रत्यक्ष नोंदीसाठी पुरावा &amp; लेखापरीक्षा पहा. या वातावरणासाठी कोणतेही नियामक प्रमाणपत्र, माहिती संरक्षण मान्यता किंवा औपचारिक गोपनीयता प्रमाणन असल्याचा दावा केलेला नाही.',
+  'Opening any evidence record tied to a governed dataset is itself a recorded audit event, attributed to the requesting officer, session and timestamp - see Evidence & Audit for the live trail. No regulatory certification, data protection accreditation or formal privacy attestation is claimed for this environment.':
+    'कारभाराखालील माहितीसंचाशी जोडलेली कोणतीही पुरावा नोंद उघडणे हीच स्वतः एक नोंदवलेली लेखापरीक्षा घटना असते — ती विनंती करणारा अधिकारी, सत्र आणि वेळमुद्रेसह नोंदवली जाते; प्रत्यक्ष नोंदीसाठी पुरावा & लेखापरीक्षा पहा. या वातावरणासाठी कोणतेही नियामक प्रमाणपत्र, माहिती संरक्षण मान्यता किंवा औपचारिक गोपनीयता प्रमाणन असल्याचा दावा केलेला नाही.',
   'Operational Health': 'कामकाजविषयक स्थिती',
   'Operational health index': 'कामकाजविषयक स्थिती निर्देशांक',
   'Operational KPIs are not outcomes. Coverage achieved, kilometres resurfaced or works completed are outputs - what was done. An outcome is what that output changed for a resident - whether a corridor stays passable, a ward stops flooding, a signal is contained. This platform tracks both, and reports the outcome without adjustment, including where an intervention has demonstrably not been effective.':
@@ -111,7 +111,7 @@ export const MR_PART_13: Record<string, string> = {
   'Past expectation': 'अपेक्षित मुदतीपलीकडे',
   'Past freshness expectation': 'ताजेपणाच्या अपेक्षित मुदतीपलीकडे',
   'Paused only': 'केवळ थांबवलेले',
-  'Pausing or removing this source does not recompute or hide the metrics above. In a live deployment they would continue to publish their last value with an ageing freshness label until it exceeded the platform&apos;s staleness threshold, at which point they would be withheld rather than shown stale — the platform never presents an aged figure as current.':
+  "Pausing or removing this source does not recompute or hide the metrics above. In a live deployment they would continue to publish their last value with an ageing freshness label until it exceeded the platform's staleness threshold, at which point they would be withheld rather than shown stale — the platform never presents an aged figure as current.":
     'हा स्रोत थांबवल्याने किंवा काढून टाकल्याने वरील मापदंड पुन्हा मोजले जात नाहीत किंवा लपवले जात नाहीत. प्रत्यक्ष अंमलबजावणीत ते आपले शेवटचे मूल्य जुनाट होत जाणाऱ्या ताजेपणा खुणेसह प्रकाशित करत राहतील — जोपर्यंत ते मंचाची शिळेपणाची मर्यादा ओलांडत नाही; त्यानंतर ते शिळे दाखवण्याऐवजी रोखले जातील — मंच जुना आकडा कधीही चालू म्हणून सादर करत नाही.',
   'Paver Block': 'पेव्हर ब्लॉक',
   'Payer-segment breakdown': 'देयकदार गटानुसार विभागणी',
@@ -347,8 +347,8 @@ export const MR_PART_13: Record<string, string> = {
   'Ranked weakest first - where the corporation is least prepared to absorb a shock.':
     'सर्वात कमकुवत प्रथम अशी क्रमवारी — धक्का पचवण्यासाठी महानगरपालिका सर्वात कमी सज्ज असलेली ठिकाणे.',
   'Rateable value': 'करपात्र मूल्य',
-  'reachable by your principal contain personal data with no minimisation measure currently recorded against them - see &quot;Datasets containing personal data&quot; below for exactly which.':
-    'तुमच्या वापरकर्त्यास उपलब्ध असलेल्या यांमध्ये वैयक्तिक माहिती आहे आणि त्यांविरुद्ध सध्या कोणताही किमानीकरण उपाय नोंदवलेला नाही — नेमके कोणते ते पाहण्यासाठी खाली &quot;वैयक्तिक माहिती असलेले माहितीसंच&quot; पहा.',
+  'reachable by your principal contain personal data with no minimisation measure currently recorded against them - see "Datasets containing personal data" below for exactly which.':
+    'तुमच्या वापरकर्त्यास उपलब्ध असलेल्या यांमध्ये वैयक्तिक माहिती आहे आणि त्यांविरुद्ध सध्या कोणताही किमानीकरण उपाय नोंदवलेला नाही — नेमके कोणते ते पाहण्यासाठी खाली "वैयक्तिक माहिती असलेले माहितीसंच" पहा.',
   'Reaches below target': 'लक्ष्याखालील भाग',
   'Read as': 'याचा अर्थ',
   'read below standard with few missed collections, consistent with an isolated, single-day disruption rather than a systemic shortfall.':
@@ -406,7 +406,7 @@ export const MR_PART_13: Record<string, string> = {
   'Recorded permanently in the audit trail against your name. This action never modifies the underlying AI request - only the human review outcome.':
     'तुमच्या नावाविरुद्ध लेखापरीक्षा नोंदीत कायमस्वरूपी नोंदवले जाते. ही कृती मूळ कृत्रिम बुद्धिमत्ता विनंती कधीही बदलत नाही — ती केवळ मानवी पुनरावलोकनाचा निष्कर्ष नोंदवते.',
   'Recorded progress': 'नोंदवलेली प्रगती',
-  'Recorded. High-impact steps beyond this still require a named officer&apos;s approval through the relevant module — this platform has not, and cannot, complete them automatically.':
+  "Recorded. High-impact steps beyond this still require a named officer's approval through the relevant module — this platform has not, and cannot, complete them automatically.":
     'नोंदवले. यापुढील उच्च-परिणाम पायऱ्यांसाठी संबंधित घटकातून नामनिर्देशित अधिकाऱ्याची मान्यता अजूनही आवश्यक आहे — या मंचाने त्या आपोआप पूर्ण केलेल्या नाहीत आणि तो त्या करूही शकत नाही.',
   Records: 'नोंदी',
   'Records a receipt collected against the revised demand.':

@@ -4,11 +4,11 @@ import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { graphService } from '@/services'
-import { useDrawerStore, type DrawerKind } from '@/stores/ui.store'
+import { useDrawerStore, useFilterStore, type DrawerKind } from '@/stores/ui.store'
 import { usePageMasthead } from '@/stores/masthead.store'
 import { isoFromAnchor } from '@/utils/deterministic'
 import { truncate } from '@/utils/format'
-import { SEVERITY_LABEL, type Severity } from '@/types/common'
+import { DOMAIN_LABEL, SEVERITY_LABEL, type IntelligenceDomain, type Severity } from '@/types/common'
 import { GRAPH_ENTITY_LABEL, GRAPH_RELATION_LABEL, type GraphEntityKind, type GraphNode, type GraphRelation } from '@/types/governance'
 import {
   Button,
@@ -24,6 +24,7 @@ import {
   SeverityBadge,
 } from '@/components/ui'
 import { GovPanel } from '@/components/gov/GovPanel'
+import { FilterBar } from '@/components/filters/FilterBar'
 import { t } from '@/i18n'
 import { registerLayer } from '@/data/runtime'
 
@@ -113,6 +114,7 @@ function radiusFor(weight: number, isFocus: boolean): number {
 
 export function KnowledgeGraphPage(): React.JSX.Element {
   const openDrawer = useDrawerStore((s) => s.open)
+  const filters = useFilterStore((s) => s.filters)
 
   // The shell's masthead states the screen's name; the page states the wording.
   usePageMasthead(t('Municipal Knowledge Graph'))
@@ -182,15 +184,34 @@ export function KnowledgeGraphPage(): React.JSX.Element {
     setRelationFilter((prev) => (prev.includes(relation) ? prev.filter((r) => r !== relation) : [...prev, relation]))
   }
 
+  const domainOptions = useMemo<IntelligenceDomain[]>(
+    () =>
+      Array.from(new Set((searchQuery.data ?? []).map((n) => n.domain))).sort((a, b) => DOMAIN_LABEL[a].localeCompare(DOMAIN_LABEL[b])),
+    [searchQuery.data],
+  )
+
+  // The global filter bar contributes domain and severity here; search is
+  // deliberately left to the page's own dedicated search box above, rather
+  // than duplicated as a second field doing the same job.
+  const filteredSearchResults = useMemo(
+    () =>
+      (searchQuery.data ?? []).filter((n) => {
+        if (filters.domains.length > 0 && !filters.domains.includes(n.domain)) return false
+        if (filters.severities.length > 0 && (!n.severity || !filters.severities.includes(n.severity))) return false
+        return true
+      }),
+    [searchQuery.data, filters.domains, filters.severities],
+  )
+
   const groupedResults = useMemo(() => {
     const groups = new Map<GraphEntityKind, GraphNode[]>()
-    for (const node of searchQuery.data ?? []) {
+    for (const node of filteredSearchResults) {
       const bucket = groups.get(node.kind) ?? []
       bucket.push(node)
       groups.set(node.kind, bucket)
     }
     return Array.from(groups.entries())
-  }, [searchQuery.data])
+  }, [filteredSearchResults])
 
   const neighbourhood = neighbourhoodQuery.data
   const posById = useMemo(() => {
@@ -216,6 +237,7 @@ export function KnowledgeGraphPage(): React.JSX.Element {
         eyebrow={t('Strategic Urban Intelligence')}
         breadcrumbs={[{ label: t('Strategic Urban Intelligence') }, { label: t('Municipal Knowledge Graph') }]}
         freshness={FRESHNESS}
+        controls={<FilterBar show={['domain', 'severity']} domainOptions={domainOptions} />}
       />
 
       <GovPanel dense tone="amber" title={t('The canonical relationship path')} subtitle={t('Institutional methodology')}>
@@ -231,7 +253,7 @@ export function KnowledgeGraphPage(): React.JSX.Element {
                   <span aria-hidden>→</span>
                 </span>
               ) : null}
-              <span className="rounded-[2px] border border-ink-100 bg-surface-sunken px-2.5 py-1.5 text-xs font-medium whitespace-nowrap text-ink-700">
+              <span className="rounded-lg border border-ink-100 bg-surface-sunken px-2.5 py-1.5 text-xs font-medium whitespace-nowrap text-ink-700">
                 {step.label}
               </span>
             </div>
@@ -263,7 +285,7 @@ export function KnowledgeGraphPage(): React.JSX.Element {
             {searchQuery.error ? <ErrorState className="mt-2" detail={searchQuery.error.message} onRetry={() => searchQuery.refetch()} compact /> : null}
 
             {!searchQuery.isLoading && !searchQuery.error ? (
-              (searchQuery.data ?? []).length === 0 ? (
+              filteredSearchResults.length === 0 ? (
                 <p className="mt-3 text-xs text-ink-400">{t('No entities match "{0}".', debouncedQuery)}</p>
               ) : (
                 <div className="scrollbar-slim mt-3 max-h-64 space-y-3 overflow-y-auto">
@@ -280,7 +302,7 @@ export function KnowledgeGraphPage(): React.JSX.Element {
                               type="button"
                               onClick={() => selectFresh(node)}
                               className={
-                                'flex w-full items-center justify-between gap-2 rounded-[2px] px-2 py-1.5 text-left text-xs transition-colors hover:bg-ink-50 ' +
+                                'flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-xs transition-colors hover:bg-ink-50 ' +
                                 (selectedId === node.id ? 'bg-govt-50 text-govt-800' : 'text-ink-700')
                               }
                             >
@@ -407,7 +429,7 @@ export function KnowledgeGraphPage(): React.JSX.Element {
               <EmptyState className="m-3" title={t('Entity not found')} detail="This entity could not be resolved. It may fall outside your authorised scope." />
             ) : (
               <div className="px-3 pb-3">
-                <div className="aspect-square w-full overflow-hidden rounded-[2px] border border-ink-100 bg-[#fbfcfe]">
+                <div className="aspect-square w-full overflow-hidden rounded-lg border border-ink-100 bg-[#fbfcfe]">
                   <svg viewBox="0 0 100 100" className="h-full w-full" role="img" aria-label={t('Neighbourhood of {0}', neighbourhood.focus.label)}>
                     {neighbourhood.links.map((link) => {
                       const from = posById.get(link.from)

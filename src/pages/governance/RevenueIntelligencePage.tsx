@@ -5,12 +5,13 @@ import { useServiceQuery, useServiceAction } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { revenueService } from '@/services'
 import { useCurrentUser } from '@/stores/auth.store'
-import { useDrawerStore } from '@/stores/ui.store'
+import { useDrawerStore, useFilterStore } from '@/stores/ui.store'
+import type { FilterState } from '@/stores/ui.store'
 import { usePageMasthead } from '@/stores/masthead.store'
 import { activeCorporation } from '@/config/municipality.config'
 import { allowed } from '@/security'
 import { ROUTES } from '@/config/navigation'
-import type { DataFreshness } from '@/types/common'
+import type { DataFreshness, DateRangeKey } from '@/types/common'
 import {
   ANOMALY_DISPOSITION_LABEL,
   REVENUE_STREAM_LABEL,
@@ -21,8 +22,9 @@ import {
   type RevenueStream,
 } from '@/types/finance'
 import { wardName, wardShortName } from '@/data/reference'
-import { isoFromAnchor } from '@/utils/deterministic'
+import { DEMO_NOW, isoFromAnchor } from '@/utils/deterministic'
 import { formatCrore, formatDelta, formatPercent } from '@/utils/format'
+import { FilterBar } from '@/components/filters/FilterBar'
 import {
   Badge,
   Button,
@@ -65,6 +67,32 @@ const FRESHNESS: DataFreshness = {
   origin: 'demonstration',
   sourceState: 'operational',
   stale: false,
+}
+
+const DATE_RANGE_HOURS: Record<DateRangeKey, number> = {
+  '24h': 24,
+  '7d': 24 * 7,
+  '30d': 24 * 30,
+  '90d': 24 * 90,
+  fy: 24 * 365,
+}
+
+function withinDateRange(iso: string, range: DateRangeKey): boolean {
+  const ageMs = DEMO_NOW.getTime() - new Date(iso).getTime()
+  return ageMs <= DATE_RANGE_HOURS[range] * 3_600_000
+}
+
+function matchesGlobalFilters(anomaly: RevenueAnomaly, filters: FilterState): boolean {
+  if (filters.wardIds.length > 0 && !filters.wardIds.includes(anomaly.wardId)) return false
+  if (filters.severities.length > 0 && !filters.severities.includes(anomaly.severity)) return false
+  if (filters.statuses.length > 0 && !filters.statuses.includes(anomaly.status)) return false
+  if (!withinDateRange(anomaly.detectedAt, filters.dateRange)) return false
+  if (filters.search.trim()) {
+    const q = filters.search.trim().toLowerCase()
+    const haystack = `${anomaly.title} ${anomaly.description} ${wardName(anomaly.wardId)}`.toLowerCase()
+    if (!haystack.includes(q)) return false
+  }
+  return true
 }
 
 const DISPOSITION_TONE: Record<AnomalyDisposition, 'warn' | 'risk' | 'info'> = {
@@ -122,6 +150,7 @@ export function RevenueIntelligencePage(): React.JSX.Element {
 
   const user = useCurrentUser()
   const openDrawer = useDrawerStore((s) => s.open)
+  const filters = useFilterStore((s) => s.filters)
   const [anomalyStatusFilter, setAnomalyStatusFilter] = useState<'all' | RevenueAnomaly['status']>('all')
   const [expandedAnomalyId, setExpandedAnomalyId] = useState<string | null>(null)
   const [pendingAction, setPendingAction] = useState<{ anomaly: RevenueAnomaly; nextStatus: RevenueAnomaly['status'] } | null>(null)
@@ -137,7 +166,12 @@ export function RevenueIntelligencePage(): React.JSX.Element {
 
   const allRecords: RevenueRecord[] = recordsQuery.data?.items ?? []
   const cityRecords = useMemo(() => allRecords.filter((r) => !r.wardId), [allRecords])
-  const wardRecords = useMemo(() => allRecords.filter((r) => Boolean(r.wardId)), [allRecords])
+  // City-wide records carry no ward, so the ward filter narrows only the
+  // ward-attributable rows - and the ranked-efficiency chart drawn from them.
+  const wardRecords = useMemo(
+    () => allRecords.filter((r) => Boolean(r.wardId) && (filters.wardIds.length === 0 || filters.wardIds.includes(r.wardId as string))),
+    [allRecords, filters.wardIds],
+  )
 
   const cityPosition = useMemo(() => {
     const assessed = cityRecords.reduce((s, r) => s + r.assessedCrore, 0)
@@ -160,15 +194,22 @@ export function RevenueIntelligencePage(): React.JSX.Element {
   }, [cityRecords])
 
   const anomalies = anomaliesQuery.data?.items ?? []
+  // Global filters narrow first, so the "All" tab and every per-status count
+  // beside it already agree with the ward, severity, date-range and search
+  // scope shown in the filter bar; the status tabs then narrow further.
+  const globallyFilteredAnomalies = useMemo(() => anomalies.filter((a) => matchesGlobalFilters(a, filters)), [anomalies, filters])
   const filteredAnomalies = useMemo(
-    () => (anomalyStatusFilter === 'all' ? anomalies : anomalies.filter((a) => a.status === anomalyStatusFilter)),
-    [anomalies, anomalyStatusFilter],
+    () =>
+      anomalyStatusFilter === 'all'
+        ? globallyFilteredAnomalies
+        : globallyFilteredAnomalies.filter((a) => a.status === anomalyStatusFilter),
+    [globallyFilteredAnomalies, anomalyStatusFilter],
   )
   const statusCounts = useMemo(() => {
     const counts: Record<RevenueAnomaly['status'], number> = { open: 0, 'under-review': 0, reconciled: 0, referred: 0, closed: 0 }
-    for (const a of anomalies) counts[a.status] += 1
+    for (const a of globallyFilteredAnomalies) counts[a.status] += 1
     return counts
-  }, [anomalies])
+  }, [globallyFilteredAnomalies])
   const expandedAnomaly = anomalies.find((a) => a.id === expandedAnomalyId) ?? null
 
   const segments = segmentsQuery.data ?? []
@@ -408,13 +449,19 @@ export function RevenueIntelligencePage(): React.JSX.Element {
   return (
     <PageBody>
       <PageHeader
-        eyebrow={t('Governance & Finance')}
-        breadcrumbs={[{ label: t('Governance & Finance') }, { label: t('Revenue Intelligence') }]}
+        eyebrow={t('Revenue & Municipal Finance')}
+        breadcrumbs={[{ label: t('Revenue & Municipal Finance') }, { label: t('Revenue Intelligence') }]}
         freshness={FRESHNESS}
         actions={
           <LinkButton to={ROUTES.property} variant="outline" icon={<Building className="h-3.5 w-3.5" />}>
             {t('Open Property Intelligence')}
           </LinkButton>
+        }
+        controls={
+          <FilterBar
+            show={['ward', 'severity', 'status', 'date', 'search']}
+            statusOptions={(Object.keys(STATUS_LABEL) as RevenueAnomaly['status'][]).map((v) => ({ value: v, label: STATUS_LABEL[v] }))}
+          />
         }
       />
 
@@ -503,7 +550,7 @@ export function RevenueIntelligencePage(): React.JSX.Element {
                 onChange={(id) => setAnomalyStatusFilter(id as typeof anomalyStatusFilter)}
                 ariaLabel="Filter anomalies by status"
                 items={[
-                  { id: 'all', label: t('All'), count: anomalies.length },
+                  { id: 'all', label: t('All'), count: globallyFilteredAnomalies.length },
                   { id: 'open', label: STATUS_LABEL.open, count: statusCounts.open },
                   { id: 'under-review', label: STATUS_LABEL['under-review'], count: statusCounts['under-review'] },
                   { id: 'reconciled', label: STATUS_LABEL.reconciled, count: statusCounts.reconciled },
@@ -536,7 +583,7 @@ export function RevenueIntelligencePage(): React.JSX.Element {
                 columns={anomalyColumns}
                 rowKey={(row) => row.id}
                 pageSize={8}
-                searchPlaceholder="Search anomalies"
+                searchable={false}
                 onRowClick={(row) => setExpandedAnomalyId(row.id === expandedAnomalyId ? null : row.id)}
                 activeRowKey={expandedAnomalyId ?? undefined}
                 rowAccent={(row) => <SeverityRail severity={row.severity} />}

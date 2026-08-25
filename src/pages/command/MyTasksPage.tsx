@@ -7,20 +7,22 @@ import { GovPanel } from '@/components/gov/GovPanel'
 import { Modal } from '@/components/ui/overlays'
 import { DemonstrationNotice, EmptyState, ErrorState, LoadingState } from '@/components/ui/states'
 import { MetricCard } from '@/components/cards/MetricCard'
+import { FilterBar } from '@/components/filters/FilterBar'
 import { useServiceQuery, useServiceAction } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { actionService, type ActionCreateInput, type AssignableUser } from '@/services'
-import type { ActionItem } from '@/types/operations'
+import type { ActionItem, ActionStatus } from '@/types/operations'
 import { ACTION_STATUS_LABEL } from '@/types/operations'
-import type { Severity } from '@/types/common'
+import { DOMAIN_LABEL, type DateRangeKey, type IntelligenceDomain, type Severity } from '@/types/common'
 import type { User } from '@/types/organisation'
 import { allowed } from '@/security/access'
 import { useCurrentUser } from '@/stores/auth.store'
 import { useDrawerStore, useFilterStore } from '@/stores/ui.store'
+import type { FilterState } from '@/stores/ui.store'
 import { usePageMasthead } from '@/stores/masthead.store'
 import { departmentName, wardName } from '@/data/reference'
+import { DEMO_NOW, isoFromAnchor } from '@/utils/deterministic'
 import { formatDate, formatRelative } from '@/utils/format'
-import { isoFromAnchor } from '@/utils/deterministic'
 import { t } from '@/i18n'
 
 /**
@@ -51,19 +53,44 @@ const STATUS_TONE: Record<string, 'muted' | 'info' | 'warn' | 'positive' | 'crit
 
 const PRIORITIES: Severity[] = ['critical', 'high', 'medium', 'low']
 
+const DATE_RANGE_HOURS: Record<DateRangeKey, number> = {
+  '24h': 24,
+  '7d': 24 * 7,
+  '30d': 24 * 30,
+  '90d': 24 * 90,
+  fy: 24 * 365,
+}
+
+function withinDateRange(iso: string, range: DateRangeKey): boolean {
+  const ageMs = DEMO_NOW.getTime() - new Date(iso).getTime()
+  return ageMs <= DATE_RANGE_HOURS[range] * 3_600_000
+}
+
 /**
- * Narrows a task register to the wards selected across the shell.
+ * Narrows a task register to the global filter set selected across the shell.
  *
- * A task carries the ward or wards it is tagged with, so a selection matches
- * on any of them - a task spanning two wards belongs in both officers' ward
- * views. No selection means no narrowing, which is the city-wide register.
+ * A task carries the ward(s), department, domain, priority and status it was
+ * raised under, so every one of those dimensions genuinely applies here - a
+ * task spanning two wards belongs in both officers' ward views. No selection
+ * on a dimension means no narrowing on it, which is the city-wide register.
  *
- * The test is the same one the other command registers apply, so the ward
- * selector cannot mean one thing on Alerts and another here.
+ * The test is the same shape the other command registers apply (see
+ * `AlertsPage`), so a filter selection cannot mean one thing there and
+ * another here. Ownership - what appears under "Assigned to me" at all - is
+ * decided by the service, never by this filter; it can only narrow further.
  */
-function inWardScope(tasks: ActionItem[], wardIds: string[]): ActionItem[] {
-  if (wardIds.length === 0) return tasks
-  return tasks.filter((task) => task.wardIds.some((wardId) => wardIds.includes(wardId)))
+function matchesGlobalFilters(task: ActionItem, filters: FilterState): boolean {
+  if (filters.wardIds.length > 0 && !task.wardIds.some((w) => filters.wardIds.includes(w))) return false
+  if (filters.departmentIds.length > 0 && !filters.departmentIds.includes(task.departmentId)) return false
+  if (filters.domains.length > 0 && !filters.domains.includes(task.domain)) return false
+  if (filters.severities.length > 0 && !filters.severities.includes(task.priority)) return false
+  if (filters.statuses.length > 0 && !filters.statuses.includes(task.status)) return false
+  if (!withinDateRange(task.createdAt, filters.dateRange)) return false
+  if (filters.search.trim()) {
+    const q = filters.search.trim().toLowerCase()
+    if (!task.title.toLowerCase().includes(q) && !task.description.toLowerCase().includes(q) && !task.reference.toLowerCase().includes(q)) return false
+  }
+  return true
 }
 
 export function MyTasksPage(): React.JSX.Element {
@@ -73,29 +100,50 @@ export function MyTasksPage(): React.JSX.Element {
   usePageMasthead(t('My Tasks'))
 
   /**
-   * The ward selection in effect across the shell.
+   * The global filter set in effect across the shell.
    *
-   * This screen read neither store, so narrowing the interface to a ward left
-   * the officer's own task list showing every ward's work under a heading that
-   * said otherwise. The selection is read here, where it narrows what is
-   * DISPLAYED; it is not - and must not be - what decides what may be read.
-   * That remains the service's ownership check: a task assigned to you is
-   * yours to open whatever ward it is tagged with, and no ward selection can
-   * widen that set, only shorten it.
+   * This screen used to read neither store, so narrowing the interface to a
+   * ward left the officer's own task list showing every ward's work under a
+   * heading that said otherwise. The selection is read here, where it narrows
+   * what is DISPLAYED; it is not - and must not be - what decides what may be
+   * read. That remains the service's ownership check: a task assigned to you
+   * is yours to open whatever ward it is tagged with, and no filter selection
+   * can widen that set, only shorten it.
    *
-   * `useFilterStore.filters.wardIds` rather than `useContextStore.wardId`
-   * because the two are reconciled by a single writer and the filter form is
-   * the general one - it holds a set, so a comparison across several wards
-   * narrows this list correctly too. It is the same source the sibling command
-   * screens (Alerts, Decision Centre, Intelligence Feed) read.
+   * `useFilterStore.filters` rather than `useContextStore.wardId` because the
+   * two are reconciled by a single writer and the filter form is the general
+   * one - it holds a set, so a comparison across several wards narrows this
+   * list correctly too. It is the same source the sibling command screens
+   * (Alerts, Decision Centre, Intelligence Feed) read.
    */
-  const wardScope = useFilterStore((s) => s.filters.wardIds)
+  const filters = useFilterStore((s) => s.filters)
 
   const myTasksQuery = useServiceQuery(queryKeys.myTasks('to-me'), (u) => actionService.myTasks(u))
   const assignedQuery = useServiceQuery(queryKeys.myTasks('by-me'), (u) => actionService.assignedByMe(u))
 
-  const myTasks = useMemo(() => inWardScope(myTasksQuery.data ?? [], wardScope), [myTasksQuery.data, wardScope])
-  const assignedByMe = useMemo(() => inWardScope(assignedQuery.data ?? [], wardScope), [assignedQuery.data, wardScope])
+  const myTasks = useMemo(
+    () => (myTasksQuery.data ?? []).filter((task) => matchesGlobalFilters(task, filters)),
+    [myTasksQuery.data, filters],
+  )
+  const assignedByMe = useMemo(
+    () => (assignedQuery.data ?? []).filter((task) => matchesGlobalFilters(task, filters)),
+    [assignedQuery.data, filters],
+  )
+
+  const domainOptions = useMemo<IntelligenceDomain[]>(
+    () =>
+      Array.from(new Set([...(myTasksQuery.data ?? []), ...(assignedQuery.data ?? [])].map((task) => task.domain))).sort(
+        (a, b) => DOMAIN_LABEL[a].localeCompare(DOMAIN_LABEL[b]),
+      ),
+    [myTasksQuery.data, assignedQuery.data],
+  )
+  const statusOptions = useMemo(
+    () =>
+      Array.from(
+        new Set([...(myTasksQuery.data ?? []), ...(assignedQuery.data ?? [])].map((task) => task.status)),
+      ).map((s: ActionStatus) => ({ value: s, label: ACTION_STATUS_LABEL[s] })),
+    [myTasksQuery.data, assignedQuery.data],
+  )
 
   if (myTasksQuery.isLoading) return <LoadingState variant="block" rows={6} />
   if (myTasksQuery.error) return <ErrorState detail={myTasksQuery.error.message} onRetry={() => myTasksQuery.refetch()} />
@@ -112,6 +160,13 @@ export function MyTasksPage(): React.JSX.Element {
           <Button variant="primary" icon={<UserPlus className="h-4 w-4" />} onClick={() => setAssignOpen(true)}>
             {t('Assign a task')}
           </Button>
+        }
+        controls={
+          <FilterBar
+            show={['date', 'ward', 'department', 'domain', 'severity', 'status', 'search']}
+            statusOptions={statusOptions}
+            domainOptions={domainOptions}
+          />
         }
       />
 

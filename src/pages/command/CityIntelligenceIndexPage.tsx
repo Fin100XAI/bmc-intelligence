@@ -174,7 +174,7 @@ export function CityIntelligenceIndexPage(): React.JSX.Element {
                     key={label}
                     type="button"
                     onClick={() => setSelectedId(dim.id)}
-                    className="rounded-[2px] border border-ink-100 p-2.5 text-left transition-colors hover:bg-ink-50/70"
+                    className="rounded-lg border border-ink-100 p-2.5 text-left transition-colors hover:bg-ink-50/70"
                   >
                     <p className="label-institutional">{label}</p>
                     <p className="mt-1 truncate text-[0.8125rem] font-semibold text-ink-900">{dim.label}</p>
@@ -236,7 +236,7 @@ function DimensionDetail({ dimension }: { dimension: IndexDimension }): React.JS
         ) : (
           <ul className="space-y-2">
             {dimension.positiveContributors.map((c, i) => (
-              <li key={`pos-${i}`} className="rounded-[2px] border border-ok-100 bg-ok-50/40 p-2.5">
+              <li key={`pos-${i}`} className="rounded-lg border border-ok-100 bg-ok-50/40 p-2.5">
                 <div className="flex items-start justify-between gap-2">
                   <p className="min-w-0 text-[0.8125rem] font-medium text-ink-800">{c.label}</p>
                   <span className="numeric inline-flex shrink-0 items-center gap-0.5 text-[0.6875rem] font-semibold text-ok-700">
@@ -259,7 +259,7 @@ function DimensionDetail({ dimension }: { dimension: IndexDimension }): React.JS
         ) : (
           <ul className="space-y-2">
             {dimension.negativeContributors.map((c, i) => (
-              <li key={`neg-${i}`} className="rounded-[2px] border border-crit-100 bg-crit-50/40 p-2.5">
+              <li key={`neg-${i}`} className="rounded-lg border border-crit-100 bg-crit-50/40 p-2.5">
                 <div className="flex items-start justify-between gap-2">
                   <p className="min-w-0 text-[0.8125rem] font-medium text-ink-800">{c.label}</p>
                   <span className="numeric inline-flex shrink-0 items-center gap-0.5 text-[0.6875rem] font-semibold text-crit-700">

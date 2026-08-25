@@ -269,7 +269,7 @@ function CoastalNotApplicable({ corporation }: { corporation: CorporationRef }):
 
       <Card tone="sunken">
         <p className="text-[0.6875rem] leading-relaxed text-ink-500">
-          {t('Coastal Intelligence is enabled only where the corporation&apos;s recorded physical form is coastal or creek-side. {0} of the {1} municipal corporations this build can be deployed against meet that test; the rest, this one among them, see this position instead. Switching the active corporation from the deployment selector in the command bar re-evaluates it.', COASTAL_CORPORATION_COUNT, CORPORATIONS.length)}
+          {t("Coastal Intelligence is enabled only where the corporation's recorded physical form is coastal or creek-side. {0} of the {1} municipal corporations this build can be deployed against meet that test; the rest, this one among them, see this position instead. Switching the active corporation from the deployment selector in the command bar re-evaluates it.", COASTAL_CORPORATION_COUNT, CORPORATIONS.length)}
         </p>
       </Card>
 
@@ -588,7 +588,7 @@ export function CoastalIntelligencePage(): React.JSX.Element {
                   <DataTable rows={[...tides].sort((a, b) => (a.at < b.at ? -1 : 1))} columns={tideColumns} rowKey={(r) => r.id} searchable={false} pageSize={8} ariaLabel="Tide windows" dense />
                 )}
               </div>
-              <div className="rounded-[2px] border border-ink-100 bg-surface-sunken p-3">
+              <div className="rounded-lg border border-ink-100 bg-surface-sunken p-3">
                 <p className="label-institutional">{t('High tide windows blocking discharge')}</p>
                 <p className="numeric mt-1 text-2xl font-semibold text-ink-900">{blockingTides.length}</p>
                 <p className="mt-0.5 text-[0.6875rem] text-ink-400">{t('of {0} recorded windows', tides.length)}</p>
@@ -627,7 +627,7 @@ export function CoastalIntelligencePage(): React.JSX.Element {
               />
               <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3 xl:grid-cols-1">
                 {byProtection.map((p) => (
-                  <div key={p.status} className="rounded-[2px] border border-ink-100 bg-surface-sunken p-2.5">
+                  <div key={p.status} className="rounded-lg border border-ink-100 bg-surface-sunken p-2.5">
                     <Badge tone={PROTECTION_TONE[p.status]}>{PROTECTION_LABEL[p.status]}</Badge>
                     <p className="numeric mt-1.5 text-sm font-semibold text-ink-900">
                       {p.count} segment{p.count === 1 ? '' : 's'} <span className="font-normal text-ink-400">{t('· {0} km', p.lengthKm)}</span>

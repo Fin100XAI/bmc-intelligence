@@ -158,17 +158,11 @@ export const MR_PART_24: Record<string, string> = {
     'व्याप्तीतील {0} क्षेत्रांत नगर विक्री समिती गठित झालेली नाही; प्रमाणपत्र कायदेशीररीत्या देण्यापूर्वी अधिनियमाने हीच समिती आवश्यक ठरवली आहे.',
   'A metric whose lineage has not been validated is not presented as evidence anywhere in the platform.':
     'ज्या मापदंडाची उगमसाखळी पडताळलेली नाही, तो मंचावर कोठेही पुरावा म्हणून सादर केला जात नाही.',
-  'access review': 'प्रवेश पुनरावलोकन',
   'Accountable owner: {0}.': 'जबाबदार अधिकारी: {0}.',
-  'active respon': 'सक्रिय प्रतिसाद',
   'against each other': 'एकमेकांशी',
-  'agency performance': 'संस्था कामगिरी',
   'Aggregate case volume in scope is {0} against {1} in the previous period, a movement of {2}.':
     'व्याप्तीतील एकत्रित प्रकरण संख्या मागील कालावधीतील {1} च्या तुलनेत {0} आहे, म्हणजे {2} इतका बदल.',
   'ahead of the phased plan': 'टप्प्याटप्प्याच्या आराखड्यापुढे',
-  'ai governance': 'कृत्रिम बुद्धिमत्ता कारभार',
-  'ai risk': 'कृत्रिम बुद्धिमत्ता जोखीम',
-  'air quality': 'हवेची गुणवत्ता',
   'All {0} building proposals in scope remain within their scrutiny SLA of 30, 45 or 60 days.':
     'व्याप्तीतील सर्व {0} बांधकाम प्रस्ताव 30, 45 किंवा 60 दिवसांच्या छाननी सेवा-हमीत आहेत.',
   'all {0} conditions': 'सर्व {0} स्थिती',  'Appliance availability stands at {0} of {1}, {2} of the fleet held in the scope.':
@@ -179,29 +173,17 @@ export const MR_PART_24: Record<string, string> = {
   'Are there any public health signals I should know about across the other conditions?':
     'इतर स्थितींबाबत मला माहीत असावेत असे सार्वजनिक आरोग्यविषयक काही संकेत आहेत का?',
   'Arrears position {0}.': 'थकबाकी स्थिती {0}.',
-  'assessed unit': 'आकारणी झालेले एकक',
-  'asset condition': 'मालमत्ता स्थिती',
-  'asset register': 'मालमत्ता नोंदवही',
   'Assign ownership of "{0}"': '"{0}" ची जबाबदारी नेमा',
   'Assign ownership of {0}': '{0} ची जबाबदारी नेमा',
   'Assignment without a resource decision will not move the position':
     'संसाधनाच्या निर्णयाविना केवळ जबाबदारी नेमल्याने स्थिती बदलणार नाही',
   'At least one ward in this comparison was selected by substitution rather than named in the question.':
     'या तुलनेतील किमान एक प्रभाग प्रश्नात नामनिर्देशित न होता पर्यायी निवडीने घेतला गेला आहे.',
-  'attention today': 'आजचे लक्ष',
-  'awaiting decision': 'निर्णयाच्या प्रतीक्षेत',
-  'awaiting determination': 'निर्णयासाठी प्रतीक्षेत',
   'Band distribution: {0}.': 'गट वितरण: {0}.',
   'basic service': 'मूलभूत सेवा',
-  'bed occupancy': 'खाट भोगवटा',
   'behind the phased plan': 'टप्प्याटप्प्याच्या आराखड्यामागे',
-  'below sla': 'सेवा-हमीखाली',
   'better than': 'पेक्षा चांगले',
-  'biggest risk': 'सर्वात मोठी जोखीम',
   'Blocked intent: {0}.': 'अडवलेला हेतू: {0}.',
-  'breach attempt': 'भंगाचा प्रयत्न',
-  'breached sla': 'भंग झालेली सेवा-हमी',
-  'brief me': 'मला थोडक्यात सांगा',
   'Bring forward protection assessments across the unprotected frontage':
     'असंरक्षित किनारपट्टीवरील संरक्षण मूल्यमापने आधी घ्या',
   'Bring forward the protection assessment for {0}': '{0} साठीचे संरक्षण मूल्यमापन आधी घ्या',
@@ -209,33 +191,16 @@ export const MR_PART_24: Record<string, string> = {
     '{1} या सुधारित तरतुदीपैकी अर्थसंकल्पीय वापर {0}.',
   'Budget utilisation stands at {0} of a revised allocation of {1}, with {2} committed but unspent; collection efficiency is {3} against arrears of {4}. Approximately 31% of the financial year has elapsed, and both figures should be read against that proportion.':
     '{1} या सुधारित तरतुदीपैकी अर्थसंकल्पीय वापर {0} आहे, आणि {2} वचनबद्ध असून खर्च झालेले नाहीत; {4} च्या थकबाकीच्या तुलनेत वसुली कार्यक्षमता {3} आहे. आर्थिक वर्षाचा अंदाजे 31% भाग सरला आहे, आणि दोन्ही आकडे त्या प्रमाणाच्या तुलनेत वाचावेत.',
-  'building permission': 'बांधकाम परवानगी',
-  'building proposal': 'बांधकाम प्रस्ताव',
-  'burning hour': 'दिवे जळण्याचे तास',
-  'can i trust': 'मी विश्वास ठेवू शकतो का',
   'Capital exposure concentrates in {0}.': 'भांडवली जोखीम {0} मध्ये एकवटली आहे.',
-  'capital outlay': 'भांडवली खर्च',
-  'capital value': 'भांडवली मूल्य',
-  'capital work': 'भांडवली काम',
   'Central resource pool availability': 'मध्यवर्ती संसाधन संचाची उपलब्धता',
-  'certificate issue': 'प्रमाणपत्र वितरण',
   'Certificates issued run at {0} per registered event, reflecting repeat copies requested against a single registration.':
     'प्रत्येक नोंदवलेल्या घटनेमागे {0} प्रमाणपत्रे दिली जातात; एकाच नोंदणीवर मागवलेल्या पुनःप्रती यातून दिसतात.',
-  'cessed building': 'उपकरप्राप्त इमारत',
-  'chronic location': 'नेहमीच्या समस्येचे ठिकाण',
-  'citizen service': 'नागरिक सेवा',
-  'city health': 'शहर आरोग्य',
-  'city index': 'शहर निर्देशांक',
-  'city position': 'शहर स्थिती',
   'Clear the {0} SLA-breached alerts, critical severity first':
     'सेवा-हमी ओलांडलेले {0} इशारे निकाली काढा, अतितीव्र प्रथम',
   'Close out the {0} alerts inside the final quarter of their response window':
     'प्रतिसाद कालावधीच्या अखेरच्या चतुर्थांशातील {0} इशारे निकाली काढा',
-  'collection coverage': 'संकलन व्याप्ती',
-  'collection efficiency': 'वसुली कार्यक्षमता',
   'Collection efficiency by revenue head': 'महसूल शीर्षनिहाय वसुली कार्यक्षमता',
   'Collection efficiency by ward': 'प्रभागनिहाय वसुली कार्यक्षमता',
-  'collection pattern': 'वसुलीचा नमुना',
   'Commission a joint departmental verification of "{0}"':
     '"{0}" ची संयुक्त विभागीय पडताळणी सुरू करा',
   'Commission a joint departmental verification of the highest-severity exposure':
@@ -243,13 +208,8 @@ export const MR_PART_24: Record<string, string> = {
   'Committed but unspent: {0}.': 'वचनबद्ध पण खर्च न झालेले: {0}.',
   'Committee sittings over twelve months: {0}, at a mean attendance of {1} and trending {2} {3} {4}.':
     'बारा महिन्यांतील समिती बैठका: {0}, सरासरी उपस्थिती {1} आणि कल {2} {3} {4}.',
-  'community hall': 'समाजमंदिर',
-  'compare ward': 'प्रभागांची तुलना',
   'Compensatory planting is {0} complete against the conditions imposed - {1} saplings remain outstanding across the wards in scope.':
     'घातलेल्या अटींच्या तुलनेत भरपाई वृक्षारोपण {0} पूर्ण झाले आहे - व्याप्तीतील प्रभागांत {1} रोपे अद्याप बाकी आहेत.',
-  'complaint trend': 'तक्रारींचा कल',
-  'complaints increas': 'तक्रारी वाढ',
-  'complaints rising': 'तक्रारी वाढत',
   'Complete': 'पूर्ण',
   'Complete outstanding pre-monsoon desilting in the {0} wards below the readiness threshold.':
     'सज्जता मर्यादेखालील {0} प्रभागांतील उरलेली पावसाळापूर्व गाळ काढणी पूर्ण करा.',
@@ -259,7 +219,6 @@ export const MR_PART_24: Record<string, string> = {
     '{0} सुरू घटनांसाठीच्या प्रतिसाद संसाधनांची खात्री करा आणि उन्नयन स्थितीचे पुनरावलोकन करा.',
   'Confirm the operations centre mobilisation position against the current establishment readiness':
     'सध्याच्या आस्थापना सज्जतेच्या तुलनेत कार्यचालन केंद्राच्या जमवाजमवीच्या स्थितीची खात्री करा',
-  'connected to each other': 'एकमेकांशी जोडलेले',
   'Contractual staff make up {0} of the total strength in scope. A contractual complement holds service delivery up while the vacancy persists, and it does not reduce the vacancy itself.':
     'व्याप्तीतील एकूण मनुष्यबळापैकी {0} कंत्राटी कर्मचारी आहेत. रिक्त पदे कायम असेपर्यंत कंत्राटी मनुष्यबळ सेवा वितरण टिकवून धरते, परंतु त्याने रिक्त पदे कमी होत नाहीत.',
   'Convene a milestone recovery review for {0}': '{0} साठी टप्पा पूर्तता पुनरावलोकन बोलवा',
@@ -280,39 +239,19 @@ export const MR_PART_24: Record<string, string> = {
     'महानगरपालिकाभर महिन्यागणिक निर्बीजीकरण {0} आणि नोंदवलेले दंश {1} बदलले. या दोन मालिकांमधील व्यस्त संबंध हाच कार्यक्रमाचा आधार आहे, आणि तो केवळ महिन्यांच्या पातळीवरच वाचता येतो.',
   'Corporation-wide, the monthly return moved to {0} births and {1} deaths from {2} and {3}, on {4} certificates issued.':
     'महानगरपालिकाभर मासिक विवरण {2} व {3} वरून {0} जन्म आणि {1} मृत्यू असे झाले, आणि {4} प्रमाणपत्रे दिली गेली.',
-  'corridor speed': 'मार्गिका वेग',
   'Critical care stands at {0} of {1} ICU beds occupied, {2}, leaving {3} {4} of headroom.':
     'अतिदक्षता स्थिती: {1} पैकी {0} अतिदक्षता खाटा व्यापलेल्या, {2}, आणि {3} {4} शिल्लक क्षमता.',
   'Critical equipment serviceability averages {0}, and {1} of {2} {3} outside an operational state on their own recorded classification.':
     'महत्त्वाच्या उपकरणांची कार्यक्षमता सरासरी {0} आहे, आणि {2} पैकी {1} {3} त्यांच्या स्वतःच्या नोंदवलेल्या वर्गीकरणानुसार कार्यरत स्थितीबाहेर.',
-  'critical risk': 'अतितीव्र जोखीम',
-  'cross domain': 'आंतरक्षेत्रीय',
   'Cross-domain exposures combine signals held by different departments, so no single departmental view holds all of them.':
     'आंतरक्षेत्रीय जोखमी वेगवेगळ्या विभागांकडील संकेत एकत्र करतात, त्यामुळे कोणत्याही एका विभागाच्या दृश्यात त्या सर्व नसतात.',
-  'dark stretch': 'अंधारा पट्टा',
-  'data quality': 'माहितीची गुणवत्ता',
-  'data source': 'माहिती स्रोत',
-  'death registration': 'मृत्यू नोंदणी',
-  'decision case': 'निर्णय प्रकरण',
-  'decision required': 'निर्णय आवश्यक',
-  'decisions awaiting': 'प्रतीक्षेतील निर्णय',
-  'decisions pending': 'प्रलंबित निर्णय',
-  'decisions required': 'आवश्यक निर्णय',
-  'delayed work': 'विलंबित काम',
-  'derived from': 'यावरून काढलेले',
   'Detected {0}; {1} timeline entries recorded.': '{0} आढळले; {1} कालरेषा नोंदी नोंदवल्या.',
-  'development plan': 'विकास आराखडा',
   'Digital request share averages {0}. Every counter visit avoided is a working day returned to a resident who is usually taking unpaid leave to make it.':
     'डिजिटल अर्जांचा वाटा सरासरी {0} आहे. टळलेली प्रत्येक खिडकीवरील फेरी म्हणजे रहिवाशाला परत मिळालेला एक कामकाजी दिवस, कारण त्यासाठी त्याला बहुधा बिनपगारी रजा घ्यावी लागते.',
   'Disbursement moved from ₹{0} lakh to ₹{1} lakh month on month ({2}), on {3} new enrolments - the only figure on this register that closes the coverage gap.':
     'महिन्यागणिक वितरण ₹{0} लाखांवरून ₹{1} लाख झाले ({2}), आणि {3} नवीन नोंदण्या झाल्या - या नोंदवहीवरील व्याप्तीतील तूट भरून काढणारा हाच एकमेव आकडा आहे.',
-  'drainage network': 'निचरा जाळे',
-  'drinking water': 'पिण्याचे पाणी',
-  'eating house': 'उपाहारगृह',
   'effluent outside consent': 'संमती अटींबाहेरील सांडपाणी',
   'effluent within consent': 'संमती अटींतील सांडपाणी',
-  'emergency load': 'आपत्कालीन भार',
-  'emergency operations': 'आपत्कालीन कार्यचालन',
   'Emergency Operations Centre Log (simulated)': 'आपत्कालीन कार्यवाही केंद्र नोंद (नक्कल)',
   'Establishes accountability for the condition, so it is addressed rather than repeatedly observed.':
     'त्या स्थितीची जबाबदारी निश्चित करते, जेणेकरून ती वारंवार केवळ निरीक्षणात न राहता तिच्यावर कार्यवाही होते.',
@@ -320,29 +259,12 @@ export const MR_PART_24: Record<string, string> = {
     'जबाबदारी निश्चित करते, जेणेकरून ती स्थिती केवळ निरीक्षणात न राहता तिच्यावर कार्यवाही होते.',
   'Establishments are ordered below by their own recorded readiness index and response mean over the last 30 days, so the ranking rests on the corporation’s own returns and describes preparation rather than the incidents any establishment will face.':
     'खाली केंद्रे त्यांच्या स्वतःच्या नोंदवलेल्या सज्जता निर्देशांकानुसार व गेल्या 30 दिवसांतील सरासरी प्रतिसादानुसार क्रमवार आहेत, त्यामुळे ही क्रमवारी महानगरपालिकेच्याच विवरणांवर आधारित असून ती कोणत्या केंद्रासमोर कोणत्या घटना येतील याचे नव्हे, तर तयारीचे वर्णन करते.',
-  'executing agency': 'अंमलबजावणी संस्था',
-  'executive summary': 'कार्यकारी सारांश',
   'Facilities are ranked below on a utilisation pressure index computed for this answer and published with its weights, so the ordering can be checked rather than taken. {0}':
     'खाली सुविधा या उत्तरासाठी काढलेल्या व त्याच्या भारांकांसह प्रकाशित केलेल्या वापर-ताण निर्देशांकानुसार क्रमवार आहेत, त्यामुळे ही क्रमवारी गृहीत न धरता तपासून पाहता येते. {0}',
   'Filtered to {0} severity because the question asked for it. ':
     'प्रश्नात तशी विचारणा असल्याने {0} तीव्रतेपुरते गाळले आहे. ',
-  'fire brigade': 'अग्निशमन दल',
-  'fire station': 'अग्निशमन केंद्र',
-  'flood preparedness': 'पूर सज्जता',
-  'flood readiness': 'पुराची सज्जता',
-  'flood risk': 'पूर जोखीम',
-  'flood spot': 'पूर ठिकाण',
-  'flooding spot': 'पाणी साचण्याचे ठिकाण',
   'Full authorised scope': 'संपूर्ण अधिकृत व्याप्ती',
-  'general body': 'महासभा',
-  'give me a brief': 'मला थोडक्यात माहिती द्या',
-  'going on in': 'काय चालले आहे',
-  'greatest risk': 'सर्वात मोठी जोखीम',
-  'growth corridor': 'विकास मार्गिका',
-  'happening in': 'घडत आहे',
-  'health signal': 'आरोग्य संकेत',
   'Held in your name or on your approval': 'तुमच्या नावावर किंवा तुमच्या मंजुरीवर',
-  'help me understand what': 'मला समजून घ्यायला मदत करा',
   'high priority': 'उच्च प्राधान्य',
   'high severity': 'उच्च तीव्रता',
   'Highest concentration by domain: {0} with {1} of {2} open alerts.':
@@ -353,47 +275,24 @@ export const MR_PART_24: Record<string, string> = {
     'भौगोलिकदृष्ट्या सर्वाधिक संकेंद्रण: {0}, {1} प्रलंबित इशारा{2}.',
   'Highest concentration by geography: {0}, named on {1} open item{2}.':
     'भौगोलिकदृष्ट्या सर्वाधिक संकेंद्रण: {0}, {1} प्रलंबित नोंद{2} वर नामनिर्देशित.',
-  'highest operational': 'सर्वाधिक कामकाजविषयक',
-  'highest risk': 'सर्वाधिक जोखीम',
   'Highest ward risk: {0} at {1}/100 composite risk.':
     'सर्वाधिक प्रभाग जोखीम: {0}, एकत्रित जोखीम {1}/100.',
   'Hospital access: {0}.': 'रुग्णालय प्रवेश: {0}.',
   'hospital unit': 'रुग्णालय विभाग',
   'Hospital unit': 'रुग्णालय विभाग',
-  'how are things': 'परिस्थिती कशी आहे',
-  'how are we doing': 'आपली कामगिरी कशी आहे',
-  'how do you know': 'तुम्हाला कसे कळते',
-  'how do you work': 'तुम्ही कसे काम करता',
-  'how is': 'कसे आहे',
-  'how is it': 'ते कसे आहे',
-  'how is the city': 'शहर कसे आहे',
-  'how is this': 'हे कसे आहे',
-  'how is ward': 'प्रभाग कसा आहे',
   'How prepared are we for this monsoon in {0}?':
     '{0} मध्ये या पावसाळ्यासाठी आपली सज्जता किती आहे?',
-  'human oversight': 'मानवी देखरेख',
-  'hygiene score': 'स्वच्छता गुण',
   'Incident load across the corridors in scope averages {0} recorded incidents per corridor over 30 days.':
     'व्याप्तीतील मार्गिकांवरील घटनांचा भार 30 दिवसांत प्रति मार्गिका सरासरी {0} नोंदवलेल्या घटना इतका आहे.',
   'Increase supervision intensity on live work held by {0}':
     '{0} कडील सुरू असलेल्या कामावरील पर्यवेक्षण वाढवा',
   'Increase supervision intensity on the weakest-standing suppliers':
     'सर्वात कमकुवत कामगिरीच्या पुरवठादारांवरील पर्यवेक्षण वाढवा',
-  'information security': 'माहिती सुरक्षा',
-  'infrastructure adequacy': 'पायाभूत सुविधा पर्याप्तता',
-  'intelligence index': 'बुद्धिमत्ता निर्देशांक',
-  'key risk': 'प्रमुख जोखीम',
-  'knock on': 'पुढील परिणाम',
-  'land use': 'जमीन वापर',
   'Land use in the weakest ward is recorded as {0}% residential, {1}% commercial, {2}% industrial and {3}% open.':
     'सर्वात कमकुवत प्रभागातील जमीन वापर {0}% निवासी, {1}% व्यावसायिक, {2}% औद्योगिक आणि {3}% मोकळा असा नोंदवला आहे.',
-  'led conversion': 'एलईडी रूपांतर',
   'Lineage graphs for the named department{0}, weakest stage quality first':
     'नामनिर्देशित विभाग{0} साठीचे उगमसाखळी आलेख, सर्वात कमकुवत टप्पा गुणवत्ता प्रथम',
-  'linked across': 'यांच्यात जोडलेले',
-  'look at': 'पहा',
   'low severity': 'निम्न तीव्रता',
-  'main risk': 'मुख्य जोखीम',
   'Mean blockage risk across the scope is {0}/100.':
     'व्याप्तीतील सरासरी तुंबण्याची जोखीम {0}/100 आहे.',
   'Mean coverage radius across the establishments read is {0} km.':
@@ -413,24 +312,15 @@ export const MR_PART_24: Record<string, string> = {
   'medium severity': 'मध्यम तीव्रता',
   'Metric lineage graphs, weakest mean stage quality first':
     'मापदंड उगमसाखळी आलेख, सर्वात कमकुवत सरासरी टप्पा गुणवत्ता प्रथम',
-  'mid day meal': 'माध्यान्ह भोजन',
   'Mid-day meal coverage averages {0} of enrolled pupils across the schools in scope.':
     'व्याप्तीतील शाळांमध्ये माध्यान्ह भोजनाची व्याप्ती पटावरील विद्यार्थ्यांच्या सरासरी {0} इतकी आहे.',
-  'model evaluation': 'प्रारूप मूल्यमापन',
-  'model registry': 'प्रारूप नोंदवही',
-  'monsoon readiness': 'पावसाळा सज्जता',
   'Monsoon readiness averages {0}/100 with {1} wards below the 70-point threshold; {2} chronic waterlogging locations are recorded in scope.':
     'पावसाळा सज्जता सरासरी {0}/100 असून {1} प्रभाग 70 गुणांच्या मर्यादेखाली आहेत; व्याप्तीत नेहमी पाणी साचणारी {2} ठिकाणे नोंदवलेली आहेत.',
-  'most serious': 'सर्वात गंभीर',
-  'municipal asset': 'महानगरपालिका मालमत्ता',
   'BMC Intelligence Core': 'BMC बुद्धिमत्ता गाभा',
   'BMC Intelligence Core - permission engine':
     'BMC बुद्धिमत्ता गाभा - परवानगी यंत्रणा',
   'BMC Intelligence Core - query route registry':
     'BMC बुद्धिमत्ता गाभा - प्रश्न मार्ग नोंदवही',
-  'my attention': 'माझे लक्ष',
-  'my day': 'माझा दिवस',
-  'my priorit': 'माझे प्राधान्य',
   'Narrowed by the question': 'प्रश्नानुसार मर्यादित',
   'Narrowed to {0} because the question named {1}.':
     'प्रश्नात {1} नामनिर्देशित असल्याने {0} पुरते मर्यादित केले आहे.',
@@ -438,7 +328,6 @@ export const MR_PART_24: Record<string, string> = {
     'प्रश्नात नामनिर्देशित विभाग{2} च्या मालकीच्या {0} उगमसाखळी आलेख{1} पुरते मर्यादित केले आहे. ',
   'Nearest readings the engine considered and set aside: {0}. Each is one click away below.':
     'यंत्रणेने विचारात घेऊन बाजूला ठेवलेले सर्वात जवळचे अर्थ: {0}. प्रत्येक खाली एका क्लिकवर आहे.',
-  'need my attention': 'माझ्या लक्षाची गरज',
   'Neither a condition nor a ward was named, so all {0} aggregate indicators are read across the {1} in your authorised scope.':
     'कोणतीही स्थिती किंवा प्रभाग नामनिर्देशित नसल्याने, तुमच्या अधिकृत व्याप्तीतील {1} मध्ये सर्व {0} एकत्रित निर्देशक वाचले आहेत.',
   'No active incident is open within the scope you are authorised to read.':
@@ -520,7 +409,6 @@ export const MR_PART_24: Record<string, string> = {
     'प्रश्नात कोणताही प्रभाग नामनिर्देशित नव्हता, त्यामुळे तुमच्या अधिकृत व्याप्तीतील सर्वाधिक दोन नोंदींची तुलना निवडीने नव्हे तर पर्यायी निवडीने केली आहे.',
   'no ward within your authorised scope was named':
     'तुमच्या अधिकृत व्याप्तीतील कोणताही प्रभाग नामनिर्देशित नव्हता',
-  'non revenue water': 'महसूलरहित पाणी',
   'None has yet passed its due date, so the queue can be cleared before any case becomes late.':
     'अद्याप कोणीही देय दिनांक ओलांडलेला नाही, त्यामुळे कोणतेही प्रकरण उशिरा होण्यापूर्वी रांग निकाली काढता येते.',
   'None has yet passed the due date recorded on the case':
@@ -535,15 +423,12 @@ export const MR_PART_24: Record<string, string> = {
   'not separable from the components held': 'उपलब्ध घटकांपासून वेगळे करता येत नाही',
   'not stated': 'नमूद नाही',
   'Not stated': 'नमूद नाही',
-  'occupancy certificate': 'भोगवटा प्रमाणपत्र',
   'Of {0} decision cases readable within your scope, {1} await determination and {2} carry a recorded determination or have moved into implementation.':
     'तुमच्या व्याप्तीत वाचता येणाऱ्या {0} निर्णय प्रकरणांपैकी {1} निर्णयाच्या प्रतीक्षेत आहेत आणि {2} वर नोंदवलेला निर्णय आहे किंवा ती अंमलबजावणीत गेली आहेत.',
   'Of {0} incidents recorded within your scope, {1} remain active, {2} are contained and {3} are resolved or reviewed.':
     'तुमच्या व्याप्तीत नोंदवलेल्या {0} घटनांपैकी {1} सुरू आहेत, {2} आटोक्यात आहेत आणि {3} चे निराकरण झाले आहे किंवा त्यांचे पुनरावलोकन झाले आहे.',
   'of them materially so': 'त्यांपैकी लक्षणीय प्रमाणात तसे',
-  'on my desk': 'माझ्या टेबलावर',
   'on time': 'वेळेत',
-  'ongoing event': 'सुरू असलेली घटना',
   'Only one service category is held in scope, so no comparison between categories is offered.':
     'व्याप्तीत केवळ एकच सेवा श्रेणी आहे, त्यामुळे श्रेणींमधील तुलना दिलेली नाही.',
   'Only one ward was named, so {0} - the highest reading otherwise in your authorised scope - is placed alongside it by substitution.':
@@ -553,39 +438,18 @@ export const MR_PART_24: Record<string, string> = {
   'Open and investigating security events, most severe and most recent first':
     'प्रलंबित व तपासाधीन सुरक्षा घटना, सर्वाधिक तीव्र व सर्वात अलीकडील प्रथम',
   'Open complaints in scope: {0}.': 'व्याप्तीतील प्रलंबित तक्रारी: {0}.',
-  'open space': 'मोकळी जागा',
   'Operational position for {0} at {1}. {2} open intelligence items fall within your scope, of which {3} are critical and {4} are high severity.':
     '{1} रोजी {0} ची कामकाज स्थिती. तुमच्या व्याप्तीत {2} प्रलंबित बुद्धिमत्ता नोंदी येतात, त्यांपैकी {3} अतितीव्र आणि {4} उच्च तीव्रतेच्या आहेत.',
-  'operational risk': 'कामकाज जोखीम',
   'Outside consent': 'संमती अटींबाहेर',
   'Outstanding': 'बाकी',
-  'overall health': 'एकूण आरोग्य',
-  'overall picture': 'एकूण चित्र',
-  'overall position': 'एकूण स्थिती',
   'Parking lots in scope collect ₹{0} lakh a month. Parking is a demand-management instrument before it is a revenue line, and reading it the other way round is how a corporation builds parking it cannot afford to police.':
     'व्याप्तीतील वाहनतळांतून दरमहा ₹{0} लाख जमा होतात. वाहनतळ ही महसुलाची बाब असण्यापूर्वी मागणी-नियमनाचे साधन आहे, आणि उलट्या क्रमाने वाचल्यामुळेच महानगरपालिका अशी वाहनतळे उभारते जिच्यावर देखरेख ठेवणे तिला परवडत नाही.',
-  'pattern across': 'यांमधील नमुना',
-  'peak speed': 'गर्दीच्या वेळेतील वेग',
-  'pending decision': 'प्रलंबित निर्णय',
-  'phased plan': 'टप्प्याटप्प्याचा आराखडा',
-  'position in': 'मधील स्थिती',
-  'pre monsoon': 'पावसाळापूर्व',
   'Pre-monsoon desilting stands at {0} against the 100% target and pump readiness at {1}%, the two capacities that bind when rainfall exceeds drain design.':
     '100% लक्ष्याच्या तुलनेत पावसाळापूर्व गाळ काढणी {0} आणि पंप सज्जता {1}% आहे; पर्जन्यमान गटाराच्या रचनेपेक्षा अधिक झाल्यावर याच दोन क्षमता निर्णायक ठरतात.',
-  'prepared for': 'साठी सज्ज',
   'Programme a re-inspection cycle across the reaches below desilting target':
     'गाळ काढणीच्या लक्ष्याखालील भागांसाठी फेरतपासणी चक्राचे नियोजन करा',
-  'prompt template': 'सूचना नमुना',
-  'property assessment': 'मालमत्ता आकारणी',
-  'property segment': 'मालमत्ता वर्ग',
-  'property tax': 'मालमत्ता कर',
   'Provision is not fungible between communities: {0} community designations are served within scope, and a city with ample cremation capacity but no burial ground within reach of the families who need one has not discharged this duty.':
     'वेगवेगळ्या समाजांमधील सुविधा परस्पर बदलण्याजोग्या नसतात: व्याप्तीत {0} समाज-निर्देश सेवा घेतात, आणि ज्या शहरात दहन क्षमता भरपूर आहे पण गरज असलेल्या कुटुंबांच्या आवाक्यात दफनभूमी नाही, त्या शहराने हे कर्तव्य पार पाडलेले नाही.',
-  'public health': 'सार्वजनिक आरोग्य',
-  'public toilet': 'सार्वजनिक शौचालय',
-  'pumping station': 'उपसा केंद्र',
-  'rain readiness': 'पावसाची सज्जता',
-  'rank ward': 'प्रभाग क्रमवारी',
   'Re-inspect and programme works on {0}': '{0} वर फेरतपासणी करून कामांचे नियोजन करा',
   'Readiness of {0}/100 sits below the {1}-point departmental threshold.':
     '{0}/100 ही सज्जता {1} गुणांच्या विभागीय मर्यादेखाली आहे.',

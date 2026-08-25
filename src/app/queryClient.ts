@@ -79,6 +79,7 @@ export const queryKeys = {
   resilience: () => ['bmc-mii', 'resilience'] as const,
   contractors: (scope?: string) => ['bmc-mii', 'contractors', scope ?? 'all'] as const,
   citizen: (scope?: string) => ['bmc-mii', 'citizen', scope ?? 'all'] as const,
+  resolution: (scope?: string) => ['bmc-mii', 'resolution', scope ?? 'all'] as const,
   hyperlocal: (scope?: string) => ['bmc-mii', 'hyperlocal', scope ?? 'all'] as const,
   // The obligatory services beyond engineering and finance.
   education: (scope?: string) => ['bmc-mii', 'education', scope ?? 'all'] as const,

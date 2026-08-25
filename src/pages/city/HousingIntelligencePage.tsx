@@ -327,7 +327,7 @@ export function HousingIntelligencePage(): React.JSX.Element {
             <div className="min-w-0">
               <p className="text-[0.8125rem] font-semibold text-govt-800">{t('This page holds places, never people')}</p>
               <p className="mt-1 text-xs leading-relaxed text-ink-600">
-                {t('Every figure here describes a settlement and the service it receives - water points, toilet seats, collection rounds, lighting. Nothing describes a resident. There is no household register, no name and no eligibility determination anywhere behind this page, and the service exposes no method that could return one. The recognition status shown is a service-entitlement classification used for planning delivery; it is not a finding about tenure, legality or anyone&apos;s rights.')}
+                {t("Every figure here describes a settlement and the service it receives - water points, toilet seats, collection rounds, lighting. Nothing describes a resident. There is no household register, no name and no eligibility determination anywhere behind this page, and the service exposes no method that could return one. The recognition status shown is a service-entitlement classification used for planning delivery; it is not a finding about tenure, legality or anyone's rights.")}
               </p>
             </div>
           </Card>

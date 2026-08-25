@@ -122,10 +122,10 @@ export function GovPanel({
   return (
     <section
       className={cn(
-        // `rounded-[2px]` rather than `rounded-none`: a true right angle reads
-        // as an unstyled box on screen, while two pixels reads as a printed
-        // rule. The difference is the whole effect.
-        'flex flex-col overflow-hidden rounded-[2px] bg-surface shadow-xs',
+        // `rounded-lg` rather than `rounded-none`: a true right angle reads
+        // as an unstyled box on screen, while a soft corner reads as a
+        // designed surface. The difference is the whole effect.
+        'flex flex-col overflow-hidden rounded-lg bg-surface shadow-xs',
         className,
       )}
     >
@@ -267,20 +267,20 @@ export function GovMasthead({
   strip?: ReactNode
 }): React.JSX.Element {
   return (
-    <div className="overflow-hidden rounded-[2px] border border-ink-200 shadow-xs">
-      <div className="flex flex-wrap items-center gap-3 bg-govt-900 px-4 py-3">
+    <div className="overflow-hidden rounded-lg border border-ink-200 shadow-xs">
+      <div className="flex flex-wrap items-center gap-3 bg-surface px-4 py-3">
         {seal ? (
           <img
             src={seal}
             alt=""
             aria-hidden
-            className="h-11 w-11 shrink-0 rounded-[3px] object-cover ring-1 ring-white/25"
+            className="h-11 w-11 shrink-0 rounded-[3px] object-cover ring-1 ring-ink-200"
           />
         ) : null}
         <div className="min-w-0 flex-1">
-          <p className="text-[0.625rem] font-semibold tracking-[0.12em] text-white/70 uppercase">{authority}</p>
-          <h1 className="mt-0.5 truncate text-[1.0625rem] leading-tight font-bold tracking-tight text-white">{title}</h1>
-          {standfirst ? <p className="mt-1 max-w-4xl text-[0.6875rem] leading-snug text-white/65">{standfirst}</p> : null}
+          <p className="text-[0.625rem] font-semibold tracking-[0.12em] text-ink-500 uppercase">{authority}</p>
+          <h1 className="mt-0.5 truncate text-[1.0625rem] leading-tight font-bold tracking-tight text-ink-900">{title}</h1>
+          {standfirst ? <p className="mt-1 max-w-4xl text-[0.6875rem] leading-snug text-ink-600">{standfirst}</p> : null}
         </div>
         {meta ? <div className="shrink-0 text-right">{meta}</div> : null}
       </div>
@@ -298,10 +298,14 @@ export function GovMasthead({
 }
 
 /** A strip cell's own wash, independent of `tone` — identity, not severity. */
-const STRIP_BACKGROUND: Record<'red' | 'amber' | 'green', string> = {
+const STRIP_BACKGROUND: Record<'red' | 'amber' | 'green' | 'blue' | 'teal' | 'gold' | 'neutral', string> = {
   red: 'bg-google-red-50',
   amber: 'bg-google-yellow-50',
   green: 'bg-google-green-50',
+  blue: 'bg-google-blue-50',
+  teal: 'bg-intel-50',
+  gold: 'bg-gold-50',
+  neutral: 'bg-ink-50',
 }
 
 /**
@@ -329,7 +333,7 @@ export function GovStripCell({
   value: ReactNode
   tone?: 'default' | 'critical' | 'warn' | 'positive'
   icon?: ReactNode
-  background?: 'red' | 'amber' | 'green'
+  background?: 'red' | 'amber' | 'green' | 'blue' | 'teal' | 'gold' | 'neutral'
 }): React.JSX.Element {
   const toneClass =
     tone === 'critical'

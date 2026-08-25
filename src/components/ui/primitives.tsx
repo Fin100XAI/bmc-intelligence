@@ -21,11 +21,11 @@ export type ButtonSize = 'xs' | 'sm' | 'md'
 // moving part in the platform - card lift, drawer, tab marker, page entrance -
 // is on that one curve, and a button easing differently is the difference
 // between an interface that moves as one piece and one that moves in parts.
-// `rounded-[2px]` rather than `rounded-lg`: a control with an 8px radius sitting
-// inside a panel with a 2px one belongs to a different interface. The whole
-// platform is squared off, and the furniture has to be squared off with it.
+// `rounded-lg` platform-wide: a control with a sharper radius sitting inside a
+// softly-curved panel belongs to a different interface. The whole platform
+// carries the same corner now, and the furniture has to carry it too.
 const BUTTON_BASE =
-  'inline-flex items-center justify-center gap-1.5 rounded-[2px] font-semibold whitespace-nowrap ' +
+  'inline-flex items-center justify-center gap-1.5 rounded-lg font-semibold whitespace-nowrap ' +
   'transition-all duration-150 ease-[var(--ease-calm)] active:translate-y-px disabled:cursor-not-allowed disabled:opacity-45 ' +
   'disabled:active:translate-y-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-govt-500'
 
@@ -186,9 +186,9 @@ const CARD_TONES: Record<NonNullable<CardProps['tone']>, string> = {
 /**
  * The ruled panel every page is built from.
  *
- * `rounded-[2px]` rather than `rounded-none`: a true right angle reads as an
- * unstyled box on screen, while two pixels reads as a printed rule. The
- * difference is the whole effect.
+ * `rounded-lg` rather than `rounded-none`: a true right angle reads as an
+ * unstyled box on screen, while a soft corner reads as a designed surface.
+ * The difference is the whole effect.
  *
  * `data-card-padded` is the contract with `CardHeader`. A titled band that
  * leaves a white gutter around it looks like a mistake, so in a padded card the
@@ -203,7 +203,7 @@ export function Card({ flush, interactive, tone = 'default', background, classNa
     <div
       data-card-padded={flush ? undefined : ''}
       className={cn(
-        'rounded-[2px] border shadow-xs',
+        'rounded-lg border shadow-xs',
         // `background` is only ever paired with the default tone at call
         // sites (identity, not a reading) — its wash and a plain hairline
         // border stand in for `CARD_TONES` entirely rather than layering
@@ -409,7 +409,7 @@ export function Label({
 }
 
 const FIELD_BASE =
-  'w-full rounded-[2px] border border-ink-200 bg-surface px-3 text-[0.8125rem] text-ink-800 shadow-xs ' +
+  'w-full rounded-lg border border-ink-200 bg-surface px-3 text-[0.8125rem] text-ink-800 shadow-xs ' +
   'placeholder:text-ink-300 transition-all focus:border-govt-400 focus:outline-none ' +
   'focus:ring-[3px] focus:ring-govt-500/15 disabled:cursor-not-allowed disabled:bg-ink-50 disabled:text-ink-400'
 
@@ -495,7 +495,7 @@ export function Checkbox({
         checked={checked}
         disabled={disabled}
         onChange={(e) => onChange(e.target.checked)}
-        className="h-3.5 w-3.5 rounded-[2px] border-ink-300 text-govt-600 focus:ring-2 focus:ring-govt-500/25"
+        className="h-3.5 w-3.5 rounded border-ink-300 text-govt-600 focus:ring-2 focus:ring-govt-500/25"
       />
       <span className="min-w-0 truncate">{label}</span>
     </label>
@@ -569,7 +569,7 @@ export function SegmentedControl<T extends string>({
     <div
       role="tablist"
       aria-label={ariaLabel}
-      className={cn('inline-flex items-center gap-0.5 rounded-[2px] border border-ink-200 bg-ink-50 p-[3px]', className)}
+      className={cn('inline-flex items-center gap-0.5 rounded-lg border border-ink-200 bg-ink-50 p-[3px]', className)}
     >
       {options.map((option) => {
         const active = option.value === value
@@ -581,7 +581,7 @@ export function SegmentedControl<T extends string>({
             aria-selected={active}
             onClick={() => onChange(option.value)}
             className={cn(
-              'inline-flex items-center gap-1.5 rounded-[2px] font-semibold transition-all duration-150',
+              'inline-flex items-center gap-1.5 rounded-md font-semibold transition-all duration-150',
               size === 'xs' ? 'h-6 px-2.5 text-[0.6875rem]' : 'h-[1.875rem] px-3 text-xs',
               active
                 ? 'bg-surface text-govt-700 shadow-[0_1px_2px_0_rgb(11_18_32/0.1)] ring-1 ring-ink-200/70'
@@ -663,7 +663,7 @@ export function ProgressBar({
       ) : null}
       <div
         className={cn(
-          'w-full overflow-hidden rounded-[2px] bg-ink-100',
+          'w-full overflow-hidden rounded-full bg-ink-100',
           size === 'xs' ? 'h-1.5' : size === 'sm' ? 'h-2' : 'h-2.5',
         )}
         role="progressbar"
@@ -672,7 +672,7 @@ export function ProgressBar({
         aria-valuemax={100}
       >
         <div
-          className={cn('h-full rounded-[2px] transition-[width] duration-500 ease-out', SCORE_TONE_BAR[resolved])}
+          className={cn('h-full rounded-full transition-[width] duration-500 ease-out', SCORE_TONE_BAR[resolved])}
           style={{ width: `${pct}%` }}
         />
       </div>

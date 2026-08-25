@@ -7,15 +7,27 @@ import { DemonstrationNotice, EmptyState, ErrorState, LoadingState } from '@/com
 import { MetricCard } from '@/components/cards/MetricCard'
 import { GovPanel } from '@/components/gov/GovPanel'
 import { CityMap } from '@/components/map/CityMap'
+import { FilterBar } from '@/components/filters/FilterBar'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { hyperlocalService } from '@/services'
-import { SIGNAL_WEIGHTS } from '@/domains/hyperlocal/signals'
+import { SIGNAL_WEIGHTS, type HyperlocalCell } from '@/domains/hyperlocal/signals'
 import { usePageMasthead } from '@/stores/masthead.store'
-import { useContextStore } from '@/stores/ui.store'
+import { useContextStore, useFilterStore, type FilterState } from '@/stores/ui.store'
 import { WARDS } from '@/data/reference'
 import { isoFromAnchor } from '@/utils/deterministic'
 import { t } from '@/i18n'
+
+/** Ward and signal-stacking are already covered by this page's own two
+ *  selects (both server-scoped); the global bar adds severity and free text. */
+function matchesGlobalFilters(cell: HyperlocalCell, filters: FilterState): boolean {
+  if (filters.severities.length > 0 && !filters.severities.includes(cell.severity)) return false
+  if (filters.search.trim()) {
+    const q = filters.search.trim().toLowerCase()
+    if (!cell.localityName.toLowerCase().includes(q) && !cell.wardLabel.toLowerCase().includes(q)) return false
+  }
+  return true
+}
 
 /**
  * src/pages/city/HyperlocalIntelligencePage.tsx
@@ -65,6 +77,7 @@ export function HyperlocalIntelligencePage(): React.JSX.Element {
 
   const [minTypes, setMinTypes] = useState<string>('')
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const globalFilters = useFilterStore((s) => s.filters)
 
   usePageMasthead(t('Hyperlocal Intelligence'))
 
@@ -86,7 +99,10 @@ export function HyperlocalIntelligencePage(): React.JSX.Element {
     hyperlocalService.wardRollup(u, wardId ? { wardId } : {}),
   )
 
-  const cells = useMemo(() => cellsQuery.data ?? [], [cellsQuery.data])
+  const cells = useMemo(
+    () => (cellsQuery.data ?? []).filter((c) => matchesGlobalFilters(c, globalFilters)),
+    [cellsQuery.data, globalFilters],
+  )
   const rollup = useMemo(() => rollupQuery.data ?? [], [rollupQuery.data])
 
   const selected = useMemo(
@@ -139,6 +155,7 @@ export function HyperlocalIntelligencePage(): React.JSX.Element {
                 ]}
               />
             </div>
+            <FilterBar show={['severity', 'search']} searchPlaceholder="Search locality or ward" />
           </>
         }
       />

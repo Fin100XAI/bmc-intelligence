@@ -471,7 +471,7 @@ export function LivelihoodsPage(): React.JSX.Element {
                 {t('A certificate of vending is an entitlement, not a favour')}
               </p>
               <p className="mt-1 text-xs leading-relaxed text-ink-600">
-                {t('Under the Street Vendors (Protection of Livelihood and Regulation of Street Vending) Act, 2014, once the statutory survey has been carried out a vendor on the register is entitled to a certificate of vending, and issuing it is a duty this corporation owes. The shortfall reported below is therefore a measure of the corporation&apos;s own statutory compliance - it records what the administration has not yet done, and it says nothing whatever about the people who earn their living by vending. Where the survey has not been carried out or the Town Vending Committee has not been constituted, the duty has not even begun to be discharged.')}
+                {t("Under the Street Vendors (Protection of Livelihood and Regulation of Street Vending) Act, 2014, once the statutory survey has been carried out a vendor on the register is entitled to a certificate of vending, and issuing it is a duty this corporation owes. The shortfall reported below is therefore a measure of the corporation's own statutory compliance - it records what the administration has not yet done, and it says nothing whatever about the people who earn their living by vending. Where the survey has not been carried out or the Town Vending Committee has not been constituted, the duty has not even begun to be discharged.")}
               </p>
             </div>
           </Card>

@@ -18,9 +18,11 @@ import {
 import { MetricCard } from '@/components/cards'
 import { GovPanel } from '@/components/gov/GovPanel'
 import { RankedBarChart } from '@/components/charts'
+import { FilterBar } from '@/components/filters/FilterBar'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { benchmarkService } from '@/services'
+import { useFilterStore } from '@/stores/ui.store'
 import { usePageMasthead } from '@/stores/masthead.store'
 import { activeCorporation } from '@/config/municipality.config'
 import {
@@ -87,6 +89,7 @@ function formatValue(value: number | null, metric: BenchmarkMetric): string {
 export function BenchmarkingPage(): React.JSX.Element {
   const [metricId, setMetricId] = useState('collection-efficiency')
   const [band, setBand] = useState<PopulationBand | 'all'>('all')
+  const filters = useFilterStore((s) => s.filters)
 
   // The shell's masthead states the screen's name; the page states the wording.
   usePageMasthead(t('State Benchmarking'))
@@ -95,7 +98,21 @@ export function BenchmarkingPage(): React.JSX.Element {
   const allQuery = useServiceQuery(queryKeys.benchmark('all'), (u) => benchmarkService.all(u))
 
   const metrics = useMemo(() => metricsQuery.data ?? [], [metricsQuery.data])
-  const rows = useMemo(() => allQuery.data ?? [], [allQuery.data])
+  // The global search filter is applied here, earliest in the derivation, so
+  // the league table, the leaders chart and every metric built from `cohort`
+  // below all honour it together.
+  const rows = useMemo(() => {
+    const all = allQuery.data ?? []
+    const q = filters.search.trim().toLowerCase()
+    if (!q) return all
+    return all.filter(
+      (r) =>
+        r.shortName.toLowerCase().includes(q) ||
+        r.name.toLowerCase().includes(q) ||
+        r.city.toLowerCase().includes(q) ||
+        r.district.toLowerCase().includes(q),
+    )
+  }, [allQuery.data, filters.search])
 
   const metric = useMemo(
     () => metrics.find((m) => m.id === metricId) ?? metrics[0],
@@ -281,6 +298,7 @@ export function BenchmarkingPage(): React.JSX.Element {
         eyebrow={t('Strategic Intelligence')}
         breadcrumbs={[{ label: t('Strategic Intelligence') }, { label: t('State Benchmarking') }]}
         freshness={freshness}
+        controls={<FilterBar show={['search']} />}
       />
 
       <Card className="flex flex-wrap items-end gap-3">

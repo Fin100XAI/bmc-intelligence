@@ -17,10 +17,13 @@ import {
 } from '@/components/ui'
 import { GovPanel } from '@/components/gov/GovPanel'
 import { MetricCard } from '@/components/cards'
+import { FilterBar } from '@/components/filters/FilterBar'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { infraCoordinationService } from '@/services'
 import { usePageMasthead } from '@/stores/masthead.store'
+import { useFilterStore } from '@/stores/ui.store'
+import type { FilterState } from '@/stores/ui.store'
 import { activeCorporation } from '@/config/municipality.config'
 import { wardShortName } from '@/data/reference'
 import {
@@ -61,9 +64,21 @@ const TASK_STATUS_TONE: Record<CoordinationTaskStatus, BadgeTone> = {
 
 const TASK_STATUSES: CoordinationTaskStatus[] = ['pending', 'in-progress', 'completed', 'disputed']
 
+function matchesGlobalFilters(task: CoordinationTask, filters: FilterState): boolean {
+  if (filters.wardIds.length > 0 && !filters.wardIds.includes(task.wardId)) return false
+  if (filters.departmentIds.length > 0 && !filters.departmentIds.includes(task.departmentId)) return false
+  if (filters.statuses.length > 0 && !filters.statuses.includes(task.status)) return false
+  if (filters.search.trim()) {
+    const q = filters.search.trim().toLowerCase()
+    if (!task.note.toLowerCase().includes(q)) return false
+  }
+  return true
+}
+
 export function InfrastructureCoordinationPage(): React.JSX.Element {
   const [projectFilter, setProjectFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState<CoordinationTaskStatus | ''>('')
+  const filters = useFilterStore((s) => s.filters)
 
   usePageMasthead(t('Infrastructure Coordination'))
 
@@ -79,11 +94,12 @@ export function InfrastructureCoordinationPage(): React.JSX.Element {
   const filteredTasks = useMemo(
     () =>
       tasks.filter((task) => {
+        if (!matchesGlobalFilters(task, filters)) return false
         if (projectFilter && task.projectId !== projectFilter) return false
         if (statusFilter && task.status !== statusFilter) return false
         return true
       }),
-    [tasks, projectFilter, statusFilter],
+    [tasks, filters, projectFilter, statusFilter],
   )
 
   const loading = positionQuery.isLoading || projectsQuery.isLoading || tasksQuery.isLoading
@@ -166,6 +182,12 @@ export function InfrastructureCoordinationPage(): React.JSX.Element {
         eyebrow={t('Projects, Procurement & Assets')}
         breadcrumbs={[{ label: t('Projects, Procurement & Assets') }, { label: t('Infrastructure Coordination') }]}
         hideProvenance
+        controls={
+          <FilterBar
+            show={['ward', 'department', 'status', 'search']}
+            statusOptions={TASK_STATUSES.map((s) => ({ value: s, label: COORDINATION_TASK_STATUS_LABEL[s] }))}
+          />
+        }
       />
 
       <DemonstrationNotice />
@@ -257,7 +279,7 @@ export function InfrastructureCoordinationPage(): React.JSX.Element {
         {filteredTasks.length === 0 ? (
           <EmptyState title={t('No obligations match the current filters')} detail="Clear a filter to widen the register." />
         ) : (
-          <DataTable rows={filteredTasks} columns={taskColumns} rowKey={(task) => task.id} pageSize={14} />
+          <DataTable rows={filteredTasks} columns={taskColumns} rowKey={(task) => task.id} pageSize={14} searchable={false} />
         )}
       </GovPanel>
     </PageBody>

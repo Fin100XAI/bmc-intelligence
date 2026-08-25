@@ -5,9 +5,11 @@ import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { procurementService } from '@/services'
 import type { CategoryConcentration } from '@/services'
-import { useDrawerStore } from '@/stores/ui.store'
+import { FilterBar } from '@/components/filters/FilterBar'
+import { useDrawerStore, useFilterStore, type FilterState } from '@/stores/ui.store'
 import { usePageMasthead } from '@/stores/masthead.store'
 import { ROUTES } from '@/config/navigation'
+import type { DateRangeKey } from '@/types/common'
 import {
   PROJECT_CATEGORY_LABEL,
   TENDER_STAGE_LABEL,
@@ -17,7 +19,7 @@ import {
 } from '@/types/finance'
 import { departmentName } from '@/data/reference'
 import { contractorName } from '@/data/finance.data'
-import { isoFromAnchor } from '@/utils/deterministic'
+import { DEMO_NOW, isoFromAnchor } from '@/utils/deterministic'
 import { formatCrore, formatDate, formatPercent } from '@/utils/format'
 import {
   Badge,
@@ -62,11 +64,42 @@ const FRESHNESS = {
 
 const STAGE_ORDER: TenderStage[] = ['draft', 'published', 'bidding', 'evaluation', 'awarded', 'cancelled']
 
+const DATE_RANGE_HOURS: Record<DateRangeKey, number> = {
+  '24h': 24,
+  '7d': 24 * 7,
+  '30d': 24 * 30,
+  '90d': 24 * 90,
+  fy: 24 * 365,
+}
+
+function withinDateRange(iso: string, range: DateRangeKey): boolean {
+  const ageMs = DEMO_NOW.getTime() - new Date(iso).getTime()
+  return ageMs <= DATE_RANGE_HOURS[range] * 3_600_000
+}
+
+function matchesGlobalFilters(contract: Contract, filters: FilterState): boolean {
+  if (filters.wardIds.length > 0 && !contract.wardIds.some((w) => filters.wardIds.includes(w))) return false
+  if (filters.departmentIds.length > 0 && !filters.departmentIds.includes(contract.departmentId)) return false
+  if (filters.statuses.length > 0 && !filters.statuses.includes(contract.stage)) return false
+  if (!withinDateRange(contract.awardDate, filters.dateRange)) return false
+  if (filters.search.trim()) {
+    const q = filters.search.trim().toLowerCase()
+    if (
+      !contract.reference.toLowerCase().includes(q) &&
+      !contract.title.toLowerCase().includes(q) &&
+      !contract.tenderReference.toLowerCase().includes(q)
+    )
+      return false
+  }
+  return true
+}
+
 export function ProcurementIntelligencePage(): React.JSX.Element {
   // The shell's masthead carries the screen's name; the page states the wording.
   usePageMasthead(t('Procurement Intelligence'))
 
   const openDrawer = useDrawerStore((s) => s.open)
+  const filters = useFilterStore((s) => s.filters)
   const [selectedContractId, setSelectedContractId] = useState<string | null>(null)
 
   const contractsQuery = useServiceQuery(queryKeys.finance('all-contracts'), (user) =>
@@ -75,7 +108,8 @@ export function ProcurementIntelligencePage(): React.JSX.Element {
   const vendorsQuery = useServiceQuery(queryKeys.finance('vendors'), (user) => procurementService.vendors(user))
   const concentrationQuery = useServiceQuery(queryKeys.finance('concentration'), (user) => procurementService.concentration(user))
 
-  const contracts = contractsQuery.data?.items ?? []
+  const allContracts = contractsQuery.data?.items ?? []
+  const contracts = useMemo(() => allContracts.filter((c) => matchesGlobalFilters(c, filters)), [allContracts, filters])
   const vendors = vendorsQuery.data ?? []
   const concentration = concentrationQuery.data ?? []
   const selectedContract = contracts.find((c) => c.id === selectedContractId) ?? null
@@ -344,13 +378,19 @@ export function ProcurementIntelligencePage(): React.JSX.Element {
   return (
     <PageBody>
       <PageHeader
-        eyebrow={t('Governance & Finance')}
-        breadcrumbs={[{ label: t('Governance & Finance') }, { label: t('Procurement Intelligence') }]}
+        eyebrow={t('Projects, Procurement & Assets')}
+        breadcrumbs={[{ label: t('Projects, Procurement & Assets') }, { label: t('Procurement Intelligence') }]}
         freshness={FRESHNESS}
         actions={
           <LinkButton to={ROUTES.projects} variant="outline" icon={<HardHat className="h-3.5 w-3.5" />}>
             {t('Open Project Intelligence')}
           </LinkButton>
+        }
+        controls={
+          <FilterBar
+            show={['ward', 'department', 'status', 'date', 'search']}
+            statusOptions={STAGE_ORDER.map((s) => ({ value: s, label: TENDER_STAGE_LABEL[s] }))}
+          />
         }
       />
 
@@ -366,11 +406,11 @@ export function ProcurementIntelligencePage(): React.JSX.Element {
         />
       ) : null}
 
-      {!anyLoading && !anyError && contracts.length === 0 ? (
+      {!anyLoading && !anyError && allContracts.length === 0 ? (
         <EmptyState title={t('No contracts available')} detail="No contract records are available within your authorised scope." />
       ) : null}
 
-      {!anyLoading && !anyError && contracts.length > 0 ? (
+      {!anyLoading && !anyError && allContracts.length > 0 ? (
         <>
           <GovPanel title={t('Procurement summary')} tone="primary">
             <p className="mb-3 text-xs leading-relaxed text-ink-500">{t('Across every contract within your authorised scope.')}</p>

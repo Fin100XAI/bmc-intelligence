@@ -29,7 +29,6 @@ export const MR_PART_29: Record<string, string> = {
   'Increase text size': 'अक्षर आकार वाढवा',
   '24×7 helpline 1916': '24×7 मदत क्रमांक 1916',
   'Search services and information': 'सेवा व माहिती शोधा',
-  'Portal navigation': 'संकेतस्थळ दिशादर्शन',
 
   /* --- Hero -------------------------------------------------------------------
      Sign-in left this page for `/login`, so the position, passphrase and audit

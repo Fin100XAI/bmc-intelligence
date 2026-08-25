@@ -17,11 +17,16 @@ import {
 } from '@/components/ui'
 import { GovPanel } from '@/components/gov/GovPanel'
 import { MetricCard } from '@/components/cards'
+import { FilterBar } from '@/components/filters/FilterBar'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { correspondenceService } from '@/services'
+import { useFilterStore } from '@/stores/ui.store'
+import type { FilterState } from '@/stores/ui.store'
 import { usePageMasthead } from '@/stores/masthead.store'
 import { departmentName } from '@/data/reference'
+import { DEMO_NOW } from '@/utils/deterministic'
+import type { DateRangeKey } from '@/types/common'
 import {
   CORRESPONDENCE_STATUS_LABEL,
   CORRESPONDENCE_SUBJECT_LABEL,
@@ -60,10 +65,42 @@ const STATUS_TONE: Record<CorrespondenceStatus, BadgeTone> = {
   'compliance-overdue': 'critical',
 }
 
+const DATE_RANGE_HOURS: Record<DateRangeKey, number> = {
+  '24h': 24,
+  '7d': 24 * 7,
+  '30d': 24 * 30,
+  '90d': 24 * 90,
+  fy: 24 * 365,
+}
+
+function withinDateRange(iso: string, range: DateRangeKey): boolean {
+  const ageMs = DEMO_NOW.getTime() - new Date(iso).getTime()
+  return ageMs <= DATE_RANGE_HOURS[range] * 3_600_000
+}
+
+/**
+ * Narrows the register by the global filter set - ward, the linked municipal
+ * department(s) a GR concerns, when it was issued, and free text against
+ * reference and subject. Applied alongside, not instead of, the register's
+ * own issuing-department/subject/status controls below, which speak to the
+ * *state* correspondence rather than the municipal side of it.
+ */
+function matchesGlobalFilters(g: GovernmentResolution, filters: FilterState): boolean {
+  if (filters.wardIds.length > 0 && !g.wardIds.some((w) => filters.wardIds.includes(w))) return false
+  if (filters.departmentIds.length > 0 && !g.linkedDepartmentIds.some((d) => filters.departmentIds.includes(d))) return false
+  if (!withinDateRange(g.issuedAt, filters.dateRange)) return false
+  if (filters.search.trim()) {
+    const q = filters.search.trim().toLowerCase()
+    if (!g.subject.toLowerCase().includes(q) && !g.summary.toLowerCase().includes(q) && !g.reference.toLowerCase().includes(q)) return false
+  }
+  return true
+}
+
 export function GovernmentCorrespondencePage(): React.JSX.Element {
   const [deptFilter, setDeptFilter] = useState<IssuingDepartment | ''>('')
   const [subjectFilter, setSubjectFilter] = useState<CorrespondenceSubject | ''>('')
   const [statusFilter, setStatusFilter] = useState<CorrespondenceStatus | ''>('')
+  const filters = useFilterStore((s) => s.filters)
 
   usePageMasthead(t('Government Correspondence'))
 
@@ -78,9 +115,9 @@ export function GovernmentCorrespondencePage(): React.JSX.Element {
         if (deptFilter && g.issuingDepartment !== deptFilter) return false
         if (subjectFilter && g.subjectCategory !== subjectFilter) return false
         if (statusFilter && g.status !== statusFilter) return false
-        return true
+        return matchesGlobalFilters(g, filters)
       }),
-    [resolutions, deptFilter, subjectFilter, statusFilter],
+    [resolutions, deptFilter, subjectFilter, statusFilter, filters],
   )
 
   const loading = positionQuery.isLoading || resolutionsQuery.isLoading
@@ -184,6 +221,7 @@ export function GovernmentCorrespondencePage(): React.JSX.Element {
         eyebrow={t('Council')}
         breadcrumbs={[{ label: t('Council') }, { label: t('Government Correspondence') }]}
         hideProvenance
+        controls={<FilterBar show={['date', 'ward', 'department', 'search']} />}
       />
 
       <DemonstrationNotice />

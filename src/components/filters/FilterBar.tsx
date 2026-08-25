@@ -1,5 +1,5 @@
 import { useMemo, useState, type ReactNode } from 'react'
-import { Filter, RotateCcw, X } from 'lucide-react'
+import { ChevronDown, Filter, RotateCcw, X } from 'lucide-react'
 import {
   DATE_RANGE_LABEL,
   DOMAIN_LABEL,
@@ -67,22 +67,21 @@ export function FilterBar({
     (filters.search.trim() ? 1 : 0) +
     (filters.dateRange !== '30d' ? 1 : 0)
 
-  const panelButton = (id: string, label: string, count: number): React.JSX.Element => (
+  const panelButton = (id: string, label: string, allLabel: string, count: number): React.JSX.Element => (
     <button
       type="button"
       onClick={() => setOpenPanel((p) => (p === id ? null : id))}
       aria-expanded={openPanel === id}
+      aria-label={label}
       className={cn(
-        'inline-flex h-8 items-center gap-1.5 rounded-md border px-2.5 text-xs font-medium transition-colors',
+        'inline-flex h-9 items-center gap-2 rounded-lg border bg-surface px-3 text-[0.8125rem] shadow-xs transition-all',
         count > 0
-          ? 'border-govt-300 bg-govt-50 text-govt-700'
-          : 'border-ink-200 bg-surface text-ink-600 hover:bg-ink-50',
+          ? 'border-govt-300 bg-govt-50 font-medium text-govt-700'
+          : 'border-ink-200 text-ink-700 hover:border-ink-300',
       )}
     >
-      {label}
-      {count > 0 ? (
-        <span className="numeric rounded bg-govt-200/70 px-1 text-[0.625rem] text-govt-800">{count}</span>
-      ) : null}
+      <span className="truncate">{count > 0 ? t('{0} ({1})', label, count) : allLabel}</span>
+      <ChevronDown className="h-3.5 w-3.5 shrink-0 text-ink-400" aria-hidden />
     </button>
   )
 
@@ -115,7 +114,7 @@ export function FilterBar({
 
       {show.includes('ward') ? (
         <div className="relative">
-          {panelButton('ward', 'Ward', filters.wardIds.length)}
+          {panelButton('ward', t('Ward'), t('All Wards'), filters.wardIds.length)}
           {panel(
             'ward',
             authorisedWards.map((w) => (
@@ -133,7 +132,7 @@ export function FilterBar({
 
       {show.includes('department') ? (
         <div className="relative">
-          {panelButton('department', 'Department', filters.departmentIds.length)}
+          {panelButton('department', t('Department'), t('All Departments'), filters.departmentIds.length)}
           {panel(
             'department',
             DEPARTMENTS_ORDERED.map((d) => (
@@ -151,7 +150,7 @@ export function FilterBar({
 
       {show.includes('domain') && domainOptions ? (
         <div className="relative">
-          {panelButton('domain', 'Domain', filters.domains.length)}
+          {panelButton('domain', t('Domain'), t('All Domains'), filters.domains.length)}
           {panel(
             'domain',
             domainOptions.map((d) => (
@@ -169,7 +168,7 @@ export function FilterBar({
 
       {show.includes('severity') ? (
         <div className="relative">
-          {panelButton('severity', 'Severity', filters.severities.length)}
+          {panelButton('severity', t('Severity'), t('All Severities'), filters.severities.length)}
           {panel(
             'severity',
             SEVERITIES.map((s) => (
@@ -187,7 +186,7 @@ export function FilterBar({
 
       {show.includes('status') && statusOptions ? (
         <div className="relative">
-          {panelButton('status', 'Status', filters.statuses.length)}
+          {panelButton('status', t('Status'), t('All Statuses'), filters.statuses.length)}
           {panel(
             'status',
             statusOptions.map((s) => (

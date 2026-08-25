@@ -7,7 +7,7 @@ import { useActiveCorporation } from '@/stores/corporation.store'
 import { queryKeys } from '@/app/queryClient'
 import { wardService, workforceService } from '@/services'
 import { ROUTES } from '@/config/navigation'
-import type { ComplaintCategory } from '@/types/operations'
+import type { ComplaintCategory, WorkforceUnit } from '@/types/operations'
 import { departmentName } from '@/data/reference'
 import { isoFromAnchor } from '@/utils/deterministic'
 import { formatNumber, formatPercent } from '@/utils/format'
@@ -27,7 +27,20 @@ import { StateBadge } from '@/components/ui/badges'
 import { MetricCard } from '@/components/cards'
 import { GovPanel } from '@/components/gov/GovPanel'
 import { CategoryBarChart, ChartFrame, MiniBar, RankedBarChart } from '@/components/charts'
+import { FilterBar } from '@/components/filters/FilterBar'
+import { useFilterStore } from '@/stores/ui.store'
+import type { FilterState } from '@/stores/ui.store'
 import { t } from '@/i18n'
+
+function matchesGlobalFilters(unit: WorkforceUnit, filters: FilterState): boolean {
+  if (filters.departmentIds.length > 0 && !filters.departmentIds.includes(unit.departmentId)) return false
+  if (filters.search.trim()) {
+    const q = filters.search.trim().toLowerCase()
+    const haystack = `${departmentName(unit.departmentId)} ${unit.cadre}`.toLowerCase()
+    if (!haystack.includes(q)) return false
+  }
+  return true
+}
 
 const FRESHNESS = {
   generatedAt: isoFromAnchor(0),
@@ -80,9 +93,13 @@ export function WorkforceIntelligencePage(): React.JSX.Element {
   usePageMasthead(t('Workforce Intelligence'))
 
   const corporation = useActiveCorporation()
+  const filters = useFilterStore((s) => s.filters)
 
   const unitsQuery = useServiceQuery(queryKeys.admin('workforce'), (user) => workforceService.units(user))
-  const units = useMemo(() => unitsQuery.data ?? [], [unitsQuery.data])
+  const allUnits = useMemo(() => unitsQuery.data ?? [], [unitsQuery.data])
+  // Filtered as early as possible so the establishment summary, the register,
+  // both charts and the vacancy/SLA correlation all agree on the same scope.
+  const units = useMemo(() => allUnits.filter((u) => matchesGlobalFilters(u, filters)), [allUnits, filters])
 
   const serviceHealthQuery = useServiceQuery(queryKeys.wards('service-health-by-department'), async (u) => {
     const wards = await wardService.list(u)
@@ -208,21 +225,26 @@ export function WorkforceIntelligencePage(): React.JSX.Element {
   return (
     <PageBody>
       <PageHeader
-        eyebrow={t('Governance & Finance')}
-        breadcrumbs={[{ label: t('Governance & Finance') }, { label: t('Workforce Intelligence') }]}
+        eyebrow={t('Council & Establishment')}
+        breadcrumbs={[{ label: t('Council & Establishment') }, { label: t('Workforce Intelligence') }]}
         freshness={FRESHNESS}
         actions={
           <LinkButton to={ROUTES.assets} variant="outline" icon={<Boxes className="h-3.5 w-3.5" />}>
             {t('Open Asset Intelligence')}
           </LinkButton>
         }
+        controls={<FilterBar show={['department', 'search']} />}
       />
 
       {unitsQuery.isLoading ? <LoadingState variant="metrics" /> : null}
       {unitsQuery.error ? <ErrorState detail={unitsQuery.error.message} onRetry={() => unitsQuery.refetch()} /> : null}
 
-      {!unitsQuery.isLoading && !unitsQuery.error && units.length === 0 ? (
+      {!unitsQuery.isLoading && !unitsQuery.error && allUnits.length === 0 ? (
         <EmptyState title={t('No workforce records available')} detail="No establishment records are recorded within your authorised scope." />
+      ) : null}
+
+      {!unitsQuery.isLoading && !unitsQuery.error && allUnits.length > 0 && units.length === 0 ? (
+        <EmptyState title={t('No establishment records match the current filters')} detail={t('Clear a filter or widen the department selection to see more results.')} />
       ) : null}
 
       {!unitsQuery.isLoading && !unitsQuery.error && units.length > 0 ? (
@@ -275,7 +297,7 @@ export function WorkforceIntelligencePage(): React.JSX.Element {
 
           <GovPanel title={t('Department × cadre establishment')} tone="red" dense>
             <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">{t('Sortable, searchable and paginated.')}</p>
-            <DataTable rows={units} columns={columns} rowKey={(r) => r.id} pageSize={12} stickyHeader maxHeight="30rem" searchPlaceholder="Search department or cadre" />
+            <DataTable rows={units} columns={columns} rowKey={(r) => r.id} pageSize={12} stickyHeader maxHeight="30rem" searchable={false} />
           </GovPanel>
 
           <GovPanel title={t('Vacancy and service-response - a correlation requiring assessment')} tone="amber">

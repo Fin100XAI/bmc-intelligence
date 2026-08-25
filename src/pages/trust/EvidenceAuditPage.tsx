@@ -8,6 +8,7 @@ import { DemonstrationNotice, EmptyState, ErrorState, LoadingState } from '@/com
 import { Tabs } from '@/components/ui/overlays'
 import { EvidenceCard } from '@/components/cards'
 import { GovPanel } from '@/components/gov/GovPanel'
+import { FilterBar } from '@/components/filters/FilterBar'
 import { useServiceQuery, useServiceAction } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import {
@@ -19,17 +20,53 @@ import {
 } from '@/services'
 import { allowed } from '@/security'
 import { useCurrentUser } from '@/stores/auth.store'
-import { useDrawerStore } from '@/stores/ui.store'
+import { useDrawerStore, useFilterStore, type FilterState } from '@/stores/ui.store'
 import { usePageMasthead } from '@/stores/masthead.store'
 import { wardName } from '@/data/reference'
 import { formatDateTime, formatRelative } from '@/utils/format'
-import { CLASSIFICATION_LABEL, type DataClassification } from '@/types/common'
+import { DEMO_NOW } from '@/utils/deterministic'
+import { CLASSIFICATION_LABEL, type DataClassification, type DateRangeKey } from '@/types/common'
 import type { AuditAction, AuditEvent } from '@/types/governance'
 import { AUDIT_ACTION_LABEL } from '@/types/governance'
-import type { EvidenceKind } from '@/types/intelligence'
+import type { EvidenceItem, EvidenceKind } from '@/types/intelligence'
 import { cn } from '@/utils/cn'
 import { t } from '@/i18n'
 import { registerLayer } from '@/data/runtime'
+
+const DATE_RANGE_HOURS: Record<DateRangeKey, number> = {
+  '24h': 24,
+  '7d': 24 * 7,
+  '30d': 24 * 30,
+  '90d': 24 * 90,
+  fy: 24 * 365,
+}
+
+function withinDateRange(iso: string, range: DateRangeKey): boolean {
+  const ageMs = DEMO_NOW.getTime() - new Date(iso).getTime()
+  return ageMs <= DATE_RANGE_HOURS[range] * 3_600_000
+}
+
+/** The evidence corpus carries wardIds, a departmentId and an observed date - all real. */
+function matchesEvidenceGlobalFilters(item: EvidenceItem, filters: FilterState): boolean {
+  if (filters.wardIds.length > 0 && !item.wardIds.some((w) => filters.wardIds.includes(w))) return false
+  if (filters.departmentIds.length > 0 && !filters.departmentIds.includes(item.departmentId)) return false
+  if (!withinDateRange(item.observedAt, filters.dateRange)) return false
+  if (filters.search.trim()) {
+    const q = filters.search.trim().toLowerCase()
+    if (!item.title.toLowerCase().includes(q) && !item.summary.toLowerCase().includes(q)) return false
+  }
+  return true
+}
+
+/** The audit trail carries no ward or department - only a timestamp and free text. */
+function matchesAuditGlobalFilters(e: AuditEvent, filters: FilterState): boolean {
+  if (!withinDateRange(e.at, filters.dateRange)) return false
+  if (filters.search.trim()) {
+    const q = filters.search.trim().toLowerCase()
+    if (!e.actorName.toLowerCase().includes(q) && !e.resourceLabel.toLowerCase().includes(q) && !(e.reason ?? '').toLowerCase().includes(q)) return false
+  }
+  return true
+}
 
 /**
  * src/pages/trust/EvidenceAuditPage.tsx
@@ -80,6 +117,7 @@ registerLayer(() => {
 export function EvidenceAuditPage(): React.JSX.Element {
   const currentUser = useCurrentUser()
   const openDrawer = useDrawerStore((s) => s.open)
+  const globalFilters = useFilterStore((s) => s.filters)
   const [tab, setTab] = useState<'evidence' | 'audit'>('evidence')
 
   // The shell's masthead carries the screen's name; the page states the wording.
@@ -109,7 +147,9 @@ export function EvidenceAuditPage(): React.JSX.Element {
   )
   const wardsQuery = useServiceQuery(queryKeys.wards(), (user) => wardService.list(user))
 
-  const filteredEvidence = evidenceQuery.data ?? []
+  // Kind/classification/ward/search narrow the request server-side; the global
+  // filter bar's ward/department/date/search are applied on top, client-side.
+  const filteredEvidence = (evidenceQuery.data ?? []).filter((e) => matchesEvidenceGlobalFilters(e, globalFilters))
   const wardOptions = wardsQuery.data ?? []
 
   // ------------------------------------------------------------------ Audit
@@ -142,9 +182,10 @@ export function EvidenceAuditPage(): React.JSX.Element {
       if (classificationFilter && e.classification !== classificationFilter) return false
       if (dateFrom && e.at < new Date(dateFrom).toISOString()) return false
       if (dateTo && e.at > new Date(dateTo).toISOString()) return false
+      if (!matchesAuditGlobalFilters(e, globalFilters)) return false
       return true
     })
-  }, [auditEvents, actorFilter, actionFilter, outcomeFilter, classificationFilter, dateFrom, dateTo])
+  }, [auditEvents, actorFilter, actionFilter, outcomeFilter, classificationFilter, dateFrom, dateTo, globalFilters])
 
   const exportAudit = useServiceAction(
     (user, filters: AuditFilters) => auditService.export(user, filters),
@@ -181,15 +222,18 @@ export function EvidenceAuditPage(): React.JSX.Element {
         eyebrow={t('Trust Centre')}
         breadcrumbs={[{ label: t('Trust Centre'), to: '/trust' }, { label: t('Evidence & Audit') }]}
         controls={
-          <Tabs
-            items={[
-              { id: 'evidence', label: t('Evidence'), count: filteredEvidence.length || undefined },
-              { id: 'audit', label: t('Audit trail'), count: auditEvents.length || undefined },
-            ]}
-            value={tab}
-            onChange={(id) => setTab(id as 'evidence' | 'audit')}
-            ariaLabel="Evidence and audit sections"
-          />
+          <div className="flex w-full flex-wrap items-center gap-2">
+            <Tabs
+              items={[
+                { id: 'evidence', label: t('Evidence'), count: filteredEvidence.length || undefined },
+                { id: 'audit', label: t('Audit trail'), count: auditEvents.length || undefined },
+              ]}
+              value={tab}
+              onChange={(id) => setTab(id as 'evidence' | 'audit')}
+              ariaLabel="Evidence and audit sections"
+            />
+            <FilterBar show={tab === 'evidence' ? ['ward', 'department', 'date', 'search'] : ['date', 'search']} />
+          </div>
         }
       />
 

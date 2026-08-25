@@ -24,8 +24,8 @@ export const MR_PART_11: Record<string, string> = {
     'प्रत्येक परिणामकारक कृती - मान्यता, संक्रमणे, निर्यात, नकार - कर्ता, कारण आणि निष्कर्षासह केवळ-भर घालता येणाऱ्या घटना नोंदवहीत लिहिली जाते.',
   "Every contract's risk score is the weighted sum of five published indicators: category concentration, repeated extensions, unusual variation magnitude, milestone delivery delay and supplier performance deterioration. Select a contract in the table above to see its breakdown.":
     'प्रत्येक कराराचा जोखीम गुण हा पाच प्रकाशित निर्देशकांची भारित बेरीज असतो: श्रेणी केंद्रीकरण, वारंवार मुदतवाढी, असामान्य फरकाचे आकारमान, टप्पा पूर्ततेतील विलंब आणि पुरवठादार कामगिरीतील घसरण. त्याची विभागणी पाहण्यासाठी वरील तक्त्यात करार निवडा.',
-  'Every dataset carries a declared retention period in months - the shortest currently in the register is {0} months. This demonstration environment does not implement automated deletion at the retention boundary: the in-session store described in Evidence &amp; Audit exists for the lifetime of the browser session, not on a retention schedule. A production deployment must implement enforced deletion, not merely a documented retention figure.':
-    'प्रत्येक माहितीसंचास महिन्यांत घोषित जतन कालावधी असतो - सध्या नोंदवहीतील सर्वात कमी कालावधी {0} महिने आहे. हे प्रात्यक्षिक वातावरण जतन मर्यादेवर स्वयंचलित विलोपन राबवत नाही: पुरावा &amp; लेखापरीक्षा मध्ये वर्णन केलेला सत्रांतर्गत कोश ब्राउझर सत्राच्या कालावधीपुरता असतो, जतन वेळापत्रकानुसार नाही. उत्पादन तैनातीत केवळ दस्तऐवजीकृत जतन आकडा पुरेसा नाही, तेथे सक्तीचे विलोपन राबवणे आवश्यक आहे.',
+  'Every dataset carries a declared retention period in months - the shortest currently in the register is {0} months. This demonstration environment does not implement automated deletion at the retention boundary: the in-session store described in Evidence & Audit exists for the lifetime of the browser session, not on a retention schedule. A production deployment must implement enforced deletion, not merely a documented retention figure.':
+    'प्रत्येक माहितीसंचास महिन्यांत घोषित जतन कालावधी असतो - सध्या नोंदवहीतील सर्वात कमी कालावधी {0} महिने आहे. हे प्रात्यक्षिक वातावरण जतन मर्यादेवर स्वयंचलित विलोपन राबवत नाही: पुरावा & लेखापरीक्षा मध्ये वर्णन केलेला सत्रांतर्गत कोश ब्राउझर सत्राच्या कालावधीपुरता असतो, जतन वेळापत्रकानुसार नाही. उत्पादन तैनातीत केवळ दस्तऐवजीकृत जतन आकडा पुरेसा नाही, तेथे सक्तीचे विलोपन राबवणे आवश्यक आहे.',
   'Every dataset carrying personal data reachable by your principal, with exactly what minimisation is applied. A dataset with no recorded measure is flagged, not hidden.':
     'तुमच्या वापरकर्त्याला उपलब्ध असलेला वैयक्तिक माहिती बाळगणारा प्रत्येक माहितीसंच, आणि त्यावर नेमकी कोणती किमानीकरणाची उपाययोजना लागू आहे. ज्यावर कोणतीही उपाययोजना नोंदलेली नाही असा माहितीसंच लपवला जात नाही, तर चिन्हांकित केला जातो.',
   'Every dataset in the register above is provisioned against a single declared purpose - the institutional reason the corporation is entitled to hold and process it':
@@ -44,7 +44,7 @@ export const MR_PART_11: Record<string, string> = {
     'तुमच्या प्राधिकृत प्रभाग व्याप्तीतील प्रत्येक फीडर मार्गिका.',
   'Every figure above is a claim. The verification tab tests them.':
     'वरील प्रत्येक आकडा हा एक दावा आहे. पडताळणी पट्टी त्यांची चाचणी घेते.',
-  'Every figure here describes a settlement and the service it receives - water points, toilet seats, collection rounds, lighting. Nothing describes a resident. There is no household register, no name and no eligibility determination anywhere behind this page, and the service exposes no method that could return one. The recognition status shown is a service-entitlement classification used for planning delivery; it is not a finding about tenure, legality or anyone&apos;s rights.':
+  "Every figure here describes a settlement and the service it receives - water points, toilet seats, collection rounds, lighting. Nothing describes a resident. There is no household register, no name and no eligibility determination anywhere behind this page, and the service exposes no method that could return one. The recognition status shown is a service-entitlement classification used for planning delivery; it is not a finding about tenure, legality or anyone's rights.":
     'येथील प्रत्येक आकडा एका वसाहतीचे आणि तिला मिळणाऱ्या सेवेचे वर्णन करतो - पाणी नळ, शौचालय आसने, संकलन फेऱ्या, प्रकाशव्यवस्था. कशाचेही वर्णन रहिवाशाबद्दल नाही. या पानामागे कोठेही कुटुंब नोंदवही, नाव किंवा पात्रता निर्धारण नाही, आणि सेवा असे काहीही परत करू शकणारी कोणतीही पद्धत उघड करत नाही. दाखवलेली मान्यता स्थिती ही सेवा वितरणाच्या नियोजनासाठी वापरली जाणारी सेवा-पात्रता वर्गवारी आहे; ती मालकी हक्क, कायदेशीरपणा किंवा कोणाच्याही हक्कांबाबतचा निष्कर्ष नाही.',
   "Every figure here is derived from the corporation's budget, revenue and project records. Where this page and the financial system of record disagree, the system of record is authoritative. This is an intelligence layer, not a ledger.":
     'येथील प्रत्येक आकडा महानगरपालिकेच्या अर्थसंकल्प, महसूल आणि प्रकल्प नोंदींवरून काढलेला आहे. हे पान आणि अधिकृत वित्तीय प्रणाली यांच्यात मतभेद असल्यास अधिकृत प्रणालीच प्रमाण मानली जाईल. हा बुद्धिमत्ता स्तर आहे, लेखापुस्तक नाही.',
@@ -62,7 +62,7 @@ export const MR_PART_11: Record<string, string> = {
     'प्रत्येक संस्थात्मक भूमिका, ज्येष्ठता पट्ट्यानुसार आणि नंतर वर्गीकरण मर्यादेनुसार क्रमवार.',
   'Every intelligence item, alert and decision traces back through transformation, metric and source with a visual provenance rail.':
     'प्रत्येक बुद्धिमत्ता बाब, इशारा आणि निर्णयाचा माग दृश्य उगम पट्टीद्वारे रूपांतर, मापदंड आणि स्रोतापर्यंत मागे काढता येतो.',
-  'Every interment consumes ground that is not returned. A ground that fills does not refill, so a facility reaching capacity is a crisis that arrives without warning and cannot be answered quickly - acquiring land for a burial ground needs a willing seller, a consenting neighbourhood and a community that accepts the site, and the lead time is measured in years. The years-remaining column is therefore a planning instruction, not a statistic. This page holds facilities and capacity only: no interment record, no name and no plot allotment appears anywhere behind it, because the register of the dead belongs to the Registrar and to each ground&apos;s own managing committee.':
+  "Every interment consumes ground that is not returned. A ground that fills does not refill, so a facility reaching capacity is a crisis that arrives without warning and cannot be answered quickly - acquiring land for a burial ground needs a willing seller, a consenting neighbourhood and a community that accepts the site, and the lead time is measured in years. The years-remaining column is therefore a planning instruction, not a statistic. This page holds facilities and capacity only: no interment record, no name and no plot allotment appears anywhere behind it, because the register of the dead belongs to the Registrar and to each ground's own managing committee.":
     'प्रत्येक दफनासाठी वापरलेली जमीन पुन्हा मिळत नाही. भरलेली दफनभूमी पुन्हा रिकामी होत नाही, त्यामुळे क्षमता संपत आलेली सुविधा हे पूर्वसूचनेशिवाय येणारे आणि लवकर सोडवता न येणारे संकट असते - दफनभूमीसाठी जमीन घ्यायची तर विकण्यास तयार मालक, संमती देणारा परिसर आणि ती जागा स्वीकारणारा समाज लागतो, आणि त्याला लागणारा काळ वर्षांत मोजला जातो. त्यामुळे शिल्लक वर्षांचा स्तंभ ही आकडेवारी नसून नियोजनाची सूचना आहे. या पानावर केवळ सुविधा आणि क्षमता आहे: यामागे कोठेही दफनाची नोंद, नाव किंवा जागेचे वाटप नाही, कारण मृतांची नोंदवही निबंधकाकडे आणि प्रत्येक दफनभूमीच्या स्वतःच्या व्यवस्थापन समितीकडे असते.',
   'Every metric traces to its source record and the computation that produced it. Nothing is asserted without provenance.':
     'प्रत्येक मापदंडाचा माग त्याच्या स्रोत नोंदीपर्यंत आणि तो तयार करणाऱ्या गणनेपर्यंत काढता येतो. उगमाशिवाय काहीही मांडले जात नाही.',
@@ -75,7 +75,7 @@ export const MR_PART_11: Record<string, string> = {
   'Every municipal school within your authorised ward scope.':
     'तुमच्या प्राधिकृत प्रभाग व्याप्तीतील प्रत्येक महानगरपालिका शाळा.',
   'Every other page in this Trust Centre': 'या विश्वास केंद्रातील इतर प्रत्येक पान',
-  'Every other screen here reports on the executive wing. A decision case in the Decision Centre ends with an officer - but a great many municipal matters cannot take effect until the Corporation has resolved on them, and expenditure above a committee&apos;s sanction limit rises to the house above it. Without this record the platform would overstate what an officer alone can commit.':
+  "Every other screen here reports on the executive wing. A decision case in the Decision Centre ends with an officer - but a great many municipal matters cannot take effect until the Corporation has resolved on them, and expenditure above a committee's sanction limit rises to the house above it. Without this record the platform would overstate what an officer alone can commit.":
     'येथील इतर प्रत्येक पडदा कार्यकारी शाखेबाबत माहिती देतो. निर्णय केंद्रातील निर्णय प्रकरण अधिकाऱ्यापाशी संपते - परंतु अनेक महानगरपालिका विषय महासभेने ठराव केल्याशिवाय अंमलात येऊ शकत नाहीत, आणि समितीच्या मंजुरी मर्यादेपलीकडचा खर्च वरच्या सभागृहाकडे जातो. या नोंदीशिवाय एकटा अधिकारी काय वचनबद्ध करू शकतो याचे मंचाकडून अतिरंजित चित्र उभे राहिले असते.',
   'Every programme classified against its own target, not a uniform bar.':
     'प्रत्येक कार्यक्रमाचे वर्गीकरण एकसमान मर्यादेवर नव्हे, तर त्याच्या स्वतःच्या लक्ष्याच्या तुलनेत केले जाते.',
@@ -129,7 +129,7 @@ export const MR_PART_11: Record<string, string> = {
   'Executive brief': 'कार्यकारी टिपण',
   'Executive title': 'कार्यकारी पदनाम',
   'Exemption ground': 'सवलतीचा आधार',
-  'exist in this platform&apos;s governance register that your current role and classification ceiling do not permit you to read. Consistent with least privilege, this page does not disclose which - a dataset you may not read is omitted entirely, not shown redacted. If you believe this is incorrect for your responsibilities, raise a scope review through Access Governance.':
+  "exist in this platform's governance register that your current role and classification ceiling do not permit you to read. Consistent with least privilege, this page does not disclose which - a dataset you may not read is omitted entirely, not shown redacted. If you believe this is incorrect for your responsibilities, raise a scope review through Access Governance.":
     'या मंचाच्या कारभार नोंदवहीत अस्तित्वात आहेत, परंतु तुमची सध्याची भूमिका व वर्गीकरण मर्यादा तुम्हाला ती वाचण्याची परवानगी देत नाही. किमान अधिकाराच्या तत्त्वानुसार, ती कोणती हे हे पान उघड करत नाही - तुम्हाला वाचता येणार नाही असा माहितीसंच गाळून दाखवण्याऐवजी पूर्णपणे वगळला जातो. तुमच्या जबाबदाऱ्यांसाठी हे चुकीचे वाटत असल्यास, प्रवेश कारभारमार्फत व्याप्ती पुनरावलोकनाची मागणी करा.',
   'Expandable permission list': 'विस्तारता येणारी परवानगी यादी',
   'Expanded': 'विस्तारित',
@@ -230,7 +230,7 @@ export const MR_PART_11: Record<string, string> = {
     'केंद्रस्थ नोड मध्यभागी, पहिल्या पातळीचे शेजारी आतल्या वर्तुळावर, दुसऱ्या पातळीचे बाहेरच्या वर्तुळावर. नोडचा आकार संस्थात्मक महत्त्व दर्शवतो; रंग घटक प्रकार दर्शवतो; लाल कडे नोंदवलेली तीव्रता दर्शवते.',
   'Focused indicator': 'केंद्रस्थ निर्देशक',
   'for a new line': 'नव्या ओळीसाठी',
-  'for this deployment. Every service method in the data-access layer accepts the acting principal first and filters its source collection to that principal&apos;s own tenant before any further permission or scope check is applied. In this single-tenant demonstration build the filter is a deliberate no-op - there is only one tenant to filter to - but the enforcement point exists exactly where it would sit in a genuine multi-tenant deployment, so a second municipal body&apos;s data would be excluded at the same choke point, not left to individual screens to remember.':
+  "for this deployment. Every service method in the data-access layer accepts the acting principal first and filters its source collection to that principal's own tenant before any further permission or scope check is applied. In this single-tenant demonstration build the filter is a deliberate no-op - there is only one tenant to filter to - but the enforcement point exists exactly where it would sit in a genuine multi-tenant deployment, so a second municipal body's data would be excluded at the same choke point, not left to individual screens to remember.":
     'या तैनातीसाठी. माहिती-प्रवेश स्तरातील प्रत्येक सेवा पद्धत प्रथम कार्यरत वापरकर्ता स्वीकारते आणि पुढील कोणतीही परवानगी वा व्याप्ती तपासणी लागू होण्यापूर्वी आपला स्रोत संच त्या वापरकर्त्याच्या स्वतःच्या आस्थापनेपुरता गाळते. या एक-आस्थापना प्रात्यक्षिक आवृत्तीत ही गाळणी जाणीवपूर्वक निष्क्रिय आहे - गाळण्यासाठी एकच आस्थापना आहे - परंतु अंमलबजावणी बिंदू नेमका तेथेच आहे जेथे तो खऱ्या बहु-आस्थापना तैनातीत असेल, म्हणजे दुसऱ्या महानगरपालिकेची माहिती याच एकाच बिंदूवर वगळली जाईल, ती लक्षात ठेवण्याचे काम स्वतंत्र पडद्यांवर सोडले जाणार नाही.',
   'Forecast (Year-End)': 'अंदाज (वर्षअखेर)',
   'Forecast variance measures how far departmental year-end forecasts sit from the approved position. It is a measure of how well the corporation forecasts itself - a governance signal. It is not a prediction of the year-end outturn and must not be read as one.':
@@ -275,7 +275,7 @@ export const MR_PART_11: Record<string, string> = {
   'Grouped by locality and service category - the unit a department can act on.':
     'वस्ती व सेवा श्रेणीनुसार गटबद्ध - विभाग ज्या घटकावर कृती करू शकतो तो.',
   'Grouped comparison': 'गटबद्ध तुलना',
-  'Growth &amp; space pressure': 'वाढ &amp; जागेवरील ताण',
+  'Growth & space pressure': 'वाढ & जागेवरील ताण',
   'Guardrails': 'संरक्षक मर्यादा',
     'Hazard preparedness detail': 'धोका सज्जता तपशील',
   'Head': 'प्रमुख',
@@ -433,7 +433,7 @@ export const MR_PART_11: Record<string, string> = {
   'Internal only': 'केवळ अंतर्गत',
   'Interruptions / complaints (30d)': 'खंड / तक्रारी (30 दि)',
   'Inverse of monsoon readiness score.': 'पावसाळी सज्जता गुणाच्या व्यस्त प्रमाणात.',
-  'is held for: &quot;': 'यासाठी ठेवलेले आहे: &quot;',
+  'is held for: "': 'यासाठी ठेवलेले आहे: "',
   'is running': 'चालू आहे',
   'Isolated disruption': 'तुरळक अडथळा',
   'Issued': 'जारी',

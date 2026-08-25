@@ -340,6 +340,7 @@ export function SituationRoomPage(): React.JSX.Element {
     <PageBody width="full" className="space-y-3 p-3 sm:p-4">
       <PageHeader
         eyebrow={t('Command')}
+        breadcrumbs={[{ label: t('Command') }, { label: t('Situation Room') }]}
         actions={
           <>
             <LiveIndicator

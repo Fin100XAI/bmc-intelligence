@@ -17,12 +17,15 @@ import {
 } from '@/components/ui'
 import { MetricCard } from '@/components/cards'
 import { GovPanel } from '@/components/gov/GovPanel'
+import { FilterBar } from '@/components/filters/FilterBar'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { wardGovernanceService } from '@/services'
+import { useFilterStore } from '@/stores/ui.store'
+import type { FilterState } from '@/stores/ui.store'
 import { usePageMasthead } from '@/stores/masthead.store'
 import { wardName, wardShortName } from '@/data/reference'
-import type { OperationalState } from '@/types/common'
+import type { DateRangeKey, OperationalState } from '@/types/common'
 import {
   CASEWORK_CATEGORY_LABEL,
   CASEWORK_STATUS_LABEL,
@@ -30,6 +33,7 @@ import {
   type CorporatorCasework,
   type WardCommitteeDetail,
 } from '@/types/ward-governance'
+import { DEMO_NOW } from '@/utils/deterministic'
 import { formatCrore, formatDate, formatRelative } from '@/utils/format'
 import { t } from '@/i18n'
 
@@ -67,9 +71,41 @@ const CASEWORK_STATUSES: CaseworkStatus[] = [
   'raised', 'referred-to-department', 'in-progress', 'resolved', 'closed-no-action',
 ]
 
+const DATE_RANGE_HOURS: Record<DateRangeKey, number> = {
+  '24h': 24,
+  '7d': 24 * 7,
+  '30d': 24 * 30,
+  '90d': 24 * 90,
+  fy: 24 * 365,
+}
+
+function withinDateRange(iso: string, range: DateRangeKey): boolean {
+  const ageMs = DEMO_NOW.getTime() - new Date(iso).getTime()
+  return ageMs <= DATE_RANGE_HOURS[range] * 3_600_000
+}
+
+/**
+ * The global filter set narrows casework by every dimension it genuinely
+ * carries - ward, the department it was referred to (where recorded), when it
+ * was raised, and free text against its subject and reference. It is applied
+ * on top of, not instead of, the page's own ward/status register controls
+ * below.
+ */
+function matchesGlobalFilters(c: CorporatorCasework, filters: FilterState): boolean {
+  if (filters.wardIds.length > 0 && !filters.wardIds.includes(c.wardId)) return false
+  if (filters.departmentIds.length > 0 && (!c.departmentId || !filters.departmentIds.includes(c.departmentId))) return false
+  if (!withinDateRange(c.raisedAt, filters.dateRange)) return false
+  if (filters.search.trim()) {
+    const q = filters.search.trim().toLowerCase()
+    if (!c.subject.toLowerCase().includes(q) && !c.reference.toLowerCase().includes(q)) return false
+  }
+  return true
+}
+
 export function WardCommitteesPage(): React.JSX.Element {
   const [wardFilter, setWardFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState<CaseworkStatus | ''>('')
+  const filters = useFilterStore((s) => s.filters)
 
   usePageMasthead(t('Ward Committees'))
 
@@ -77,7 +113,10 @@ export function WardCommitteesPage(): React.JSX.Element {
   const committeesQuery = useServiceQuery(queryKeys.wardGovernance('committees'), (u) => wardGovernanceService.committees(u))
   const caseworkQuery = useServiceQuery(queryKeys.wardGovernance('casework'), (u) => wardGovernanceService.casework(u))
 
-  const committees = useMemo(() => committeesQuery.data ?? [], [committeesQuery.data])
+  const committees = useMemo(() => {
+    const all = committeesQuery.data ?? []
+    return filters.wardIds.length > 0 ? all.filter((c) => filters.wardIds.includes(c.wardId)) : all
+  }, [committeesQuery.data, filters.wardIds])
   const casework = useMemo(() => caseworkQuery.data ?? [], [caseworkQuery.data])
 
   const filteredCasework = useMemo(
@@ -85,9 +124,9 @@ export function WardCommitteesPage(): React.JSX.Element {
       casework.filter((c) => {
         if (wardFilter && c.wardId !== wardFilter) return false
         if (statusFilter && c.status !== statusFilter) return false
-        return true
+        return matchesGlobalFilters(c, filters)
       }),
-    [casework, wardFilter, statusFilter],
+    [casework, wardFilter, statusFilter, filters],
   )
 
   const loading = positionQuery.isLoading || committeesQuery.isLoading || caseworkQuery.isLoading
@@ -254,6 +293,7 @@ export function WardCommitteesPage(): React.JSX.Element {
         eyebrow={t('Council')}
         breadcrumbs={[{ label: t('Council') }, { label: t('Ward Committees') }]}
         hideProvenance
+        controls={<FilterBar show={['date', 'ward', 'department', 'search']} />}
       />
 
       <DemonstrationNotice />

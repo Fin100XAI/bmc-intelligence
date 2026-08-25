@@ -17,12 +17,16 @@ import {
 } from '@/components/ui'
 import { GovPanel, GovStripCell } from '@/components/gov/GovPanel'
 import { CHART_COLOURS, DonutChart } from '@/components/charts'
+import { FilterBar } from '@/components/filters/FilterBar'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { legalService } from '@/services'
+import { useFilterStore } from '@/stores/ui.store'
+import type { FilterState } from '@/stores/ui.store'
 import { usePageMasthead } from '@/stores/masthead.store'
 import { departmentName } from '@/data/reference'
 import { DEMO_NOW } from '@/utils/deterministic'
+import type { DateRangeKey } from '@/types/common'
 import {
   ARBITRATION_DISPUTE_TYPE_LABEL,
   ARBITRATION_STAGE_LABEL,
@@ -105,9 +109,43 @@ const ARBITRATION_STAGE_TONE: Record<ArbitrationMatter['stage'], BadgeTone> = {
   'award-challenged': 'critical',
 }
 
+const DATE_RANGE_HOURS: Record<DateRangeKey, number> = {
+  '24h': 24,
+  '7d': 24 * 7,
+  '30d': 24 * 30,
+  '90d': 24 * 90,
+  fy: 24 * 365,
+}
+
+function withinDateRange(iso: string, range: DateRangeKey): boolean {
+  const ageMs = DEMO_NOW.getTime() - new Date(iso).getTime()
+  return ageMs <= DATE_RANGE_HOURS[range] * 3_600_000
+}
+
+/**
+ * Narrows the court-matters register by the global filter set - ward, the
+ * department the matter bears on, when it was filed, and free text against
+ * reference, subject and summary. `domain` is deliberately left unwired: a
+ * legal case's `domain` field carries free text such as "council" that is
+ * not a member of `IntelligenceDomain`, so the shared domain filter cannot be
+ * applied here without silently mis-labelling matters. Applied alongside,
+ * not instead of, the register's own case-type/status controls.
+ */
+function matchesGlobalFilters(c: LegalCase, filters: FilterState): boolean {
+  if (filters.wardIds.length > 0 && !c.wardIds.some((w) => filters.wardIds.includes(w))) return false
+  if (filters.departmentIds.length > 0 && !filters.departmentIds.includes(c.departmentId)) return false
+  if (!withinDateRange(c.filedAt, filters.dateRange)) return false
+  if (filters.search.trim()) {
+    const q = filters.search.trim().toLowerCase()
+    if (!c.subject.toLowerCase().includes(q) && !c.summary.toLowerCase().includes(q) && !c.reference.toLowerCase().includes(q)) return false
+  }
+  return true
+}
+
 export function LegalLitigationPage(): React.JSX.Element {
   const [typeFilter, setTypeFilter] = useState<CaseType | ''>('')
   const [statusFilter, setStatusFilter] = useState<CaseStatus | ''>('')
+  const filters = useFilterStore((s) => s.filters)
 
   usePageMasthead(t('Legal & Litigation'))
 
@@ -125,9 +163,9 @@ export function LegalLitigationPage(): React.JSX.Element {
       cases.filter((c) => {
         if (typeFilter && c.caseType !== typeFilter) return false
         if (statusFilter && c.status !== statusFilter) return false
-        return true
+        return matchesGlobalFilters(c, filters)
       }),
-    [cases, typeFilter, statusFilter],
+    [cases, typeFilter, statusFilter, filters],
   )
 
   const loading = positionQuery.isLoading || casesQuery.isLoading || rtiQuery.isLoading || arbitrationQuery.isLoading
@@ -296,6 +334,7 @@ export function LegalLitigationPage(): React.JSX.Element {
         eyebrow={t('Council')}
         breadcrumbs={[{ label: t('Council') }, { label: t('Legal & Litigation') }]}
         hideProvenance
+        controls={<FilterBar show={['date', 'ward', 'department', 'search']} />}
       />
 
       <DemonstrationNotice />
@@ -315,7 +354,7 @@ export function LegalLitigationPage(): React.JSX.Element {
       {/* ── Status strip ───────────────────────────────────────────────
           The six figures a Law Officer reads first, in the same ruled
           ledger strip the Executive Overview opens with. */}
-      <div className="flex flex-wrap items-stretch gap-px overflow-hidden rounded-[2px] border border-ink-200 bg-ink-100 shadow-xs">
+      <div className="flex flex-wrap items-stretch gap-px overflow-hidden rounded-lg border border-ink-200 bg-ink-100 shadow-xs">
         <GovStripCell label={t('Cases active')} value={position?.casesActive ?? 0} background="amber" />
         <GovStripCell
           label={t('Financial exposure')}

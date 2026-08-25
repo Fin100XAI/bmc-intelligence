@@ -17,9 +17,11 @@ import {
 } from '@/components/ui'
 import { MetricCard } from '@/components/cards'
 import { GovPanel } from '@/components/gov/GovPanel'
+import { FilterBar } from '@/components/filters/FilterBar'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { developmentPlanService } from '@/services'
+import { useFilterStore, type FilterState } from '@/stores/ui.store'
 import { usePageMasthead } from '@/stores/masthead.store'
 import { wardName } from '@/data/reference'
 import { activeCorporation } from '@/config/municipality.config'
@@ -32,6 +34,8 @@ import {
   type ReservationStatus,
   type ReservationType,
 } from '@/types/development-plan'
+import type { DateRangeKey } from '@/types/common'
+import { DEMO_NOW } from '@/utils/deterministic'
 import { formatDate, formatNumber } from '@/utils/format'
 import { t } from '@/i18n'
 
@@ -60,9 +64,47 @@ const RESERVATION_STATUS_TONE: Record<ReservationStatus, BadgeTone> = {
   'reservation-lifted': 'neutral',
 }
 
+const DATE_RANGE_HOURS: Record<DateRangeKey, number> = {
+  '24h': 24,
+  '7d': 24 * 7,
+  '30d': 24 * 30,
+  '90d': 24 * 90,
+  fy: 24 * 365,
+}
+
+function withinDateRange(iso: string, range: DateRangeKey): boolean {
+  const ageMs = DEMO_NOW.getTime() - new Date(iso).getTime()
+  return ageMs <= DATE_RANGE_HOURS[range] * 3_600_000
+}
+
+function matchesZoneFilters(zone: DevelopmentPlanZone, filters: FilterState): boolean {
+  if (filters.wardIds.length > 0 && !filters.wardIds.includes(zone.wardId)) return false
+  if (filters.search.trim()) {
+    const q = filters.search.trim().toLowerCase()
+    if (!wardName(zone.wardId).toLowerCase().includes(q) && !DP_ZONE_TYPE_LABEL[zone.zoneType].toLowerCase().includes(q)) return false
+  }
+  return true
+}
+
+function matchesReservationFilters(reservation: DPReservation, filters: FilterState): boolean {
+  if (filters.wardIds.length > 0 && !filters.wardIds.includes(reservation.wardId)) return false
+  if (filters.statuses.length > 0 && !filters.statuses.includes(reservation.status)) return false
+  if (!withinDateRange(reservation.reservedAt, filters.dateRange)) return false
+  if (filters.search.trim()) {
+    const q = filters.search.trim().toLowerCase()
+    if (
+      !wardName(reservation.wardId).toLowerCase().includes(q) &&
+      !RESERVATION_TYPE_LABEL[reservation.reservationType].toLowerCase().includes(q)
+    )
+      return false
+  }
+  return true
+}
+
 export function DevelopmentPlanPage(): React.JSX.Element {
   const [reservationTypeFilter, setReservationTypeFilter] = useState<ReservationType | ''>('')
   const [statusFilter, setStatusFilter] = useState<ReservationStatus | ''>('')
+  const filters = useFilterStore((s) => s.filters)
 
   usePageMasthead(t('Development Plan 2034'))
 
@@ -70,8 +112,18 @@ export function DevelopmentPlanPage(): React.JSX.Element {
   const zonesQuery = useServiceQuery(queryKeys.developmentPlan('zones'), (u) => developmentPlanService.zones(u))
   const reservationsQuery = useServiceQuery(queryKeys.developmentPlan('reservations'), (u) => developmentPlanService.reservations(u))
 
-  const zones = useMemo(() => zonesQuery.data ?? [], [zonesQuery.data])
-  const reservations = useMemo(() => reservationsQuery.data ?? [], [reservationsQuery.data])
+  // The global filter bar is applied first, as early as possible, so the
+  // ward zoning register and the reservation register - and the page's own
+  // reservation-type / status controls layered on top of it - all agree
+  // about which slice of the Development Plan is in view.
+  const zones = useMemo(
+    () => (zonesQuery.data ?? []).filter((z) => matchesZoneFilters(z, filters)),
+    [zonesQuery.data, filters],
+  )
+  const reservations = useMemo(
+    () => (reservationsQuery.data ?? []).filter((r) => matchesReservationFilters(r, filters)),
+    [reservationsQuery.data, filters],
+  )
 
   const filteredReservations = useMemo(
     () =>
@@ -212,6 +264,12 @@ export function DevelopmentPlanPage(): React.JSX.Element {
         eyebrow={t('Planning & Development')}
         breadcrumbs={[{ label: t('Planning & Development') }, { label: t('Development Plan 2034') }]}
         hideProvenance
+        controls={
+          <FilterBar
+            show={['ward', 'status', 'date', 'search']}
+            statusOptions={RESERVATION_STATUSES.map((s) => ({ value: s, label: RESERVATION_STATUS_LABEL[s] }))}
+          />
+        }
       />
 
       <DemonstrationNotice />

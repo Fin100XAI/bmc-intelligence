@@ -5,12 +5,14 @@ import { Button } from '@/components/ui/primitives'
 import { GovPanel } from '@/components/gov/GovPanel'
 import { LiveIndicator } from '@/components/ui/LiveIndicator'
 import { CityMap, jitteredWardPoint, type MapMarker } from '@/components/map/CityMap'
+import { FilterBar } from '@/components/filters/FilterBar'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { incidentService, projectService, roadsService, wardService } from '@/services'
 import { useActiveCorporation } from '@/stores/corporation.store'
 import { cityName } from '@/config/corporations'
 import { usePageMasthead } from '@/stores/masthead.store'
+import { useFilterStore } from '@/stores/ui.store'
 import { t } from '@/i18n'
 
 /**
@@ -44,6 +46,8 @@ export function CityCommandMapPage(): React.JSX.Element {
   const corporation = useActiveCorporation()
   usePageMasthead(t('{0} Command Map', cityName(corporation)))
 
+  const filters = useFilterStore((s) => s.filters)
+
   const [enabled, setEnabled] = useState<Record<MarkerLayerId, boolean>>({
     incidents: true,
     projects: false,
@@ -63,9 +67,30 @@ export function CityCommandMapPage(): React.JSX.Element {
   const defectsQuery = useServiceQuery(queryKeys.roads('command-map-defects'), (u) => roadsService.rankedDefects(u, 40))
 
   const wards = wardsQuery.data ?? []
-  const incidents = incidentsQuery.data ?? []
-  const projectsAtRisk = projectsQuery.data ?? []
-  const defects = defectsQuery.data ?? []
+
+  // Each marker source carries a different shape (an incident's `wardId`, a
+  // project's `wardIds`, a defect's `wardId`), so the shared ward/severity/
+  // search filters are applied per source rather than through one predicate -
+  // the same approach Roads Intelligence takes for its segment and defect
+  // registers.
+  const searchQuery = filters.search.trim().toLowerCase()
+  const incidents = (incidentsQuery.data ?? []).filter((i) => {
+    if (filters.wardIds.length > 0 && !filters.wardIds.includes(i.wardId)) return false
+    if (filters.severities.length > 0 && !filters.severities.includes(i.severity)) return false
+    if (searchQuery && !i.title.toLowerCase().includes(searchQuery) && !i.locationName.toLowerCase().includes(searchQuery)) return false
+    return true
+  })
+  const projectsAtRisk = (projectsQuery.data ?? []).filter((p) => {
+    if (filters.wardIds.length > 0 && !p.wardIds.some((w) => filters.wardIds.includes(w))) return false
+    if (searchQuery && !p.name.toLowerCase().includes(searchQuery) && !p.reference.toLowerCase().includes(searchQuery)) return false
+    return true
+  })
+  const defects = (defectsQuery.data ?? []).filter((d) => {
+    if (filters.wardIds.length > 0 && !filters.wardIds.includes(d.wardId)) return false
+    if (filters.severities.length > 0 && !filters.severities.includes(d.severity)) return false
+    if (searchQuery && !d.type.toLowerCase().includes(searchQuery)) return false
+    return true
+  })
 
   const markers = useMemo<MapMarker[]>(() => {
     const byWardCount = new Map<string, number>()
@@ -112,6 +137,7 @@ export function CityCommandMapPage(): React.JSX.Element {
         eyebrow={t('Command')}
         breadcrumbs={[{ label: t('Command') }, { label: t('City Command Map') }]}
         actions={<LiveIndicator dataUpdatedAt={incidentsQuery.dataUpdatedAt} isFetching={incidentsQuery.isFetching} />}
+        controls={<FilterBar show={['ward', 'severity', 'search']} />}
       />
 
       <GovPanel

@@ -6,10 +6,11 @@ import { usePageMasthead } from '@/stores/masthead.store'
 import { queryKeys } from '@/app/queryClient'
 import { reconciliationService } from '@/services'
 import { ROUTES } from '@/config/navigation'
-import { WARDS, wardName } from '@/data/reference'
-import { isoFromAnchor } from '@/utils/deterministic'
+import { wardName } from '@/data/reference'
+import { DEMO_NOW, isoFromAnchor } from '@/utils/deterministic'
 import { formatDate, formatNumber, formatPercent, formatRelative, formatRupees } from '@/utils/format'
 import type { User } from '@/types/organisation'
+import type { DateRangeKey } from '@/types/common'
 import type {
   AssessmentException,
   ExceptionStatus,
@@ -25,6 +26,9 @@ import {
   REGISTRY_SHORT_LABEL,
   RULE_TIER_LABEL,
 } from '@/types/revenue-reconciliation'
+import { FilterBar } from '@/components/filters/FilterBar'
+import { useFilterStore } from '@/stores/ui.store'
+import type { FilterState } from '@/stores/ui.store'
 import {
   Badge,
   Button,
@@ -99,6 +103,32 @@ const disputeAction = (user: User, id: string, note: string) => reconciliationSe
 const confirmMatchAction = (user: User, id: string, note: string) => reconciliationService.confirmMatch(user, id, note)
 const dismissMatchAction = (user: User, id: string, note: string) => reconciliationService.dismissMatch(user, id, note)
 
+const DATE_RANGE_HOURS: Record<DateRangeKey, number> = {
+  '24h': 24,
+  '7d': 24 * 7,
+  '30d': 24 * 30,
+  '90d': 24 * 90,
+  fy: 24 * 365,
+}
+
+function withinDateRange(iso: string, range: DateRangeKey): boolean {
+  const ageMs = DEMO_NOW.getTime() - new Date(iso).getTime()
+  return ageMs <= DATE_RANGE_HOURS[range] * 3_600_000
+}
+
+function matchesGlobalFilters(exception: AssessmentException, filters: FilterState): boolean {
+  if (filters.wardIds.length > 0 && !filters.wardIds.includes(exception.wardId)) return false
+  if (filters.severities.length > 0 && !filters.severities.includes(exception.severity)) return false
+  if (filters.statuses.length > 0 && !filters.statuses.includes(exception.status)) return false
+  if (!withinDateRange(exception.raisedAt, filters.dateRange)) return false
+  if (filters.search.trim()) {
+    const q = filters.search.trim().toLowerCase()
+    const haystack = `${exception.reference} ${exception.addressLine} ${exception.locality} ${exception.counterpartReference}`.toLowerCase()
+    if (!haystack.includes(q)) return false
+  }
+  return true
+}
+
 const STATUS_TONE: Record<ExceptionStatus, 'neutral' | 'info' | 'warn' | 'positive' | 'critical' | 'risk'> = {
   raised: 'neutral',
   assigned: 'info',
@@ -126,29 +156,35 @@ export function RecoveryWorklistPage(): React.JSX.Element {
   usePageMasthead(t('Assessment Recovery Worklist'))
 
   const [tab, setTab] = useState<WorklistTab>('worklist')
-  const [wardFilter, setWardFilter] = useState('all')
   const [openId, setOpenId] = useState<string | null>(null)
+  const filters = useFilterStore((s) => s.filters)
+  // The candidate service scopes its request to a single ward. Two or more
+  // wards selected in the global filter is answered by fetching city-wide and
+  // narrowing client-side below, rather than by a request shape the service
+  // does not support.
+  const singleWardId = filters.wardIds.length === 1 ? filters.wardIds[0] : undefined
 
-  const filters = useMemo(
+  const queryFilters = useMemo(
     () => ({
-      wardId: wardFilter === 'all' ? undefined : wardFilter,
+      wardId: singleWardId,
       worklistOnly: tab === 'worklist',
       matchQueueOnly: tab === 'match-queue',
       openOnly: tab !== 'decided',
       status: tab === 'decided' ? (['demand-revised', 'recovered', 'closed-no-action'] as ExceptionStatus[]) : undefined,
       pageSize: 400,
     }),
-    [tab, wardFilter],
+    [tab, singleWardId],
   )
 
-  const listQuery = useServiceQuery(queryKeys.reconciliation(`list:${JSON.stringify(filters)}`), (user) =>
-    reconciliationService.exceptions(user, filters),
+  const listQuery = useServiceQuery(queryKeys.reconciliation(`list:${JSON.stringify(queryFilters)}`), (user) =>
+    reconciliationService.exceptions(user, queryFilters),
   )
-  const summaryQuery = useServiceQuery(queryKeys.reconciliation(`summary:${wardFilter}`), (user) =>
-    reconciliationService.summary(user, wardFilter === 'all' ? undefined : wardFilter),
+  const summaryQuery = useServiceQuery(queryKeys.reconciliation(`summary:${singleWardId ?? 'all'}`), (user) =>
+    reconciliationService.summary(user, singleWardId),
   )
 
   const rows = listQuery.data?.items ?? []
+  const filteredRows = useMemo(() => rows.filter((r) => matchesGlobalFilters(r, filters)), [rows, filters])
   const summary = summaryQuery.data
   // The table sorts and searches client-side, so it needs the whole section in
   // hand. If a corporation ever carries more candidates than one page holds,
@@ -246,8 +282,8 @@ export function RecoveryWorklistPage(): React.JSX.Element {
     },
   ]
 
-  const wardOptions = useMemo(
-    () => [{ value: 'all', label: t('All wards in scope') }, ...WARDS.map((w) => ({ value: w.id, label: w.name }))],
+  const statusOptions = useMemo(
+    () => (Object.keys(EXCEPTION_STATUS_LABEL) as ExceptionStatus[]).map((v) => ({ value: v, label: EXCEPTION_STATUS_LABEL[v] })),
     [],
   )
 
@@ -257,8 +293,8 @@ export function RecoveryWorklistPage(): React.JSX.Element {
   return (
     <PageBody>
       <PageHeader
-        eyebrow={t('Governance & Finance')}
-        breadcrumbs={[{ label: t('Governance & Finance') }, { label: t('Assessment Recovery Worklist') }]}
+        eyebrow={t('Revenue & Municipal Finance')}
+        breadcrumbs={[{ label: t('Revenue & Municipal Finance') }, { label: t('Recovery Worklist') }]}
         freshness={FRESHNESS}
         actions={
           <LinkButton to={ROUTES.reconciliation} variant="outline" icon={<Scale className="h-3.5 w-3.5" />}>
@@ -266,12 +302,9 @@ export function RecoveryWorklistPage(): React.JSX.Element {
           </LinkButton>
         }
         controls={
-          <Select
-            aria-label={t('Filter by ward')}
-            value={wardFilter}
-            onChange={(e) => setWardFilter(e.target.value)}
-            options={wardOptions}
-            className="w-auto"
+          <FilterBar
+            show={['ward', 'severity', 'status', 'date', 'search']}
+            statusOptions={statusOptions}
           />
         }
       />
@@ -350,15 +383,15 @@ export function RecoveryWorklistPage(): React.JSX.Element {
             ) : null}
 
             <DataTable
-              rows={rows}
+              rows={filteredRows}
               columns={columns}
               rowKey={(r) => r.id}
               pageSize={12}
               stickyHeader
               maxHeight="30rem"
-              searchPlaceholder="Search by reference, address or locality"
+              searchable={false}
               exportName="assessment-review-candidates"
-              exportFilters={{ ward: wardFilter, section: tab }}
+              exportFilters={{ ward: singleWardId ?? 'all', section: tab }}
               onRowClick={(r) => setOpenId(r.id)}
               activeRowKey={openId ?? undefined}
               toolbar={

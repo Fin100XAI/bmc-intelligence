@@ -6,10 +6,12 @@ import { Card, DefinitionList, DefinitionRow, MetricGrid } from '@/components/ui
 import { GovPanel } from '@/components/gov/GovPanel'
 import { DataTable, type Column } from '@/components/ui/DataTable'
 import { DemonstrationNotice, EmptyState, ErrorState, LoadingState } from '@/components/ui/states'
+import { FilterBar } from '@/components/filters/FilterBar'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { adminService } from '@/services'
 import { usePageMasthead } from '@/stores/masthead.store'
+import { useFilterStore, type FilterState } from '@/stores/ui.store'
 import { RESOURCE_LABEL, getRole, type ResourceType } from '@/security'
 import { userDisplayName } from '@/auth/demo-users'
 import { formatDate } from '@/utils/format'
@@ -33,9 +35,30 @@ const STATUS_TONE: Record<AccessPolicy['status'], 'positive' | 'neutral' | 'warn
   retired: 'muted',
 }
 
+const POLICY_STATUSES: Array<AccessPolicy['status']> = ['active', 'draft', 'review-required', 'retired']
+const statusOptions = POLICY_STATUSES.map((s) => ({ value: s, label: s.replace('-', ' ') }))
+
+/**
+ * Only the dimensions this register genuinely carries: review status and free
+ * text. `lastReviewedAt` is deliberately not wired to the global date filter -
+ * that filter's default 30-day window would hide exactly the overdue,
+ * long-unreviewed policies an administrator most needs to see, rather than
+ * narrowing to something that happened recently the way an alert or a notice
+ * does.
+ */
+function matchesGlobalFilters(policy: AccessPolicy, filters: FilterState): boolean {
+  if (filters.statuses.length > 0 && !filters.statuses.includes(policy.status)) return false
+  if (filters.search.trim()) {
+    const q = filters.search.trim().toLowerCase()
+    if (!policy.name.toLowerCase().includes(q) && !policy.description.toLowerCase().includes(q)) return false
+  }
+  return true
+}
+
 export function PoliciesPage(): React.JSX.Element {
   const policiesQuery = useServiceQuery(queryKeys.admin('policies'), (user) => adminService.policies(user))
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const filters = useFilterStore((s) => s.filters)
 
   // The shell renders the masthead; this page states what it should say.
   usePageMasthead(t('Policies'))
@@ -49,8 +72,9 @@ export function PoliciesPage(): React.JSX.Element {
     return <EmptyState title={t('No access policies registered')} detail="The policy register returned no entries." />
   }
 
-  const selected = policies.find((p) => p.id === selectedId) ?? policies[0] ?? null
-  const denyCount = policies.filter((p) => p.effect === 'deny').length
+  const filtered = policies.filter((p) => matchesGlobalFilters(p, filters))
+  const selected = filtered.find((p) => p.id === selectedId) ?? filtered[0] ?? null
+  const denyCount = filtered.filter((p) => p.effect === 'deny').length
 
   const columns: Array<Column<AccessPolicy>> = [
     {
@@ -129,17 +153,18 @@ export function PoliciesPage(): React.JSX.Element {
       <PageHeader
         eyebrow={t('Administration')}
         breadcrumbs={[{ label: t('Administration') }, { label: t('Policies') }]}
+        controls={<FilterBar show={['status', 'search']} statusOptions={statusOptions} />}
       />
 
       <MetricGrid columns={4}>
         <Card background="red">
           <p className="label-institutional">{t('Policies')}</p>
-          <p className="numeric mt-2 text-metric font-semibold text-ink-900">{policies.length}</p>
+          <p className="numeric mt-2 text-metric font-semibold text-ink-900">{filtered.length}</p>
         </Card>
         <Card background="amber">
           <p className="label-institutional">{t('Active')}</p>
           <p className="numeric mt-2 text-metric font-semibold text-ink-900">
-            {policies.filter((p) => p.status === 'active').length}
+            {filtered.filter((p) => p.status === 'active').length}
           </p>
         </Card>
         <Card tone={denyCount > 0 ? 'critical' : 'default'} background="green">
@@ -149,7 +174,7 @@ export function PoliciesPage(): React.JSX.Element {
         <Card>
           <p className="label-institutional">{t('Review required')}</p>
           <p className="numeric mt-2 text-metric font-semibold text-ink-900">
-            {policies.filter((p) => p.status === 'review-required').length}
+            {filtered.filter((p) => p.status === 'review-required').length}
           </p>
         </Card>
       </MetricGrid>
@@ -160,13 +185,12 @@ export function PoliciesPage(): React.JSX.Element {
           asideWidth="lg"
           main={
             <DataTable
-              rows={policies}
+              rows={filtered}
               columns={columns}
               rowKey={(p) => p.id}
               onRowClick={(p) => setSelectedId(p.id)}
               activeRowKey={selected?.id}
-              searchable
-              searchPlaceholder="Search policies"
+              searchable={false}
               pageSize={10}
               initialSort={{ columnId: 'effect', direction: 'asc' }}
               rowAccent={(p) => (

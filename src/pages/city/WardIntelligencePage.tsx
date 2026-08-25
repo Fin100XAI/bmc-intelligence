@@ -204,7 +204,7 @@ export function WardIntelligencePage(): React.JSX.Element {
         freshness={freshness}
         controls={
           wards.length > 1 ? (
-            <div className="flex items-center gap-2 rounded-[2px] border border-google-red-100 bg-google-red-50 py-1 pr-2 pl-2.5">
+            <div className="flex items-center gap-2 rounded-lg border border-google-red-100 bg-google-red-50 py-1 pr-2 pl-2.5">
               <MapPin className="h-3.5 w-3.5 text-google-red-700" aria-hidden />
               <Select
                 value={resolvedWardId}
@@ -291,7 +291,7 @@ function WardOverviewTab({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-stretch gap-px overflow-hidden rounded-[2px] border border-ink-200 bg-ink-100 shadow-xs">
+      <div className="flex flex-wrap items-stretch gap-px overflow-hidden rounded-lg border border-ink-200 bg-ink-100 shadow-xs">
         <GovStripCell
           label={t('Open complaints')}
           value={profile.services.complaints.open}
@@ -406,7 +406,7 @@ function WardOverviewTab({
             {t('Water supply, solid waste, road condition, drainage readiness and municipal asset condition.')}
           </p>
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <div className="rounded-[2px] border border-ink-200 p-3">
+            <div className="rounded-lg border border-ink-200 p-3">
               <p className="label-institutional mb-2 flex items-center gap-1.5">
                 <Droplets className="h-3.5 w-3.5" />{' '}{t('Water supply')}{profile.water ? ` · ${profile.water.zoneName}` : ''}
               </p>
@@ -438,7 +438,7 @@ function WardOverviewTab({
               )}
             </div>
 
-            <div className="rounded-[2px] border border-ink-200 p-3">
+            <div className="rounded-lg border border-ink-200 p-3">
               <p className="label-institutional mb-2 flex items-center gap-1.5">
                 <Trash2 className="h-3.5 w-3.5" />{' '}{t('Solid waste')}
               </p>
@@ -458,7 +458,7 @@ function WardOverviewTab({
               )}
             </div>
 
-            <div className="rounded-[2px] border border-ink-200 p-3">
+            <div className="rounded-lg border border-ink-200 p-3">
               <p className="label-institutional mb-2">{t('Road network')}</p>
               <div className="flex items-baseline gap-2">
                 <span className={cn('numeric text-2xl font-semibold', SCORE_TONE_TEXT[toneForScore(profile.roads.conditionIndex)])}>
@@ -482,7 +482,7 @@ function WardOverviewTab({
               )}
             </div>
 
-            <div className="rounded-[2px] border border-ink-200 p-3">
+            <div className="rounded-lg border border-ink-200 p-3">
               <p className="label-institutional mb-2 flex items-center gap-1.5">
                 <Waves className="h-3.5 w-3.5" />{' '}{t('Drainage & flood readiness')}
               </p>
@@ -662,7 +662,7 @@ function WardOverviewTab({
               </div>
               <div className="mt-3 space-y-2">
                 {profile.health.topSignals.slice(0, 2).map((sig) => (
-                  <div key={sig.id} className="rounded-[2px] border border-ink-200 p-3">
+                  <div key={sig.id} className="rounded-lg border border-ink-200 p-3">
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-xs font-semibold text-ink-800">{DISEASE_LABEL[sig.disease]}</span>
                       <ConfidenceBadge confidence={sig.confidence} />
@@ -860,7 +860,7 @@ function CompareTab({ wards }: { wards: Ward[] }): React.JSX.Element {
   const selectorPanel = (
     <GovPanel title={t('Select wards to compare')} subtitle={t('{0} of 4 selected', selection.selected.length)} tone="amber">
       <p className="mb-3 text-xs leading-relaxed text-ink-500">{t('Choose between 2 and 4 wards.')}</p>
-      <div className="scrollbar-slim max-h-56 overflow-y-auto rounded-[2px] border border-ink-200 p-2">
+      <div className="scrollbar-slim max-h-56 overflow-y-auto rounded-lg border border-ink-200 p-2">
         <div className="grid grid-cols-1 gap-1 sm:grid-cols-2 lg:grid-cols-3">
           {wards.map((w) => (
             <Checkbox

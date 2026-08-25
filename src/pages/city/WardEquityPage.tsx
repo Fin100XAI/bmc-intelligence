@@ -17,9 +17,11 @@ import {
 import { MetricCard } from '@/components/cards'
 import { GovPanel } from '@/components/gov/GovPanel'
 import { RankedBarChart } from '@/components/charts'
+import { FilterBar } from '@/components/filters/FilterBar'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { usePageMasthead } from '@/stores/masthead.store'
+import { useFilterStore, type FilterState } from '@/stores/ui.store'
 import { wardEquityService } from '@/services/ward-equity.service'
 import { QUADRANT_DESCRIPTION, QUADRANT_LABEL } from '@/domains/wards/equity'
 import type { EquityQuadrant, WardEquityRow } from '@/domains/wards/equity'
@@ -28,6 +30,19 @@ import { DEMO_NOW } from '@/utils/deterministic'
 import { formatCrore, formatDelta, formatNumber, formatPercent, formatRupees } from '@/utils/format'
 import { t } from '@/i18n'
 import { registerLayer } from '@/data/runtime'
+
+/** No ward or quadrant filter exists on this page today, so the global bar
+ *  carries all three real dimensions this record has: ward, quadrant (as
+ *  "status") and free text. */
+function matchesGlobalFilters(r: WardEquityRow, filters: FilterState): boolean {
+  if (filters.wardIds.length > 0 && !filters.wardIds.includes(r.wardId)) return false
+  if (filters.statuses.length > 0 && !filters.statuses.includes(r.quadrant)) return false
+  if (filters.search.trim()) {
+    const q = filters.search.trim().toLowerCase()
+    if (!r.label.toLowerCase().includes(q) && !r.code.toLowerCase().includes(q) && !r.region.toLowerCase().includes(q)) return false
+  }
+  return true
+}
 
 /**
  * src/pages/city/WardEquityPage.tsx
@@ -89,11 +104,21 @@ const TITLE = 'Ward Equity & Allocation'
 
 export function WardEquityPage(): React.JSX.Element {
   usePageMasthead(TITLE)
+  const filters = useFilterStore((s) => s.filters)
+  // Computed on every render (not module scope) so a language switch, which
+  // reassigns QUADRANT_LABEL in place, is reflected immediately here too.
+  const quadrantStatusOptions = (Object.keys(QUADRANT_LABEL) as EquityQuadrant[]).map((q) => ({
+    value: q,
+    label: QUADRANT_LABEL[q],
+  }))
 
   const equityQuery = useServiceQuery(queryKeys.wardEquity('assessment'), (u) => wardEquityService.assessment(u))
 
   const assessment = equityQuery.data
-  const rows = useMemo(() => assessment?.rows ?? [], [assessment])
+  const rows = useMemo(
+    () => (assessment?.rows ?? []).filter((r) => matchesGlobalFilters(r, filters)),
+    [assessment, filters],
+  )
 
   const shortfalls = useMemo(
     () =>
@@ -265,6 +290,7 @@ export function WardEquityPage(): React.JSX.Element {
         eyebrow={EYEBROW}
         breadcrumbs={BREADCRUMBS}
         freshness={freshness}
+        controls={<FilterBar show={['ward', 'status', 'search']} statusOptions={quadrantStatusOptions} searchPlaceholder="Search wards" />}
       />
 
       <DemonstrationNotice />

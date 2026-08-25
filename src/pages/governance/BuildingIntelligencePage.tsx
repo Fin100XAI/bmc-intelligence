@@ -1,11 +1,13 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { Boxes } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { buildingService } from '@/services'
-import { useDrawerStore } from '@/stores/ui.store'
+import { useDrawerStore, useFilterStore } from '@/stores/ui.store'
+import type { FilterState } from '@/stores/ui.store'
 import { usePageMasthead } from '@/stores/masthead.store'
+import { FilterBar } from '@/components/filters/FilterBar'
 import { activeCorporation } from '@/config/municipality.config'
 import { ROUTES } from '@/config/navigation'
 import type { BuildingProposal, BuildingRecord } from '@/types/city-domains'
@@ -22,7 +24,6 @@ import {
   LinkButton,
   LoadingState,
   MetricGrid,
-  Select,
   type Column,
 } from '@/components/ui'
 import { GovPanel } from '@/components/gov/GovPanel'
@@ -95,12 +96,32 @@ registerLayer(() => {
   AGE_BANDS = build$AGE_BANDS()
 })
 
+function matchesGlobalFilters(building: BuildingRecord, filters: FilterState): boolean {
+  if (filters.wardIds.length > 0 && !filters.wardIds.includes(building.wardId)) return false
+  if (filters.severities.length > 0 && !filters.severities.includes(building.severity)) return false
+  if (filters.statuses.length > 0 && !filters.statuses.includes(building.permissionStatus)) return false
+  if (filters.search.trim()) {
+    const q = filters.search.trim().toLowerCase()
+    if (!building.name.toLowerCase().includes(q) && !building.reference.toLowerCase().includes(q)) return false
+  }
+  return true
+}
+
+function matchesGlobalFiltersProposal(proposal: BuildingProposal, filters: FilterState): boolean {
+  if (filters.wardIds.length > 0 && !filters.wardIds.includes(proposal.wardId)) return false
+  if (filters.search.trim()) {
+    const q = filters.search.trim().toLowerCase()
+    if (!proposal.reference.toLowerCase().includes(q)) return false
+  }
+  return true
+}
+
 export function BuildingIntelligencePage(): React.JSX.Element {
   // The shell's masthead carries the screen's name; the page states the wording.
   usePageMasthead(t('Building Intelligence'))
 
   const openDrawer = useDrawerStore((s) => s.open)
-  const [wardFilter, setWardFilter] = useState<string>('all')
+  const filters = useFilterStore((s) => s.filters)
 
   const buildingsQuery = useServiceQuery(queryKeys.admin('buildings'), (user) => buildingService.buildings(user))
   const proposalsQuery = useServiceQuery(queryKeys.admin('building-proposals'), (user) => buildingService.proposals(user))
@@ -108,13 +129,8 @@ export function BuildingIntelligencePage(): React.JSX.Element {
   const buildings = buildingsQuery.data ?? []
   const proposals = proposalsQuery.data ?? []
 
-  const filteredBuildings = wardFilter === 'all' ? buildings : buildings.filter((b) => b.wardId === wardFilter)
-  const filteredProposals = wardFilter === 'all' ? proposals : proposals.filter((p) => p.wardId === wardFilter)
-
-  const wardOptions = useMemo(
-    () => Array.from(new Set(buildings.map((b) => b.wardId))).map((id) => ({ value: id, label: wardName(id) })).sort((a, b) => a.label.localeCompare(b.label)),
-    [buildings],
-  )
+  const filteredBuildings = buildings.filter((b) => matchesGlobalFilters(b, filters))
+  const filteredProposals = proposals.filter((p) => matchesGlobalFiltersProposal(p, filters))
 
   const summary = useMemo(() => {
     const auditsOverdue = filteredBuildings.filter((b) => b.structuralAudit === 'overdue').length
@@ -181,8 +197,8 @@ export function BuildingIntelligencePage(): React.JSX.Element {
   return (
     <PageBody>
       <PageHeader
-        eyebrow={t('Governance & Finance')}
-        breadcrumbs={[{ label: t('Governance & Finance') }, { label: t('Building Intelligence') }]}
+        eyebrow={t('Planning & Development Control')}
+        breadcrumbs={[{ label: t('Planning & Development Control') }, { label: t('Building Intelligence') }]}
         freshness={FRESHNESS}
         actions={
           <LinkButton to={ROUTES.assets} variant="outline" icon={<Boxes className="h-3.5 w-3.5" />}>
@@ -190,12 +206,9 @@ export function BuildingIntelligencePage(): React.JSX.Element {
           </LinkButton>
         }
         controls={
-          <Select
-            aria-label={t('Filter by ward')}
-            value={wardFilter}
-            onChange={(e) => setWardFilter(e.target.value)}
-            options={[{ value: 'all', label: t('All wards') }, ...wardOptions]}
-            className="w-auto"
+          <FilterBar
+            show={['ward', 'severity', 'status', 'search']}
+            statusOptions={(Object.keys(PERMISSION_LABEL) as Array<BuildingRecord['permissionStatus']>).map((v) => ({ value: v, label: PERMISSION_LABEL[v] }))}
           />
         }
       />

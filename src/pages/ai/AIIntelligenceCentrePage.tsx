@@ -1,16 +1,19 @@
 import { useMemo, useState } from 'react'
 import { AlertTriangle, Ban, Cpu } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
+import { FilterBar } from '@/components/filters/FilterBar'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { aiService } from '@/services'
 import { DEMO_USERS } from '@/stores/auth.store'
 import { usePageMasthead } from '@/stores/masthead.store'
+import { useFilterStore } from '@/stores/ui.store'
+import type { FilterState } from '@/stores/ui.store'
 import { getRole } from '@/security'
-import { isoFromAnchor } from '@/utils/deterministic'
+import { DEMO_NOW, isoFromAnchor } from '@/utils/deterministic'
 import { formatPercent } from '@/utils/format'
 import { AI_USE_CASE_LABEL, GROUNDING_LABEL, type AIRequestRecord, type AIUseCase } from '@/types/ai'
-import { DOMAIN_LABEL } from '@/types/common'
+import { DOMAIN_LABEL, type DateRangeKey, type IntelligenceDomain } from '@/types/common'
 import {
   Badge,
   Card,
@@ -76,11 +79,35 @@ registerLayer(() => {
   LATENCY_BANDS = build$LATENCY_BANDS()
 })
 
+const DATE_RANGE_HOURS: Record<DateRangeKey, number> = {
+  '24h': 24,
+  '7d': 24 * 7,
+  '30d': 24 * 30,
+  '90d': 24 * 90,
+  fy: 24 * 365,
+}
+
+function withinDateRange(iso: string, range: DateRangeKey): boolean {
+  const ageMs = DEMO_NOW.getTime() - new Date(iso).getTime()
+  return ageMs <= DATE_RANGE_HOURS[range] * 3_600_000
+}
+
+function matchesGlobalFilters(record: AIRequestRecord, filters: FilterState): boolean {
+  if (filters.domains.length > 0 && !record.domains.some((d) => filters.domains.includes(d))) return false
+  if (!withinDateRange(record.requestedAt, filters.dateRange)) return false
+  if (filters.search.trim()) {
+    const q = filters.search.trim().toLowerCase()
+    if (!record.prompt.toLowerCase().includes(q) && !record.modelId.toLowerCase().includes(q)) return false
+  }
+  return true
+}
+
 export function AIIntelligenceCentrePage(): React.JSX.Element {
   // The shell's masthead states the screen's name; the page states the wording.
   usePageMasthead(t('AI Intelligence Centre'))
 
   const requestsQuery = useServiceQuery(queryKeys.ai('requests-all'), (u) => aiService.requests(u, { pageSize: 300 }))
+  const filters = useFilterStore((s) => s.filters)
 
   const [useCaseFilter, setUseCaseFilter] = useState<'all' | AIUseCase>('all')
   const [modelFilter, setModelFilter] = useState<string>('all')
@@ -88,10 +115,16 @@ export function AIIntelligenceCentrePage(): React.JSX.Element {
   const [policyFilter, setPolicyFilter] = useState<'all' | AIRequestRecord['policyStatus']>('all')
   const [confidenceFilter, setConfidenceFilter] = useState<'all' | AIRequestRecord['confidence']>('all')
 
-  const requests = requestsQuery.data?.items ?? []
+  const allRequests = requestsQuery.data?.items ?? []
+  const domainOptions = useMemo<IntelligenceDomain[]>(
+    () =>
+      Array.from(new Set(allRequests.flatMap((r) => r.domains))).sort((a, b) => DOMAIN_LABEL[a].localeCompare(DOMAIN_LABEL[b])),
+    [allRequests],
+  )
+  const requests = useMemo(() => allRequests.filter((r) => matchesGlobalFilters(r, filters)), [allRequests, filters])
 
   const userNameById = useMemo(() => new Map(DEMO_USERS.map((u) => [u.id, u])), [])
-  const models = useMemo(() => Array.from(new Set(requests.map((r) => r.modelId))).sort(), [requests])
+  const models = useMemo(() => Array.from(new Set(allRequests.map((r) => r.modelId))).sort(), [allRequests])
 
   const filtered = useMemo(
     () =>
@@ -236,13 +269,14 @@ export function AIIntelligenceCentrePage(): React.JSX.Element {
         eyebrow={t('AI & Automation')}
         breadcrumbs={[{ label: t('AI & Automation') }, { label: t('AI Intelligence Centre') }]}
         freshness={FRESHNESS}
+        controls={<FilterBar show={['date', 'domain', 'search']} domainOptions={domainOptions} />}
       />
 
       {requestsQuery.isLoading ? <LoadingState variant="metrics" /> : null}
       {requestsQuery.error ? <ErrorState detail={requestsQuery.error.message} onRetry={() => requestsQuery.refetch()} /> : null}
 
       {!requestsQuery.isLoading && !requestsQuery.error ? (
-        requests.length === 0 ? (
+        allRequests.length === 0 ? (
           <EmptyState title={t('No AI requests recorded')} detail="No AI request records are visible within your authorised scope." />
         ) : (
           <>
@@ -334,6 +368,7 @@ export function AIIntelligenceCentrePage(): React.JSX.Element {
                       pageSize={12}
                       stickyHeader
                       maxHeight="30rem"
+                      searchable={false}
                       searchPlaceholder="Search prompts"
                       initialSort={{ columnId: 'latency', direction: 'desc' }}
                       emptyTitle={t('No requests match these filters')}
@@ -366,7 +401,7 @@ export function AIIntelligenceCentrePage(): React.JSX.Element {
                     </p>
                     <ul className="mt-3 space-y-2">
                       {flaggedOrBlocked.map((r) => (
-                        <li key={r.id} className="flex items-start gap-2 rounded-[2px] border border-warn-200 bg-warn-50/40 p-2.5 text-xs">
+                        <li key={r.id} className="flex items-start gap-2 rounded-lg border border-warn-200 bg-warn-50/40 p-2.5 text-xs">
                           {r.policyStatus === 'blocked' ? (
                             <Ban className="mt-0.5 h-3.5 w-3.5 shrink-0 text-crit-600" />
                           ) : (

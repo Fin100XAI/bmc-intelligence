@@ -21,21 +21,67 @@ import { MetricCard } from '@/components/cards'
 import { AlertCard } from '@/components/cards/domain-cards'
 import { GovPanel } from '@/components/gov/GovPanel'
 import { ChartFrame, HeatmapMatrix, RankedBarChart, CompositionBar } from '@/components/charts'
+import { FilterBar } from '@/components/filters/FilterBar'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { healthService } from '@/services/health.service'
 import { alertService } from '@/services/alert.service'
-import { useDrawerStore } from '@/stores/ui.store'
+import { useDrawerStore, useFilterStore, type FilterState } from '@/stores/ui.store'
 import { useActiveCorporation } from '@/stores/corporation.store'
 import { cityName } from '@/config/corporations'
 import { usePageMasthead } from '@/stores/masthead.store'
 import { ROUTES } from '@/config/navigation'
 import { WARDS, wardName, wardShortName } from '@/data/reference'
 import { DISEASE_LABEL, type DiseaseIndicator, type HealthIndicator } from '@/types/city-domains'
-import type { Trend } from '@/types/common'
+import type { Alert } from '@/types/intelligence'
+import type { DateRangeKey, Trend } from '@/types/common'
+import { DEMO_NOW } from '@/utils/deterministic'
 import { formatCompact, formatDelta, formatPercent } from '@/utils/format'
 import { t } from '@/i18n'
 import { registerLayer } from '@/data/runtime'
+
+const DATE_RANGE_HOURS: Record<DateRangeKey, number> = {
+  '24h': 24,
+  '7d': 24 * 7,
+  '30d': 24 * 30,
+  '90d': 24 * 90,
+  fy: 24 * 365,
+}
+
+function withinDateRange(iso: string, range: DateRangeKey): boolean {
+  const ageMs = DEMO_NOW.getTime() - new Date(iso).getTime()
+  return ageMs <= DATE_RANGE_HOURS[range] * 3_600_000
+}
+
+/** Ward, severity and free text apply to the aggregate disease indicators
+ *  that drive most of this page - the summary table, the ward x disease
+ *  heatmap, the outbreak ranking, the vector-borne framing and the
+ *  sanitation correlates all read from the same filtered set. */
+function matchesIndicatorFilters(h: HealthIndicator, filters: FilterState): boolean {
+  if (filters.wardIds.length > 0 && !filters.wardIds.includes(h.wardId)) return false
+  if (filters.severities.length > 0 && !filters.severities.includes(h.severity)) return false
+  if (filters.search.trim()) {
+    const q = filters.search.trim().toLowerCase()
+    if (!DISEASE_LABEL[h.disease].toLowerCase().includes(q) && !wardName(h.wardId).toLowerCase().includes(q)) return false
+  }
+  return true
+}
+
+/** The health alerts register is the same Alert record filtered elsewhere on
+ *  the platform, so it honours the full set of dimensions - including status
+ *  and date range, which have no counterpart on the aggregate indicators. */
+function matchesAlertFilters(alert: Alert, filters: FilterState): boolean {
+  if (filters.wardIds.length > 0 && !alert.wardIds.some((w) => filters.wardIds.includes(w))) return false
+  if (filters.departmentIds.length > 0 && !filters.departmentIds.includes(alert.departmentId)) return false
+  if (filters.severities.length > 0 && !filters.severities.includes(alert.severity)) return false
+  if (filters.statuses.length > 0 && !filters.statuses.includes(alert.status)) return false
+  if (!withinDateRange(alert.createdAt, filters.dateRange)) return false
+  if (filters.search.trim()) {
+    const q = filters.search.trim().toLowerCase()
+    if (!alert.title.toLowerCase().includes(q) && !alert.description.toLowerCase().includes(q)) return false
+  }
+  return true
+}
 
 /**
  * Public health module.
@@ -113,6 +159,7 @@ export function PublicHealthPage(): React.JSX.Element {
   const openDrawer = useDrawerStore((s) => s.open)
   const corporation = useActiveCorporation()
   const [focusedId, setFocusedId] = useState<string | null>(null)
+  const filters = useFilterStore((s) => s.filters)
 
   usePageMasthead(t('{0} Public Health Intelligence', cityName(corporation)))
 
@@ -122,6 +169,9 @@ export function PublicHealthPage(): React.JSX.Element {
   const alertsQuery = useServiceQuery(queryKeys.alerts({ domain: 'health' }), (u) =>
     alertService.list(u, { domain: 'health', pageSize: 30 }),
   )
+
+  const filteredIndicators = (indicatorsQuery.data ?? []).filter((h) => matchesIndicatorFilters(h, filters))
+  const filteredOutbreakSignals = (outbreakQuery.data ?? []).filter((h) => matchesIndicatorFilters(h, filters))
 
   const criticalNotice = (
     <Card tone="info" className="flex items-start gap-3">
@@ -140,6 +190,7 @@ export function PublicHealthPage(): React.JSX.Element {
       <PageHeader
         eyebrow={t('City Intelligence')}
         breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Public Health') }]}
+        controls={<FilterBar show={['date', 'ward', 'severity', 'search']} searchPlaceholder="Search ward or condition" />}
       />
 
       {/* --- Primary care network headline counts ------------------------ */}
@@ -188,7 +239,7 @@ export function PublicHealthPage(): React.JSX.Element {
         <ErrorState detail={indicatorsQuery.error.message} onRetry={() => indicatorsQuery.refetch()} />
       ) : (
         (() => {
-          const indicators = indicatorsQuery.data ?? []
+          const indicators = filteredIndicators
           if (indicators.length === 0) {
             return <EmptyState title={t('No health indicators available')} detail="No aggregate indicators were returned for the current scope." />
           }
@@ -221,15 +272,15 @@ export function PublicHealthPage(): React.JSX.Element {
       )}
 
       {/* --- Ward × disease heatmap -------------------------------------- */}
-      {indicatorsQuery.data && indicatorsQuery.data.length > 0 ? (
+      {filteredIndicators.length > 0 ? (
         (() => {
-          const indicators = indicatorsQuery.data
+          const indicators = filteredIndicators
           const heatValues: Record<string, Record<string, number>> = {}
           for (const h of indicators) {
             heatValues[h.wardId] ??= {}
             heatValues[h.wardId]![h.disease] = h.outbreakSignal
           }
-          const focused = indicators.find((h) => h.id === focusedId) ?? outbreakQuery.data?.[0] ?? null
+          const focused = indicators.find((h) => h.id === focusedId) ?? filteredOutbreakSignals[0] ?? null
 
           return (
             <GovPanel title={t('Ward × disease outbreak signal')} tone="red">
@@ -305,7 +356,7 @@ export function PublicHealthPage(): React.JSX.Element {
         <ErrorState detail={outbreakQuery.error.message} onRetry={() => outbreakQuery.refetch()} />
       ) : (
         (() => {
-          const signals = outbreakQuery.data ?? []
+          const signals = filteredOutbreakSignals
           if (signals.length === 0) {
             return (
               <GovPanel title={t('Outbreak signal ranking')} tone="amber">
@@ -358,7 +409,7 @@ export function PublicHealthPage(): React.JSX.Element {
         <ErrorState detail={alertsQuery.error.message} onRetry={() => alertsQuery.refetch()} />
       ) : (
         (() => {
-          const alerts = alertsQuery.data?.items ?? []
+          const alerts = (alertsQuery.data?.items ?? []).filter((a) => matchesAlertFilters(a, filters))
           return (
             <GovPanel title={t('Health alerts')} tone="green" dense>
               <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
@@ -433,9 +484,9 @@ export function PublicHealthPage(): React.JSX.Element {
 
 
       {/* --- Vector-borne risk framed to monsoon season -------------------- */}
-      {indicatorsQuery.data && indicatorsQuery.data.length > 0 ? (
+      {filteredIndicators.length > 0 ? (
         (() => {
-          const indicators = indicatorsQuery.data
+          const indicators = filteredIndicators
           const vectorRows = indicators.filter((h) => VECTOR_BORNE.includes(h.disease))
           const nonVectorRows = indicators.filter((h) => !VECTOR_BORNE.includes(h.disease))
           const vectorCases = vectorRows.reduce((s, h) => s + h.casesReported, 0)
@@ -481,9 +532,9 @@ export function PublicHealthPage(): React.JSX.Element {
       ) : null}
 
       {/* --- Sanitation and environmental correlates ----------------------- */}
-      {indicatorsQuery.data && indicatorsQuery.data.length > 0 ? (
+      {filteredIndicators.length > 0 ? (
         (() => {
-          const significant = indicatorsQuery.data.filter((h) => h.outbreakSignal >= 50 && h.correlates.length > 0)
+          const significant = filteredIndicators.filter((h) => h.outbreakSignal >= 50 && h.correlates.length > 0)
           const counts = new Map<string, number>()
           for (const h of significant) {
             for (const c of h.correlates) counts.set(c, (counts.get(c) ?? 0) + 1)

@@ -19,6 +19,7 @@ import {
 import { MetricCard } from '@/components/cards'
 import { GovPanel } from '@/components/gov/GovPanel'
 import { RankedBarChart } from '@/components/charts'
+import { FilterBar } from '@/components/filters/FilterBar'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { wardCommitmentsService } from '@/services/ward-commitments.service'
@@ -32,11 +33,42 @@ import {
 } from '@/domains/wards/commitments'
 import { wardShortName } from '@/data/reference'
 import { usePageMasthead } from '@/stores/masthead.store'
-import type { DataFreshness } from '@/types/common'
+import { useFilterStore, type FilterState } from '@/stores/ui.store'
+import type { DataFreshness, DateRangeKey } from '@/types/common'
 import { DEMO_NOW } from '@/utils/deterministic'
 import { formatCrore, formatDate, formatRelative } from '@/utils/format'
 import { t } from '@/i18n'
 import { registerLayer } from '@/data/runtime'
+
+const DATE_RANGE_HOURS: Record<DateRangeKey, number> = {
+  '24h': 24,
+  '7d': 24 * 7,
+  '30d': 24 * 30,
+  '90d': 24 * 90,
+  fy: 24 * 365,
+}
+
+function withinDateRange(iso: string, range: DateRangeKey): boolean {
+  const ageMs = DEMO_NOW.getTime() - new Date(iso).getTime()
+  return ageMs <= DATE_RANGE_HOURS[range] * 3_600_000
+}
+
+/** Register (kind) and standing are already covered by this page's own
+ *  selects; the global bar adds ward, recency and free text. */
+function matchesGlobalFilters(c: WardCommitment, filters: FilterState): boolean {
+  if (filters.wardIds.length > 0 && !filters.wardIds.includes(c.wardId)) return false
+  if (!withinDateRange(c.committedAt, filters.dateRange)) return false
+  if (filters.search.trim()) {
+    const q = filters.search.trim().toLowerCase()
+    if (
+      !c.subject.toLowerCase().includes(q) &&
+      !c.reference.toLowerCase().includes(q) &&
+      !c.basis.toLowerCase().includes(q)
+    )
+      return false
+  }
+  return true
+}
 
 /**
  * src/pages/city/WardCommitmentsPage.tsx
@@ -98,6 +130,7 @@ export function WardCommitmentsPage(): React.JSX.Element {
   const [kindFilter, setKindFilter] = useState<CommitmentKind | ''>('')
   const [standingFilter, setStandingFilter] = useState<CommitmentStanding | ''>('')
   const [rankMetric, setRankMetric] = useState<RankMetric>('unactioned')
+  const filters = useFilterStore((s) => s.filters)
 
   const ledgerQuery = useServiceQuery(queryKeys.wardCommitments(scope), (u) =>
     wardCommitmentsService.ledger(u, scope === CITY_SCOPE ? null : scope),
@@ -111,9 +144,10 @@ export function WardCommitmentsPage(): React.JSX.Element {
       commitments.filter((c) => {
         if (kindFilter && c.kind !== kindFilter) return false
         if (standingFilter && c.standing !== standingFilter) return false
+        if (!matchesGlobalFilters(c, filters)) return false
         return true
       }),
-    [commitments, kindFilter, standingFilter],
+    [commitments, kindFilter, standingFilter, filters],
   )
 
   const freshness: DataFreshness = {
@@ -286,6 +320,7 @@ export function WardCommitmentsPage(): React.JSX.Element {
                 ? 'Each matter counted once across the wards it names.'
                 : `Commitments naming ${summary.wardLabel}.`}
             </span>
+            <FilterBar show={['date', 'ward', 'search']} searchPlaceholder="Search reference, subject or basis" />
           </div>
         }
       />
@@ -299,7 +334,7 @@ export function WardCommitmentsPage(): React.JSX.Element {
             {t('The accountability gap that belongs to neither wing, read at the unit it is asked about')}
           </p>
           <p className="mt-1 text-xs leading-relaxed text-ink-600">
-            {t('The Council register establishes that a matter the house has passed and the administration has not acted on is nobody&apos;s alone - the corporation resolved, and the corporation did not deliver. That gap is visible city-wide but not ward by ward, which is the unit a corporator asks about in the General Body. This page joins the deliberative record to the delivery record so the answer is one reading rather than four. A commitment appears here only where the source record names a ward: {0} commitments carried for the whole corporation - {1} resolutions, {2} works and {3} decision cases - are excluded by construction rather than overlooked, and belong to the city-wide registers they came from.', excluded.total, excluded.resolutions, excluded.projects, excluded.decisions)}
+            {t("The Council register establishes that a matter the house has passed and the administration has not acted on is nobody's alone - the corporation resolved, and the corporation did not deliver. That gap is visible city-wide but not ward by ward, which is the unit a corporator asks about in the General Body. This page joins the deliberative record to the delivery record so the answer is one reading rather than four. A commitment appears here only where the source record names a ward: {0} commitments carried for the whole corporation - {1} resolutions, {2} works and {3} decision cases - are excluded by construction rather than overlooked, and belong to the city-wide registers they came from.", excluded.total, excluded.resolutions, excluded.projects, excluded.decisions)}
           </p>
         </div>
       </Card>

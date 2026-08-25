@@ -13,7 +13,9 @@ import {
 } from '@/components/ui'
 import { MetricCard } from '@/components/cards'
 import { GovPanel } from '@/components/gov/GovPanel'
+import { FilterBar } from '@/components/filters/FilterBar'
 import { CORPORATIONS, corporationName as resolveCorporationName, type CorporationRef, type CorporationSource } from '@/config/corporations'
+import { useFilterStore } from '@/stores/ui.store'
 import { t } from '@/i18n'
 
 /**
@@ -90,6 +92,7 @@ export function DataResourcesPage(): React.JSX.Element {
   const [search, setSearch] = useState('')
   const [kindFilter, setKindFilter] = useState<SourceKind | ''>('')
   const [corpFilter, setCorpFilter] = useState<string>('')
+  const filters = useFilterStore((s) => s.filters)
 
   const SOURCE_KIND_LABEL = build$SOURCE_KIND_LABEL()
 
@@ -109,18 +112,18 @@ export function DataResourcesPage(): React.JSX.Element {
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
+    // The global search filter narrows the same fields as the page's own
+    // search box, applied first so both are honoured together.
+    const globalQ = filters.search.trim().toLowerCase()
     return rows.filter((r) => {
       if (kindFilter && r.kind !== kindFilter) return false
       if (corpFilter && r.corporationId !== corpFilter) return false
+      const haystack = `${humanizeField(r.field)} ${r.note ?? ''} ${hostOf(r.url)} ${r.corporationName}`.toLowerCase()
+      if (globalQ && !haystack.includes(globalQ)) return false
       if (!q) return true
-      return (
-        humanizeField(r.field).toLowerCase().includes(q) ||
-        (r.note ?? '').toLowerCase().includes(q) ||
-        hostOf(r.url).toLowerCase().includes(q) ||
-        r.corporationName.toLowerCase().includes(q)
-      )
+      return haystack.includes(q)
     })
-  }, [rows, search, kindFilter, corpFilter])
+  }, [rows, search, kindFilter, corpFilter, filters.search])
 
   const uniqueFields = new Set(rows.map((r) => r.field)).size
   const uniqueHosts = new Set(rows.map((r) => hostOf(r.url))).size
@@ -183,6 +186,7 @@ export function DataResourcesPage(): React.JSX.Element {
       <PageHeader
         eyebrow={t('Strategic')}
         breadcrumbs={[{ label: t('Strategic') }, { label: t('Data & Resources') }]}
+        controls={<FilterBar show={['search']} />}
       />
 
       <Card tone="info" className="flex items-start gap-3">

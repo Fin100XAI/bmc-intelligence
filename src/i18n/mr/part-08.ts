@@ -82,7 +82,6 @@ export const MR_PART_08: Record<string, string> = {
   'AI Governance Report': 'कृत्रिम बुद्धिमत्ता कारभार अहवाल',
   'All departments': 'सर्व विभाग',
   'All risk classes': 'सर्व जोखीम वर्ग',
-  'All wards in scope': 'व्याप्तीतील सर्व प्रभाग',
   'Approaching threshold': 'मर्यादेच्या जवळ',
   'Assessment Recovery Worklist': 'आकारणी वसुली कार्यसूची',
   'Assign - {0}': 'नेमून द्या - {0}',
@@ -130,7 +129,6 @@ export const MR_PART_08: Record<string, string> = {
   'Extreme rainfall frequency': 'अतिवृष्टीची वारंवारता',
   'Feature flags': 'वैशिष्ट्य निशाण्या',
   'Filter by classification': 'वर्गीकरणानुसार गाळणी',
-  'Filter by domain': 'क्षेत्रानुसार गाळणी',
   'Filter by risk class': 'जोखीम वर्गानुसार गाळणी',
   'Filter by state': 'अवस्थेनुसार गाळणी',
   'Financial position': 'वित्तीय स्थिती',
@@ -223,8 +221,6 @@ export const MR_PART_08: Record<string, string> = {
   'Sign in': 'प्रवेश करा',
   'Signing in…': 'प्रवेश करत आहे…',
   'Enter the console': 'कन्सोलमध्ये प्रवेश करा',
-  'Scroll sections left': 'विभाग डावीकडे सरकवा',
-  'Scroll sections right': 'विभाग उजवीकडे सरकवा',
   'SLA breached': 'सेवा-हमी भंग',
   State: 'अवस्था',
   'Survey no.': 'सर्वेक्षण क्र.',
@@ -254,12 +250,11 @@ export const MR_PART_08: Record<string, string> = {
     '- तिची स्वतःची परिभाषा, प्रशासकीय एकके, बोधचिन्ह आणि प्रकाशित संदर्भ आकडेवारी - आणि बुद्धिमत्ता, सुरक्षा किंवा कार्यप्रवाह यंत्रणांमध्ये कोणताही बदल न करता तिच्याखालील प्रत्येक बुद्धिमत्ता स्तर पुन्हा उभारते. प्रत्येक महानगरपालिकेसाठी नोंदवलेली संदर्भ आकडेवारी ही त्या महानगरपालिकेच्या स्वतःच्या स्रोतांतून प्रकाशित झालेली आकडेवारी आहे; त्यावर तयार होणारे कामकाजविषयक आकडे मात्र प्रतिरूपित प्रात्यक्षिक माहिती आहेत. यापैकी काहीही प्रत्यक्ष तैनातीसाठी उपलब्ध करून देण्यासाठी त्याचा स्वतंत्र संस्थात्मक कारभार, माहिती-सामायिकीकरण करार आणि सुरक्षा पुनरावलोकन अतिरिक्तपणे आवश्यक ठरेल; ते अस्तित्वात असल्याचे येथे कोठेही सूचित होत नाही.',
   '- the share of checkpointed runs an officer approved as recommended, rather than modified or rejected.':
     '- तपासणी-बिंदू असलेल्या फेऱ्यांपैकी अधिकाऱ्याने सुधारित किंवा नामंजूर न करता शिफारशीप्रमाणेच मंजूर केलेल्यांचे प्रमाण.',
-  '- the ward&apos;s susceptibility to access disruption during flooding - and are not a prediction of when or whether any specific facility will become inaccessible.':
+  "- the ward's susceptibility to access disruption during flooding - and are not a prediction of when or whether any specific facility will become inaccessible.":
     '- पुरादरम्यान प्रवेश खंडित होण्याबाबतची प्रभागाची संवेदनशीलता - आणि कोणतीही विशिष्ट सुविधा केव्हा किंवा मुळात दुर्गम होईल का याचा हा अंदाज नाही.',
   '— the mean of': '— याची सरासरी',
-  '— watch it refuse at the gateway': '— प्रवेशद्वारावर तो कसा नकार देतो ते पहा',
-  ', and reports what happened — including when what happened is a failure. A check that cannot be run on your role reports &quot;not applicable&quot; and says why; it never reports a pass it did not earn.':
-    ', आणि काय घडले ते नोंदवते — घडलेले अपयश असले तरीही. तुमच्या भूमिकेवर चालवता न येणारी तपासणी &quot;लागू नाही&quot; असे नोंदवते आणि त्याचे कारण सांगते; न मिळवलेले उत्तीर्णत्व ती कधीही नोंदवत नाही.',
+  ', and reports what happened — including when what happened is a failure. A check that cannot be run on your role reports "not applicable" and says why; it never reports a pass it did not earn.':
+    ', आणि काय घडले ते नोंदवते — घडलेले अपयश असले तरीही. तुमच्या भूमिकेवर चालवता न येणारी तपासणी "लागू नाही" असे नोंदवते आणि त्याचे कारण सांगते; न मिळवलेले उत्तीर्णत्व ती कधीही नोंदवत नाही.',
   ', which blocks gravity discharge. Pumped discharge is the only mechanism available at affected outfalls during this window.':
     ', ज्यामुळे गुरुत्वाकर्षणाने होणारा निचरा अडतो. या कालावधीत बाधित निःसारण मुखांवर पंपाद्वारे निचरा हाच एकमेव उपलब्ध मार्ग असतो.',
   '. At the current pace, the department is at risk of failing to deliver its sanctioned programme within the financial year without re-phasing or accelerated execution.':
@@ -433,10 +428,10 @@ export const MR_PART_08: Record<string, string> = {
   '{0}: {1} (threshold {2})': '{0}: {1} (मर्यादा {2})',
   '{0}% utilisation · {1}% compliance · {2}': '{0}% वापर · {1}% अनुपालन · {2}',
   '{0}d / {1}d': '{0} दि / {1} दि',
-  '&apos;s': 'चे',
-  '&quot;': '&quot;',
-  '&quot;Passed&quot; and &quot;Implemented&quot; are deliberately separate. A matter the house has carried and the administration has not yet acted on is the accountability gap that belongs to neither wing alone.':
-    '&quot;संमत&quot; आणि &quot;अंमलात आणले&quot; हे जाणीवपूर्वक वेगळे ठेवले आहेत. सभागृहाने संमत केलेली परंतु प्रशासनाने अद्याप कार्यवाही न केलेली बाब ही उत्तरदायित्वातील अशी तफावत आहे, जी एकट्या कोणत्याही एका बाजूची नाही.',
+  "'s": 'चे',
+  '"': '"',
+  '"Passed" and "Implemented" are deliberately separate. A matter the house has carried and the administration has not yet acted on is the accountability gap that belongs to neither wing alone.':
+    '"संमत" आणि "अंमलात आणले" हे जाणीवपूर्वक वेगळे ठेवले आहेत. सभागृहाने संमत केलेली परंतु प्रशासनाने अद्याप कार्यवाही न केलेली बाब ही उत्तरदायित्वातील अशी तफावत आहे, जी एकट्या कोणत्याही एका बाजूची नाही.',
   '% and an SLA compliance threshold below': '% आणि याखालील सेवा-हमी अनुपालन मर्यादा',
   '% completion': '% पूर्तता',
   '% compliant': '% अनुपालनात',

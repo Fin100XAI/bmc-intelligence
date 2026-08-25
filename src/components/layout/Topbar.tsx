@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import {
   Bell,
   ChevronDown,
@@ -18,6 +18,7 @@ import { describeScope } from '@/security/access'
 import { WARDS, wardName } from '@/data/reference'
 import { useAuthStore, useCurrentUser } from '@/stores/auth.store'
 import { useCommandStore, useContextStore, useLayoutStore } from '@/stores/ui.store'
+import { useBreadcrumbStore } from '@/stores/breadcrumb.store'
 import { formatDateTime, formatRelative } from '@/utils/format'
 import { DEMO_NOW } from '@/utils/deterministic'
 import { cn } from '@/utils/cn'
@@ -28,7 +29,6 @@ import { useActiveCorporation } from '@/stores/corporation.store'
 import { cityName } from '@/config/corporations'
 import { LanguageSwitcher } from './LanguageSwitcher'
 import { FontSizeControl } from './FontSizeControl'
-import { ContrastToggle } from './ContrastToggle'
 import { t } from '@/i18n'
 
 export interface TopbarStatus {
@@ -116,7 +116,6 @@ function LiveClock({
 export function Topbar({ status }: { status: TopbarStatus }): React.JSX.Element {
   const corporation = useActiveCorporation()
   const user = useCurrentUser()
-  const navigate = useNavigate()
   const signOut = useAuthStore((s) => s.signOut)
   const setSidebarOpen = useLayoutStore((s) => s.setSidebarOpen)
   const setPaletteOpen = useCommandStore((s) => s.setPaletteOpen)
@@ -244,9 +243,6 @@ export function Topbar({ status }: { status: TopbarStatus }): React.JSX.Element 
         </Link>
       </Tooltip>
 
-      {/* Contrast --------------------------------------------------------- */}
-      <ContrastToggle />
-
       {/* Text size ------------------------------------------------------ */}
       <FontSizeControl />
 
@@ -346,9 +342,23 @@ export function Topbar({ status }: { status: TopbarStatus }): React.JSX.Element 
                 className="justify-start text-crit-600 hover:bg-crit-50"
                 icon={<LogOut className="h-3.5 w-3.5" />}
                 onClick={() => {
+                  // A hard navigation, not `useNavigate()`: clearing the
+                  // session and routing away in the same tick races
+                  // `RequireAuth`, which re-renders the instant the session
+                  // goes and - being still mounted on this guarded route -
+                  // fires its own `<Navigate to="/login">` after this handler
+                  // returns, overriding the client-side navigation requested
+                  // here no matter which of the two calls comes first or how
+                  // long the other is deferred. A full page load bypasses
+                  // that race entirely: the guard runs once, against
+                  // `/portal` and a session already cleared in storage,
+                  // reaching the exact same result the two of them were
+                  // fighting over - and as a side effect resets every other
+                  // piece of in-memory state (React Query cache, session
+                  // store) that ending a session should reset anyway.
                   setProfileOpen(false)
                   signOut()
-                  navigate(ROUTES.login)
+                  window.location.assign(ROUTES.portal)
                 }}
               >
                 {t('Sign out')}
@@ -371,6 +381,7 @@ export function ContextBar({ children, className }: { children?: React.ReactNode
   const user = useCurrentUser()
   const wardId = useContextStore((s) => s.wardId)
   const role = user ? getRole(user.roleId) : null
+  const trail = useBreadcrumbStore((s) => s.trail)
 
   return (
     <div
@@ -390,6 +401,30 @@ export function ContextBar({ children, className }: { children?: React.ReactNode
         {t('BMC Intelligence')}
       </Badge>
       <span className="hidden shrink-0 text-[0.625rem] text-ink-400 lg:inline">{cityName(corporation)}</span>
+      {/* The page's own trail (section, screen) - reported by `PageHeader` via
+          `useBreadcrumbStore` rather than drawn a second time on the page
+          itself, so the platform states its location once, the way the
+          reference intelligence platforms in this programme do it. */}
+      {trail.map((crumb, i) => {
+        const isLast = i === trail.length - 1
+        const badge = (
+          <Badge tone={isLast ? 'warn' : 'muted'} size="sm">
+            {crumb.label}
+          </Badge>
+        )
+        return (
+          <span key={`${crumb.label}-${i}`} className="inline-flex shrink-0 items-center gap-2">
+            <span className="text-ink-300">›</span>
+            {crumb.to ? (
+              <Link to={crumb.to} className="transition-opacity hover:opacity-80">
+                {badge}
+              </Link>
+            ) : (
+              badge
+            )}
+          </span>
+        )
+      })}
       {wardId ? (
         <>
           <span className="shrink-0 text-ink-300">›</span>

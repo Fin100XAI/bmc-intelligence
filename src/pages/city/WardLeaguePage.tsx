@@ -497,7 +497,7 @@ export function WardLeaguePage(): React.JSX.Element {
               <div className="min-w-0">
                 <p className="text-[0.8125rem] font-semibold text-govt-800">{t('Read the spread, not the leader')}</p>
                 <p className="mt-1 text-xs leading-relaxed text-ink-600">
-                  {t('The finding on this page is not any single ward&apos;s score. It is the distance between the best ward and the worst. A city where the best ward scores 82 and the worst 41 is not one city being served - it is two, and no city-wide average will show that. Every figure here is the figure Ward Intelligence reports for the same ward: this page orders and compares them, and computes nothing of its own beyond the median and the spread.')}
+                  {t("The finding on this page is not any single ward's score. It is the distance between the best ward and the worst. A city where the best ward scores 82 and the worst 41 is not one city being served - it is two, and no city-wide average will show that. Every figure here is the figure Ward Intelligence reports for the same ward: this page orders and compares them, and computes nothing of its own beyond the median and the spread.")}
                 </p>
               </div>
             </Card>

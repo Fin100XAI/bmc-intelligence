@@ -329,7 +329,7 @@ export function StreetLightingPage(): React.JSX.Element {
                 {t('Indicative saving from completing conversion: ₹{0} Cr a year', indicativeAnnualSaving)}
               </p>
               <p className="mt-1 text-[0.625rem] leading-relaxed text-ink-500">
-                {t('Counts the energy difference only, at roughly a third of the draw of the fitting replaced. Nothing is claimed here for lamp life, maintenance or failure rates - all real, none quantifiable without the corporation&apos;s own contract terms.')}
+                {t("Counts the energy difference only, at roughly a third of the draw of the fitting replaced. Nothing is claimed here for lamp life, maintenance or failure rates - all real, none quantifiable without the corporation's own contract terms.")}
               </p>
             </div>
           </Card>

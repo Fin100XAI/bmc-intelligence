@@ -296,7 +296,7 @@ export function TrustCentrePage(): React.JSX.Element {
         <>
           <Card tone="info">
             <p className="text-[0.8125rem] leading-relaxed text-ink-800">
-              {t('This platform is built on the premise that a Municipal Commissioner cannot act on intelligence they cannot interrogate. Every figure presented anywhere in this application is scoped by the permission engine, traceable through its evidence and lineage, and recorded to an audit trail the instant it is acted on. Nothing here claims a live {0} connection, a government approval, or any security or privacy certification - this Trust Centre exists to show precisely what is and is not true of this environment, in the platform&apos;s own words, not to assert a level of assurance it has not earned.', municipality.shortName)}
+              {t("This platform is built on the premise that a Municipal Commissioner cannot act on intelligence they cannot interrogate. Every figure presented anywhere in this application is scoped by the permission engine, traceable through its evidence and lineage, and recorded to an audit trail the instant it is acted on. Nothing here claims a live {0} connection, a government approval, or any security or privacy certification - this Trust Centre exists to show precisely what is and is not true of this environment, in the platform's own words, not to assert a level of assurance it has not earned.", municipality.shortName)}
             </p>
           </Card>
 
@@ -459,7 +459,7 @@ function VerificationTab({
       <GovPanel title={t('What this actually does')} tone="amber">
         <p className="mb-2 text-xs leading-relaxed text-ink-500">{t('Not a status page. A verification pass.')}</p>
         <p className="text-[0.8125rem] leading-relaxed text-ink-700">
-          {t('Every other page in this Trust Centre')}{' '}<em>describes</em>{' '}{t('a control. This one')}{' '}<em>runs</em>{' '}{t('them. Each check below calls the real permission engine, the real AI gateway and the real service layer, using your own credentials as')}{' '}{actingRole ?? 'the acting principal'}{t(', and reports what happened — including when what happened is a failure. A check that cannot be run on your role reports &quot;not applicable&quot; and says why; it never reports a pass it did not earn.')}
+          {t('Every other page in this Trust Centre')}{' '}<em>describes</em>{' '}{t('a control. This one')}{' '}<em>runs</em>{' '}{t('them. Each check below calls the real permission engine, the real AI gateway and the real service layer, using your own credentials as')}{' '}{actingRole ?? 'the acting principal'}{t(', and reports what happened — including when what happened is a failure. A check that cannot be run on your role reports "not applicable" and says why; it never reports a pass it did not earn.')}
         </p>
         <p className="mt-2 text-[0.8125rem] leading-relaxed text-ink-700">
           {t('This is the platform testing itself, and it should be read as exactly that. It is not an independent assessment, and it produces no certification, accreditation or audit opinion — those require a third party, and this environment has none.')}

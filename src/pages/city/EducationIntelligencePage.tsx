@@ -262,7 +262,7 @@ export function EducationIntelligencePage(): React.JSX.Element {
             <div className="min-w-0">
               <p className="text-[0.8125rem] font-semibold text-govt-800">{t('This page holds schools, never pupils')}</p>
               <p className="mt-1 text-xs leading-relaxed text-ink-600">
-                {t('Attendance and dropout below are school-level rates. No child&apos;s record, name or individual attendance is held anywhere behind this page, and the education service exposes no method that could return one. A corporation&apos;s duty here is to the school estate and the teaching establishment; the child&apos;s record belongs to the school and stays there.')}
+                {t("Attendance and dropout below are school-level rates. No child's record, name or individual attendance is held anywhere behind this page, and the education service exposes no method that could return one. A corporation's duty here is to the school estate and the teaching establishment; the child's record belongs to the school and stays there.")}
               </p>
             </div>
           </Card>

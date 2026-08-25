@@ -5,9 +5,11 @@ import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { projectService, wardService } from '@/services'
-import { useDrawerStore } from '@/stores/ui.store'
+import { FilterBar } from '@/components/filters/FilterBar'
+import { useDrawerStore, useFilterStore, type FilterState } from '@/stores/ui.store'
 import { usePageMasthead } from '@/stores/masthead.store'
 import { ROUTES } from '@/config/navigation'
+import type { DateRangeKey } from '@/types/common'
 import {
   PROJECT_CATEGORY_LABEL,
   PROJECT_STATUS_LABEL,
@@ -16,7 +18,7 @@ import {
   type ProjectStatus,
 } from '@/types/finance'
 import { departmentName, wardName } from '@/data/reference'
-import { isoFromAnchor } from '@/utils/deterministic'
+import { DEMO_NOW, isoFromAnchor } from '@/utils/deterministic'
 import { formatCrore, formatNumber, formatPercent } from '@/utils/format'
 import {
   Badge,
@@ -88,12 +90,47 @@ const RISK_BAND_TONE: Record<RiskBand, 'positive' | 'warn' | 'risk' | 'critical'
 
 const ACTIVE_STATUSES: ProjectStatus[] = ['planned', 'tendered', 'awarded', 'in-progress', 'delayed', 'on-hold']
 
+const DATE_RANGE_HOURS: Record<DateRangeKey, number> = {
+  '24h': 24,
+  '7d': 24 * 7,
+  '30d': 24 * 30,
+  '90d': 24 * 90,
+  fy: 24 * 365,
+}
+
+function withinDateRange(iso: string, range: DateRangeKey): boolean {
+  const ageMs = DEMO_NOW.getTime() - new Date(iso).getTime()
+  return ageMs <= DATE_RANGE_HOURS[range] * 3_600_000
+}
+
+/**
+ * The page already drives ward, department, category and status through its
+ * own selects, scoped server-side via `serviceFilters` below - those stay as
+ * they are. This predicate layers the GLOBAL filter set (shared with every
+ * other module, and with the command bar's ward/department selector) on top,
+ * so a selection made elsewhere in the platform still narrows this page even
+ * though its own controls only surface date and search.
+ */
+function matchesGlobalFilters(project: Project, filters: FilterState): boolean {
+  if (filters.wardIds.length > 0 && !project.wardIds.some((w) => filters.wardIds.includes(w))) return false
+  if (filters.departmentIds.length > 0 && !filters.departmentIds.includes(project.departmentId)) return false
+  if (filters.statuses.length > 0 && !filters.statuses.includes(project.status)) return false
+  if (!withinDateRange(project.updatedAt, filters.dateRange)) return false
+  if (filters.search.trim()) {
+    const q = filters.search.trim().toLowerCase()
+    if (!project.name.toLowerCase().includes(q) && !project.reference.toLowerCase().includes(q) && !project.description.toLowerCase().includes(q))
+      return false
+  }
+  return true
+}
+
 export function ProjectIntelligencePage(): React.JSX.Element {
   // The shell's masthead carries the screen's name; the page states the wording.
   usePageMasthead(t('Project Intelligence'))
 
   const [searchParams] = useSearchParams()
   const openDrawer = useDrawerStore((s) => s.open)
+  const filters = useFilterStore((s) => s.filters)
 
   const [wardFilter, setWardFilter] = useState<string>('all')
   const [departmentFilter, setDepartmentFilter] = useState<string>('all')
@@ -118,9 +155,10 @@ export function ProjectIntelligencePage(): React.JSX.Element {
   const wardsQuery = useServiceQuery(queryKeys.wards(), (u) => wardService.list(u))
 
   const allRows = projectsQuery.data?.items ?? []
+  const globallyFilteredRows = useMemo(() => allRows.filter((p) => matchesGlobalFilters(p, filters)), [allRows, filters])
   const rows = useMemo(
-    () => (riskFilter === 'all' ? allRows : allRows.filter((p) => riskBand(p.riskScore) === riskFilter)),
-    [allRows, riskFilter],
+    () => (riskFilter === 'all' ? globallyFilteredRows : globallyFilteredRows.filter((p) => riskBand(p.riskScore) === riskFilter)),
+    [globallyFilteredRows, riskFilter],
   )
 
   const selectedProject = rows.find((p) => p.id === selectedProjectId) ?? allRows.find((p) => p.id === selectedProjectId) ?? null
@@ -346,8 +384,8 @@ export function ProjectIntelligencePage(): React.JSX.Element {
   return (
     <PageBody>
       <PageHeader
-        eyebrow={t('Governance & Finance')}
-        breadcrumbs={[{ label: t('Governance & Finance') }, { label: t('Project Intelligence') }]}
+        eyebrow={t('Projects, Procurement & Assets')}
+        breadcrumbs={[{ label: t('Projects, Procurement & Assets') }, { label: t('Project Intelligence') }]}
         freshness={FRESHNESS}
         actions={
           <LinkButton to={ROUTES.procurement} variant="outline" icon={<ClipboardCheck className="h-3.5 w-3.5" />}>
@@ -356,6 +394,7 @@ export function ProjectIntelligencePage(): React.JSX.Element {
         }
         controls={
           <>
+            <FilterBar show={['date', 'search']} compact />
             <span className="label-institutional inline-flex items-center gap-1">
               <ListFilter className="h-3 w-3" />{' '}{t('Filters')}
             </span>

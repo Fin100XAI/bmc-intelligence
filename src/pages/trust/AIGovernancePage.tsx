@@ -11,11 +11,13 @@ import { DataTable } from '@/components/ui/DataTable'
 import { DemonstrationNotice, EmptyState, ErrorState, LoadingState } from '@/components/ui/states'
 import { ConfirmDialog, Tabs } from '@/components/ui/overlays'
 import { GovPanel } from '@/components/gov/GovPanel'
+import { FilterBar } from '@/components/filters/FilterBar'
 import { useServiceQuery, useServiceAction } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { aiService } from '@/services'
 import { allowed, HUMAN_CONFIRMATION_REQUIRED } from '@/security'
 import { useCurrentUser } from '@/stores/auth.store'
+import { useFilterStore, type FilterState } from '@/stores/ui.store'
 import { usePageMasthead } from '@/stores/masthead.store'
 import { ROUTES } from '@/config/navigation'
 import { userDisplayName } from '@/auth/demo-users'
@@ -78,10 +80,49 @@ registerLayer(() => {
 const LIKELIHOOD_ORDER: Array<AIRiskEntry['likelihood']> = ['low', 'medium', 'high']
 const IMPACT_ORDER: Array<AIRiskEntry['impact']> = ['high', 'medium', 'low']
 
+/** Per-tab predicates - each tab is a different register with its own real fields. */
+function matchesModelFilters(m: AIModel, filters: FilterState): boolean {
+  if (filters.statuses.length > 0 && !filters.statuses.includes(m.status)) return false
+  if (filters.search.trim()) {
+    const q = filters.search.trim().toLowerCase()
+    if (!m.name.toLowerCase().includes(q) && !m.provider.toLowerCase().includes(q)) return false
+  }
+  return true
+}
+function matchesPromptFilters(p: PromptTemplate, filters: FilterState): boolean {
+  if (filters.statuses.length > 0 && !filters.statuses.includes(p.approvalStatus)) return false
+  if (filters.search.trim() && !p.title.toLowerCase().includes(filters.search.trim().toLowerCase())) return false
+  return true
+}
+function matchesRiskFilters(r: AIRiskEntry, filters: FilterState): boolean {
+  if (filters.statuses.length > 0 && !filters.statuses.includes(r.status)) return false
+  if (filters.search.trim()) {
+    const q = filters.search.trim().toLowerCase()
+    if (!r.description.toLowerCase().includes(q) && !AI_RISK_LABEL[r.category].toLowerCase().includes(q)) return false
+  }
+  return true
+}
+function matchesOversightFilters(o: HumanOversightRecord, filters: FilterState): boolean {
+  if (filters.domains.length > 0 && !filters.domains.includes(o.domain)) return false
+  if (filters.severities.length > 0 && !filters.severities.includes(o.severity)) return false
+  if (filters.search.trim() && !o.recommendationTitle.toLowerCase().includes(filters.search.trim().toLowerCase())) return false
+  return true
+}
+function matchesIncidentFilters(i: AIIncident, filters: FilterState): boolean {
+  if (filters.statuses.length > 0 && !filters.statuses.includes(i.status)) return false
+  if (filters.severities.length > 0 && !filters.severities.includes(i.severity)) return false
+  if (filters.search.trim()) {
+    const q = filters.search.trim().toLowerCase()
+    if (!i.title.toLowerCase().includes(q) && !i.description.toLowerCase().includes(q)) return false
+  }
+  return true
+}
+
 type TabId = 'models' | 'prompts' | 'risk' | 'oversight' | 'incidents'
 
 export function AIGovernancePage(): React.JSX.Element {
   const currentUser = useCurrentUser()
+  const filters = useFilterStore((s) => s.filters)
   const [tab, setTab] = useState<TabId>('risk')
 
   // The shell's masthead carries the screen's name; the page states the wording.
@@ -106,25 +147,25 @@ export function AIGovernancePage(): React.JSX.Element {
   const canReview = allowed(currentUser, 'ai-governance', 'approve', { domain: 'ai-governance' })
 
   const riskMatrix = useMemo(() => {
-    const risks = riskQuery.data ?? []
+    const risks = (riskQuery.data ?? []).filter((r) => matchesRiskFilters(r, filters))
     const cells = new Map<string, AIRiskEntry[]>()
     for (const r of risks) {
       const key = `${r.impact}:${r.likelihood}`
       cells.set(key, [...(cells.get(key) ?? []), r])
     }
     return cells
-  }, [riskQuery.data])
+  }, [riskQuery.data, filters])
 
   if (modelsQuery.isLoading || promptsQuery.isLoading || riskQuery.isLoading) return <LoadingState variant="metrics" />
   if (modelsQuery.error) return <ErrorState detail={modelsQuery.error.message} onRetry={() => modelsQuery.refetch()} />
   if (promptsQuery.error) return <ErrorState detail={promptsQuery.error.message} onRetry={() => promptsQuery.refetch()} />
   if (riskQuery.error) return <ErrorState detail={riskQuery.error.message} onRetry={() => riskQuery.refetch()} />
 
-  const models = modelsQuery.data ?? []
-  const prompts = promptsQuery.data ?? []
-  const risks = riskQuery.data ?? []
+  const models = (modelsQuery.data ?? []).filter((m) => matchesModelFilters(m, filters))
+  const prompts = (promptsQuery.data ?? []).filter((p) => matchesPromptFilters(p, filters))
+  const risks = (riskQuery.data ?? []).filter((r) => matchesRiskFilters(r, filters))
   const oversightSummary = oversightSummaryQuery.data
-  const incidents = incidentsQuery.data ?? []
+  const incidents = (incidentsQuery.data ?? []).filter((i) => matchesIncidentFilters(i, filters))
 
   const activeModels = models.filter((m) => m.status === 'active').length
   const highRiskModels = models.filter((m) => m.riskClass === 'high').length
@@ -137,6 +178,33 @@ export function AIGovernancePage(): React.JSX.Element {
       <PageHeader
         eyebrow={t('Trust Centre - Flagship')}
         breadcrumbs={[{ label: t('Trust Centre'), to: '/trust' }, { label: t('AI Governance') }]}
+        controls={
+          <FilterBar
+            show={
+              tab === 'oversight'
+                ? ['domain', 'severity', 'search']
+                : tab === 'incidents'
+                  ? ['severity', 'status', 'search']
+                  : ['status', 'search']
+            }
+            statusOptions={
+              tab === 'models'
+                ? (['active', 'restricted', 'retired', 'pending-approval'] as AIModel['status'][]).map((s) => ({ value: s, label: s.replace(/-/g, ' ') }))
+                : tab === 'prompts'
+                  ? (['draft', 'under-review', 'approved', 'withdrawn'] as PromptTemplate['approvalStatus'][]).map((s) => ({ value: s, label: s.replace(/-/g, ' ') }))
+                  : tab === 'risk'
+                    ? (['open', 'mitigated', 'accepted', 'monitoring'] as AIRiskEntry['status'][]).map((s) => ({ value: s, label: s }))
+                    : tab === 'incidents'
+                      ? INCIDENT_STAGES.map((s) => ({ value: s, label: INCIDENT_STAGE_LABEL[s] }))
+                      : undefined
+            }
+            domainOptions={
+              tab === 'oversight'
+                ? Array.from(new Set((oversightQuery.data?.items ?? []).map((o) => o.domain)))
+                : undefined
+            }
+          />
+        }
       />
 
       {/* ---------------------------------------------------- Human-in-the-loop */}
@@ -430,7 +498,7 @@ export function AIGovernancePage(): React.JSX.Element {
             ) : (
               <div className="mt-3">
                 <DataTable
-                  rows={oversightQuery.data?.items ?? []}
+                  rows={(oversightQuery.data?.items ?? []).filter((r) => matchesOversightFilters(r, filters))}
                   rowKey={(r: HumanOversightRecord) => r.id}
                   searchable
                   searchPlaceholder="Search recommendations"

@@ -404,7 +404,7 @@ export function WardTrajectoryPage(): React.JSX.Element {
                   />
                 </div>
                 <p className="px-3 pb-4 text-[0.6875rem] leading-relaxed text-ink-500">
-                  {t('Months before the current one are reconstructed from each ward&apos;s published movement against the previous thirty days. They are a modelled history, not a retained record - the figure that is authoritative is the last one.')}
+                  {t("Months before the current one are reconstructed from each ward's published movement against the previous thirty days. They are a modelled history, not a retained record - the figure that is authoritative is the last one.")}
                 </p>
               </GovPanel>
             </div>

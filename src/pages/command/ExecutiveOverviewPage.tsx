@@ -14,7 +14,7 @@ import {
   Sparkles,
   Users,
 } from 'lucide-react'
-import { PageBody } from '@/components/layout/PageHeader'
+import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { Button, ProgressBar, ScoreDial } from '@/components/ui/primitives'
 import { Badge, ConfidenceBadge, SeverityBadge, StateBadge } from '@/components/ui/badges'
 import { DemonstrationNotice, EmptyState, ErrorState, LoadingState } from '@/components/ui/states'
@@ -260,12 +260,14 @@ export function ExecutiveOverviewPage(): React.JSX.Element {
 
   return (
     <PageBody>
+      <PageHeader breadcrumbs={[{ label: t('Command Centre') }, { label: t('Executive Overview') }]} />
+
       {/* ── Status strip ───────────────────────────────────────────────
           The identity band now sits above the top bar, rendered once by the
           shell. What stays on the page is the part that is this page's data
           rather than the corporation's letterhead: the six figures a
           commissioner reads first. */}
-      <div className="flex flex-wrap items-stretch gap-px overflow-hidden rounded-[2px] border border-ink-200 bg-ink-100 shadow-xs">
+      <div className="flex flex-wrap items-stretch gap-px overflow-hidden rounded-lg border border-ink-200 bg-ink-100 shadow-xs">
         <GovStripCell
           label={t('City health index')}
           value={`${cityPosition.healthScore}/100`}
@@ -471,7 +473,7 @@ export function ExecutiveOverviewPage(): React.JSX.Element {
            * becomes scrollable rather than running off the bottom with its
            * lower half unreachable.
            */}
-          <div className="scrollbar-rail flex flex-col gap-3 xl:sticky xl:top-[3.75rem] xl:z-10 xl:max-h-[calc(100vh-4.5rem)] xl:overflow-y-auto">
+          <div className="scrollbar-rail grid grid-cols-1 gap-3 sm:grid-cols-2 xl:sticky xl:top-[3.75rem] xl:z-10 xl:max-h-[calc(100vh-4.5rem)] xl:overflow-y-auto">
           <GovPanel
             title={t('Latest updates')}
             subtitle={t('{0} live', feed.length)}
@@ -537,7 +539,7 @@ export function ExecutiveOverviewPage(): React.JSX.Element {
         </div>
 
         {/* Column 3 — what the administration is carrying ----------- */}
-        <div className="flex flex-col gap-3 xl:col-span-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:col-span-3 xl:grid-cols-1 2xl:grid-cols-2">
           <GovPanel title={t('Revenue & finance')} tone="amber" dense>
             <GovStat
               label={t('Revenue realisation')}
@@ -712,7 +714,7 @@ export function ExecutiveOverviewPage(): React.JSX.Element {
             />
           ) : brief ? (
             <div className="space-y-3">
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-[2px] border border-ink-200 bg-surface-sunken p-2.5">
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-ink-200 bg-surface-sunken p-2.5">
                 <div className="flex flex-wrap items-center gap-1.5 text-[0.6875rem] text-ink-500">
                   <ConfidenceBadge confidence={brief.confidence} />
                   <Badge tone="muted">{brief.scopeLabel}</Badge>
@@ -739,7 +741,7 @@ export function ExecutiveOverviewPage(): React.JSX.Element {
                   than stacked below it. */}
               <div className="grid grid-cols-1 gap-2.5 lg:grid-cols-2">
                 {brief.sections.map((section) => (
-                  <div key={section.id} className="rounded-[2px] border border-ink-200 p-3">
+                  <div key={section.id} className="rounded-lg border border-ink-200 p-3">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div className="flex flex-wrap items-center gap-1.5">
                         <SeverityBadge severity={section.severity} />
@@ -770,7 +772,7 @@ export function ExecutiveOverviewPage(): React.JSX.Element {
               </div>
 
               {brief.limitations.length > 0 ? (
-                <div className="rounded-[2px] border border-warn-200 bg-warn-50/50 p-2.5 text-[0.6875rem] text-warn-700">
+                <div className="rounded-lg border border-warn-200 bg-warn-50/50 p-2.5 text-[0.6875rem] text-warn-700">
                   <p className="mb-1 font-semibold">{t('Risks and limitations')}</p>
                   <ul className="list-disc space-y-0.5 pl-4">
                     {brief.limitations.map((l, i) => (

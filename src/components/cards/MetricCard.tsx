@@ -49,14 +49,16 @@ export interface MetricCardProps {
    */
   tone?: 'default' | 'critical' | 'warn' | 'positive' | 'info'
   /**
-   * Opt-in pale Google wash for the card itself — identity, not a reading.
+   * Opt-in pale wash for the card itself — identity, not a reading.
    * Left unset everywhere by default, on purpose: the ruled-white-cell
    * philosophy above still holds for an ordinary row of figures. A call site
    * only reaches for this when the cards are standing in for `GovStripCell`
    * as a page's own masthead strip and are meant to read as a row of
-   * distinct stat cards rather than a departmental return.
+   * distinct stat cards rather than a departmental return - and, per an
+   * explicit request, for a KPI strip that is meant to read as one card per
+   * distinct measure rather than one uniform ledger.
    */
-  background?: 'red' | 'amber' | 'green'
+  background?: 'red' | 'amber' | 'green' | 'blue' | 'teal' | 'orange' | 'gold' | 'neutral'
   /** Explanation shown behind an info affordance. */
   explanation?: ReactNode
   size?: 'sm' | 'md' | 'lg'
@@ -68,6 +70,11 @@ const BACKGROUND_WASH: Record<NonNullable<MetricCardProps['background']>, string
   red: 'bg-google-red-50',
   amber: 'bg-google-yellow-50',
   green: 'bg-google-green-50',
+  blue: 'bg-google-blue-50',
+  teal: 'bg-intel-50',
+  orange: 'bg-risk-50',
+  gold: 'bg-gold-50',
+  neutral: 'bg-ink-50',
 }
 
 /**
@@ -119,7 +126,7 @@ export function MetricCard({
       <div className="flex items-start justify-between gap-2">
         <div className="flex min-w-0 items-center gap-1.5">
           {icon ? (
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-[2px] border border-ink-200 bg-surface-sunken text-ink-500">
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-ink-200 bg-surface-sunken text-ink-500">
               {icon}
             </span>
           ) : null}
@@ -182,10 +189,10 @@ export function MetricCard({
   )
 
   const shell = cn(
-    // Two pixels of radius, not none: a true right angle reads as an unstyled
-    // box on screen, while a hairline with a two-pixel corner reads as a
-    // printed rule. The same corner every panel on the platform now carries.
-    'group relative block overflow-hidden rounded-[2px] border border-ink-200 p-3 shadow-xs',
+    // A soft corner, not a right angle: a true right angle reads as an
+    // unstyled box on screen. The same corner every panel on the platform
+    // now carries.
+    'group relative block overflow-hidden rounded-lg border border-ink-200 p-3 shadow-xs',
     background ? BACKGROUND_WASH[background] : 'bg-surface',
     interactive && 'cursor-pointer transition-colors hover:border-govt-300 hover:bg-govt-50/50',
     className,
@@ -234,7 +241,7 @@ export function MetricPill({
     <Wrapper
       {...(onClick ? { type: 'button' as const, onClick } : {})}
       className={cn(
-        'flex flex-col rounded-[2px] px-2.5 py-1.5 text-left',
+        'flex flex-col rounded-lg px-2.5 py-1.5 text-left',
         tones[tone],
         onClick && 'cursor-pointer transition-opacity hover:opacity-85',
         className,

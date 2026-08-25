@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react'
 import { RotateCcw } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
+import { FilterBar } from '@/components/filters/FilterBar'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { monsoonService, roadsService, wardService } from '@/services'
 import { usePageMasthead } from '@/stores/masthead.store'
-import { useContextStore } from '@/stores/ui.store'
+import { useFilterStore } from '@/stores/ui.store'
 import {
   DEFAULT_PLANNING_SCENARIO,
   PLANNING_SCENARIO_PRESETS,
@@ -138,20 +139,23 @@ export function UrbanPlanningPage(): React.JSX.Element {
   const readinessQuery = useServiceQuery(queryKeys.monsoon('readiness-planning'), (u) => monsoonService.readiness(u))
 
   /**
-   * The ward selected in the command bar governs this page.
+   * The global ward filter governs this page.
    *
    * The scenario engine is corporation-wide by construction - it walks every
    * planning indicator - so nothing it returns is narrowed on its own. The
    * page read the shared selection nowhere at all, which left the register,
    * the rankings, the map and the city position identical for all wards while
-   * the command bar said otherwise.
+   * the filter bar said otherwise.
    *
    * Scope is taken from `wardService.list`, which is already filtered through
    * the tenant and ward-scope helpers, so a ward the principal may not read is
    * absent from `wards` and therefore absent from every figure below - the
-   * shared selection can narrow the page but never widen it.
+   * shared selection can narrow the page but never widen it. Reading the full
+   * `wardIds` array (rather than the single-ward command-bar selection) means
+   * a multi-ward selection in the filter bar narrows this page too, not only
+   * a single-ward one.
    */
-  const contextWardId = useContextStore((s) => s.wardId)
+  const filters = useFilterStore((s) => s.filters)
 
   const [selectedWardId, setSelectedWardId] = useState<string | null>(null)
   const [scenarioInputs, setScenarioInputs] = useState<PlanningScenarioInput>(DEFAULT_PLANNING_SCENARIO)
@@ -163,8 +167,8 @@ export function UrbanPlanningPage(): React.JSX.Element {
 
   const authorisedWards = wardsQuery.data ?? []
   const wards = useMemo(
-    () => (contextWardId ? authorisedWards.filter((w) => w.id === contextWardId) : authorisedWards),
-    [authorisedWards, contextWardId],
+    () => (filters.wardIds.length > 0 ? authorisedWards.filter((w) => filters.wardIds.includes(w.id)) : authorisedWards),
+    [authorisedWards, filters.wardIds],
   )
   const wardIdsInScope = useMemo(() => new Set(wards.map((w) => w.id)), [wards])
   const readinessByWard = useMemo(() => new Map((readinessQuery.data ?? []).map((r) => [r.wardId, r])), [readinessQuery.data])
@@ -202,6 +206,16 @@ export function UrbanPlanningPage(): React.JSX.Element {
       }),
     [scopedWardRows, extrasByWard],
   )
+
+  // The global search filter narrows the ward planning table only - the
+  // position, map and rankings beside it stay at full ward scope (as
+  // narrowed by the ward filter above), same as the table's own built-in
+  // search never narrowed them either.
+  const searchedRows = useMemo(() => {
+    const q = filters.search.trim().toLowerCase()
+    if (!q) return rows
+    return rows.filter((r) => r.label.toLowerCase().includes(q))
+  }, [rows, filters.search])
 
   /**
    * The city position summarises the wards in view. At full scope this is the
@@ -296,7 +310,7 @@ export function UrbanPlanningPage(): React.JSX.Element {
       id: 'pressure',
       header: (
         <span className="inline-flex items-center gap-1">
-          {t('Growth &amp; space pressure')}
+          {t('Growth & space pressure')}
           <InfoHint>
             {t('Composite proxy (0–100, higher = more pressure) from population density against the design assumption, flood exposure and chronic waterlogging locations. Not a survey-grade open-space inventory - that dataset is not yet integrated into this service layer.')}
           </InfoHint>
@@ -336,6 +350,7 @@ export function UrbanPlanningPage(): React.JSX.Element {
         breadcrumbs={[{ label: t('Strategic Urban Intelligence') }, { label: t('Urban Planning') }]}
         freshness={FRESHNESS}
         actions={isScenario ? <SimulationBadge /> : undefined}
+        controls={<FilterBar show={['ward', 'search']} />}
       />
 
       {anyLoading ? <LoadingState variant="metrics" /> : null}
@@ -382,7 +397,7 @@ export function UrbanPlanningPage(): React.JSX.Element {
               <GovPanel title={t('Ward planning table')} tone="red" dense>
                 <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">{t('Sortable and searchable. Selecting a row highlights the ward on the map.')}</p>
                 <DataTable
-                  rows={rows}
+                  rows={searchedRows}
                   columns={columns}
                   rowKey={(row) => row.wardId}
                   pageSize={9}

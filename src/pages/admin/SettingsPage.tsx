@@ -645,7 +645,7 @@ export function SettingsPage(): React.JSX.Element {
 
             <Card tone="info">
               <p className="text-[0.8125rem] leading-relaxed text-ink-700">
-                {t('These are personal interface preferences, not deployment configuration. They are held in this browser and never leave it — there is no preferences service and nothing is written to any operator&apos;s record. No preference in this half of the page can change a figure, widen a permission or alter who the platform holds accountable for an item; a setting that could do any of those belongs to the deployment, under change control, and is shown further down under')}{' '}
+                {t("These are personal interface preferences, not deployment configuration. They are held in this browser and never leave it — there is no preferences service and nothing is written to any operator's record. No preference in this half of the page can change a figure, widen a permission or alter who the platform holds accountable for an item; a setting that could do any of those belongs to the deployment, under change control, and is shown further down under")}{' '}
                 <a href="#profile" className="font-medium text-govt-700 underline-offset-2 hover:underline">
                   {t('Deployment profile')}
                 </a>
@@ -1095,7 +1095,7 @@ export function SettingsPage(): React.JSX.Element {
                 {t('How this deployment keeps one municipal body\'s data separate from every other.')}
               </p>
               <p className="mt-3 text-[0.8125rem] leading-relaxed text-ink-700">
-                {t('Every record produced anywhere in the platform - every ward, department, intelligence item, decision case, evidence record and audit event - carries a')}{' '}<span className="font-mono">tenantId</span>{' '}{t('field set to')}{' '}<span className="font-mono">{municipality.tenantId}</span>{' '}{t('for this deployment. Every service method in the data-access layer accepts the acting principal first and filters its source collection to that principal&apos;s own tenant before any further permission or scope check is applied. In this single-tenant demonstration build the filter is a deliberate no-op - there is only one tenant to filter to - but the enforcement point exists exactly where it would sit in a genuine multi-tenant deployment, so a second municipal body&apos;s data would be excluded at the same choke point, not left to individual screens to remember.')}
+                {t('Every record produced anywhere in the platform - every ward, department, intelligence item, decision case, evidence record and audit event - carries a')}{' '}<span className="font-mono">tenantId</span>{' '}{t('field set to')}{' '}<span className="font-mono">{municipality.tenantId}</span>{' '}{t("for this deployment. Every service method in the data-access layer accepts the acting principal first and filters its source collection to that principal's own tenant before any further permission or scope check is applied. In this single-tenant demonstration build the filter is a deliberate no-op - there is only one tenant to filter to - but the enforcement point exists exactly where it would sit in a genuine multi-tenant deployment, so a second municipal body's data would be excluded at the same choke point, not left to individual screens to remember.")}
               </p>
             </GovPanel>
 

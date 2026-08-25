@@ -17,12 +17,14 @@ import { ConfirmDialog, Modal } from '@/components/ui/overlays'
 import { DemonstrationNotice, EmptyState, ErrorState, LoadingState } from '@/components/ui/states'
 import { MetricCard } from '@/components/cards/MetricCard'
 import { GovPanel, panelToneForIndex } from '@/components/gov/GovPanel'
+import { FilterBar } from '@/components/filters/FilterBar'
 import { useActivityLog, useServiceAction, useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { decisionService, healthService, incidentService, intelligenceService, projectService, revenueService } from '@/services'
 import { buildCityPosition, buildCrossDomainInsights, type CrossDomainInsight } from '@/domains'
 import { CockpitBriefing } from '@/components/onboarding/CockpitBriefing'
-import { useDrawerStore } from '@/stores/ui.store'
+import { useDrawerStore, useFilterStore } from '@/stores/ui.store'
+import type { FilterState } from '@/stores/ui.store'
 import { useActiveCorporation } from '@/stores/corporation.store'
 import { cityName } from '@/config/corporations'
 import { useCurrentUser } from '@/stores/auth.store'
@@ -33,8 +35,8 @@ import { ROUTES } from '@/config/navigation'
 import { departmentName, officerDesignation, officerDisplayName, wardName } from '@/data/reference'
 import { DEMO_NOW } from '@/utils/deterministic'
 import { formatCompact, formatCrore, formatDateTime, formatPercent, formatRelative, sanitiseText } from '@/utils/format'
-import { DOMAIN_LABEL, SEVERITY_ORDER } from '@/types/common'
-import { INTELLIGENCE_STATUS_LABEL, type IntelligenceItem } from '@/types/intelligence'
+import { DOMAIN_LABEL, SEVERITY_ORDER, type DateRangeKey, type IntelligenceDomain } from '@/types/common'
+import { INTELLIGENCE_STATUS_LABEL, type IntelligenceItem, type IntelligenceStatus } from '@/types/intelligence'
 import { t } from '@/i18n'
 
 /**
@@ -45,6 +47,33 @@ import { t } from '@/i18n'
  * actually get worked. Every action taken here is written to the audit trail
  * and to the visible session log below.
  */
+
+const DATE_RANGE_HOURS: Record<DateRangeKey, number> = {
+  '24h': 24,
+  '7d': 24 * 7,
+  '30d': 24 * 30,
+  '90d': 24 * 90,
+  fy: 24 * 365,
+}
+
+function withinDateRange(iso: string, range: DateRangeKey): boolean {
+  const ageMs = DEMO_NOW.getTime() - new Date(iso).getTime()
+  return ageMs <= DATE_RANGE_HOURS[range] * 3_600_000
+}
+
+function matchesGlobalFilters(item: IntelligenceItem, filters: FilterState): boolean {
+  if (filters.wardIds.length > 0 && !item.wardIds.some((w) => filters.wardIds.includes(w))) return false
+  if (filters.departmentIds.length > 0 && !filters.departmentIds.includes(item.departmentId)) return false
+  if (filters.domains.length > 0 && !filters.domains.includes(item.domain)) return false
+  if (filters.severities.length > 0 && !filters.severities.includes(item.severity)) return false
+  if (filters.statuses.length > 0 && !filters.statuses.includes(item.status)) return false
+  if (!withinDateRange(item.createdAt, filters.dateRange)) return false
+  if (filters.search.trim()) {
+    const q = filters.search.trim().toLowerCase()
+    if (!item.title.toLowerCase().includes(q) && !item.description.toLowerCase().includes(q)) return false
+  }
+  return true
+}
 
 interface ItemState {
   approved?: boolean
@@ -105,6 +134,7 @@ export function CommissionerCockpitPage(): React.JSX.Element {
   const user = useCurrentUser()
   const corporation = useActiveCorporation()
   const openDrawer = useDrawerStore((s) => s.open)
+  const filters = useFilterStore((s) => s.filters)
   const activity = useActivityLog(user?.name ?? 'Municipal Commissioner')
   const briefingDismissed = useIsFlowDismissed('cockpit-briefing')
   const dismissFlow = useOnboardingStore((s) => s.dismiss)
@@ -158,12 +188,30 @@ export function CommissionerCockpitPage(): React.JSX.Element {
 
   const queue = useMemo(() => {
     const items = priorityQuery.data?.items ?? []
-    return [...items].sort((a, b) => {
-      const sev = SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity]
-      if (sev !== 0) return sev
-      return a.createdAt < b.createdAt ? 1 : -1
-    })
-  }, [priorityQuery.data])
+    return items
+      .filter((i) => matchesGlobalFilters(i, filters))
+      .sort((a, b) => {
+        const sev = SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity]
+        if (sev !== 0) return sev
+        return a.createdAt < b.createdAt ? 1 : -1
+      })
+  }, [priorityQuery.data, filters])
+
+  const domainOptions = useMemo<IntelligenceDomain[]>(
+    () =>
+      Array.from(new Set((priorityQuery.data?.items ?? []).map((i) => i.domain))).sort((a, b) =>
+        DOMAIN_LABEL[a].localeCompare(DOMAIN_LABEL[b]),
+      ),
+    [priorityQuery.data],
+  )
+  const statusOptions = useMemo(
+    () =>
+      Array.from(new Set((priorityQuery.data?.items ?? []).map((i) => i.status))).map((s: IntelligenceStatus) => ({
+        value: s,
+        label: INTELLIGENCE_STATUS_LABEL[s],
+      })),
+    [priorityQuery.data],
+  )
 
   const decisionById = useMemo(() => new Map((decisionsQuery.data?.items ?? []).map((d) => [d.id, d])), [decisionsQuery.data])
   // The selected item drives the detail pop-up; nothing is open until a row is
@@ -286,6 +334,13 @@ export function CommissionerCockpitPage(): React.JSX.Element {
             </Button>
           ) : undefined
         }
+        controls={
+          <FilterBar
+            show={['date', 'ward', 'department', 'domain', 'severity', 'status', 'search']}
+            statusOptions={statusOptions}
+            domainOptions={domainOptions}
+          />
+        }
       />
 
       <MetricGrid columns={4}>
@@ -334,7 +389,7 @@ export function CommissionerCockpitPage(): React.JSX.Element {
               key={insight.id}
               type="button"
               onClick={() => setOpenInsight(insight)}
-              className="w-80 shrink-0 rounded-[2px] border border-ink-200 bg-surface p-3 text-left shadow-xs transition-colors hover:bg-govt-50/50"
+              className="w-80 shrink-0 rounded-lg border border-ink-200 bg-surface p-3 text-left shadow-xs transition-colors hover:bg-govt-50/50"
             >
               <div className="flex items-center gap-1.5">
                 <SeverityBadge severity={insight.severity} />
@@ -553,7 +608,7 @@ export function CommissionerCockpitPage(): React.JSX.Element {
 
             <p className="text-xs leading-relaxed text-ink-600">{selectedItem.explanation}</p>
 
-            <dl className="grid grid-cols-1 gap-1.5 rounded-[2px] bg-surface-sunken p-3 text-xs sm:grid-cols-2">
+            <dl className="grid grid-cols-1 gap-1.5 rounded-lg bg-surface-sunken p-3 text-xs sm:grid-cols-2">
               <div className="flex justify-between gap-2 sm:flex-col sm:justify-start sm:gap-0.5"><dt className="text-ink-400">{t('Wards')}</dt><dd className="text-right text-ink-700 sm:text-left">{selectedItem.wardIds.map((w) => wardName(w)).join(', ') || 'City-wide'}</dd></div>
               <div className="flex justify-between gap-2 sm:flex-col sm:justify-start sm:gap-0.5"><dt className="text-ink-400">{t('Department')}</dt><dd className="text-right text-ink-700 sm:text-left">{departmentName(selectedItem.departmentId)}</dd></div>
               <div className="flex justify-between gap-2 sm:flex-col sm:justify-start sm:gap-0.5"><dt className="text-ink-400">{t('Responsible officer')}</dt><dd className="text-right text-ink-700 sm:text-left">{officerDisplayName(selectedItem.ownerId)}</dd></div>

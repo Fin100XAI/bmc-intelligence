@@ -5,11 +5,14 @@ import { Badge, ClassificationBadge } from '@/components/ui/badges'
 import { DefinitionList, DefinitionRow, Input } from '@/components/ui/primitives'
 import { DemonstrationNotice, EmptyState, ErrorState, LoadingState, PartialDataWarning } from '@/components/ui/states'
 import { GovPanel } from '@/components/gov/GovPanel'
+import { FilterBar } from '@/components/filters/FilterBar'
 import { useServiceQuery } from '@/hooks'
 import { useDebounced } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { infrastructureGraphService, type ScopedInfrastructureChain } from '@/services'
+import { useFilterStore } from '@/stores/ui.store'
 import { usePageMasthead } from '@/stores/masthead.store'
+import { DOMAIN_LABEL, type IntelligenceDomain } from '@/types/common'
 import { GRAPH_ENTITY_LABEL, type GraphEntityKind } from '@/types/governance'
 import { cn } from '@/utils/cn'
 import { isoFromAnchor } from '@/utils/deterministic'
@@ -75,12 +78,18 @@ export function InfrastructureGraphPage(): React.JSX.Element {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [searchInput, setSearchInput] = useState('')
   const debouncedSearch = useDebounced(searchInput, 200)
+  const filters = useFilterStore((s) => s.filters)
 
   const anchorsQuery = useServiceQuery(queryKeys.infraGraph('anchors'), (u) =>
     infrastructureGraphService.anchors(u),
   )
 
   const anchors = useMemo(() => anchorsQuery.data ?? [], [anchorsQuery.data])
+
+  const domainOptions = useMemo<IntelligenceDomain[]>(
+    () => Array.from(new Set(anchors.map((a) => a.node.domain))).sort((a, b) => DOMAIN_LABEL[a].localeCompare(DOMAIN_LABEL[b])),
+    [anchors],
+  )
 
   const effectiveId = selectedId ?? anchors[0]?.node.id ?? null
 
@@ -90,13 +99,18 @@ export function InfrastructureGraphPage(): React.JSX.Element {
     { enabled: Boolean(effectiveId) },
   )
 
+  // The global filter bar contributes domain and severity here; search is
+  // deliberately left to the page's own dedicated search box below, rather
+  // than duplicated as a second field doing the same job.
   const filteredAnchors = useMemo(() => {
     const q = debouncedSearch.trim().toLowerCase()
-    if (!q) return anchors
-    return anchors.filter(
-      (a) => a.node.label.toLowerCase().includes(q) || a.node.subtitle.toLowerCase().includes(q),
-    )
-  }, [anchors, debouncedSearch])
+    return anchors.filter((a) => {
+      if (filters.domains.length > 0 && !filters.domains.includes(a.node.domain)) return false
+      if (filters.severities.length > 0 && (!a.node.severity || !filters.severities.includes(a.node.severity))) return false
+      if (!q) return true
+      return a.node.label.toLowerCase().includes(q) || a.node.subtitle.toLowerCase().includes(q)
+    })
+  }, [anchors, debouncedSearch, filters.domains, filters.severities])
 
   if (anchorsQuery.isLoading) return <LoadingState variant="block" rows={6} />
   if (anchorsQuery.error) return <ErrorState detail={anchorsQuery.error.message} onRetry={() => anchorsQuery.refetch()} />
@@ -119,6 +133,7 @@ export function InfrastructureGraphPage(): React.JSX.Element {
         eyebrow={t('Strategic Intelligence')}
         breadcrumbs={[{ label: t('Strategic Intelligence') }, { label: t('City Infrastructure Graph') }]}
         freshness={FRESHNESS}
+        controls={<FilterBar show={['domain', 'severity']} domainOptions={domainOptions} />}
       />
 
       {/* ── Two columns ─────────────────────────────────────────────
@@ -143,7 +158,7 @@ export function InfrastructureGraphPage(): React.JSX.Element {
                   ) : null}
                   <span
                     className={cn(
-                      'rounded-[2px] px-2.5 py-1.5 text-xs font-medium whitespace-nowrap',
+                      'rounded-lg px-2.5 py-1.5 text-xs font-medium whitespace-nowrap',
                       KIND_TONE[step.kind] ?? 'bg-surface-sunken text-ink-700',
                     )}
                   >
@@ -191,7 +206,7 @@ export function InfrastructureGraphPage(): React.JSX.Element {
                 ) : null}
 
                 {/* Anchor -------------------------------------------- */}
-                <div className="rounded-[2px] border-2 border-govt-200 bg-govt-50/50 p-3">
+                <div className="rounded-lg border-2 border-govt-200 bg-govt-50/50 p-3">
                   <div className="flex items-center justify-between gap-2">
                     <span className={cn('rounded px-1.5 py-0.5 text-[0.625rem] font-semibold', KIND_TONE[chain.anchor.kind] ?? 'bg-ink-100 text-ink-700')}>
                       {GRAPH_ENTITY_LABEL[chain.anchor.kind]}
@@ -214,7 +229,7 @@ export function InfrastructureGraphPage(): React.JSX.Element {
                         {nodes.map((n) => (
                           <li
                             key={n.node.id}
-                            className="rounded-[2px] border border-ink-100 bg-surface p-2.5"
+                            className="rounded-lg border border-ink-100 bg-surface p-2.5"
                           >
                             <div className="flex items-center justify-between gap-2">
                               <span className={cn('rounded px-1.5 py-0.5 text-[0.625rem] font-semibold', KIND_TONE[n.node.kind] ?? 'bg-ink-100 text-ink-700')}>
@@ -277,7 +292,7 @@ export function InfrastructureGraphPage(): React.JSX.Element {
                         type="button"
                         onClick={() => setSelectedId(a.node.id)}
                         className={cn(
-                          'w-full rounded-[2px] px-2.5 py-2 text-left transition-colors hover:bg-ink-50/70',
+                          'w-full rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-ink-50/70',
                           effectiveId === a.node.id && 'bg-govt-50/70',
                         )}
                       >

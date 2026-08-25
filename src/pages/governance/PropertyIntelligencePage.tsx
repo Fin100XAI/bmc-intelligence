@@ -4,7 +4,8 @@ import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { revenueService } from '@/services'
-import { useContextStore, useDrawerStore } from '@/stores/ui.store'
+import { FilterBar } from '@/components/filters/FilterBar'
+import { useContextStore, useDrawerStore, useFilterStore, type FilterState } from '@/stores/ui.store'
 import { usePageMasthead } from '@/stores/masthead.store'
 import { activeCorporation } from '@/config/municipality.config'
 import { ROUTES } from '@/config/navigation'
@@ -127,11 +128,27 @@ function aggregateByWard(rows: PropertySegment[]): WardAggregate[] {
   })
 }
 
+/**
+ * `PropertySegment` carries only a ward dimension - no department, status,
+ * severity or date field exists on the assessment-base record - so the
+ * global filter bar contributes ward selection and free-text search (matched
+ * against the ward's name) on top of the page's own segment toggle.
+ */
+function matchesGlobalFilters(segment: PropertySegment, filters: FilterState): boolean {
+  if (filters.wardIds.length > 0 && !filters.wardIds.includes(segment.wardId)) return false
+  if (filters.search.trim()) {
+    const q = filters.search.trim().toLowerCase()
+    if (!wardName(segment.wardId).toLowerCase().includes(q)) return false
+  }
+  return true
+}
+
 export function PropertyIntelligencePage(): React.JSX.Element {
   // The shell's masthead carries the screen's name; the page states the wording.
   usePageMasthead(t('Property Intelligence'))
 
   const openDrawer = useDrawerStore((s) => s.open)
+  const filters = useFilterStore((s) => s.filters)
   const [segmentFilter, setSegmentFilter] = useState<'all' | SegmentKey>('all')
 
   /**
@@ -161,10 +178,14 @@ export function PropertyIntelligencePage(): React.JSX.Element {
   )
 
   const allSegments = segmentsQuery.data ?? []
+  const globallyFilteredSegments = useMemo(
+    () => allSegments.filter((s) => matchesGlobalFilters(s, filters)),
+    [allSegments, filters],
+  )
 
   const filteredSegments = useMemo(
-    () => (segmentFilter === 'all' ? allSegments : allSegments.filter((s) => s.segment === segmentFilter)),
-    [allSegments, segmentFilter],
+    () => (segmentFilter === 'all' ? globallyFilteredSegments : globallyFilteredSegments.filter((s) => s.segment === segmentFilter)),
+    [globallyFilteredSegments, segmentFilter],
   )
 
   /**
@@ -197,8 +218,8 @@ export function PropertyIntelligencePage(): React.JSX.Element {
   }, [scopedSegments])
 
   const compositionSource = useMemo(
-    () => (selectedWardId ? allSegments.filter((s) => s.wardId === selectedWardId) : allSegments),
-    [allSegments, selectedWardId],
+    () => (selectedWardId ? globallyFilteredSegments.filter((s) => s.wardId === selectedWardId) : globallyFilteredSegments),
+    [globallyFilteredSegments, selectedWardId],
   )
   const compositionData = useMemo(
     () =>
@@ -305,8 +326,8 @@ export function PropertyIntelligencePage(): React.JSX.Element {
   return (
     <PageBody>
       <PageHeader
-        eyebrow={t('Governance & Finance')}
-        breadcrumbs={[{ label: t('Governance & Finance') }, { label: t('Property Intelligence') }]}
+        eyebrow={t('Revenue & Municipal Finance')}
+        breadcrumbs={[{ label: t('Revenue & Municipal Finance') }, { label: t('Property Intelligence') }]}
         freshness={FRESHNESS}
         actions={
           <LinkButton to={ROUTES.revenue} variant="outline" icon={<Banknote className="h-3.5 w-3.5" />}>
@@ -315,6 +336,7 @@ export function PropertyIntelligencePage(): React.JSX.Element {
         }
         controls={
           <>
+            <FilterBar show={['ward', 'search']} compact />
             <span className="label-institutional">{t('Segment')}</span>
             <div className="scrollbar-slim max-w-full min-w-0 overflow-x-auto">
               <SegmentedControl

@@ -14,6 +14,7 @@ import {
 import { DataTable, type Column } from '@/components/ui/DataTable'
 import { DemonstrationNotice, EmptyState, ErrorState, LoadingState } from '@/components/ui/states'
 import { GovPanel } from '@/components/gov/GovPanel'
+import { FilterBar } from '@/components/filters/FilterBar'
 import { useServiceQuery } from '@/hooks'
 import { authService, wardService } from '@/services'
 import {
@@ -28,6 +29,7 @@ import {
   type ResourceType,
 } from '@/security'
 import type { AccessContext, AccessDecision } from '@/security/model'
+import { useFilterStore } from '@/stores/ui.store'
 import { usePageMasthead } from '@/stores/masthead.store'
 import { CLASSIFICATION_LABEL, DOMAIN_LABEL, type DataClassification, type IntelligenceDomain } from '@/types/common'
 import type { Role } from '@/types/organisation'
@@ -130,6 +132,7 @@ registerLayer(() => {
 })
 
 export function AccessGovernancePage(): React.JSX.Element {
+  const filters = useFilterStore((s) => s.filters)
   const [selectedRoleId, setSelectedRoleId] = useState<string>(ROLES_ORDERED[0]?.id ?? '')
 
   // The shell's masthead carries the screen's name; the page states the wording.
@@ -169,11 +172,17 @@ export function AccessGovernancePage(): React.JSX.Element {
   const decision: AccessDecision = canAccess(activeUser, resource, action, context)
   const selectedRole = ROLES_ORDERED.find((r) => r.id === selectedRoleId) ?? ROLES_ORDERED[0]
 
+  const roleSearchQuery = filters.search.trim().toLowerCase()
+  const filteredRoles = roleSearchQuery
+    ? ROLES_ORDERED.filter((r) => `${r.name} ${r.id} ${r.band}`.toLowerCase().includes(roleSearchQuery))
+    : ROLES_ORDERED
+
   return (
     <PageBody>
       <PageHeader
         eyebrow={t('Trust Centre')}
         breadcrumbs={[{ label: t('Trust Centre'), to: '/trust' }, { label: t('Access Governance') }]}
+        controls={<FilterBar show={['search']} />}
       />
 
       <MetricGrid columns={4}>
@@ -212,7 +221,7 @@ export function AccessGovernancePage(): React.JSX.Element {
           asideWidth="lg"
           main={
             <DataTable
-              rows={ROLES_ORDERED}
+              rows={filteredRoles}
               columns={ROLE_COLUMNS}
               rowKey={(r) => r.id}
               onRowClick={(r) => setSelectedRoleId(r.id)}
@@ -273,7 +282,7 @@ export function AccessGovernancePage(): React.JSX.Element {
                 <th className="sticky top-0 left-0 z-20 min-w-[9rem] border-b border-ink-100 bg-surface-sunken px-2 py-1.5 text-left text-[0.625rem] font-semibold text-ink-500">
                   {t('Resource')}
                 </th>
-                {ROLES_ORDERED.map((role) => (
+                {filteredRoles.map((role) => (
                   <th
                     key={role.id}
                     title={role.name}
@@ -293,7 +302,7 @@ export function AccessGovernancePage(): React.JSX.Element {
                   >
                     {RESOURCE_LABEL[res]}
                   </th>
-                  {ROLES_ORDERED.map((role) => {
+                  {filteredRoles.map((role) => {
                     const held = actionsHeld(role, res)
                     return (
                       <td
@@ -318,7 +327,7 @@ export function AccessGovernancePage(): React.JSX.Element {
           </table>
         </div>
         <p className="mt-2 text-[0.6875rem] text-ink-400">
-          {t('Column key: {0}', ROLES_ORDERED.map((r) => `${roleAbbreviation(r)}=${r.name}`).join(' · '))}
+          {t('Column key: {0}', filteredRoles.map((r) => `${roleAbbreviation(r)}=${r.name}`).join(' · '))}
         </p>
       </GovPanel>
         </div>

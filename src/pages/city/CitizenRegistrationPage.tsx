@@ -277,7 +277,7 @@ export function CitizenRegistrationPage(): React.JSX.Element {
             <div className="min-w-0">
               <p className="text-[0.8125rem] font-semibold text-govt-800">{t('The register is not held here')}</p>
               <p className="mt-1 text-xs leading-relaxed text-ink-600">
-                {t('This page reports on how well the statutory register is being kept - volumes, timeliness and backlog. It does not reproduce the register. No registered event, no name, no date and no certificate content appears anywhere behind this page. Vital records remain in the Registrar&apos;s statutory custody, which is where the law places them and where they should stay.')}
+                {t("This page reports on how well the statutory register is being kept - volumes, timeliness and backlog. It does not reproduce the register. No registered event, no name, no date and no certificate content appears anywhere behind this page. Vital records remain in the Registrar's statutory custody, which is where the law places them and where they should stay.")}
               </p>
             </div>
           </Card>

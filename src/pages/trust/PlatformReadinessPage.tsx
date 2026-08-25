@@ -376,7 +376,7 @@ export function PlatformReadinessPage(): React.JSX.Element {
           <div className="flex items-start gap-2.5">
             <Target className="mt-0.5 h-4 w-4 shrink-0 text-govt-700" />
             <p className="text-xs leading-relaxed text-ink-700">
-              {t('Neither list is exhaustive of every engineering detail, and completing the right-hand column is a multi-department, multi-quarter undertaking, not a release. The indicative scale on each workstream is a band rather than an estimate: a precise figure would be false when the critical path runs through signed agreements and completed reviews rather than through code. This page will be revised as work against each item begins and completes - no item moves from &quot;Required&quot; to &quot;Implemented&quot; here without the underlying capability actually existing.')}
+              {t('Neither list is exhaustive of every engineering detail, and completing the right-hand column is a multi-department, multi-quarter undertaking, not a release. The indicative scale on each workstream is a band rather than an estimate: a precise figure would be false when the critical path runs through signed agreements and completed reviews rather than through code. This page will be revised as work against each item begins and completes - no item moves from "Required" to "Implemented" here without the underlying capability actually existing.')}
             </p>
           </div>
         </Card>

@@ -370,7 +370,7 @@ export function HospitalIntelligencePage(): React.JSX.Element {
           </div>
         ) : null}
         <p className="mt-3 border-t border-ink-100 pt-2.5 text-[0.6875rem] leading-relaxed text-ink-400">
-          {t('Wards are flagged flood-prone based on structural, low-lying exposure - the same flag monsoon intelligence uses. The lower accessibility figures observed at facilities within these wards reflect a modelled')}{' '}<span className="font-medium text-ink-600">exposure</span>{' '}{t('- the ward&apos;s susceptibility to access disruption during flooding - and are not a prediction of when or whether any specific facility will become inaccessible.')}
+          {t('Wards are flagged flood-prone based on structural, low-lying exposure - the same flag monsoon intelligence uses. The lower accessibility figures observed at facilities within these wards reflect a modelled')}{' '}<span className="font-medium text-ink-600">exposure</span>{' '}{t("- the ward's susceptibility to access disruption during flooding - and are not a prediction of when or whether any specific facility will become inaccessible.")}
         </p>
       </GovPanel>
         </div>

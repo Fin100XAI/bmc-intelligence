@@ -21,6 +21,15 @@ import type { AIResponse } from '@/types/ai'
 export interface CopilotMessage {
   id: string
   question: string
+  /**
+   * What was actually sent to the retrieval engine and the gateway policy
+   * check, when it differs from `question` - a canned prompt asked in a
+   * non-English interface sends its known-good English wording while the
+   * operator reads the question in their own language. Carried on the
+   * message so a retry resends the wording that was actually matched,
+   * not the display text.
+   */
+  matchQuery?: string
   askedAt: string
   status: 'loading' | 'done' | 'error'
   response?: AIResponse

@@ -1,14 +1,16 @@
 import { useMemo, useState } from 'react'
 import { AlertOctagon, Sparkles } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
+import { FilterBar } from '@/components/filters/FilterBar'
 import { useServiceAction, useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { aiService, type OversightFilters } from '@/services'
 import { useCurrentUser } from '@/stores/auth.store'
 import { usePageMasthead } from '@/stores/masthead.store'
-import { useDrawerStore } from '@/stores/ui.store'
+import { useDrawerStore, useFilterStore } from '@/stores/ui.store'
+import type { FilterState } from '@/stores/ui.store'
 import { allowed } from '@/security'
-import { isoFromAnchor } from '@/utils/deterministic'
+import { DEMO_NOW, isoFromAnchor } from '@/utils/deterministic'
 import { formatPercent, formatRelative } from '@/utils/format'
 import { evidenceForDomain } from '@/data/evidence.data'
 import {
@@ -19,7 +21,7 @@ import {
   type AIRequestRecord,
   type HumanOversightRecord,
 } from '@/types/ai'
-import { DOMAIN_LABEL, type IntelligenceDomain } from '@/types/common'
+import { DOMAIN_LABEL, type DateRangeKey, type IntelligenceDomain } from '@/types/common'
 import {
   Card,
   ConfirmDialog,
@@ -128,6 +130,30 @@ function toRecommendationBlock(record: HumanOversightRecord, request: AIRequestR
   }
 }
 
+const DATE_RANGE_HOURS: Record<DateRangeKey, number> = {
+  '24h': 24,
+  '7d': 24 * 7,
+  '30d': 24 * 30,
+  '90d': 24 * 90,
+  fy: 24 * 365,
+}
+
+function withinDateRange(iso: string, range: DateRangeKey): boolean {
+  const ageMs = DEMO_NOW.getTime() - new Date(iso).getTime()
+  return ageMs <= DATE_RANGE_HOURS[range] * 3_600_000
+}
+
+function matchesGlobalFilters(record: HumanOversightRecord, filters: FilterState): boolean {
+  if (filters.domains.length > 0 && !filters.domains.includes(record.domain)) return false
+  if (filters.severities.length > 0 && !filters.severities.includes(record.severity)) return false
+  if (!withinDateRange(record.submittedAt, filters.dateRange)) return false
+  if (filters.search.trim()) {
+    const q = filters.search.trim().toLowerCase()
+    if (!record.recommendationTitle.toLowerCase().includes(q)) return false
+  }
+  return true
+}
+
 export function AIRecommendationsPage(): React.JSX.Element {
   const user = useCurrentUser()
 
@@ -138,8 +164,8 @@ export function AIRecommendationsPage(): React.JSX.Element {
   const [dialog, setDialog] = useState<{ id: string; outcome: HumanOversightRecord['outcome']; title: string } | null>(null)
 
   const summaryQuery = useServiceQuery(queryKeys.ai('oversight-summary'), (u) => aiService.oversightSummary(u))
-  const filters: OversightFilters = useMemo(() => ({ outcome: [tab], pageSize: 100 }), [tab])
-  const oversightQuery = useServiceQuery(queryKeys.ai(`oversight:${tab}`), (u) => aiService.oversight(u, filters))
+  const queryFilters: OversightFilters = useMemo(() => ({ outcome: [tab], pageSize: 100 }), [tab])
+  const oversightQuery = useServiceQuery(queryKeys.ai(`oversight:${tab}`), (u) => aiService.oversight(u, queryFilters))
   const requestsQuery = useServiceQuery(queryKeys.ai('requests-for-oversight'), (u) => aiService.requests(u, { pageSize: 300 }))
   // The model and evaluation registers, so each recommendation can be traced
   // through to the model that produced it and that model's most recent
@@ -172,8 +198,14 @@ export function AIRecommendationsPage(): React.JSX.Element {
     return map
   }, [evaluationsQuery.data])
 
+  const filters = useFilterStore((s) => s.filters)
   const summary = summaryQuery.data
-  const records = oversightQuery.data?.items ?? []
+  const allRecords = oversightQuery.data?.items ?? []
+  const domainOptions = useMemo<IntelligenceDomain[]>(
+    () => Array.from(new Set(allRecords.map((r) => r.domain))).sort((a, b) => DOMAIN_LABEL[a].localeCompare(DOMAIN_LABEL[b])),
+    [allRecords],
+  )
+  const records = useMemo(() => allRecords.filter((r) => matchesGlobalFilters(r, filters)), [allRecords, filters])
   const mayReview = allowed(user, 'ai-governance', 'approve')
 
   const anyLoading = summaryQuery.isLoading || oversightQuery.isLoading || modelsQuery.isLoading || evaluationsQuery.isLoading
@@ -207,6 +239,7 @@ export function AIRecommendationsPage(): React.JSX.Element {
         eyebrow={t('AI & Automation')}
         breadcrumbs={[{ label: t('AI & Automation') }, { label: t('AI Recommendations') }]}
         freshness={FRESHNESS}
+        controls={<FilterBar show={['date', 'domain', 'severity', 'search']} domainOptions={domainOptions} />}
       />
 
       {anyLoading ? <LoadingState variant="metrics" /> : null}

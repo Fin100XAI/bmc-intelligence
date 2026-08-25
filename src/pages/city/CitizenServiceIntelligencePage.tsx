@@ -8,11 +8,13 @@ import { DemonstrationNotice, EmptyState, ErrorState, LoadingState } from '@/com
 import { MetricCard } from '@/components/cards/MetricCard'
 import { GovPanel } from '@/components/gov/GovPanel'
 import { MiniBar } from '@/components/charts'
+import { FilterBar } from '@/components/filters/FilterBar'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { citizenService } from '@/services'
 import type { RecurringCluster } from '@/domains/citizen-services/root-cause'
 import { usePageMasthead } from '@/stores/masthead.store'
+import { useFilterStore, type FilterState } from '@/stores/ui.store'
 import { activeCorporation } from '@/config/municipality.config'
 import { WARDS } from '@/data/reference'
 import { COMPLAINT_CATEGORY_LABEL, type ComplaintCategory, type ComplaintChannel } from '@/types/operations'
@@ -20,6 +22,19 @@ import { formatNumber, formatPercent } from '@/utils/format'
 import { isoFromAnchor } from '@/utils/deterministic'
 import { t } from '@/i18n'
 import { registerLayer } from '@/data/runtime'
+
+/** Ward and service category are already covered by this page's own two
+ *  selects (both server-scoped); the global bar adds the dimensions those do
+ *  not: department, severity and free text. */
+function matchesGlobalFilters(c: RecurringCluster, filters: FilterState): boolean {
+  if (filters.departmentIds.length > 0 && !filters.departmentIds.includes(c.departmentId)) return false
+  if (filters.severities.length > 0 && !filters.severities.includes(c.severity)) return false
+  if (filters.search.trim()) {
+    const q = filters.search.trim().toLowerCase()
+    if (!c.localityName.toLowerCase().includes(q) && !c.categoryLabel.toLowerCase().includes(q) && !c.wardLabel.toLowerCase().includes(q)) return false
+  }
+  return true
+}
 
 /**
  * The routes a citizen can reach the corporation on, named as the corporation
@@ -67,6 +82,7 @@ const FRESHNESS = {
 export function CitizenServiceIntelligencePage(): React.JSX.Element {
   const [wardId, setWardId] = useState<string>('')
   const [category, setCategory] = useState<string>('')
+  const globalFilters = useFilterStore((s) => s.filters)
 
   usePageMasthead(t('Citizen Service Intelligence'))
 
@@ -103,8 +119,8 @@ export function CitizenServiceIntelligencePage(): React.JSX.Element {
   }
 
   const summary = summaryQuery.data
-  const clusters = clustersQuery.data ?? []
-  const associations = rootCauseQuery.data ?? []
+  const clusters = (clustersQuery.data ?? []).filter((c) => matchesGlobalFilters(c, globalFilters))
+  const associations = (rootCauseQuery.data ?? []).filter((a) => matchesGlobalFilters(a.cluster, globalFilters))
   const postures = categoryQuery.data ?? []
   const channels = channelQuery.data ?? []
   const handoffs = deptQuery.data ?? []
@@ -201,6 +217,7 @@ export function CitizenServiceIntelligencePage(): React.JSX.Element {
                 ]}
               />
             </div>
+            <FilterBar show={['department', 'severity', 'search']} searchPlaceholder="Search locality or category" />
           </>
         }
       />

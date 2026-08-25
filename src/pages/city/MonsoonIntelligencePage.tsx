@@ -32,6 +32,7 @@ import { MetricCard, IncidentCard } from '@/components/cards'
 import { GovPanel } from '@/components/gov/GovPanel'
 import { ChartFrame, ContributionBars, RankedBarChart, MiniBar } from '@/components/charts'
 import { CityMap, jitteredWardPoint, type MapMarker } from '@/components/map/CityMap'
+import { FilterBar } from '@/components/filters/FilterBar'
 import { useServiceQuery, useServiceAction, useActivityLog } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { monsoonService, healthService, incidentService } from '@/services'
@@ -41,7 +42,7 @@ import { useCurrentUser } from '@/stores/auth.store'
 import { useActiveCorporation } from '@/stores/corporation.store'
 import { cityName } from '@/config/corporations'
 import { usePageMasthead } from '@/stores/masthead.store'
-import { useContextStore, useDrawerStore } from '@/stores/ui.store'
+import { useContextStore, useDrawerStore, useFilterStore } from '@/stores/ui.store'
 import { allowed } from '@/security'
 import { wardName } from '@/data/reference'
 import type {
@@ -205,6 +206,7 @@ export function MonsoonIntelligencePage(): React.JSX.Element {
   const contextWardId = useContextStore((s) => s.wardId)
   const [mapFocus, setMapFocus] = useState<{ wardId: string | null; from: string | null }>({ wardId: null, from: null })
   const focusWardId = mapFocus.from === contextWardId ? mapFocus.wardId : contextWardId
+  const search = useFilterStore((s) => s.filters.search)
   const [committedInputs, setCommittedInputs] = useState<MonsoonScenarioInput>(DEFAULT_MONSOON_SCENARIO)
   const hasScenarioAccess = allowed(user, 'situation-room', 'edit', { domain: 'monsoon' })
 
@@ -242,6 +244,7 @@ export function MonsoonIntelligencePage(): React.JSX.Element {
         eyebrow={t('City Intelligence')}
         breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Monsoon Intelligence') }]}
         freshness={freshness}
+        controls={<FilterBar show={['search']} searchPlaceholder="Search stations, drains or wards" />}
       />
 
       <MonsoonPositionSection
@@ -258,10 +261,10 @@ export function MonsoonIntelligencePage(): React.JSX.Element {
           exposures read against them, and sit beside rather than between. */}
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
         <div className="flex min-w-0 flex-col gap-4 xl:col-span-8">
-          <PumpingStationSection focusWardId={focusWardId} />
-          <DrainRiskSection focusWardId={focusWardId} />
-          <RainfallSection focusWardId={focusWardId} />
-          <WardPreparednessSection focusWardId={focusWardId} />
+          <PumpingStationSection focusWardId={focusWardId} search={search} />
+          <DrainRiskSection focusWardId={focusWardId} search={search} />
+          <RainfallSection focusWardId={focusWardId} search={search} />
+          <WardPreparednessSection focusWardId={focusWardId} search={search} />
           <ActiveResponseSection />
         </div>
 
@@ -536,7 +539,7 @@ function MonsoonPositionSection({
    Pumping Station Status
    ========================================================================== */
 
-function PumpingStationSection({ focusWardId }: { focusWardId: string | null }): React.JSX.Element {
+function PumpingStationSection({ focusWardId, search }: { focusWardId: string | null; search: string }): React.JSX.Element {
   const q = useServiceQuery(queryKeys.monsoon('pumping-stations'), (u) => monsoonService.pumpingStations(u))
 
   if (q.isLoading) {
@@ -554,7 +557,9 @@ function PumpingStationSection({ focusWardId }: { focusWardId: string | null }):
     )
   }
   const all = q.data ?? []
-  const rows = focusWardId ? all.filter((p) => p.wardId === focusWardId) : all
+  const scoped = focusWardId ? all.filter((p) => p.wardId === focusWardId) : all
+  const q2 = search.trim().toLowerCase()
+  const rows = q2 ? scoped.filter((p) => p.name.toLowerCase().includes(q2) || wardName(p.wardId).toLowerCase().includes(q2)) : scoped
 
   const columns: Array<Column<PumpingStation>> = [
     { id: 'name', header: t('Station'), cell: (r) => <span className="font-medium text-ink-900">{r.name}</span>, sortValue: (r) => r.name, searchValue: (r) => r.name },
@@ -601,7 +606,7 @@ function PumpingStationSection({ focusWardId }: { focusWardId: string | null }):
    Drain Risk
    ========================================================================== */
 
-function DrainRiskSection({ focusWardId }: { focusWardId: string | null }): React.JSX.Element {
+function DrainRiskSection({ focusWardId, search }: { focusWardId: string | null; search: string }): React.JSX.Element {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const q = useServiceQuery(queryKeys.monsoon('drains'), (u) => monsoonService.drains(u))
 
@@ -620,7 +625,9 @@ function DrainRiskSection({ focusWardId }: { focusWardId: string | null }): Reac
     )
   }
   const all = q.data ?? []
-  const rows = focusWardId ? all.filter((d) => d.wardId === focusWardId) : all
+  const scoped = focusWardId ? all.filter((d) => d.wardId === focusWardId) : all
+  const q2 = search.trim().toLowerCase()
+  const rows = q2 ? scoped.filter((d) => d.name.toLowerCase().includes(q2) || wardName(d.wardId).toLowerCase().includes(q2)) : scoped
   const rankedByRisk = [...rows].sort((a, b) => b.blockageRisk - a.blockageRisk)
   const selected = rows.find((d) => d.id === selectedId) ?? rankedByRisk[0]
 
@@ -762,7 +769,7 @@ function HighTideSection(): React.JSX.Element {
    Rainfall observations
    ========================================================================== */
 
-function RainfallSection({ focusWardId }: { focusWardId: string | null }): React.JSX.Element {
+function RainfallSection({ focusWardId, search }: { focusWardId: string | null; search: string }): React.JSX.Element {
   const q = useServiceQuery(queryKeys.monsoon('rainfall'), (u) => monsoonService.rainfall(u))
 
   if (q.isLoading) {
@@ -780,7 +787,9 @@ function RainfallSection({ focusWardId }: { focusWardId: string | null }): React
     )
   }
   const all = q.data ?? []
-  const rows = focusWardId ? all.filter((r) => r.wardId === focusWardId) : all
+  const scoped = focusWardId ? all.filter((r) => r.wardId === focusWardId) : all
+  const q2 = search.trim().toLowerCase()
+  const rows = q2 ? scoped.filter((r) => r.stationName.toLowerCase().includes(q2) || wardName(r.wardId).toLowerCase().includes(q2)) : scoped
 
   const intensityTone = { nil: 'muted', light: 'neutral', moderate: 'info', heavy: 'warn', 'very-heavy': 'risk', 'extremely-heavy': 'critical' } as const
 
@@ -930,7 +939,7 @@ function HospitalAccessSection(): React.JSX.Element {
    Ward Preparedness
    ========================================================================== */
 
-function WardPreparednessSection({ focusWardId }: { focusWardId: string | null }): React.JSX.Element {
+function WardPreparednessSection({ focusWardId, search }: { focusWardId: string | null; search: string }): React.JSX.Element {
   const q = useServiceQuery(queryKeys.monsoon('readiness'), (u) => monsoonService.readiness(u))
 
   if (q.isLoading) {
@@ -948,7 +957,9 @@ function WardPreparednessSection({ focusWardId }: { focusWardId: string | null }
     )
   }
   const all = q.data ?? []
-  const rows = focusWardId ? all.filter((r) => r.wardId === focusWardId) : all
+  const scoped = focusWardId ? all.filter((r) => r.wardId === focusWardId) : all
+  const q2 = search.trim().toLowerCase()
+  const rows = q2 ? scoped.filter((r) => wardName(r.wardId).toLowerCase().includes(q2)) : scoped
   if (all.length === 0) {
     return (
       <Card>

@@ -1,10 +1,8 @@
-import { type ReactNode } from 'react'
-import { Link } from 'react-router-dom'
-import { ChevronRight } from 'lucide-react'
+import { type ReactNode, useEffect } from 'react'
 import type { DataFreshness } from '@/types/common'
 import { cn } from '@/utils/cn'
 import { FreshnessLine, ProvenanceBadge } from '@/components/ui/badges'
-import { t } from '@/i18n'
+import { type BreadcrumbCrumb, useBreadcrumbStore } from '@/stores/breadcrumb.store'
 
 /**
  * Page furniture — the ruled strip that sits above a screen's content.
@@ -17,9 +15,17 @@ import { t } from '@/i18n'
  * stated its own name twice, a few rows apart, which is the surest way to make
  * a record look like a product.
  *
- * So what remains is only the part the masthead does NOT carry: where the
- * screen sits in the hierarchy, what may be done on it, and what the figures'
- * provenance is. One hairline-ruled strip, the height of a line of type.
+ * The trail (`eyebrow` + `breadcrumbs`) used to be drawn a second time here as
+ * well, in its own ruled box directly under the shell's own "Context" line —
+ * two breadcrumb strips, a few pixels apart, saying almost the same thing.
+ * This bar now reports its trail into `useBreadcrumbStore` instead, and the
+ * shell's context line renders it as the tail of the one trail it already
+ * shows for the product and the ward — one line, the way a reference platform
+ * states it, rather than two.
+ *
+ * So what this bar still draws directly is only what genuinely belongs beside
+ * the page's own content rather than in the shell's chrome: view actions and
+ * data provenance.
  *
  * `title` and `description` stay in the props — every page passes them, and
  * they remain the honest declaration of what the screen is — but they are the
@@ -32,10 +38,11 @@ export interface PageHeaderProps {
    * left for this bar to carry beyond its trail, actions and provenance.
    */
   title?: ReactNode
-  /** Small uppercase eyebrow - usually the section, e.g. "City Intelligence". */
+  /** Small uppercase eyebrow - usually the section, e.g. "City Intelligence". Reported to the shell's context line, not drawn here. */
   eyebrow?: ReactNode
   description?: ReactNode
-  breadcrumbs?: Array<{ label: string; to?: string }>
+  /** Reported to the shell's context line as the trail's tail, not drawn here. */
+  breadcrumbs?: BreadcrumbCrumb[]
   actions?: ReactNode
   /** Rendered under the description - filters, ward selector, mode switch. */
   controls?: ReactNode
@@ -47,7 +54,6 @@ export interface PageHeaderProps {
 }
 
 export function PageHeader({
-  eyebrow,
   breadcrumbs,
   actions,
   controls,
@@ -56,63 +62,37 @@ export function PageHeader({
   className,
   hideProvenance,
 }: PageHeaderProps): React.JSX.Element {
-  const trail = breadcrumbs ?? []
-  // The bar earns its rule only when it has something to rule off. A page that
-  // passes nothing but a title now renders no furniture at all, rather than an
-  // empty box holding a gap open above the first panel.
-  const hasBar = trail.length > 0 || Boolean(eyebrow) || Boolean(meta) || Boolean(actions) || Boolean(freshness)
+  const setTrail = useBreadcrumbStore((s) => s.set)
+  const trailKey = JSON.stringify(breadcrumbs ?? [])
+  useEffect(() => {
+    setTrail(JSON.parse(trailKey))
+    return () => setTrail([])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [setTrail, trailKey])
+
+  // The bar earns its rule only when it has something of its own to show. The
+  // trail no longer counts - that lives in the shell now.
+  const hasBar = Boolean(meta) || Boolean(actions) || Boolean(freshness)
 
   if (!hasBar && !controls) return <></>
 
   return (
     <header className={cn('min-w-0', className)}>
+      {/* Filters sit directly under the shell's Context line - nothing of the
+          page's own furniture stands between them, the way the reference
+          platform keeps that pair adjacent. */}
+      {controls ? <div className="flex flex-wrap items-center gap-2 py-1.5">{controls}</div> : null}
+
       {hasBar ? (
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-[2px] border border-ink-200 bg-surface-sunken px-3 py-1.5">
-          {eyebrow ? (
-            <span className="shrink-0 text-[0.625rem] font-bold tracking-[0.1em] text-ink-500 uppercase">
-              {eyebrow}
-            </span>
-          ) : null}
-          {eyebrow && trail.length > 0 ? <span aria-hidden className="h-3 w-px shrink-0 bg-ink-200" /> : null}
-
-          {trail.length > 0 ? (
-            <nav
-              aria-label={t('Breadcrumb')}
-              className="flex min-w-0 flex-wrap items-center gap-1 text-[0.6875rem] text-ink-500"
-            >
-              {trail.map((crumb, i) => (
-                <span key={`${crumb.label}-${i}`} className="inline-flex items-center gap-1">
-                  {i > 0 ? <ChevronRight className="h-3 w-3 text-ink-300" aria-hidden /> : null}
-                  {crumb.to ? (
-                    <Link to={crumb.to} className="transition-colors hover:text-govt-700 hover:underline">
-                      {crumb.label}
-                    </Link>
-                  ) : (
-                    <span className={cn(i === trail.length - 1 && 'font-semibold text-ink-700')}>{crumb.label}</span>
-                  )}
-                </span>
-              ))}
-            </nav>
-          ) : null}
-
-          {/* Everything on the right of the rule is what the screen offers or
-              discloses, rather than what it is called. */}
-          <div className="ml-auto flex flex-wrap items-center gap-x-3 gap-y-1.5">
-            {meta ? <div className="flex flex-wrap items-center gap-1.5">{meta}</div> : null}
-            {freshness ? <FreshnessLine freshness={freshness} /> : !hideProvenance ? <ProvenanceBadge /> : null}
-            {actions ? <div className="flex flex-wrap items-center gap-1.5">{actions}</div> : null}
-          </div>
-        </div>
-      ) : null}
-
-      {controls ? (
         <div
           className={cn(
-            'flex flex-wrap items-center gap-2 rounded-[2px] border border-ink-200 bg-surface px-3 py-2',
-            hasBar && 'mt-2',
+            'flex flex-wrap items-center justify-end gap-x-3 gap-y-1.5 rounded-lg border border-ink-200 bg-surface-sunken px-3 py-1.5',
+            controls && 'mt-1.5',
           )}
         >
-          {controls}
+          {meta ? <div className="flex flex-wrap items-center gap-1.5">{meta}</div> : null}
+          {freshness ? <FreshnessLine freshness={freshness} /> : !hideProvenance ? <ProvenanceBadge /> : null}
+          {actions ? <div className="flex flex-wrap items-center gap-1.5">{actions}</div> : null}
         </div>
       ) : null}
     </header>

@@ -1,12 +1,14 @@
 import { useMemo } from 'react'
 import { ChevronRight, Info, Target } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
+import { FilterBar } from '@/components/filters/FilterBar'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { healthService, monsoonService, projectService, revenueService, roadsService, wasteService, waterService } from '@/services'
+import { useFilterStore } from '@/stores/ui.store'
 import { isoFromAnchor } from '@/utils/deterministic'
 import { formatCrore, formatPercent } from '@/utils/format'
-import type { ConfidenceLevel, OperationalState, SeriesPoint } from '@/types/common'
+import { DOMAIN_LABEL, type ConfidenceLevel, type IntelligenceDomain, type OperationalState, type SeriesPoint } from '@/types/common'
 import {
   Badge,
   Card,
@@ -54,6 +56,8 @@ interface OutcomePipeline {
   id: string
   title: string
   domain: string
+  /** The canonical intelligence domain this programme belongs to, for the global domain filter - `domain` above is a display label, not the enum. */
+  domainKey: IntelligenceDomain
   input: { label: string; value: string }
   activity: { label: string; value: string }
   output: { label: string; value: string }
@@ -93,6 +97,7 @@ function trendPointsFor(pipeline: Pick<OutcomePipeline, 'baselinePct' | 'achieve
 export function OutcomeIntelligencePage(): React.JSX.Element {
   // The shell's masthead states the screen's name; the page states the wording.
   usePageMasthead(t('Outcome Intelligence'))
+  const filters = useFilterStore((s) => s.filters)
 
   const projectsQuery = useServiceQuery(queryKeys.projects({ scope: 'outcomes' }), (u) => projectService.list(u, { pageSize: 300 }))
   const roadsQuery = useServiceQuery(queryKeys.roads('outcomes'), (u) => roadsService.segments(u))
@@ -119,6 +124,7 @@ export function OutcomeIntelligencePage(): React.JSX.Element {
         id: 'projects',
         title: t('Capital project delivery'),
         domain: 'Capital Works',
+        domainKey: 'projects',
         input: { label: t('Sanctioned exposure, active works'), value: formatCrore(active.reduce((s, p) => s + p.sanctionedCostCrore, 0)) },
         activity: { label: t('Capital works in execution'), value: `${active.length} active works` },
         output: {
@@ -144,6 +150,7 @@ export function OutcomeIntelligencePage(): React.JSX.Element {
         id: 'roads',
         title: t('Road network serviceability'),
         domain: 'Roads',
+        domainKey: 'roads',
         input: { label: t('Network under management'), value: `${Math.round(segments.reduce((s, r) => s + r.lengthKm, 0))} km, ${segments.length} segments` },
         activity: { label: t('Emergency / hospital-access segments'), value: `${critical.length} segments` },
         output: { label: t('Mean network condition index'), value: `${Math.round(mean(segments.map((s) => s.conditionIndex)))}/100` },
@@ -165,6 +172,7 @@ export function OutcomeIntelligencePage(): React.JSX.Element {
         id: 'waste',
         title: t('Solid waste processing'),
         domain: 'Solid Waste',
+        domainKey: 'waste',
         input: { label: t('Waste generated citywide'), value: `${Math.round(rows.reduce((s, r) => s + r.generationTpd, 0))} TPD` },
         activity: { label: t('Collection vehicles deployed'), value: `${rows.reduce((s, r) => s + r.vehiclesDeployed, 0)} vehicles` },
         output: { label: t('Mean collection coverage'), value: formatPercent(mean(rows.map((r) => r.coveragePct))) },
@@ -186,6 +194,7 @@ export function OutcomeIntelligencePage(): React.JSX.Element {
         id: 'water',
         title: t('Water supply reliability'),
         domain: 'Water Supply',
+        domainKey: 'water',
         input: { label: t('Assessed demand, all zones'), value: `${Math.round(zones.reduce((s, z) => s + z.demandMld, 0))} MLD, ${zones.length} zones` },
         activity: { label: t('Bulk supply delivered'), value: `${Math.round(zones.reduce((s, z) => s + z.supplyMld, 0))} MLD` },
         output: { label: t('Mean water quality compliance'), value: formatPercent(mean(zones.map((z) => z.qualityCompliancePct))) },
@@ -208,6 +217,7 @@ export function OutcomeIntelligencePage(): React.JSX.Element {
         id: 'monsoon',
         title: t('Monsoon preparedness'),
         domain: 'Monsoon & Flood',
+        domainKey: 'monsoon',
         input: { label: t('Pumps and response teams allocated'), value: `${rows.reduce((s, r) => s + r.dewateringPumps, 0)} pumps, ${rows.reduce((s, r) => s + r.teamsAllocated, 0)} teams` },
         activity: { label: t('Mean pre-monsoon desilting completion'), value: formatPercent(mean(rows.map((r) => r.desiltingPct))) },
         output: { label: t('Mean ward readiness score'), value: `${Math.round(mean(rows.map((r) => r.readinessScore)))}/100` },
@@ -229,6 +239,7 @@ export function OutcomeIntelligencePage(): React.JSX.Element {
         id: 'health',
         title: t('Public health surveillance responsiveness'),
         domain: 'Public Health',
+        domainKey: 'health',
         input: { label: t('Ward-disease indicators monitored'), value: `${rows.length} indicators` },
         activity: { label: t('Highest current outbreak signal'), value: `${Math.max(0, ...rows.map((r) => r.outbreakSignal))}/100` },
         output: { label: t('Mean outbreak signal across all indicators'), value: `${Math.round(mean(rows.map((r) => r.outbreakSignal)))}/100` },
@@ -248,6 +259,7 @@ export function OutcomeIntelligencePage(): React.JSX.Element {
         id: 'revenue',
         title: t('Revenue realisation'),
         domain: 'Revenue',
+        domainKey: 'revenue',
         input: { label: t('Annual revenue target'), value: formatCrore(totals.target) },
         activity: { label: t('Collected to date'), value: formatCrore(totals.collected) },
         output: { label: t('Collection efficiency, year to date'), value: formatPercent(totals.efficiencyPct) },
@@ -263,11 +275,28 @@ export function OutcomeIntelligencePage(): React.JSX.Element {
     return out
   }, [projectsQuery.data, roadsQuery.data, wasteQuery.data, waterQuery.data, monsoonQuery.data, healthQuery.data, revenueQuery.data])
 
-  const onTrack = pipelines.filter((p) => p.achievedPct >= p.targetPct - 5)
-  const behind = pipelines.filter((p) => p.achievedPct < p.targetPct - 20)
-  const developing = pipelines.filter((p) => !onTrack.includes(p) && !behind.includes(p))
+  const domainOptions = useMemo<IntelligenceDomain[]>(
+    () => Array.from(new Set(pipelines.map((p) => p.domainKey))).sort((a, b) => DOMAIN_LABEL[a].localeCompare(DOMAIN_LABEL[b])),
+    [pipelines],
+  )
 
-  const rankedGaps = [...pipelines]
+  // The global filter bar (domain, search) narrows the programme pipelines
+  // themselves, applied here so the portfolio summary, the ranked-gap chart
+  // and every card below all agree on which programmes are in view.
+  const filteredPipelines = useMemo(() => {
+    const q = filters.search.trim().toLowerCase()
+    return pipelines.filter((p) => {
+      if (filters.domains.length > 0 && !filters.domains.includes(p.domainKey)) return false
+      if (q && !p.title.toLowerCase().includes(q)) return false
+      return true
+    })
+  }, [pipelines, filters.domains, filters.search])
+
+  const onTrack = filteredPipelines.filter((p) => p.achievedPct >= p.targetPct - 5)
+  const behind = filteredPipelines.filter((p) => p.achievedPct < p.targetPct - 20)
+  const developing = filteredPipelines.filter((p) => !onTrack.includes(p) && !behind.includes(p))
+
+  const rankedGaps = [...filteredPipelines]
     .map((p) => ({ label: p.title, value: Math.round((p.targetPct - p.achievedPct) * 10) / 10 }))
     .sort((a, b) => b.value - a.value)
 
@@ -277,6 +306,7 @@ export function OutcomeIntelligencePage(): React.JSX.Element {
         eyebrow={t('Strategic Urban Intelligence')}
         breadcrumbs={[{ label: t('Strategic Urban Intelligence') }, { label: t('Outcome Intelligence') }]}
         freshness={FRESHNESS}
+        controls={<FilterBar show={['domain', 'search']} domainOptions={domainOptions} />}
       />
 
       {anyLoading ? <LoadingState variant="metrics" /> : null}
@@ -314,7 +344,7 @@ export function OutcomeIntelligencePage(): React.JSX.Element {
                 </MetricGrid>
               </GovPanel>
 
-              {pipelines.map((p, index) => (
+              {filteredPipelines.map((p, index) => (
               <GovPanel
                 key={p.id}
                 title={p.title}
@@ -336,7 +366,7 @@ export function OutcomeIntelligencePage(): React.JSX.Element {
                     { stageName: 'Outcome', caption: p.outcomeLabel, value: formatPercent(p.achievedPct) },
                   ].map((stage, i) => (
                     <div key={stage.stageName} className="flex items-stretch">
-                      <div className={'flex w-48 shrink-0 flex-col rounded-[2px] border p-2.5 ' + (i === 3 ? 'border-intel-300 bg-intel-50/50' : 'border-ink-100 bg-surface-sunken')}>
+                      <div className={'flex w-48 shrink-0 flex-col rounded-lg border p-2.5 ' + (i === 3 ? 'border-intel-300 bg-intel-50/50' : 'border-ink-100 bg-surface-sunken')}>
                         <span className={'text-[0.625rem] font-semibold tracking-wide uppercase ' + (i === 3 ? 'text-intel-700' : 'text-ink-400')}>{stage.stageName}</span>
                         <span className="numeric mt-1 text-sm font-semibold text-ink-900">{stage.value}</span>
                         <span className="mt-1 text-[0.6875rem] leading-snug text-ink-600">{stage.caption}</span>
@@ -381,7 +411,7 @@ export function OutcomeIntelligencePage(): React.JSX.Element {
               ))}
 
               <Badge tone="muted" className="w-fit">
-                {t('{0} programme{1} tracked end to end', pipelines.length, pipelines.length === 1 ? '' : 's')}
+                {t('{0} programme{1} tracked end to end', filteredPipelines.length, filteredPipelines.length === 1 ? '' : 's')}
               </Badge>
             </>
           ) : null}
@@ -390,7 +420,7 @@ export function OutcomeIntelligencePage(): React.JSX.Element {
         <div className="flex min-w-0 flex-col gap-3 xl:col-span-4">
           {!anyLoading && !anyError ? (
             <Card>
-              <ChartFrame title={t('Ranked gap to target')} unit={t('percentage points short')} timeframe="Current reporting position" height={Math.max(180, pipelines.length * 26)}>
+              <ChartFrame title={t('Ranked gap to target')} unit={t('percentage points short')} timeframe="Current reporting position" height={Math.max(180, filteredPipelines.length * 26)}>
                 <RankedBarChart data={rankedGaps} higherIsWorse unit=" pp" />
               </ChartFrame>
             </Card>

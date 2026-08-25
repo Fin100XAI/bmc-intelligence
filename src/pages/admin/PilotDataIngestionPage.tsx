@@ -90,7 +90,7 @@ export function PilotDataIngestionPage(): React.JSX.Element {
         breadcrumbs={[{ label: t('Administration') }, { label: t('Pilot Data Ingestion') }]}
       />
 
-      <div className="rounded-[2px] border border-google-blue-100 bg-google-blue-50 px-4 py-3 text-xs leading-relaxed text-ink-700">
+      <div className="rounded-lg border border-google-blue-100 bg-google-blue-50 px-4 py-3 text-xs leading-relaxed text-ink-700">
         {t('Every other page in this platform reads deterministic demonstration data. This one page is the exception: upload a CSV export of the kind an officer could pull from the real Property Tax Citizen Portal, and the register below shows exactly what that file contained.')}
       </div>
 

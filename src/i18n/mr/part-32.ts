@@ -15,7 +15,6 @@ export const MR_PART_32: Record<string, string> = {
   'Scroll the menu right': 'मेनू उजवीकडे सरकवा',
 
   /* --- Masthead ----------------------------------------------------------- */
-  '{0} · Office of the Municipal Commissioner': '{0} · महानगरपालिका आयुक्त कार्यालय',
   'Position as at': 'स्थिती दिनांक',
 
   /* --- City health index -------------------------------------------------- */

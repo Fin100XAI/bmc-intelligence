@@ -16,10 +16,12 @@ import { DataTable, type Column } from '@/components/ui/DataTable'
 import { DemonstrationNotice, EmptyState, ErrorState, LoadingState } from '@/components/ui/states'
 import { Tabs } from '@/components/ui/overlays'
 import { MiniBar } from '@/components/charts/charts'
+import { FilterBar } from '@/components/filters/FilterBar'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { adminService } from '@/services'
 import { usePageMasthead } from '@/stores/masthead.store'
+import { useFilterStore, type FilterState } from '@/stores/ui.store'
 import {
   ACTION_LABEL,
   RESOURCE_LABEL,
@@ -83,6 +85,33 @@ const ALL_ACTIONS = Object.keys(ACTION_LABEL) as ActionType[]
 const CROSS_LINK =
   'inline-flex max-w-full items-center gap-1 rounded font-medium text-govt-700 underline-offset-2 ' +
   'hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-govt-500'
+
+/** Only the dimensions a principal genuinely carries: ward, department and free text. */
+function matchesUserGlobalFilters(user: User, filters: FilterState): boolean {
+  if (filters.wardIds.length > 0 && !(user.wardId && filters.wardIds.includes(user.wardId))) return false
+  if (filters.departmentIds.length > 0 && !filters.departmentIds.includes(user.departmentId)) return false
+  if (filters.search.trim()) {
+    const q = filters.search.trim().toLowerCase()
+    if (
+      !user.name.toLowerCase().includes(q) &&
+      !user.designation.toLowerCase().includes(q) &&
+      !user.email.toLowerCase().includes(q) &&
+      !user.employeeCode.toLowerCase().includes(q)
+    ) {
+      return false
+    }
+  }
+  return true
+}
+
+/** A role carries neither ward nor department - only free text applies. */
+function matchesRoleGlobalFilters(role: Role, filters: FilterState): boolean {
+  if (filters.search.trim()) {
+    const q = filters.search.trim().toLowerCase()
+    if (!role.name.toLowerCase().includes(q) && !role.description.toLowerCase().includes(q)) return false
+  }
+  return true
+}
 
 function countByResource(role: Role): Array<{ resource: ResourceType; count: number }> {
   return ALL_RESOURCES.map((resource) => ({
@@ -169,6 +198,7 @@ export function UsersPage(): React.JSX.Element {
   const [roleFilter, setRoleFilter] = useState<RoleId | ''>('')
   const [mfaFilter, setMfaFilter] = useState<'' | 'enrolled' | 'not-enrolled'>('')
   const [statusFilter, setStatusFilter] = useState<User['status'] | ''>('')
+  const filters = useFilterStore((s) => s.filters)
 
   // The shell renders the masthead; this page states what it should say.
   usePageMasthead(t('Users & Roles'))
@@ -186,8 +216,15 @@ export function UsersPage(): React.JSX.Element {
   const roleById = new Map(roles.map((r) => [r.id, r]))
   const roleFor = (roleId: RoleId): Role | undefined => roleById.get(roleId) ?? getRole(roleId)
 
+  // Ward, department and search apply globally, ahead of this view's own
+  // role/MFA/status widgets - so the roster totals, the role holder counts and
+  // the table all agree on the same working set before either tab narrows it
+  // further.
+  const globallyFilteredUsers = users.filter((u) => matchesUserGlobalFilters(u, filters))
+  const filteredRoles = roles.filter((r) => matchesRoleGlobalFilters(r, filters))
+
   const holdersByRole = new Map<RoleId, number>()
-  for (const u of users) holdersByRole.set(u.roleId, (holdersByRole.get(u.roleId) ?? 0) + 1)
+  for (const u of globallyFilteredUsers) holdersByRole.set(u.roleId, (holdersByRole.get(u.roleId) ?? 0) + 1)
 
   /** Users -> Roles: open the register entry that grants what this officer holds. */
   function inspectRole(roleId: RoleId): void {
@@ -211,7 +248,7 @@ export function UsersPage(): React.JSX.Element {
 
   const roleOptions = Array.from(new Set(users.map((u) => u.roleId))).sort()
 
-  const filtered = users.filter((u) => {
+  const filtered = globallyFilteredUsers.filter((u) => {
     if (roleFilter && u.roleId !== roleFilter) return false
     if (mfaFilter === 'enrolled' && !u.mfaEnrolled) return false
     if (mfaFilter === 'not-enrolled' && u.mfaEnrolled) return false
@@ -220,9 +257,9 @@ export function UsersPage(): React.JSX.Element {
   })
 
   const selectedUser = filtered.find((u) => u.id === selectedUserId) ?? filtered[0] ?? null
-  const selectedRole = roles.find((r) => r.id === selectedRoleId) ?? roles[0] ?? null
-  const withoutMfa = users.filter((u) => !u.mfaEnrolled).length
-  const unheldRoles = roles.filter((r) => (holdersByRole.get(r.id) ?? 0) === 0).length
+  const selectedRole = filteredRoles.find((r) => r.id === selectedRoleId) ?? filteredRoles[0] ?? null
+  const withoutMfa = globallyFilteredUsers.filter((u) => !u.mfaEnrolled).length
+  const unheldRoles = filteredRoles.filter((r) => (holdersByRole.get(r.id) ?? 0) === 0).length
   const selectedRoleHolders = selectedRole ? (holdersByRole.get(selectedRole.id) ?? 0) : 0
 
   const userColumns: Array<Column<User>> = [
@@ -322,25 +359,28 @@ export function UsersPage(): React.JSX.Element {
       eyebrow={t('Administration')}
       breadcrumbs={[{ label: t('Administration') }, { label: t('Users & Roles') }]}
       controls={
-        <Tabs
-          items={[
-            {
-              id: 'users',
-              label: t('Users'),
-              icon: <UsersIcon className="h-3.5 w-3.5" />,
-              count: users.length || undefined,
-            },
-            {
-              id: 'roles',
-              label: t('Roles'),
-              icon: <KeyRound className="h-3.5 w-3.5" />,
-              count: roles.length || undefined,
-            },
-          ]}
-          value={tab}
-          onChange={(id) => setTab(id as DirectoryTab)}
-          ariaLabel="Access directory sections"
-        />
+        <>
+          <Tabs
+            items={[
+              {
+                id: 'users',
+                label: t('Users'),
+                icon: <UsersIcon className="h-3.5 w-3.5" />,
+                count: users.length || undefined,
+              },
+              {
+                id: 'roles',
+                label: t('Roles'),
+                icon: <KeyRound className="h-3.5 w-3.5" />,
+                count: roles.length || undefined,
+              },
+            ]}
+            value={tab}
+            onChange={(id) => setTab(id as DirectoryTab)}
+            ariaLabel="Access directory sections"
+          />
+          <FilterBar show={['ward', 'department', 'search']} />
+        </>
       }
     />
   )
@@ -383,7 +423,7 @@ export function UsersPage(): React.JSX.Element {
             <MetricGrid columns={4}>
               <Card background="red">
                 <p className="label-institutional">{t('Principals')}</p>
-                <p className="numeric mt-2 text-metric font-semibold text-ink-900">{users.length}</p>
+                <p className="numeric mt-2 text-metric font-semibold text-ink-900">{globallyFilteredUsers.length}</p>
               </Card>
               <Card tone={withoutMfa > 0 ? 'warn' : 'default'} background="amber">
                 <p className="label-institutional">{t('Without MFA')}</p>
@@ -392,13 +432,13 @@ export function UsersPage(): React.JSX.Element {
               <Card background="green">
                 <p className="label-institutional">{t('Active')}</p>
                 <p className="numeric mt-2 text-metric font-semibold text-ink-900">
-                  {users.filter((u) => u.status === 'active').length}
+                  {globallyFilteredUsers.filter((u) => u.status === 'active').length}
                 </p>
               </Card>
               <Card>
                 <p className="label-institutional">{t('City-wide scope')}</p>
                 <p className="numeric mt-2 text-metric font-semibold text-ink-900">
-                  {users.filter((u) => u.scope.wardIds === '*').length}
+                  {globallyFilteredUsers.filter((u) => u.scope.wardIds === '*').length}
                 </p>
               </Card>
             </MetricGrid>
@@ -414,8 +454,7 @@ export function UsersPage(): React.JSX.Element {
                     rowKey={(u) => u.id}
                     onRowClick={(u) => setSelectedUserId(u.id)}
                     activeRowKey={selectedUser?.id}
-                    searchable
-                    searchPlaceholder="Search by name, email or employee code"
+                    searchable={false}
                     pageSize={10}
                     initialSort={{ columnId: 'name', direction: 'asc' }}
                     toolbar={
@@ -544,24 +583,24 @@ export function UsersPage(): React.JSX.Element {
           <MetricGrid columns={5}>
             <Card background="red">
               <p className="label-institutional">{t('Roles configured')}</p>
-              <p className="numeric mt-2 text-metric font-semibold text-ink-900">{roles.length}</p>
+              <p className="numeric mt-2 text-metric font-semibold text-ink-900">{filteredRoles.length}</p>
             </Card>
             <Card background="amber">
               <p className="label-institutional">{t('Executive band')}</p>
               <p className="numeric mt-2 text-metric font-semibold text-ink-900">
-                {roles.filter((r) => r.band === 'executive').length}
+                {filteredRoles.filter((r) => r.band === 'executive').length}
               </p>
             </Card>
             <Card background="green">
               <p className="label-institutional">{t('Oversight band')}</p>
               <p className="numeric mt-2 text-metric font-semibold text-ink-900">
-                {roles.filter((r) => r.band === 'oversight').length}
+                {filteredRoles.filter((r) => r.band === 'oversight').length}
               </p>
             </Card>
             <Card>
               <p className="label-institutional">{t('Restricted-ceiling roles')}</p>
               <p className="numeric mt-2 text-metric font-semibold text-ink-900">
-                {roles.filter((r) => r.maxClassification === 'restricted').length}
+                {filteredRoles.filter((r) => r.maxClassification === 'restricted').length}
               </p>
             </Card>
             <Card tone={unheldRoles > 0 ? 'info' : 'default'}>
@@ -577,13 +616,12 @@ export function UsersPage(): React.JSX.Element {
               asideWidth="lg"
               main={
                 <DataTable
-                  rows={roles}
+                  rows={filteredRoles}
                   columns={roleColumns(holdersByRole)}
                   rowKey={(r) => r.id}
                   onRowClick={(r) => setSelectedRoleId(r.id)}
                   activeRowKey={selectedRole?.id}
-                  searchable
-                  searchPlaceholder="Search roles by name or description"
+                  searchable={false}
                   pageSize={14}
                   initialSort={{ columnId: 'permissions', direction: 'desc' }}
                 />

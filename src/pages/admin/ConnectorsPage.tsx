@@ -6,14 +6,16 @@ import { Card, DefinitionList, DefinitionRow, MetricGrid } from '@/components/ui
 import { GovPanel } from '@/components/gov/GovPanel'
 import { DataTable, type Column } from '@/components/ui/DataTable'
 import { DemonstrationNotice, EmptyState, ErrorState, LoadingState } from '@/components/ui/states'
+import { FilterBar } from '@/components/filters/FilterBar'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { adminService } from '@/services'
 import { usePageMasthead } from '@/stores/masthead.store'
+import { useFilterStore, type FilterState } from '@/stores/ui.store'
 import { departmentName, officerDisplayName } from '@/data/reference'
 import { formatRelative } from '@/utils/format'
 import { CONNECTOR_TYPE_LABEL, type Connector } from '@/types/governance'
-import { DOMAIN_LABEL } from '@/types/common'
+import { DOMAIN_LABEL, OPERATIONAL_STATE_LABEL } from '@/types/common'
 import { t } from '@/i18n'
 import { registerLayer } from '@/data/runtime'
 
@@ -56,9 +58,28 @@ function provisioningPrerequisite(connector: Connector): string {
   }
 }
 
+/** Only the dimensions this register genuinely carries: owner department, domain and health state. */
+function matchesGlobalFilters(connector: Connector, filters: FilterState): boolean {
+  if (filters.departmentIds.length > 0 && !filters.departmentIds.includes(connector.ownerDepartmentId)) return false
+  if (filters.domains.length > 0 && !filters.domains.includes(connector.domain)) return false
+  if (filters.statuses.length > 0 && !filters.statuses.includes(connector.health)) return false
+  if (filters.search.trim()) {
+    const q = filters.search.trim().toLowerCase()
+    if (
+      !connector.name.toLowerCase().includes(q) &&
+      !connector.targetSystem.toLowerCase().includes(q) &&
+      !connector.sourceAuthority.toLowerCase().includes(q)
+    ) {
+      return false
+    }
+  }
+  return true
+}
+
 export function ConnectorsPage(): React.JSX.Element {
   const connectorsQuery = useServiceQuery(queryKeys.admin('connectors'), (user) => adminService.connectors(user))
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const filters = useFilterStore((s) => s.filters)
 
   // The shell renders the masthead; this page states what it should say.
   usePageMasthead(t('Connectors'))
@@ -72,9 +93,18 @@ export function ConnectorsPage(): React.JSX.Element {
     return <EmptyState title={t('No connectors configured')} detail="The connector registry returned no entries." />
   }
 
-  const selected = connectors.find((c) => c.id === selectedId) ?? connectors[0] ?? null
-  const requiringReview = connectors.filter((c) => c.health === 'review-required' || c.health === 'not-connected').length
-  const notConfigured = connectors.filter((c) => c.authenticationMode === 'not-configured').length
+  const domainOptions = Array.from(new Set(connectors.map((c) => c.domain))).sort((a, b) =>
+    DOMAIN_LABEL[a].localeCompare(DOMAIN_LABEL[b]),
+  )
+  const statusOptions = Array.from(new Set(connectors.map((c) => c.health))).map((h) => ({
+    value: h,
+    label: OPERATIONAL_STATE_LABEL[h],
+  }))
+
+  const filtered = connectors.filter((c) => matchesGlobalFilters(c, filters))
+  const selected = filtered.find((c) => c.id === selectedId) ?? filtered[0] ?? null
+  const requiringReview = filtered.filter((c) => c.health === 'review-required' || c.health === 'not-connected').length
+  const notConfigured = filtered.filter((c) => c.authenticationMode === 'not-configured').length
 
   const columns: Array<Column<Connector>> = [
     {
@@ -150,12 +180,15 @@ export function ConnectorsPage(): React.JSX.Element {
       <PageHeader
         eyebrow={t('Administration')}
         breadcrumbs={[{ label: t('Administration') }, { label: t('Connectors') }]}
+        controls={
+          <FilterBar show={['department', 'domain', 'status', 'search']} statusOptions={statusOptions} domainOptions={domainOptions} />
+        }
       />
 
       <MetricGrid columns={4}>
         <Card background="red">
           <p className="label-institutional">{t('Connectors configured')}</p>
-          <p className="numeric mt-2 text-metric font-semibold text-ink-900">{connectors.length}</p>
+          <p className="numeric mt-2 text-metric font-semibold text-ink-900">{filtered.length}</p>
         </Card>
         <Card tone={requiringReview > 0 ? 'warn' : 'default'} background="amber">
           <p className="label-institutional">{t('Requiring review or agreement')}</p>
@@ -164,7 +197,7 @@ export function ConnectorsPage(): React.JSX.Element {
         <Card background="green">
           <p className="label-institutional">{t('Adapter ready')}</p>
           <p className="numeric mt-2 text-metric font-semibold text-ink-900">
-            {connectors.filter((c) => c.health === 'adapter-ready').length}
+            {filtered.filter((c) => c.health === 'adapter-ready').length}
           </p>
         </Card>
         <Card tone={notConfigured > 0 ? 'critical' : 'default'}>
@@ -179,13 +212,12 @@ export function ConnectorsPage(): React.JSX.Element {
           asideWidth="lg"
           main={
             <DataTable
-              rows={connectors}
+              rows={filtered}
               columns={columns}
               rowKey={(c) => c.id}
               onRowClick={(c) => setSelectedId(c.id)}
               activeRowKey={selected?.id}
-              searchable
-              searchPlaceholder="Search connectors"
+              searchable={false}
               pageSize={10}
               initialSort={{ columnId: 'name', direction: 'asc' }}
             />

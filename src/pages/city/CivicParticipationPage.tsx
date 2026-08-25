@@ -16,10 +16,12 @@ import {
 } from '@/components/ui'
 import { MetricCard } from '@/components/cards'
 import { GovPanel } from '@/components/gov/GovPanel'
+import { FilterBar } from '@/components/filters/FilterBar'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { civicParticipationService } from '@/services'
 import { usePageMasthead } from '@/stores/masthead.store'
+import { useFilterStore, type FilterState } from '@/stores/ui.store'
 import { activeCorporation } from '@/config/municipality.config'
 import { departmentName, wardShortName } from '@/data/reference'
 import {
@@ -30,8 +32,37 @@ import {
   type EngagementStatus,
   type EngagementTheme,
 } from '@/types/civic-participation'
+import type { DateRangeKey } from '@/types/common'
+import { DEMO_NOW } from '@/utils/deterministic'
 import { formatDate, formatNumber } from '@/utils/format'
 import { t } from '@/i18n'
+
+const DATE_RANGE_HOURS: Record<DateRangeKey, number> = {
+  '24h': 24,
+  '7d': 24 * 7,
+  '30d': 24 * 30,
+  '90d': 24 * 90,
+  fy: 24 * 365,
+}
+
+function withinDateRange(iso: string, range: DateRangeKey): boolean {
+  const ageMs = DEMO_NOW.getTime() - new Date(iso).getTime()
+  return ageMs <= DATE_RANGE_HOURS[range] * 3_600_000
+}
+
+/** Theme and status are already covered by this page's own selects; the
+ *  global bar adds the dimensions those do not: ward, department, recency
+ *  and free text. */
+function matchesGlobalFilters(e: CivicEngagementRecord, filters: FilterState): boolean {
+  if (filters.wardIds.length > 0 && !e.wardIds.some((w) => filters.wardIds.includes(w))) return false
+  if (filters.departmentIds.length > 0 && !filters.departmentIds.includes(e.departmentId)) return false
+  if (!withinDateRange(e.openedAt, filters.dateRange)) return false
+  if (filters.search.trim()) {
+    const q = filters.search.trim().toLowerCase()
+    if (!e.subject.toLowerCase().includes(q) && !e.summary.toLowerCase().includes(q) && !e.reference.toLowerCase().includes(q)) return false
+  }
+  return true
+}
 
 /**
  * src/pages/city/CivicParticipationPage.tsx
@@ -56,6 +87,7 @@ const STATUS_TONE: Record<EngagementStatus, BadgeTone> = {
 export function CivicParticipationPage(): React.JSX.Element {
   const [themeFilter, setThemeFilter] = useState<EngagementTheme | ''>('')
   const [statusFilter, setStatusFilter] = useState<EngagementStatus | ''>('')
+  const filters = useFilterStore((s) => s.filters)
 
   usePageMasthead(t('Civic Participation'))
 
@@ -68,9 +100,10 @@ export function CivicParticipationPage(): React.JSX.Element {
       engagements.filter((e) => {
         if (themeFilter && e.theme !== themeFilter) return false
         if (statusFilter && e.status !== statusFilter) return false
+        if (!matchesGlobalFilters(e, filters)) return false
         return true
       }),
-    [engagements, themeFilter, statusFilter],
+    [engagements, themeFilter, statusFilter, filters],
   )
 
   const loading = positionQuery.isLoading || engagementsQuery.isLoading
@@ -159,6 +192,7 @@ export function CivicParticipationPage(): React.JSX.Element {
         eyebrow={t('Citizen Services & Social Development')}
         breadcrumbs={[{ label: t('Citizen Services & Social Development') }, { label: t('Civic Participation') }]}
         hideProvenance
+        controls={<FilterBar show={['date', 'ward', 'department', 'search']} searchPlaceholder="Search engagements" />}
       />
       <DemonstrationNotice />
 

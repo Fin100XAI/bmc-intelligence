@@ -335,7 +335,7 @@ export function EnvironmentIntelligencePage(): React.JSX.Element {
             <div className="min-w-0">
               <p className="text-[0.8125rem] font-semibold text-govt-800">{t('Current readings are seasonal, not structural')}</p>
               <p className="mt-1 text-xs leading-relaxed text-ink-600">
-                {t('These figures are drawn during the monsoon season, when rainfall washout materially suppresses particulate levels city-wide. The current AQI position should be read as a seasonal snapshot rather than the city&apos;s structural, year-round air-quality position - the same monitoring network typically reads materially higher in the dry winter months.')}
+                {t("These figures are drawn during the monsoon season, when rainfall washout materially suppresses particulate levels city-wide. The current AQI position should be read as a seasonal snapshot rather than the city's structural, year-round air-quality position - the same monitoring network typically reads materially higher in the dry winter months.")}
               </p>
             </div>
           </Card>

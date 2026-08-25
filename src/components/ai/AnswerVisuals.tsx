@@ -2,6 +2,7 @@ import type { AIVisual } from '@/types/ai'
 import type { NamedSeries, SeriesPoint } from '@/types/common'
 import { MetricGrid } from '@/components/ui'
 import { MetricCard } from '@/components/cards'
+import type { MetricCardProps } from '@/components/cards'
 import {
   CHART_COLOURS,
   ChartFrame,
@@ -91,20 +92,40 @@ function VisualBlock({ visual }: { visual: AIVisual }): React.JSX.Element | null
    Metrics
    ========================================================================== */
 
+/**
+ * Cards whose tone is not already spoken for by an adverse reading (warn,
+ * critical) rotate through this identity palette instead of sitting plain
+ * white - so a row of otherwise-neutral figures reads as distinct measures
+ * rather than one undifferentiated ledger, the same treatment the dashboard
+ * pages give their own KPI strips.
+ */
+const NEUTRAL_BACKGROUND_CYCLE: Array<NonNullable<MetricCardProps['background']>> = ['blue', 'teal', 'gold', 'neutral']
+
+function metricBackground(tone: VisualTone | undefined, index: number): MetricCardProps['background'] {
+  if (tone === 'critical') return 'red'
+  if (tone === 'warn') return 'amber'
+  if (tone === 'positive') return 'green'
+  return NEUTRAL_BACKGROUND_CYCLE[index % NEUTRAL_BACKGROUND_CYCLE.length]
+}
+
 function MetricsVisual({ visual }: { visual: Extract<AIVisual, { kind: 'metrics' }> }): React.JSX.Element | null {
   if (visual.items.length === 0) return null
-  const columns = visual.items.length >= 4 ? 4 : visual.items.length === 3 ? 3 : 2
+  // Matches the row to its own count up to `MetricGrid`'s widest supported
+  // layout, so a five-card answer fills its row instead of wrapping one
+  // lonely card onto a mostly-empty second line.
+  const columns = Math.min(6, Math.max(2, visual.items.length)) as 2 | 3 | 4 | 5 | 6
   return (
     <div className="min-w-0">
       {visual.caption ? <p className="label-institutional mb-2.5">{visual.caption}</p> : null}
       <MetricGrid columns={columns}>
-        {visual.items.map((item) => (
+        {visual.items.map((item, index) => (
           <MetricCard
             key={item.label}
             label={item.label}
             value={item.value}
             support={item.support}
             tone={item.tone ? METRIC_TONE[item.tone] : 'default'}
+            background={metricBackground(item.tone, index)}
             size="sm"
           />
         ))}

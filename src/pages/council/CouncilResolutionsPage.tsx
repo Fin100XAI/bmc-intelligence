@@ -18,12 +18,16 @@ import {
 import { MetricCard } from '@/components/cards'
 import { CHART_COLOURS, DonutChart } from '@/components/charts'
 import { GovPanel } from '@/components/gov/GovPanel'
+import { FilterBar } from '@/components/filters/FilterBar'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { councilService } from '@/services'
+import { useFilterStore } from '@/stores/ui.store'
+import type { FilterState } from '@/stores/ui.store'
 import { usePageMasthead } from '@/stores/masthead.store'
 import { wardShortName } from '@/data/reference'
-import { DOMAIN_LABEL, type IntelligenceDomain } from '@/types/common'
+import { DEMO_NOW } from '@/utils/deterministic'
+import { DOMAIN_LABEL, type DateRangeKey, type IntelligenceDomain } from '@/types/common'
 import {
   COMMITTEE_KIND_LABEL,
   RESOLUTION_STATUS_LABEL,
@@ -76,9 +80,40 @@ const STATUS_COLOUR: Record<ResolutionStatus, string> = {
 
 const STATUSES: ResolutionStatus[] = ['tabled', 'under-discussion', 'deferred', 'passed', 'rejected', 'implemented']
 
+const DATE_RANGE_HOURS: Record<DateRangeKey, number> = {
+  '24h': 24,
+  '7d': 24 * 7,
+  '30d': 24 * 30,
+  '90d': 24 * 90,
+  fy: 24 * 365,
+}
+
+function withinDateRange(iso: string, range: DateRangeKey): boolean {
+  const ageMs = DEMO_NOW.getTime() - new Date(iso).getTime()
+  return ageMs <= DATE_RANGE_HOURS[range] * 3_600_000
+}
+
+/**
+ * Narrows the register by the global filter set - ward, subject-matter
+ * domain, when it was tabled, and free text against reference and subject.
+ * Applied alongside, not instead of, the register's own committee/status
+ * controls below.
+ */
+function matchesGlobalFilters(r: CouncilResolution, filters: FilterState): boolean {
+  if (filters.wardIds.length > 0 && !r.wardIds.some((w) => filters.wardIds.includes(w))) return false
+  if (filters.domains.length > 0 && !filters.domains.includes(r.domain as IntelligenceDomain)) return false
+  if (!withinDateRange(r.tabledAt, filters.dateRange)) return false
+  if (filters.search.trim()) {
+    const q = filters.search.trim().toLowerCase()
+    if (!r.subject.toLowerCase().includes(q) && !r.summary.toLowerCase().includes(q) && !r.reference.toLowerCase().includes(q)) return false
+  }
+  return true
+}
+
 export function CouncilResolutionsPage(): React.JSX.Element {
   const [committeeFilter, setCommitteeFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState<ResolutionStatus | ''>('')
+  const filters = useFilterStore((s) => s.filters)
 
   // The shell renders the masthead; this page states what it should say.
   usePageMasthead(t('Council & Committees'))
@@ -95,14 +130,22 @@ export function CouncilResolutionsPage(): React.JSX.Element {
     [committees],
   )
 
+  const domainOptions = useMemo<IntelligenceDomain[]>(
+    () =>
+      Array.from(new Set(resolutions.map((r) => r.domain as IntelligenceDomain))).sort((a, b) =>
+        DOMAIN_LABEL[a].localeCompare(DOMAIN_LABEL[b]),
+      ),
+    [resolutions],
+  )
+
   const filtered = useMemo(
     () =>
       resolutions.filter((r) => {
         if (committeeFilter && r.committeeId !== committeeFilter) return false
         if (statusFilter && r.status !== statusFilter) return false
-        return true
+        return matchesGlobalFilters(r, filters)
       }),
-    [resolutions, committeeFilter, statusFilter],
+    [resolutions, committeeFilter, statusFilter, filters],
   )
 
   if (positionQuery.isLoading || committeesQuery.isLoading || resolutionsQuery.isLoading) {
@@ -219,6 +262,7 @@ export function CouncilResolutionsPage(): React.JSX.Element {
         eyebrow={t('Council')}
         breadcrumbs={[{ label: t('Council') }, { label: t('Council & Committees') }]}
         hideProvenance
+        controls={<FilterBar show={['date', 'ward', 'domain', 'search']} domainOptions={domainOptions} />}
       />
 
       <DemonstrationNotice />
@@ -236,7 +280,7 @@ export function CouncilResolutionsPage(): React.JSX.Element {
             <div className="min-w-0">
               <p className="text-[0.8125rem] font-semibold text-govt-800">{t('The half of the corporation the rest of this platform does not show')}</p>
               <p className="mt-1 text-xs leading-relaxed text-ink-600">
-                {t('Every other screen here reports on the executive wing. A decision case in the Decision Centre ends with an officer - but a great many municipal matters cannot take effect until the Corporation has resolved on them, and expenditure above a committee&apos;s sanction limit rises to the house above it. Without this record the platform would overstate what an officer alone can commit.')}
+                {t("Every other screen here reports on the executive wing. A decision case in the Decision Centre ends with an officer - but a great many municipal matters cannot take effect until the Corporation has resolved on them, and expenditure above a committee's sanction limit rises to the house above it. Without this record the platform would overstate what an officer alone can commit.")}
               </p>
             </div>
           </Card>
@@ -377,7 +421,7 @@ export function CouncilResolutionsPage(): React.JSX.Element {
             </ul>
 
             <p className="border-t border-ink-100 px-4 py-3 text-[0.6875rem] leading-relaxed text-ink-500">
-              {t('&quot;Passed&quot; and &quot;Implemented&quot; are deliberately separate. A matter the house has carried and the administration has not yet acted on is the accountability gap that belongs to neither wing alone.')}
+              {t('"Passed" and "Implemented" are deliberately separate. A matter the house has carried and the administration has not yet acted on is the accountability gap that belongs to neither wing alone.')}
             </p>
           </GovPanel>
         </div>

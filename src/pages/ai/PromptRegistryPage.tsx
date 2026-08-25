@@ -1,13 +1,17 @@
 import { useMemo, useState } from 'react'
 import { Lock, ScrollText, ShieldCheck } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
+import { FilterBar } from '@/components/filters/FilterBar'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { aiService } from '@/services'
 import { usePageMasthead } from '@/stores/masthead.store'
+import { useFilterStore } from '@/stores/ui.store'
+import type { FilterState } from '@/stores/ui.store'
 import { getRole } from '@/security'
-import { isoFromAnchor } from '@/utils/deterministic'
+import { DEMO_NOW, isoFromAnchor } from '@/utils/deterministic'
 import { formatRelative } from '@/utils/format'
+import type { DateRangeKey } from '@/types/common'
 import { AI_USE_CASE_LABEL, type PromptTemplate } from '@/types/ai'
 import {
   Badge,
@@ -57,6 +61,33 @@ const RISK_TONE: Record<PromptTemplate['riskClass'], 'positive' | 'warn' | 'crit
   high: 'critical',
 }
 
+const DATE_RANGE_HOURS: Record<DateRangeKey, number> = {
+  '24h': 24,
+  '7d': 24 * 7,
+  '30d': 24 * 30,
+  '90d': 24 * 90,
+  fy: 24 * 365,
+}
+
+function withinDateRange(iso: string, range: DateRangeKey): boolean {
+  const ageMs = DEMO_NOW.getTime() - new Date(iso).getTime()
+  return ageMs <= DATE_RANGE_HOURS[range] * 3_600_000
+}
+
+function matchesGlobalFilters(prompt: PromptTemplate, filters: FilterState): boolean {
+  if (!withinDateRange(prompt.lastModifiedAt, filters.dateRange)) return false
+  if (filters.search.trim()) {
+    const q = filters.search.trim().toLowerCase()
+    if (
+      !prompt.title.toLowerCase().includes(q) &&
+      !prompt.id.toLowerCase().includes(q) &&
+      !prompt.body.toLowerCase().includes(q)
+    )
+      return false
+  }
+  return true
+}
+
 export function PromptRegistryPage(): React.JSX.Element {
   // The shell's masthead states the screen's name; the page states the wording.
   usePageMasthead(t('Prompt Registry'))
@@ -65,8 +96,10 @@ export function PromptRegistryPage(): React.JSX.Element {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [approvalFilter, setApprovalFilter] = useState<'all' | PromptTemplate['approvalStatus']>('all')
   const [riskFilter, setRiskFilter] = useState<'all' | PromptTemplate['riskClass']>('all')
+  const filters = useFilterStore((s) => s.filters)
 
-  const prompts = promptsQuery.data ?? []
+  const rawPrompts = promptsQuery.data ?? []
+  const prompts = useMemo(() => rawPrompts.filter((p) => matchesGlobalFilters(p, filters)), [rawPrompts, filters])
 
   const filtered = useMemo(
     () =>
@@ -133,6 +166,7 @@ export function PromptRegistryPage(): React.JSX.Element {
         eyebrow={t('AI & Automation')}
         breadcrumbs={[{ label: t('AI & Automation') }, { label: t('Prompt Registry') }]}
         freshness={FRESHNESS}
+        controls={<FilterBar show={['date', 'search']} />}
       />
 
       {promptsQuery.isLoading ? <LoadingState variant="metrics" /> : null}
@@ -146,7 +180,7 @@ export function PromptRegistryPage(): React.JSX.Element {
       <div className="grid grid-cols-1 gap-3 xl:grid-cols-12">
         <div className="flex min-w-0 flex-col gap-3 xl:col-span-8">
           {!promptsQuery.isLoading && !promptsQuery.error ? (
-            prompts.length === 0 ? (
+            rawPrompts.length === 0 ? (
               <EmptyState title={t('No prompt templates registered')} detail="No prompt templates are visible within your authorised scope." />
             ) : (
               <>
@@ -189,6 +223,7 @@ export function PromptRegistryPage(): React.JSX.Element {
                     pageSize={9}
                     stickyHeader
                     maxHeight="30rem"
+                    searchable={false}
                     searchPlaceholder="Search prompts"
                     onRowClick={(row) => setSelectedId(row.id)}
                     activeRowKey={selected?.id}
@@ -232,7 +267,7 @@ export function PromptRegistryPage(): React.JSX.Element {
 
                 <div className="mt-4">
                   <Label>{t('Prompt body')}</Label>
-                  <pre className="scrollbar-slim max-h-72 overflow-auto whitespace-pre-wrap rounded-[2px] border border-ink-100 bg-surface-sunken p-3 font-mono text-[0.6875rem] leading-relaxed text-ink-700">
+                  <pre className="scrollbar-slim max-h-72 overflow-auto whitespace-pre-wrap rounded-lg border border-ink-100 bg-surface-sunken p-3 font-mono text-[0.6875rem] leading-relaxed text-ink-700">
                     {selected.body}
                   </pre>
                 </div>

@@ -1,9 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   ArrowRight,
   Building2,
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
   CloudRain,
@@ -40,6 +39,7 @@ import { corporationName } from '@/config/corporations'
 import { municipality } from '@/config/municipality.config'
 import { NAV_SECTIONS, ROUTES } from '@/config/navigation'
 import { useActiveCorporation } from '@/stores/corporation.store'
+import { useCurrentUser } from '@/stores/auth.store'
 import { useApplyLocale } from '@/stores/locale.store'
 import { LanguageSwitcher } from '@/components/layout/LanguageSwitcher'
 import { EnvironmentBadge } from '@/components/ui/badges'
@@ -116,42 +116,23 @@ interface PortalLink {
 }
 
 /**
- * Where a portal destination actually takes the visitor: the officer sign-in
- * screen, carrying where they were headed.
- *
- * This page is only ever rendered to someone who is NOT signed in - an
- * authenticated principal is redirected to their own landing route the moment
- * this component runs. Every module named on it therefore sits behind
- * `RequireAuth`, and following one directly bounced the visitor straight back
- * here: they clicked "Ward Intelligence" and arrived at the portal front page
- * again, with nothing said about why. A front door that answers every knock by
- * closing is not a front door.
- *
- * So every destination into the platform resolves to `/login/direct` instead.
- * The card, column and button still READ as the module they name - that is what
- * the visitor came looking for - and now they land somewhere that can take them
- * there. `?next=` carries the intent across the sign-in so the click is not
- * thrown away; `LoginPage` re-checks it against the permission engine before
- * honouring it, so naming a route here can never grant one.
- *
- * Not applied to the page's own controls - the mega-menu toggle, the ticker
- * pause, the font-size steps, the carousel, the language switcher. Those are
- * how the visitor reads this page rather than ways off it, and sending them to
- * sign-in would leave the portal unusable.
- */
-/**
  * Where a portal tile or menu link actually goes.
  *
- * This used to mint `/login/direct?next=…`, because the portal was public and
- * every destination had to bounce an anonymous visitor through sign-in. The
- * portal now sits behind the session, so the principal is already established
- * by the time any of these links is on screen and the destination is reached
- * directly. The permission engine still governs what opens: `RequirePermission`
- * re-evaluates on arrival, so a link to a module this role may not read is
- * refused there exactly as it was before.
+ * The portal is public again - a visitor with no session and an officer who
+ * has just signed in or out all read the same page. For the former, following
+ * a module link directly would land on `RequireAuth`'s own redirect with
+ * nothing said about why, so it mints `/login/direct?next=…` instead: the
+ * card still READS as the module it names, and the visitor lands somewhere
+ * that can take them there. `?next=` carries the intent across the sign-in so
+ * the click is not thrown away; `LoginPage` re-checks it against the
+ * permission engine before honouring it, so naming a route here can never
+ * grant one. For a principal who already holds a session, the destination is
+ * reached directly - `RequirePermission` still re-evaluates on arrival, so a
+ * link to a module this role may not read is refused there exactly as it
+ * would be otherwise.
  */
-function signInFor(to: string): string {
-  return to
+function signInFor(to: string, isAuthenticated: boolean): string {
+  return isAuthenticated ? to : `${ROUTES.loginDirect}?next=${encodeURIComponent(to)}`
 }
 
 interface PortalMenu {
@@ -746,13 +727,13 @@ const HERO_DOT_HUES = [
  * the columns, and it stops twelve saturated blocks from becoming the loudest
  * thing on a government page.
  */
-function PortalLinkGrid({ tiles }: { tiles: PortalTile[] }): React.JSX.Element {
+function PortalLinkGrid({ tiles, isAuthenticated }: { tiles: PortalTile[]; isAuthenticated: boolean }): React.JSX.Element {
   return (
     <ul className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
       {tiles.map((tile, index) => (
         <li key={tile.label}>
           <a
-            href={signInFor(tile.to)}
+            href={signInFor(tile.to, isAuthenticated)}
             className={cn(
               'interactive-surface flex h-full items-center gap-3 rounded-lg border border-ink-200 px-4 py-3.5 shadow-card transition-colors',
               CARD_WASH_HOVER[index % CARD_WASH_HOVER.length],
@@ -786,13 +767,13 @@ function PortalLinkGrid({ tiles }: { tiles: PortalTile[] }): React.JSX.Element {
  * that begins below the cards' heads so the row reads as one band rather than
  * as four loose tiles.
  */
-function PortalCardRow({ tiles }: { tiles: PortalTile[] }): React.JSX.Element {
+function PortalCardRow({ tiles, isAuthenticated }: { tiles: PortalTile[]; isAuthenticated: boolean }): React.JSX.Element {
   return (
     <ul className="relative grid grid-cols-2 gap-4 px-4 pb-16 lg:grid-cols-4 lg:px-8">
       {tiles.map((tile, index) => (
         <li key={tile.label}>
           <a
-            href={signInFor(tile.to)}
+            href={signInFor(tile.to, isAuthenticated)}
             className={cn(
               'interactive-surface flex h-full flex-col items-center gap-3 rounded-lg border border-ink-200 px-4 py-6 text-center shadow-card transition-colors',
               CARD_WASH_HOVER[index % CARD_WASH_HOVER.length],
@@ -834,12 +815,11 @@ export function PortalLandingPage(): React.JSX.Element {
   const navigate = useNavigate()
   const corporation = useActiveCorporation()
   const locale = useApplyLocale()
+  // Whether this visit already carries a session - decides, per link below,
+  // whether a destination is reached directly or must detour through sign-in
+  // first. See `signInFor`.
+  const isAuthenticated = useCurrentUser() !== null
 
-  const menuRailRef = useRef<HTMLUListElement>(null)
-  const [canSlideLeft, setCanSlideLeft] = useState(false)
-  const [canSlideRight, setCanSlideRight] = useState(false)
-
-  const [openMenu, setOpenMenu] = useState<string | null>(null)
   const [query, setQuery] = useState('')
   const [fontStep, setFontStep] = useState(0)
   const [feedPaused, setFeedPaused] = useState(false)
@@ -855,7 +835,6 @@ export function PortalLandingPage(): React.JSX.Element {
   const relatedPages = Math.max(1, Math.ceil(RELATED_LINKS.length / 4))
   const relatedStart = Math.min(relatedPage, relatedPages - 1) * 4
   const shownRelated = RELATED_LINKS.slice(relatedStart, relatedStart + 4)
-  const navRef = useRef<HTMLDivElement | null>(null)
 
   /**
    * The banner's rotation.
@@ -895,23 +874,6 @@ export function PortalLandingPage(): React.JSX.Element {
       root.style.fontSize = previous
     }
   }, [fontStep])
-
-  /** A click anywhere outside the menu bar closes the open mega-menu. */
-  useEffect(() => {
-    if (!openMenu) return
-    const onDown = (event: MouseEvent): void => {
-      if (navRef.current && !navRef.current.contains(event.target as Node)) setOpenMenu(null)
-    }
-    const onKey = (event: KeyboardEvent): void => {
-      if (event.key === 'Escape') setOpenMenu(null)
-    }
-    document.addEventListener('mousedown', onDown)
-    document.addEventListener('keydown', onKey)
-    return () => {
-      document.removeEventListener('mousedown', onDown)
-      document.removeEventListener('keydown', onKey)
-    }
-  }, [openMenu])
 
   /**
    * Visitor counters and the what's-new list.
@@ -1021,42 +983,6 @@ export function PortalLandingPage(): React.JSX.Element {
    * convenient. `closest` walks up from the actual target, so a click on the
    * icon inside a button still counts as the button's.
    */
-  /*
-   * The sliding section rail.
-   *
-   * `scrollWidth > clientWidth` is the only honest test for "there is more this
-   * way" — it accounts for the actual rendered width of the sections, which
-   * varies with the language (a Marathi label is not the width of its English
-   * one) and with the viewport. Deciding from a hard-coded section count would
-   * be wrong in Marathi and wrong on every width but one.
-   *
-   * The one-pixel tolerance is not superstition: sub-pixel layout means a rail
-   * scrolled fully right commonly lands at 811.4 of 812, and without it the
-   * right arrow stays lit forever pointing at nothing.
-   */
-  const syncSlideAffordances = (): void => {
-    const rail = menuRailRef.current
-    if (!rail) return
-    setCanSlideLeft(rail.scrollLeft > 1)
-    setCanSlideRight(rail.scrollLeft + rail.clientWidth < rail.scrollWidth - 1)
-  }
-
-  /** Slides by most of a viewport, keeping a sliver of context across the jump. */
-  const slideMenus = (direction: 1 | -1): void => {
-    const rail = menuRailRef.current
-    if (!rail) return
-    rail.scrollBy({ left: direction * rail.clientWidth * 0.8, behavior: 'smooth' })
-  }
-
-  // Re-measured on mount, on resize and on a language switch — each changes the
-  // rendered width of the rail, and a stale measurement leaves an arrow either
-  // missing when it is needed or lit when it does nothing.
-  useEffect(() => {
-    syncSlideAffordances()
-    window.addEventListener('resize', syncSlideAffordances)
-    return () => window.removeEventListener('resize', syncSlideAffordances)
-  }, [locale])
-
   const enterConsole = (event: React.MouseEvent<HTMLDivElement>): void => {
     const target = event.target as HTMLElement | null
     if (target?.closest('a, button, input, select, textarea, label, [role="button"], [role="link"]')) return
@@ -1168,7 +1094,7 @@ export function PortalLandingPage(): React.JSX.Element {
                   {liveUpdates.map((item) => (
                     <li key={item.label} className="flex items-center">
                       <a
-                        href={signInFor(item.to)}
+                        href={signInFor(item.to, isAuthenticated)}
                         tabIndex={isLoopCopy ? -1 : undefined}
                         className="px-3 py-0.5 text-[0.75rem] whitespace-nowrap text-white/90 hover:text-white hover:underline"
                       >
@@ -1200,9 +1126,11 @@ export function PortalLandingPage(): React.JSX.Element {
       {/* ============================================================ */}
       {/* Masthead                                                     */}
       {/* ============================================================ */}
-      {/* A WHITE masthead between two blue bands, following mcgm.gov.in: blue
-          utility strip above, white masthead here, blue navigation below,
-          closed by the gold rule that separates the whole header from the hero.
+      {/* A WHITE masthead under the blue utility strip, closed by the gold
+          rule that separates the whole header from the hero. The internal
+          module menu that used to sit below it was dropped: this page is the
+          public storefront, and a visitor who has not signed in has nowhere
+          to go with "Command Centre" or "Resolution Intelligence" as a link.
 
           Carried on white, the masthead earns its authority from weight and a
           hairline of gold rather than from colour — which is what lets the
@@ -1271,7 +1199,7 @@ export function PortalLandingPage(): React.JSX.Element {
                   {matchingLinks.map((link) =>
                     link.to ? (
                       <li key={link.label}>
-                        <a href={signInFor(link.to)} className="block px-3 py-1.5 text-[0.75rem] text-portal-700 hover:bg-portal-50">
+                        <a href={signInFor(link.to, isAuthenticated)} className="block px-3 py-1.5 text-[0.75rem] text-portal-700 hover:bg-portal-50">
                           {link.label}
                         </a>
                       </li>
@@ -1287,119 +1215,6 @@ export function PortalLandingPage(): React.JSX.Element {
           </div>
         </div>
       </header>
-
-      {/* ============================================================ */}
-      {/* Primary navigation - segmented by decision surface           */}
-      {/* ============================================================ */}
-      {/* The navigation carries the corporation's portal blue, closing the
-          chrome that the utility bar opened: blue band, white masthead, blue
-          band. It sits directly on top of the photographic hero, and the two
-          are one block of chrome that has to read as one. */}
-      <div ref={navRef} className="relative z-20 bg-portal-700">
-        <nav aria-label={t('Portal navigation')} className="relative mx-auto flex max-w-[80rem] items-stretch px-2">
-          {/* One line, always. A tab bar that wraps reads as two bars, and the
-              menu that drops to the second row looks like an afterthought
-              rather than a peer of the others. Below the width where every
-              section fits, the bar slides sideways instead — which is what a
-              tab bar on a government portal does on a handset.
-
-              The arrows exist because sideways scroll is otherwise invisible on
-              a desktop with no touch and no horizontal wheel: the row simply
-              looks truncated, and the sections past the edge are not so much
-              hidden as unknown. Each is hidden the moment its direction is
-              exhausted, so a lit arrow always means there is more that way. */}
-          <button
-            type="button"
-            aria-label={t('Scroll sections left')}
-            onClick={() => slideMenus(-1)}
-            className={cn(
-              'z-10 -mr-2 shrink-0 self-stretch bg-gradient-to-r from-portal-700 via-portal-700 to-transparent pr-4 pl-1 text-white/70 transition-colors hover:text-white',
-              !canSlideLeft && 'pointer-events-none opacity-0',
-            )}
-          >
-            <ChevronLeft className="h-4 w-4" aria-hidden />
-          </button>
-
-          <ul
-            ref={menuRailRef}
-            onScroll={syncSlideAffordances}
-            className="scrollbar-none flex min-w-0 flex-1 flex-nowrap overflow-x-auto scroll-smooth"
-          >
-            {PORTAL_MENUS.map((menu) => (
-              <li key={menu.id} className="shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setOpenMenu(openMenu === menu.id ? null : menu.id)}
-                  aria-expanded={openMenu === menu.id}
-                  /* The open tab is marked by a gold underline rather than by
-                     a lighter fill. The reference portal signals the active
-                     menu the same way, and an underline survives the drop
-                     panel opening beneath it where a fill would fight it. */
-                  className={cn(
-                    'flex items-center gap-1 border-b-[3px] border-transparent px-3 py-2.5 text-[0.8125rem] font-medium whitespace-nowrap text-white/90 transition-colors hover:bg-white/10 hover:text-white',
-                    openMenu === menu.id && 'border-gold-500 bg-white/10 text-white',
-                  )}
-                >
-                  {menu.label}
-                  <ChevronDown
-                    className={cn('h-3.5 w-3.5 transition-transform', openMenu === menu.id && 'rotate-180')}
-                    aria-hidden
-                  />
-                </button>
-              </li>
-            ))}
-          </ul>
-
-          <button
-            type="button"
-            aria-label={t('Scroll sections right')}
-            onClick={() => slideMenus(1)}
-            className={cn(
-              'z-10 -ml-2 shrink-0 self-stretch bg-gradient-to-l from-portal-700 via-portal-700 to-transparent pr-1 pl-4 text-white/70 transition-colors hover:text-white',
-              !canSlideRight && 'pointer-events-none opacity-0',
-            )}
-          >
-            <ChevronRight className="h-4 w-4" aria-hidden />
-          </button>
-        </nav>
-
-        {openMenu ? (
-          <div className="absolute inset-x-0 top-full border-b border-ink-200 bg-surface shadow-drawer">
-            <div className="mx-auto grid max-w-[80rem] grid-cols-1 gap-x-8 gap-y-5 px-4 py-5 sm:grid-cols-2 lg:grid-cols-3">
-              {PORTAL_MENUS.find((m) => m.id === openMenu)?.groups.map((group, index) => (
-                /* Keyed by position: the columns of one section's destinations
-                   carry no headings to key on, and their order is the order the
-                   navigation states. */
-                <div key={index}>
-                  {group.heading ? (
-                    <p className="text-[0.6875rem] font-bold tracking-[0.08em] text-ink-400 uppercase">
-                      {group.heading}
-                    </p>
-                  ) : null}
-                  <ul className="mt-2 flex flex-col gap-1.5">
-                    {group.links.map((link) => (
-                      <li key={link.label}>
-                        {link.to ? (
-                          <a href={signInFor(link.to)} className="text-[0.8125rem] text-portal-700 hover:underline">
-                            {link.label}
-                          </a>
-                        ) : (
-                          /* Not a link: this platform does not implement the
-                             service, and offering a destination it cannot
-                             reach would be worse than saying so. */
-                          <span className="cursor-help text-[0.8125rem] text-ink-500" title={link.note}>
-                            {link.label}
-                          </span>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : null}
-      </div>
 
       {/* ============================================================ */}
       {/* Hero band                                                    */}
@@ -1483,7 +1298,7 @@ export function PortalLandingPage(): React.JSX.Element {
                     </ul>
 
                     <a
-                      href={signInFor(slide.to)}
+                      href={signInFor(slide.to, isAuthenticated)}
                       tabIndex={active ? undefined : -1}
                       className="interactive-surface mt-8 inline-flex items-center gap-2 rounded-md bg-white px-6 py-3.5 text-[0.9375rem] font-bold text-[color:var(--mcgm-ground-deep)] shadow-lg transition-transform hover:scale-[1.02] hover:bg-white/90"
                     >
@@ -1663,7 +1478,7 @@ export function PortalLandingPage(): React.JSX.Element {
               {SURFACES.map((surface, index) => (
                 <li key={surface.label}>
                   <a
-                    href={signInFor(surface.to)}
+                    href={signInFor(surface.to, isAuthenticated)}
                     className={cn(
                       'interactive-surface flex h-full flex-col gap-2.5 p-5 transition-colors',
                       CARD_WASH_HOVER[index % CARD_WASH_HOVER.length],
@@ -1714,7 +1529,7 @@ export function PortalLandingPage(): React.JSX.Element {
                   <p className="mt-2 text-[0.9375rem] leading-snug font-semibold text-ink-900">{item.label}</p>
                   <p className="mt-2 text-[0.75rem] leading-relaxed text-ink-500">{item.note}</p>
                   <a
-                    href={signInFor(item.to)}
+                    href={signInFor(item.to, isAuthenticated)}
                     className="mt-3 inline-flex items-center gap-1 text-[0.75rem] font-semibold text-govt-700 hover:underline"
                   >
                     {item.linkLabel}
@@ -1771,7 +1586,7 @@ export function PortalLandingPage(): React.JSX.Element {
                     </div>
                     {/* Bottom-right, as the reference sets it. */}
                     <a
-                      href={signInFor(feature.to)}
+                      href={signInFor(feature.to, isAuthenticated)}
                       className="mt-3 flex items-center justify-end gap-1 text-[0.75rem] font-semibold text-google-blue-700 hover:underline"
                     >
                       {t('Read more')}
@@ -1826,7 +1641,7 @@ export function PortalLandingPage(): React.JSX.Element {
                     {tab.items.map((item) => (
                       <li key={item.label}>
                         <a
-                          href={signInFor(item.to)}
+                          href={signInFor(item.to, isAuthenticated)}
                           className="flex items-center gap-2.5 px-1 py-2.5 text-[0.8125rem] text-ink-700 transition-colors hover:text-google-blue-700"
                         >
                           <item.icon className="h-4 w-4 shrink-0 text-google-blue-700" aria-hidden />
@@ -1843,7 +1658,7 @@ export function PortalLandingPage(): React.JSX.Element {
                 ))}
 
                 <a
-                  href={signInFor(ROUTES.intelligenceFeed)}
+                  href={signInFor(ROUTES.intelligenceFeed, isAuthenticated)}
                   className="mt-4 inline-flex items-center gap-1.5 text-[0.75rem] font-semibold text-google-blue-700 hover:underline"
                 >
                   {t('Know more')}
@@ -1864,7 +1679,7 @@ export function PortalLandingPage(): React.JSX.Element {
             </h2>
             <span aria-hidden className="mcgm-heading-rule mx-auto mt-3 block h-[3px] w-14 rounded-full" />
 
-            <PortalLinkGrid tiles={QUICK_LINKS} />
+            <PortalLinkGrid tiles={QUICK_LINKS} isAuthenticated={isAuthenticated} />
 
             {/* ---- The handset row --------------------------------- */}
             <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -1911,7 +1726,7 @@ export function PortalLandingPage(): React.JSX.Element {
                     {t('Ask the platform in plain language. Every answer arrives with its evidence and the post permitted to act on it.')}
                   </p>
                   <a
-                    href={signInFor(ROUTES.copilot)}
+                    href={signInFor(ROUTES.copilot, isAuthenticated)}
                     className="mt-2 inline-flex items-center gap-1 rounded-md bg-google-blue-600 px-3 py-1.5 text-[0.75rem] font-semibold text-white hover:bg-google-blue-700"
                   >
                     {t('Click here')}
@@ -1941,7 +1756,7 @@ export function PortalLandingPage(): React.JSX.Element {
                 and is marked as such. */}
             <div className="relative mt-8">
               <span aria-hidden className="absolute inset-x-0 top-14 bottom-0 rounded-xl bg-google-blue-700" />
-              <PortalCardRow tiles={shownRelated} />
+              <PortalCardRow tiles={shownRelated} isAuthenticated={isAuthenticated} />
 
               <div className="absolute inset-x-0 bottom-5 flex items-center justify-center gap-3">
                 <button
@@ -1974,7 +1789,7 @@ export function PortalLandingPage(): React.JSX.Element {
       {/* carries on the right edge                                     */}
       {/* ============================================================ */}
       <a
-        href={signInFor(ROUTES.citizenServices)}
+        href={signInFor(ROUTES.citizenServices, isAuthenticated)}
         className="fixed top-1/2 right-0 z-30 hidden -translate-y-1/2 rounded-l-md bg-google-blue-600 px-2 py-5 text-[0.75rem] font-bold tracking-wide text-white shadow-drawer [writing-mode:vertical-rl] hover:bg-google-blue-700 lg:block"
       >
         {t('Feedback')}

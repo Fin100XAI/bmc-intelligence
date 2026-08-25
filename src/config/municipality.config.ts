@@ -292,7 +292,7 @@ export function buildMunicipalityConfig(corp: CorporationRef): MunicipalityConfi
     branding: {
       productFamily: t('BMC Intelligence Infrastructure'),
       productName: t('BMC Intelligence Infrastructure'),
-      productShortName: t('BMC Intelligence Infrastructure'),
+      productShortName: t('BMC Intelligence'),
       panelColor: 'rgb(23 99 224 / 98%)',
       productSubtitle: t('Sovereign Urban Intelligence & Decision Infrastructure for {0}', city),
       deploymentLine: `${name} - ${city}`,

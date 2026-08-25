@@ -5,10 +5,12 @@ import { StateBadge } from '@/components/ui/badges'
 import { Card, DefinitionList, DefinitionRow, ProgressBar, ScoreDial } from '@/components/ui/primitives'
 import { DemonstrationNotice, ErrorState, LoadingState } from '@/components/ui/states'
 import { GovPanel } from '@/components/gov/GovPanel'
+import { FilterBar } from '@/components/filters/FilterBar'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { resilienceService } from '@/services'
 import { useActiveCorporation } from '@/stores/corporation.store'
+import { useFilterStore } from '@/stores/ui.store'
 import { cityName } from '@/config/corporations'
 import { usePageMasthead } from '@/stores/masthead.store'
 
@@ -41,8 +43,16 @@ export function UrbanResiliencePage(): React.JSX.Element {
   const corporation = useActiveCorporation()
   const query = useServiceQuery(queryKeys.resilience(), (u) => resilienceService.index(u))
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const filters = useFilterStore((s) => s.filters)
 
-  const dimensions = useMemo(() => query.data?.dimensions ?? [], [query.data])
+  const allDimensions = useMemo(() => query.data?.dimensions ?? [], [query.data])
+  // The global search filter narrows the hazard list itself, applied here so
+  // the ranked list and the detail register beside it both honour it.
+  const dimensions = useMemo(() => {
+    const q = filters.search.trim().toLowerCase()
+    if (!q) return allDimensions
+    return allDimensions.filter((d) => d.label.toLowerCase().includes(q))
+  }, [allDimensions, filters.search])
   const selected = useMemo(
     () => dimensions.find((d) => d.id === selectedId) ?? dimensions[0] ?? null,
     [dimensions, selectedId],
@@ -65,6 +75,7 @@ export function UrbanResiliencePage(): React.JSX.Element {
         eyebrow={t('Strategic Intelligence')}
         breadcrumbs={[{ label: t('Strategic Intelligence') }, { label: t('Urban Resilience') }]}
         freshness={FRESHNESS}
+        controls={<FilterBar show={['search']} />}
       />
 
       {/* ── Two columns ─────────────────────────────────────────────

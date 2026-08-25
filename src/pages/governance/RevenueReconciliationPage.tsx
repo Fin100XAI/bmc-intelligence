@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { ListChecks, ScrollText } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { useServiceQuery } from '@/hooks'
@@ -6,7 +6,6 @@ import { usePageMasthead } from '@/stores/masthead.store'
 import { queryKeys } from '@/app/queryClient'
 import { reconciliationService } from '@/services'
 import { ROUTES } from '@/config/navigation'
-import { WARDS } from '@/data/reference'
 import { isoFromAnchor } from '@/utils/deterministic'
 import { formatNumber, formatPercent, formatRupees } from '@/utils/format'
 import type { ReconciliationRule, RulePrecision } from '@/types/revenue-reconciliation'
@@ -21,12 +20,13 @@ import {
   LoadingState,
   MetricGrid,
   ProgressBar,
-  Select,
   type Column,
 } from '@/components/ui'
 import { GovPanel } from '@/components/gov/GovPanel'
 import { MetricCard } from '@/components/cards'
 import { CompositionBar } from '@/components/charts'
+import { FilterBar } from '@/components/filters/FilterBar'
+import { useFilterStore } from '@/stores/ui.store'
 import { t } from '@/i18n'
 
 /**
@@ -57,10 +57,16 @@ export function RevenueReconciliationPage(): React.JSX.Element {
   // The shell's masthead carries the screen's name; the page states the wording.
   usePageMasthead(t('Registry Reconciliation'))
 
-  const [wardFilter, setWardFilter] = useState('all')
+  const filters = useFilterStore((s) => s.filters)
+  // The reconciliation summary scopes its request to a single ward. Two or
+  // more wards selected in the global filter is answered by falling back to
+  // the city-wide figure rather than a request shape the service does not
+  // support - the rule catalogue and its observed precision are not
+  // ward-scoped records in the first place, so they are unaffected by ward.
+  const singleWardId = filters.wardIds.length === 1 ? filters.wardIds[0] : undefined
 
-  const summaryQuery = useServiceQuery(queryKeys.reconciliation(`summary:${wardFilter}`), (user) =>
-    reconciliationService.summary(user, wardFilter === 'all' ? undefined : wardFilter),
+  const summaryQuery = useServiceQuery(queryKeys.reconciliation(`summary:${singleWardId ?? 'all'}`), (user) =>
+    reconciliationService.summary(user, singleWardId),
   )
   const rulesQuery = useServiceQuery(queryKeys.reconciliation('rules'), (user) => reconciliationService.rules(user))
   const precisionQuery = useServiceQuery(queryKeys.reconciliation('precision'), (user) =>
@@ -71,9 +77,14 @@ export function RevenueReconciliationPage(): React.JSX.Element {
   const rules = rulesQuery.data ?? []
   const precision = precisionQuery.data ?? []
 
-  const wardOptions = useMemo(
-    () => [{ value: 'all', label: t('All wards in scope') }, ...WARDS.map((w) => ({ value: w.id, label: w.name }))],
-    [],
+  const searchQuery = filters.search.trim().toLowerCase()
+  const filteredRules = useMemo(
+    () => (searchQuery ? rules.filter((r) => `${r.title} ${r.definition} ${r.rationale}`.toLowerCase().includes(searchQuery)) : rules),
+    [rules, searchQuery],
+  )
+  const filteredPrecision = useMemo(
+    () => (searchQuery ? precision.filter((r) => r.title.toLowerCase().includes(searchQuery)) : precision),
+    [precision, searchQuery],
   )
 
   const tierSegments = useMemo(
@@ -178,8 +189,8 @@ export function RevenueReconciliationPage(): React.JSX.Element {
   return (
     <PageBody>
       <PageHeader
-        eyebrow={t('Governance & Finance')}
-        breadcrumbs={[{ label: t('Governance & Finance') }, { label: t('Registry Reconciliation') }]}
+        eyebrow={t('Revenue & Municipal Finance')}
+        breadcrumbs={[{ label: t('Revenue & Municipal Finance') }, { label: t('Registry Reconciliation') }]}
         freshness={FRESHNESS}
         actions={
           <>
@@ -191,15 +202,7 @@ export function RevenueReconciliationPage(): React.JSX.Element {
             </LinkButton>
           </>
         }
-        controls={
-          <Select
-            aria-label={t('Filter by ward')}
-            value={wardFilter}
-            onChange={(e) => setWardFilter(e.target.value)}
-            options={wardOptions}
-            className="w-auto"
-          />
-        }
+        controls={<FilterBar show={['ward', 'search']} />}
       />
 
       {isLoading ? <LoadingState variant="metrics" /> : null}
@@ -297,7 +300,7 @@ export function RevenueReconciliationPage(): React.JSX.Element {
               {t('Computed from what officers actually found, not asserted. Precision counts a candidate against a rule only where the officer established that the rule was wrong about the property - a candidate correctly surfaced and then closed for a lawful reason is the engine working, not failing.')}
             </p>
             <DataTable
-              rows={precision}
+              rows={filteredPrecision}
               columns={precisionColumns}
               rowKey={(r) => r.ruleId}
               exportName="reconciliation-rule-precision"
@@ -315,7 +318,7 @@ export function RevenueReconciliationPage(): React.JSX.Element {
               {t('Every condition the engine applies, stated in full. An officer, a ratepayer\'s advocate and an auditor should all be able to read exactly what put a property on the worklist - and the lawful explanations that may mean it should come straight back off again.')}
             </p>
             <div className="mt-3 grid grid-cols-1 gap-4 xl:grid-cols-2">
-              {rules.map((rule) => (
+              {filteredRules.map((rule) => (
                 <RuleCard key={rule.id} rule={rule} precision={precision.find((p) => p.ruleId === rule.id)} />
               ))}
             </div>

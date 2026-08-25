@@ -22,20 +22,34 @@ import { MetricCard } from '@/components/cards'
 import { GovPanel } from '@/components/gov/GovPanel'
 import { ChartFrame, CategoryBarChart, RankedBarChart, CHART_COLOURS } from '@/components/charts'
 import { CityMap } from '@/components/map/CityMap'
+import { FilterBar } from '@/components/filters/FilterBar'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { usePageMasthead } from '@/stores/masthead.store'
 import { waterService } from '@/services'
-import { useContextStore, useDrawerStore } from '@/stores/ui.store'
+import { useContextStore, useDrawerStore, useFilterStore, type FilterState } from '@/stores/ui.store'
 import { wardName } from '@/data/reference'
 import { activeCorporation } from '@/config/municipality.config'
 import type { WaterAsset, WaterZone } from '@/types/city-domains'
-import type { DataFreshness } from '@/types/common'
+import { OPERATIONAL_STATE_LABEL, type DataFreshness, type OperationalState } from '@/types/common'
 import { cn } from '@/utils/cn'
 import { formatDate, formatNumber, formatPercent } from '@/utils/format'
 import { DEMO_NOW } from '@/utils/deterministic'
 import { t } from '@/i18n'
 import { registerLayer } from '@/data/runtime'
+
+/** Every zone-driven section below filters its own copy of the zone list
+ *  against the same predicate, so the city position, the zone register and
+ *  the zone charts always agree about which zones are in scope. */
+function matchesGlobalFilters(zone: WaterZone, filters: FilterState): boolean {
+  if (filters.wardIds.length > 0 && !zone.wardIds.some((w) => filters.wardIds.includes(w))) return false
+  if (filters.statuses.length > 0 && !filters.statuses.includes(zone.state)) return false
+  if (filters.search.trim()) {
+    const q = filters.search.trim().toLowerCase()
+    if (!zone.name.toLowerCase().includes(q) && !zone.wardIds.some((w) => wardName(w).toLowerCase().includes(q))) return false
+  }
+  return true
+}
 
 /**
  * Water Intelligence - city water position, reservoir status, zone register,
@@ -141,6 +155,15 @@ export function WaterIntelligencePage(): React.JSX.Element {
     setDrillWardSelection({ wardId: null, zoneId: null, from: contextWardId })
   }
 
+  // Cached alongside the section-level fetches below (same query key), so this
+  // costs nothing extra - it only reads the state vocabulary in use for the
+  // filter bar's status options.
+  const zonesForOptions = useServiceQuery(queryKeys.water('zones'), (u) => waterService.zones(u)).data ?? []
+  const zoneStatusOptions = Array.from(new Set(zonesForOptions.map((z) => z.state))).map((s) => ({
+    value: s,
+    label: OPERATIONAL_STATE_LABEL[s as OperationalState],
+  }))
+
   const freshness: DataFreshness = {
     generatedAt: DEMO_NOW.toISOString(),
     sourceObservedAt: DEMO_NOW.toISOString(),
@@ -156,6 +179,7 @@ export function WaterIntelligencePage(): React.JSX.Element {
         eyebrow={t('City Intelligence')}
         breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Water Intelligence') }]}
         freshness={freshness}
+        controls={<FilterBar show={['ward', 'status', 'search']} statusOptions={zoneStatusOptions} searchPlaceholder="Search zones or wards" />}
       />
 
       <CityPositionSection />
@@ -188,6 +212,7 @@ export default WaterIntelligencePage
    ========================================================================== */
 
 function CityPositionSection(): React.JSX.Element {
+  const filters = useFilterStore((s) => s.filters)
   const q = useServiceQuery(queryKeys.water('zones'), (u) => waterService.zones(u))
   if (q.isLoading) {
     return (
@@ -203,7 +228,7 @@ function CityPositionSection(): React.JSX.Element {
       </Card>
     )
   }
-  const zones = q.data ?? []
+  const zones = (q.data ?? []).filter((z) => matchesGlobalFilters(z, filters))
   if (zones.length === 0) {
     return (
       <Card>
@@ -337,6 +362,7 @@ function ZoneSection({
   onSelectZone: (zoneId: string) => void
   activeZoneId: string | null
 }): React.JSX.Element {
+  const filters = useFilterStore((s) => s.filters)
   const q = useServiceQuery(queryKeys.water('zones'), (u) => waterService.zones(u))
   if (q.isLoading) {
     return (
@@ -352,7 +378,7 @@ function ZoneSection({
       </Card>
     )
   }
-  const zones = q.data ?? []
+  const zones = (q.data ?? []).filter((z) => matchesGlobalFilters(z, filters))
   if (zones.length === 0) {
     return (
       <Card>
@@ -608,6 +634,7 @@ function DrilldownSection({
    ========================================================================== */
 
 function WaterChartsSection(): React.JSX.Element {
+  const filters = useFilterStore((s) => s.filters)
   const q = useServiceQuery(queryKeys.water('zones'), (u) => waterService.zones(u))
   if (q.isLoading) {
     return (
@@ -623,7 +650,7 @@ function WaterChartsSection(): React.JSX.Element {
       </Card>
     )
   }
-  const zones = q.data ?? []
+  const zones = (q.data ?? []).filter((z) => matchesGlobalFilters(z, filters))
   if (zones.length === 0) {
     return (
       <Card>

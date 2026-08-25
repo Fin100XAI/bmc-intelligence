@@ -12,9 +12,11 @@ import { DataTable, type Column } from '@/components/ui/DataTable'
 import { ConfirmDialog } from '@/components/ui/overlays'
 import { DemonstrationNotice, EmptyState, ErrorState, LoadingState } from '@/components/ui/states'
 import { GovPanel } from '@/components/gov/GovPanel'
+import { FilterBar } from '@/components/filters/FilterBar'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { drService } from '@/services'
+import { useFilterStore } from '@/stores/ui.store'
 import { usePageMasthead } from '@/stores/masthead.store'
 import {
   POSTURE_MATURITY_LABEL,
@@ -96,6 +98,7 @@ export function ResilienceDRPage(): React.JSX.Element {
   usePageMasthead(t('Resilience & Disaster Recovery'))
 
   const query = useServiceQuery(queryKeys.dr(), (u) => drService.posture(u))
+  const globalFilters = useFilterStore((s) => s.filters)
 
   const [maturityFilter, setMaturityFilter] = useState<PostureMaturity | ''>('')
   const [drills, setDrills] = useState<Record<string, DrillRun>>({})
@@ -103,14 +106,21 @@ export function ResilienceDRPage(): React.JSX.Element {
   const [drillTarget, setDrillTarget] = useState<ResilienceTest | null>(null)
 
   const posture = query.data
+  const searchQuery = globalFilters.search.trim().toLowerCase()
 
   const filteredBackups = useMemo(
-    () => (posture?.backups ?? []).filter((b) => !maturityFilter || b.maturity === maturityFilter),
-    [posture, maturityFilter],
+    () =>
+      (posture?.backups ?? []).filter(
+        (b) => (!maturityFilter || b.maturity === maturityFilter) && (!searchQuery || `${b.scope} ${b.method}`.toLowerCase().includes(searchQuery)),
+      ),
+    [posture, maturityFilter, searchQuery],
   )
   const filteredFailover = useMemo(
-    () => (posture?.failover ?? []).filter((f) => !maturityFilter || f.maturity === maturityFilter),
-    [posture, maturityFilter],
+    () =>
+      (posture?.failover ?? []).filter(
+        (f) => (!maturityFilter || f.maturity === maturityFilter) && (!searchQuery || `${f.component} ${f.strategy}`.toLowerCase().includes(searchQuery)),
+      ),
+    [posture, maturityFilter, searchQuery],
   )
 
   /** Tests with this session's drills layered over the seed result. */
@@ -118,11 +128,12 @@ export function ResilienceDRPage(): React.JSX.Element {
     () =>
       (posture?.tests ?? [])
         .filter((resilienceTest) => !maturityFilter || resilienceTest.maturity === maturityFilter)
+        .filter((resilienceTest) => !searchQuery || resilienceTest.name.toLowerCase().includes(searchQuery))
         .map((resilienceTest) => {
           const drill = drills[resilienceTest.id]
           return drill ? { ...resilienceTest, lastResult: drill.outcome } : resilienceTest
         }),
-    [posture, maturityFilter, drills],
+    [posture, maturityFilter, searchQuery, drills],
   )
 
   function runDrill(test: ResilienceTest): void {
@@ -239,19 +250,22 @@ export function ResilienceDRPage(): React.JSX.Element {
           </div>
         }
         controls={
-          <Select
-            aria-label={t('Filter by maturity')}
-            className="w-full max-w-xs"
-            value={maturityFilter}
-            onChange={(e) => setMaturityFilter(e.target.value as PostureMaturity | '')}
-            options={[
-              { value: '', label: t('All maturities') },
-              ...(Object.keys(POSTURE_MATURITY_LABEL) as PostureMaturity[]).map((m) => ({
-                value: m,
-                label: POSTURE_MATURITY_LABEL[m],
-              })),
-            ]}
-          />
+          <div className="flex w-full flex-wrap items-center gap-2">
+            <Select
+              aria-label={t('Filter by maturity')}
+              className="w-full max-w-xs"
+              value={maturityFilter}
+              onChange={(e) => setMaturityFilter(e.target.value as PostureMaturity | '')}
+              options={[
+                { value: '', label: t('All maturities') },
+                ...(Object.keys(POSTURE_MATURITY_LABEL) as PostureMaturity[]).map((m) => ({
+                  value: m,
+                  label: POSTURE_MATURITY_LABEL[m],
+                })),
+              ]}
+            />
+            <FilterBar show={['search']} />
+          </div>
         }
       />
 

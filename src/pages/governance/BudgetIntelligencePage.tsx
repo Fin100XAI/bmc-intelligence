@@ -5,13 +5,16 @@ import { useServiceAction, useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { financeService, projectService } from '@/services'
 import { useCurrentUser } from '@/stores/auth.store'
+import { useFilterStore } from '@/stores/ui.store'
+import type { FilterState } from '@/stores/ui.store'
 import { usePageMasthead } from '@/stores/masthead.store'
 import { activeCorporation } from '@/config/municipality.config'
 import { allowed } from '@/security'
 import { ROUTES } from '@/config/navigation'
-import type { OperationalState } from '@/types/common'
+import { OPERATIONAL_STATE_LABEL, type OperationalState } from '@/types/common'
 import { BUDGET_HEAD_LABEL, type BudgetHead, type BudgetLine, type BudgetScenarioInput } from '@/types/finance'
 import type { Project } from '@/types/finance'
+import { FilterBar } from '@/components/filters/FilterBar'
 import { departmentName, wardName } from '@/data/reference'
 import { isoFromAnchor } from '@/utils/deterministic'
 import { formatCrore, formatDelta, formatPercent } from '@/utils/format'
@@ -95,11 +98,23 @@ function round1(v: number): number {
   return Math.round(v * 10) / 10
 }
 
+function matchesGlobalFilters(line: BudgetLine, filters: FilterState): boolean {
+  if (filters.wardIds.length > 0 && (!line.wardId || !filters.wardIds.includes(line.wardId))) return false
+  if (filters.departmentIds.length > 0 && !filters.departmentIds.includes(line.departmentId)) return false
+  if (filters.statuses.length > 0 && !filters.statuses.includes(line.state)) return false
+  if (filters.search.trim()) {
+    const q = filters.search.trim().toLowerCase()
+    if (!departmentName(line.departmentId).toLowerCase().includes(q)) return false
+  }
+  return true
+}
+
 export function BudgetIntelligencePage(): React.JSX.Element {
   // The shell's masthead carries the screen's name; the page states the wording.
   usePageMasthead(t('Budget Intelligence'))
 
   const user = useCurrentUser()
+  const filters = useFilterStore((s) => s.filters)
   const [selectedDepartmentId, setSelectedDepartmentId] = useState<string | null>(null)
 
   const linesQuery = useServiceQuery(queryKeys.finance('budget-lines'), (u) => financeService.budgetLines(u, { pageSize: 200 }))
@@ -119,9 +134,24 @@ export function BudgetIntelligencePage(): React.JSX.Element {
   const [scenarioError, setScenarioError] = useState<string | null>(null)
   const [scenarioPending, setScenarioPending] = useState(false)
 
-  const lines = linesQuery.data?.items ?? []
+  const lines = useMemo(
+    () => (linesQuery.data?.items ?? []).filter((l) => matchesGlobalFilters(l, filters)),
+    [linesQuery.data, filters],
+  )
   const deptVarianceRows = deptVarianceQuery.data ?? []
-  const projects = projectsQuery.data?.items ?? []
+  const projects = useMemo(
+    () =>
+      (projectsQuery.data?.items ?? []).filter(
+        (p) =>
+          (filters.wardIds.length === 0 || p.wardIds.some((w) => filters.wardIds.includes(w))) &&
+          (filters.departmentIds.length === 0 || filters.departmentIds.includes(p.departmentId)),
+      ),
+    [projectsQuery.data, filters],
+  )
+  const wardVarianceRows = useMemo(
+    () => (wardVarianceQuery.data ?? []).filter((w) => filters.wardIds.length === 0 || filters.wardIds.includes(w.wardId)),
+    [wardVarianceQuery.data, filters],
+  )
 
   const departmentRows: DepartmentBudgetRow[] = useMemo(() => {
     const byDept = new Map<string, BudgetLine[]>()
@@ -203,7 +233,7 @@ export function BudgetIntelligencePage(): React.JSX.Element {
 
   const selectedDeptProjects = selectedDepartmentId ? projects.filter((p) => p.departmentId === selectedDepartmentId) : []
   const selectedDeptWardIds = Array.from(new Set(selectedDeptProjects.flatMap((p) => p.wardIds)))
-  const selectedDeptWardRows = (wardVarianceQuery.data ?? []).filter((w) => selectedDeptWardIds.includes(w.wardId))
+  const selectedDeptWardRows = wardVarianceRows.filter((w) => selectedDeptWardIds.includes(w.wardId))
 
   const canRunScenario = allowed(user, 'budget', 'edit')
 
@@ -351,13 +381,19 @@ export function BudgetIntelligencePage(): React.JSX.Element {
   return (
     <PageBody>
       <PageHeader
-        eyebrow={t('Governance & Finance')}
-        breadcrumbs={[{ label: t('Governance & Finance') }, { label: t('Budget Intelligence') }]}
+        eyebrow={t('Revenue & Municipal Finance')}
+        breadcrumbs={[{ label: t('Revenue & Municipal Finance') }, { label: t('Budget Intelligence') }]}
         freshness={FRESHNESS}
         actions={
           <LinkButton to={ROUTES.projects} variant="outline" icon={<HardHat className="h-3.5 w-3.5" />}>
             {t('Open Project Intelligence')}
           </LinkButton>
+        }
+        controls={
+          <FilterBar
+            show={['ward', 'department', 'status', 'search']}
+            statusOptions={(Object.keys(OPERATIONAL_STATE_LABEL) as OperationalState[]).map((v) => ({ value: v, label: OPERATIONAL_STATE_LABEL[v] }))}
+          />
         }
       />
 
@@ -584,7 +620,7 @@ export function BudgetIntelligencePage(): React.JSX.Element {
                 {t('Capital allocation and spend by ward, from the finance service ward variance view.')}
               </p>
               <DataTable
-                rows={wardVarianceQuery.data ?? []}
+                rows={wardVarianceRows}
                 columns={[
                   {
                     id: 'ward',

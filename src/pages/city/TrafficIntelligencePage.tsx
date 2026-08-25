@@ -6,18 +6,29 @@ import { MetricCard } from '@/components/cards'
 import { GovPanel } from '@/components/gov/GovPanel'
 import { CategoryBarChart, CHART_COLOURS, ChartFrame, MiniBar } from '@/components/charts'
 import { CityMap, type MapPath } from '@/components/map/CityMap'
+import { FilterBar } from '@/components/filters/FilterBar'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { roadsService } from '@/services'
 import { activeCorporation } from '@/config/municipality.config'
 import { wardShortName } from '@/data/reference'
 import { usePageMasthead } from '@/stores/masthead.store'
-import { useFilterStore } from '@/stores/ui.store'
+import { useFilterStore, type FilterState } from '@/stores/ui.store'
 import type { RoadSegment, TrafficCorridor } from '@/types/city-domains'
-import type { DataFreshness } from '@/types/common'
+import { OPERATIONAL_STATE_LABEL, type DataFreshness, type OperationalState } from '@/types/common'
 import { isoFromAnchor } from '@/utils/deterministic'
 import { formatNumber } from '@/utils/format'
 import { t } from '@/i18n'
+
+function matchesGlobalFilters(c: TrafficCorridor, filters: FilterState): boolean {
+  if (filters.wardIds.length > 0 && !c.wardIds.some((w) => filters.wardIds.includes(w))) return false
+  if (filters.statuses.length > 0 && !filters.statuses.includes(c.state)) return false
+  if (filters.search.trim()) {
+    const q = filters.search.trim().toLowerCase()
+    if (!c.name.toLowerCase().includes(q) && !c.wardIds.some((w) => wardShortName(w).toLowerCase().includes(q))) return false
+  }
+  return true
+}
 
 /**
  * Traffic & Mobility Intelligence - corridor congestion, incidents and
@@ -61,7 +72,7 @@ export function TrafficIntelligencePage(): React.JSX.Element {
    * principal may read (`filterByScope` on `mobility`), so this can subtract
    * from that set and can never add to it.
    */
-  const wardScope = useFilterStore((s) => s.filters.wardIds)
+  const filters = useFilterStore((s) => s.filters)
 
   const corridorsQuery = useServiceQuery(queryKeys.roads('corridors'), (u) => roadsService.corridors(u))
   const segmentsQuery = useServiceQuery(queryKeys.roads('segments'), (u) => roadsService.segments(u))
@@ -94,13 +105,18 @@ export function TrafficIntelligencePage(): React.JSX.Element {
     )
   }
 
-  // A corridor is in scope when it serves at least one ward in the selection;
-  // with no ward selected the corporation-wide position stands.
-  const servesScope = (wardIds: string[]): boolean =>
-    wardScope.length === 0 || wardIds.some((w) => wardScope.includes(w))
+  const corridorStatusOptions = Array.from(new Set((corridorsQuery.data ?? []).map((c) => c.state))).map((s) => ({
+    value: s,
+    label: OPERATIONAL_STATE_LABEL[s as OperationalState],
+  }))
 
-  const corridors = (corridorsQuery.data ?? []).filter((c) => servesScope(c.wardIds))
-  const segments = (segmentsQuery.data ?? []).filter((s) => servesScope([s.wardId]))
+  const corridors = (corridorsQuery.data ?? []).filter((c) => matchesGlobalFilters(c, filters))
+  // Segments feed only the ward-scoped cross-domain reference below, which has
+  // no status or free-text dimension of its own - ward is the one filter that
+  // genuinely applies to it.
+  const segments = (segmentsQuery.data ?? []).filter(
+    (s) => filters.wardIds.length === 0 || filters.wardIds.includes(s.wardId),
+  )
 
   if (corridors.length === 0) {
     return (
@@ -190,6 +206,7 @@ export function TrafficIntelligencePage(): React.JSX.Element {
         eyebrow={t('City Intelligence')}
         breadcrumbs={breadcrumbs}
         freshness={FRESHNESS}
+        controls={<FilterBar show={['ward', 'status', 'search']} statusOptions={corridorStatusOptions} searchPlaceholder="Search corridor or ward" />}
       />
 
       <MetricGrid columns={4}>

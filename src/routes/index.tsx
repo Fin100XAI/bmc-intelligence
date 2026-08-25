@@ -26,6 +26,7 @@ const CommissionerCockpitPage = lazy(() => import('@/pages/command/CommissionerC
 const CityIntelligenceIndexPage = lazy(() => import('@/pages/command/CityIntelligenceIndexPage'))
 const SituationRoomPage = lazy(() => import('@/pages/command/SituationRoomPage'))
 const CityCommandMapPage = lazy(() => import('@/pages/command/CityCommandMapPage'))
+const ResolutionIntelligencePage = lazy(() => import('@/pages/command/ResolutionIntelligencePage'))
 const IntelligenceFeedPage = lazy(() => import('@/pages/command/IntelligenceFeedPage'))
 const DecisionCentrePage = lazy(() => import('@/pages/command/DecisionCentrePage'))
 const MyTasksPage = lazy(() => import('@/pages/command/MyTasksPage'))
@@ -149,15 +150,13 @@ function guarded(element: React.JSX.Element): React.JSX.Element {
 
 export const router = createBrowserRouter([
   {
-    // Sign-in is now the front door. The portal front page moved behind it —
-    // see `ROUTES.portal` below and the note on that constant.
+    // The direct sign-in form - reachable on its own for a bookmark or a
+    // `?next=`-carrying link, but no longer the front door itself: the portal
+    // below is, matching the corporation's own public site.
     path: ROUTES.login,
     element: <LoginPage />,
   },
   {
-    // Retained so that `?next=`-carrying links minted before this change, and
-    // any bookmark an officer kept, still land on the sign-in screen rather
-    // than on a 404.
     path: ROUTES.loginDirect,
     element: <LoginPage />,
   },
@@ -168,15 +167,15 @@ export const router = createBrowserRouter([
     element: <TransparencyPortalPage />,
   },
   {
-    // The portal front page, behind the session. `RequireAuth` rather than the
-    // full `AppShell`: this page carries its own masthead and navigation and
-    // would otherwise render a portal inside the console's chrome.
+    // The portal front page - public, no `RequireAuth`, no `AppShell`: it
+    // carries its own masthead and would otherwise render a portal inside the
+    // console's chrome. A visitor with no session reads it and signs in; an
+    // officer who has just signed out or signed in lands here too, the same
+    // page either way. `PortalLandingPage` itself decides, per link, whether
+    // a destination is reachable directly (a session already exists) or must
+    // detour through sign-in first (`signInFor`).
     path: ROUTES.portal,
-    element: (
-      <RequireAuth>
-        <PortalLandingPage />
-      </RequireAuth>
-    ),
+    element: <PortalLandingPage />,
   },
   {
     path: '/',
@@ -194,6 +193,7 @@ export const router = createBrowserRouter([
       { path: ROUTES.cityIndex, element: guarded(<CityIntelligenceIndexPage />) },
       { path: ROUTES.situationRoom, element: guarded(<SituationRoomPage />) },
       { path: ROUTES.cityCommandMap, element: guarded(<CityCommandMapPage />) },
+      { path: ROUTES.resolutionIntelligence, element: guarded(<ResolutionIntelligencePage />) },
       { path: ROUTES.intelligenceFeed, element: guarded(<IntelligenceFeedPage />) },
       { path: ROUTES.decisions, element: guarded(<DecisionCentrePage />) },
       { path: ROUTES.myTasks, element: guarded(<MyTasksPage />) },

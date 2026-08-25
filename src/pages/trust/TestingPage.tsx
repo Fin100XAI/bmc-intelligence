@@ -4,6 +4,8 @@ import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { Badge } from '@/components/ui/badges'
 import { Card, CardHeader, MetricGrid, Select } from '@/components/ui/primitives'
 import { DemonstrationNotice } from '@/components/ui/states'
+import { FilterBar } from '@/components/filters/FilterBar'
+import { useFilterStore } from '@/stores/ui.store'
 import { usePageMasthead } from '@/stores/masthead.store'
 import { cn } from '@/utils/cn'
 import { t } from '@/i18n'
@@ -191,14 +193,19 @@ export function TestingPage(): React.JSX.Element {
   )
 
   const rows = useMemo(build$ROWS, [])
+  const globalFilters = useFilterStore((s) => s.filters)
   const [categoryFilter, setCategoryFilter] = useState<CoverageCategory | ''>('')
   const [statusFilter, setStatusFilter] = useState<CoverageStatus | ''>('')
 
   const STATUS_LABEL = build$STATUS_LABEL()
   const CATEGORY_LABEL = build$CATEGORY_LABEL()
 
+  const searchQuery = globalFilters.search.trim().toLowerCase()
   const filtered = rows.filter(
-    (r) => (!categoryFilter || r.category === categoryFilter) && (!statusFilter || r.status === statusFilter),
+    (r) =>
+      (!categoryFilter || r.category === categoryFilter) &&
+      (!statusFilter || r.status === statusFilter) &&
+      (!searchQuery || `${r.title} ${r.detail}`.toLowerCase().includes(searchQuery)),
   )
 
   const verified = rows.filter((r) => r.status === 'verified-manually').length
@@ -231,6 +238,7 @@ export function TestingPage(): React.JSX.Element {
                 ...(Object.keys(STATUS_LABEL) as CoverageStatus[]).map((s) => ({ value: s, label: STATUS_LABEL[s] })),
               ]}
             />
+            <FilterBar show={['search']} />
           </div>
         }
       />

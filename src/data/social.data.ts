@@ -468,20 +468,26 @@ registerLayer(() => {
   const maternityLocalities = localityNames(maternityCount)
   const dispensaryLocalities = localityNames(dispensaryCount)
 
+  // A running counter, not fixed per-tier offsets, is what keeps every
+  // hospital id unique: fixed bands (0/20/40/60) silently collide once a
+  // corporation's published tier count (e.g. BMC's 30 maternity homes)
+  // outgrows the gap reserved for it, which is exactly what produced
+  // duplicate `hos-061`..`hos-070` ids once the maternity tier reached 30.
+  let hospitalSeedIndex = 0
   HOSPITALS = [
     ...hospitalLocalities
       .slice(0, majorCount)
-      .map((locality, i) => buildHospital(`${locality} Municipal General Hospital`, 'major', i)),
+      .map((locality) => buildHospital(`${locality} Municipal General Hospital`, 'major', hospitalSeedIndex++)),
     ...hospitalLocalities
       .slice(majorCount)
-      .map((locality, i) => buildHospital(`${locality} Municipal Hospital`, 'peripheral', i + 20)),
+      .map((locality) => buildHospital(`${locality} Municipal Hospital`, 'peripheral', hospitalSeedIndex++)),
     ...maternityLocalities.map((locality, i) => {
       const ward = WARDS[i % WARDS.length]!
-      return buildHospital(`${locality} Maternity Home`, 'maternity', i + 40, ward.id)
+      return buildHospital(`${locality} Maternity Home`, 'maternity', hospitalSeedIndex++, ward.id)
     }),
     ...dispensaryLocalities.map((locality, i) => {
       const ward = WARDS[(i + maternityCount) % WARDS.length]!
-      return buildHospital(`${locality} Municipal Dispensary`, 'dispensary', i + 60, ward.id)
+      return buildHospital(`${locality} Municipal Dispensary`, 'dispensary', hospitalSeedIndex++, ward.id)
     }),
   ]
 

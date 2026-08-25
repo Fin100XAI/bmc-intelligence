@@ -115,7 +115,7 @@ export const MR_PART_12: Record<string, string> = {
   'Monthly registrations and certificates issued': 'मासिक नोंदण्या आणि दिलेली प्रमाणपत्रे',
   'Monthly sterilisations, vaccinations and dog bites': 'मासिक निर्बीजीकरण, लसीकरण आणि श्वानदंश',
   Months: 'महिने',
-  'Months before the current one are reconstructed from each ward&apos;s published movement against the previous thirty days. They are a modelled history, not a retained record - the figure that is authoritative is the last one.':
+  "Months before the current one are reconstructed from each ward's published movement against the previous thirty days. They are a modelled history, not a retained record - the figure that is authoritative is the last one.":
     'चालू महिन्यापूर्वीचे महिने प्रत्येक प्रभागाच्या मागील तीस दिवसांतील प्रकाशित बदलावरून पुनर्रचित केले आहेत. तो प्रतिरूपित इतिहास आहे, जतन केलेली नोंद नाही — अधिकृत आकडा हा शेवटचाच.',
   'Most adverse variance first.': 'सर्वाधिक प्रतिकूल फरक प्रथम.',
   'Most deteriorated': 'सर्वाधिक ढासळलेले',
@@ -155,8 +155,8 @@ export const MR_PART_12: Record<string, string> = {
   'Need rises upward': 'वर जाताना गरज वाढते',
   Neighbourhood: 'परिसर',
   'Neighbourhood of {0}': '{0} चा परिसर',
-  'Neither list is exhaustive of every engineering detail, and completing the right-hand column is a multi-department, multi-quarter undertaking, not a release. The indicative scale on each workstream is a band rather than an estimate: a precise figure would be false when the critical path runs through signed agreements and completed reviews rather than through code. This page will be revised as work against each item begins and completes - no item moves from &quot;Required&quot; to &quot;Implemented&quot; here without the underlying capability actually existing.':
-    'यापैकी कोणतीही यादी प्रत्येक अभियांत्रिकी तपशील समाविष्ट करत नाही, आणि उजवा स्तंभ पूर्ण करणे हे अनेक विभागांचे, अनेक तिमाहींचे काम आहे — एखादी आवृत्ती प्रकाशित करणे नव्हे. प्रत्येक कार्यप्रवाहावरील निर्देशक व्याप्ती हा अंदाज नसून पट्टा आहे: जेव्हा निर्णायक मार्ग संगणक आज्ञावलीतून नव्हे तर स्वाक्षरित करार व पूर्ण झालेल्या पुनरावलोकनांतून जातो, तेव्हा नेमका आकडा चुकीचाच ठरेल. प्रत्येक बाबीवरील काम सुरू होईल व पूर्ण होईल तसे हे पान सुधारले जाईल — मूळ क्षमता प्रत्यक्षात अस्तित्वात आल्याशिवाय येथे कोणतीही बाब &quot;आवश्यक&quot; वरून &quot;अंमलात&quot; कडे जात नाही.',
+  'Neither list is exhaustive of every engineering detail, and completing the right-hand column is a multi-department, multi-quarter undertaking, not a release. The indicative scale on each workstream is a band rather than an estimate: a precise figure would be false when the critical path runs through signed agreements and completed reviews rather than through code. This page will be revised as work against each item begins and completes - no item moves from "Required" to "Implemented" here without the underlying capability actually existing.':
+    'यापैकी कोणतीही यादी प्रत्येक अभियांत्रिकी तपशील समाविष्ट करत नाही, आणि उजवा स्तंभ पूर्ण करणे हे अनेक विभागांचे, अनेक तिमाहींचे काम आहे — एखादी आवृत्ती प्रकाशित करणे नव्हे. प्रत्येक कार्यप्रवाहावरील निर्देशक व्याप्ती हा अंदाज नसून पट्टा आहे: जेव्हा निर्णायक मार्ग संगणक आज्ञावलीतून नव्हे तर स्वाक्षरित करार व पूर्ण झालेल्या पुनरावलोकनांतून जातो, तेव्हा नेमका आकडा चुकीचाच ठरेल. प्रत्येक बाबीवरील काम सुरू होईल व पूर्ण होईल तसे हे पान सुधारले जाईल — मूळ क्षमता प्रत्यक्षात अस्तित्वात आल्याशिवाय येथे कोणतीही बाब "आवश्यक" वरून "अंमलात" कडे जात नाही.',
   'Net movement': 'निव्वळ बदल',
   'Network under management': 'व्यवस्थापनाखालील जाळे',
   Never: 'कधीही नाही',
