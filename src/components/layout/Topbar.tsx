@@ -19,7 +19,7 @@ import { WARDS, wardName } from '@/data/reference'
 import { useAuthStore, useCurrentUser } from '@/stores/auth.store'
 import { useCommandStore, useContextStore, useLayoutStore } from '@/stores/ui.store'
 import { useBreadcrumbStore } from '@/stores/breadcrumb.store'
-import { formatDateTime, formatRelative } from '@/utils/format'
+import { formatRelative } from '@/utils/format'
 import { DEMO_NOW } from '@/utils/deterministic'
 import { cn } from '@/utils/cn'
 import { Badge } from '@/components/ui/badges'
@@ -40,79 +40,6 @@ export interface TopbarStatus {
   lastRefreshedAt: string
 }
 
-/* The operator's wall clock. Formatted in Asia/Kolkata explicitly so the "IST"
-   suffix is true regardless of the machine the console is being shown on. */
-const IST_TIME = new Intl.DateTimeFormat('en-IN', {
-  timeZone: 'Asia/Kolkata',
-  hour: '2-digit',
-  minute: '2-digit',
-  second: '2-digit',
-  hour12: false,
-})
-const IST_DATE = new Intl.DateTimeFormat('en-IN', {
-  timeZone: 'Asia/Kolkata',
-  weekday: 'short',
-  day: '2-digit',
-  month: 'short',
-})
-
-/**
- * The live clock in the command bar.
- *
- * This is the one place in the application that renders the real system clock:
- * it is the operator's wall time, not a data timestamp. Every figure,
- * freshness label and audit age elsewhere stays anchored to `DEMO_NOW`
- * (`src/utils/deterministic.ts`) so the municipal picture remains internally
- * consistent - do not wire this clock into either direction of that boundary.
- */
-function LiveClock({
-  dotClass,
-  stateLabel,
-  refreshedAt,
-  cityName,
-}: {
-  dotClass: string
-  /** What the status dot means, so its colour is never unexplained. */
-  stateLabel: string
-  refreshedAt: string
-  /** The city whose wall time this is - it moves with the deployment. */
-  cityName: string
-}): React.JSX.Element {
-  const [now, setNow] = useState(() => new Date())
-
-  useEffect(() => {
-    const id = window.setInterval(() => setNow(new Date()), 1000)
-    return () => window.clearInterval(id)
-  }, [])
-
-  return (
-    <Tooltip
-      side="bottom"
-      className="hidden shrink-0 xl:inline-flex"
-      content={
-        <span>
-          <span className="font-semibold">{stateLabel}</span>
-          <span className="mt-0.5 block opacity-80">{t('Live {0} time · IST', cityName)}</span>
-          <span className="mt-0.5 block opacity-80">
-            {t('Municipal figures are anchored to {0}.', formatDateTime(DEMO_NOW))}
-          </span>
-          <span className="mt-0.5 block opacity-80">{t('Data refreshed {0}', formatRelative(refreshedAt))}</span>
-        </span>
-      }
-    >
-      <span className="flex flex-col items-end justify-center leading-none">
-        <span className="numeric flex items-center gap-1.5 text-[0.8125rem] font-semibold tabular-nums text-ink-800">
-          <span className={cn('animate-pulse-soft h-1.5 w-1.5 rounded-full', dotClass)} aria-hidden />
-          <time dateTime={now.toISOString()}>{IST_TIME.format(now)}</time>
-        </span>
-        <span className="mt-1 text-[0.5625rem] font-semibold tracking-[0.09em] text-ink-400 uppercase">
-          {t('{0} · IST', IST_DATE.format(now))}
-        </span>
-      </span>
-    </Tooltip>
-  )
-}
-
 export function Topbar({ status }: { status: TopbarStatus }): React.JSX.Element {
   const corporation = useActiveCorporation()
   const user = useCurrentUser()
@@ -121,8 +48,6 @@ export function Topbar({ status }: { status: TopbarStatus }): React.JSX.Element 
   const setPaletteOpen = useCommandStore((s) => s.setPaletteOpen)
   const setNotificationsOpen = useCommandStore((s) => s.setNotificationsOpen)
   const notificationsOpen = useCommandStore((s) => s.notificationsOpen)
-  const wardId = useContextStore((s) => s.wardId)
-  const setWard = useContextStore((s) => s.setWard)
   const [profileOpen, setProfileOpen] = useState(false)
   const [isMac, setIsMac] = useState(false)
 
@@ -136,20 +61,6 @@ export function Topbar({ status }: { status: TopbarStatus }): React.JSX.Element 
       ? WARDS
       : WARDS.filter((w) => (user.scope.wardIds as string[]).includes(w.id))
     : []
-
-  const stateDot = {
-    operational: 'bg-ok-500',
-    degraded: 'bg-warn-500',
-    'at-risk': 'bg-risk-500',
-    critical: 'bg-crit-500',
-  } as const
-
-  const stateLabel = {
-    operational: 'City operations normal',
-    degraded: 'City operations degraded',
-    'at-risk': 'City operations at risk',
-    critical: 'City operations critical',
-  } as const
 
   return (
     <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b border-ink-100 bg-surface/85 px-3 shadow-[0_1px_0_0_rgb(11_18_32/0.04)] backdrop-blur-md sm:px-4">
@@ -195,35 +106,16 @@ export function Topbar({ status }: { status: TopbarStatus }): React.JSX.Element 
           interface against another corporation offered a choice that is not
           on the table - and it read as a live capability while listing
           nothing. `CorporationSelector` is still in the tree, unreferenced,
-          for the multi-tenant build that needs it. */}
+          for the multi-tenant build that needs it.
 
-      {/* Live city clock ---------------------------------------------- */}
-      <LiveClock
-        dotClass={stateDot[status.operationalState]}
-        stateLabel={stateLabel[status.operationalState]}
-        refreshedAt={status.lastRefreshedAt}
-        cityName={cityName(corporation)}
-      />
+          The live clock that used to sit here moved to `AppMasthead`, at the
+          opposite end of the band from the brand - see the note there. */}
 
-      {/* Ward context selector ---------------------------------------- */}
-      {authorisedWards.length > 1 ? (
-        <label className="hidden items-center gap-1.5 md:flex">
-          <span className="sr-only">{t('Ward context')}</span>
-          <select
-            value={wardId ?? ''}
-            onChange={(e) => setWard(e.target.value || null)}
-            className="h-8 max-w-[11rem] cursor-pointer rounded-md border border-ink-200 bg-surface px-2 text-xs text-ink-700 focus:border-govt-400 focus:ring-2 focus:ring-govt-500/20 focus:outline-none"
-            aria-label={t('Select ward context')}
-          >
-            <option value="">{t('All authorised wards')}</option>
-            {authorisedWards.map((w) => (
-              <option key={w.id} value={w.id}>
-                {w.code} - {w.name.split(' · ')[0]}
-              </option>
-            ))}
-          </select>
-        </label>
-      ) : authorisedWards.length === 1 ? (
+      {/* A single-ward officer's own ward, stated rather than chosen - this
+          is identity, not a filter, so it has no interactive control. Every
+          page's own Ward filter (see `FilterBar`) is the one place scope is
+          actually narrowed now, rather than duplicating that control here. */}
+      {authorisedWards.length === 1 ? (
         <Badge tone="info" size="sm" className="hidden md:inline-flex">
           {wardName(authorisedWards[0]!.id)}
         </Badge>

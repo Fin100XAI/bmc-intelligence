@@ -142,7 +142,7 @@ export function AppShell(): React.JSX.Element {
             It scrolls away with the page; the top bar beneath it is what stays
             pinned, because search and status are what an officer reaches for
             mid-task, not the letterhead. */}
-        {!reduced ? <AppMasthead /> : null}
+        {!reduced ? <AppMasthead status={status} /> : null}
         <Topbar status={status} />
         {!reduced ? <MenuBar badges={badges} /> : null}
         {!reduced ? <ContextBar /> : null}

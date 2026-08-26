@@ -163,7 +163,6 @@ export const MR_PART_02: Record<string, string> = {
   'Select all rows on this page': 'या पानावरील सर्व ओळी निवडा',
   'Select row': 'ओळ निवडा',
   'Select the active municipal corporation': 'कार्यरत महानगरपालिका निवडा',
-  'Select ward context': 'प्रभाग संदर्भ निवडा',
   'Selected alternative': 'निवडलेला पर्याय',
   'Selecting a corporation rebuilds every intelligence layer against its own published reference data.':
     'महानगरपालिका निवडल्यावर प्रत्येक बुद्धिमत्ता स्तर तिच्या स्वतःच्या प्रकाशित संदर्भ माहितीवर पुन्हा उभारला जातो.',
@@ -207,7 +206,6 @@ export const MR_PART_02: Record<string, string> = {
   'View critical alerts': 'अतितीव्र इशारे पहा',
   'Visible columns': 'दिसणारे स्तंभ',
   'vs plan': 'आराखड्याच्या तुलनेत',
-  'Ward context': 'प्रभाग संदर्भ',
   'Ward not found': 'प्रभाग आढळला नाही',
   'Ward Officer': 'प्रभाग अधिकारी',
   'Ward profile': 'प्रभाग माहिती',

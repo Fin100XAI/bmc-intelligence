@@ -308,10 +308,69 @@ export function ExecutiveOverviewPage(): React.JSX.Element {
         />
       </div>
 
-      {/* ── Three columns ──────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 gap-3 xl:grid-cols-12">
-        {/* Column 1 — the city's condition ------------------------- */}
-        <div className="flex flex-col gap-3 xl:col-span-5">
+      {/* ── What just happened / what needs attention ─────────────────
+          A wide horizontal pair rather than a narrow sidebar column: both
+          read as lists, and a list read in a column four-twelfths wide is a
+          column of clipped lines, not a list. Full page width, side by side,
+          gives each the room its entries actually need. */}
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+        <GovPanel
+          title={t('Latest updates')}
+          subtitle={t('{0} live', feed.length)}
+          tone="green"
+          dense
+        >
+          <LiveFeed
+            entries={feed}
+            now={DEMO_NOW}
+            height="min(24rem, calc(100vh - 20rem))"
+            onSelect={(entry) => {
+              const [kind, id] = entry.id.split(':')
+              if (kind === 'intel') openDrawer({ kind: 'intelligence', id: id ?? '' })
+              else if (kind === 'incident') openDrawer({ kind: 'incident', id: id ?? '' })
+              else if (kind === 'alert') navigate(ROUTES.alerts)
+              else if (entry.route) navigate(entry.route)
+            }}
+          />
+        </GovPanel>
+
+        <GovPanel
+          title={t('Matters requiring attention')}
+          subtitle={t('{0} open', cityPosition.topRisks.length)}
+          tone="critical"
+          dense
+        >
+          {cityPosition.topRisks.length === 0 ? (
+            <p className="px-3 py-6 text-center text-[0.75rem] text-ink-400">{t('No open risks.')}</p>
+          ) : (
+            <ul className="scrollbar-slim divide-y divide-ink-100 overflow-y-auto" style={{ maxHeight: 'min(24rem, calc(100vh - 20rem))' }}>
+              {cityPosition.topRisks.map((item) => (
+                <li key={item.id}>
+                  <button
+                    type="button"
+                    onClick={() => openDrawer({ kind: 'intelligence', id: item.id })}
+                    className="flex w-full items-center gap-3 px-3 py-2 text-left transition-colors hover:bg-govt-50/60"
+                  >
+                    <span className="flex shrink-0 flex-col items-start gap-1">
+                      <SeverityBadge severity={item.severity} />
+                      <span className="text-[0.5625rem] font-semibold tracking-wide text-ink-500 uppercase">
+                        {DOMAIN_LABEL[item.domain]}
+                      </span>
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[0.75rem] leading-snug font-semibold text-ink-800">{item.title}</span>
+                      <span className="line-clamp-1 block text-[0.6875rem] leading-snug text-ink-500">{item.description}</span>
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </GovPanel>
+      </div>
+
+      {/* ── City health index | Ward performance register ────────────── */}
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
           <GovPanel title={t('City health index')} subtitle={t('Weighted composite')} tone="amber" dense>
             {/* The gauge states the one number an executive reads first; the
                 radar states its SHAPE — which components are pulling it down
@@ -406,7 +465,12 @@ export function ExecutiveOverviewPage(): React.JSX.Element {
               ariaLabel={t('Ward performance')}
             />
           </GovPanel>
+      </div>
 
+      {/* ── Ward risk map ──────────────────────────────────────────────
+          Full width on its own rather than paired - a spatial view reads
+          worse squeezed to half the page than either of the panels beside
+          it would. */}
           <GovPanel title={t('Ward risk map')} subtitle={t('Select a ward to open its profile')} tone="red" dense>
             <CityMap
               layers={[
@@ -453,93 +517,9 @@ export function ExecutiveOverviewPage(): React.JSX.Element {
               height={380}
             />
           </GovPanel>
-        </div>
 
-        {/* Column 2 — what has just happened ------------------------ */}
-        <div className="xl:col-span-4">
-          {/*
-           * The WHOLE column pins, not the feed alone.
-           *
-           * A `position: sticky` element stays in normal flow — its box keeps
-           * its place and only its painting is offset. Siblings do not reflow
-           * around it, so a panel below a pinned one scrolls straight up
-           * underneath it. Pinning just the feed therefore fixed where it came
-           * to rest and did nothing about what slid beneath it.
-           *
-           * Sticking the column as a single block means the two panels move
-           * together and can never cross. `max-h` plus `overflow-y-auto` is the
-           * safety net for short viewports: on a normal screen the block fits
-           * and only the feed scrolls, and on a small one the block itself
-           * becomes scrollable rather than running off the bottom with its
-           * lower half unreachable.
-           */}
-          <div className="scrollbar-rail grid grid-cols-1 gap-3 sm:grid-cols-2 xl:sticky xl:top-[3.75rem] xl:z-10 xl:max-h-[calc(100vh-4.5rem)] xl:overflow-y-auto">
-          <GovPanel
-            title={t('Latest updates')}
-            subtitle={t('{0} live', feed.length)}
-            tone="green"
-            dense
-            /* Pinning is handled by the column wrapper above — see the note
-               there on why sticking this panel alone could not work. The
-               `3.75rem` offset it uses clears the shell's `sticky top-0` top
-               bar, which is 3.5rem tall and shares this scrollport. */
-          >
-            <LiveFeed
-              entries={feed}
-              now={DEMO_NOW}
-              /* Bounded against the viewport rather than fixed, so the pinned
-                 column fits on a short laptop as well as a large monitor. The
-                 cap is generous — this is the column an officer glances at
-                 most, and a feed showing three entries is not worth the space
-                 it occupies. The column's own scrollbar is the fallback when
-                 the pair genuinely cannot fit. */
-              height="min(30rem, calc(100vh - 20rem))"
-              onSelect={(entry) => {
-                const [kind, id] = entry.id.split(':')
-                if (kind === 'intel') openDrawer({ kind: 'intelligence', id: id ?? '' })
-                else if (kind === 'incident') openDrawer({ kind: 'incident', id: id ?? '' })
-                else if (kind === 'alert') navigate(ROUTES.alerts)
-                else if (entry.route) navigate(entry.route)
-              }}
-            />
-          </GovPanel>
-
-          <GovPanel
-            title={t('Matters requiring attention')}
-            subtitle={t('{0} open', cityPosition.topRisks.length)}
-            tone="critical"
-            dense
-          >
-            {cityPosition.topRisks.length === 0 ? (
-              <p className="px-3 py-6 text-center text-[0.75rem] text-ink-400">{t('No open risks.')}</p>
-            ) : (
-              <ul className="divide-y divide-ink-100">
-                {cityPosition.topRisks.map((item) => (
-                  <li key={item.id}>
-                    <button
-                      type="button"
-                      onClick={() => openDrawer({ kind: 'intelligence', id: item.id })}
-                      className="flex w-full flex-col gap-1 px-3 py-2 text-left transition-colors hover:bg-govt-50/60"
-                    >
-                      <span className="flex flex-wrap items-center gap-1.5">
-                        <SeverityBadge severity={item.severity} />
-                        <span className="text-[0.5625rem] font-semibold tracking-wide text-ink-500 uppercase">
-                          {DOMAIN_LABEL[item.domain]}
-                        </span>
-                      </span>
-                      <span className="text-[0.75rem] leading-snug font-semibold text-ink-800">{item.title}</span>
-                      <span className="line-clamp-2 text-[0.6875rem] leading-snug text-ink-500">{item.description}</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-            </GovPanel>
-          </div>
-        </div>
-
-        {/* Column 3 — what the administration is carrying ----------- */}
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:col-span-3 xl:grid-cols-1 2xl:grid-cols-2">
+      {/* ── Revenue & finance | Capital works | Service delivery | Infrastructure standing ── */}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <GovPanel title={t('Revenue & finance')} tone="amber" dense>
             <GovStat
               label={t('Revenue realisation')}
@@ -675,7 +655,6 @@ export function ExecutiveOverviewPage(): React.JSX.Element {
             )}
           </GovPanel>
         </div>
-      </div>
 
       {/* ── Executive brief ────────────────────────────────────────── */}
       <GovPanel

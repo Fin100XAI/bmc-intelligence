@@ -14,9 +14,6 @@ export const MR_PART_32: Record<string, string> = {
   'Scroll the menu left': 'मेनू डावीकडे सरकवा',
   'Scroll the menu right': 'मेनू उजवीकडे सरकवा',
 
-  /* --- Masthead ----------------------------------------------------------- */
-  'Position as at': 'स्थिती दिनांक',
-
   /* --- City health index -------------------------------------------------- */
   'City health index': 'शहर आरोग्य निर्देशांक',
   'Weighted composite': 'भारित संमिश्र',
