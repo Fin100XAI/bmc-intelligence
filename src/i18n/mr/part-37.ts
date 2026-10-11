@@ -43,8 +43,6 @@ export const MR_PART_37: Record<string, string> = {
   'Every statutory certificate, licence and permit measured against its published turnaround, across every department.':
     'प्रत्येक विभागातील प्रत्येक वैधानिक प्रमाणपत्र, परवाना आणि अनुमती यांचे त्यांच्या प्रकाशित कालमर्यादेविरुद्ध मापन.',
   'Data & Resources': 'माहिती व संसाधने',
-  "The citation register behind this platform's factual spine - every published figure, and exactly where it was read.":
-    'या मंचाच्या तथ्यात्मक कण्यामागील उद्धरण नोंदवही - प्रत्येक प्रकाशित आकडा, आणि तो नेमका कुठे वाचला गेला.',
   'Testing & Quality Assurance': 'चाचणी व गुणवत्ता हमी',
   'What has actually been verified against this build, how, and what has not - stated plainly.':
     'या बांधणीविरुद्ध प्रत्यक्षात काय पडताळले गेले, कसे, आणि काय पडताळले गेले नाही - स्पष्टपणे नमूद.',

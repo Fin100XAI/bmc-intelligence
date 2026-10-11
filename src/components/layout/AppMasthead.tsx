@@ -110,14 +110,10 @@ export function AppMasthead({ status }: { status: TopbarStatus }): React.JSX.Ele
 
   return (
     <div className="shrink-0">
-      {/* The corporation's own civic blue, `portal-700` (#0051bb) - the same
-          band mcgm.gov.in opens on, and the same one the public landing and
-          sign-in pages carry before a user is ever inside the application. An
-          officer's working session and the portal they arrived from should
-          read as one system, not as two different institutions handing off
-          to each other at the sign-in wall. The menu bar below the top bar
-          carries the same blue for the same reason. */}
-      <div className="flex flex-wrap items-center gap-3 bg-portal-700 px-3 py-2.5 sm:px-4">
+      {/* The institutional navy, `govt-900` - the same authority colour the
+          NMMC platform's masthead carries, so the two deployments read as one
+          family. The menu bar below the top bar carries the same navy. */}
+      <div className="flex flex-wrap items-center gap-3 bg-govt-900 px-3 py-2.5 sm:px-4">
         {/* The seal and the title link to the Executive Overview, the way a
             masthead links home on any government portal.
 

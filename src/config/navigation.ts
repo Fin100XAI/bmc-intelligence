@@ -1,6 +1,8 @@
 import type { LucideIcon } from 'lucide-react'
 import {
   Activity,
+  Layers,
+  Library,
   Archive,
   AlertOctagon,
   AlertTriangle,
@@ -224,6 +226,13 @@ export const ROUTES = {
   scenarios: '/strategic/scenarios',
   dataResources: '/strategic/data-resources',
 
+  // Evidence & roadmap - the decision layer's real, sourced foundation
+  evidenceRegistry: '/decision/evidence',
+  publicMoney: '/decision/public-money',
+  capabilityRoadmap: '/decision/roadmap',
+  systemsMap: '/decision/systems-map',
+  capabilityArea: '/decision/systems-map/:area',
+
   // AI
   copilot: '/ai/copilot',
   aiCentre: '/ai/centre',
@@ -316,7 +325,7 @@ function build$NAV_SECTIONS(): NavSection[] {
   return [
   {
     id: 'command',
-    label: t('Command Centre'),
+    label: t('Command'),
     items: [
       {
         id: 'executive',
@@ -383,6 +392,114 @@ function build$NAV_SECTIONS(): NavSection[] {
         description: t('Institutional feed of every signal the platform has raised.'),
       },
       {
+        id: 'alerts',
+        label: t('Alerts & Escalations'),
+        to: ROUTES.alerts,
+        icon: AlertTriangle,
+        requires: { resource: 'alert', action: 'view' },
+        badge: 'critical-alerts',
+        description: t('Operational alerts with SLA position and ownership.'),
+      },
+    ],
+  },
+  {
+    id: 'finance',
+    label: t('Revenue & Finance'),
+    items: [
+      {
+        id: 'revenue',
+        label: t('Revenue Intelligence'),
+        to: ROUTES.revenue,
+        icon: Banknote,
+        requires: { resource: 'revenue', action: 'view' },
+        domain: 'revenue',
+        description: t('Collection efficiency, arrears and reconciliation candidates.'),
+      },
+      {
+        id: 'licensing',
+        label: t('Licences & Trade'),
+        to: ROUTES.licensing,
+        icon: Stamp,
+        requires: { resource: 'revenue', action: 'view' },
+        domain: 'revenue',
+        description: t('Trade licences, renewals, compliance and licence fee position.'),
+      },
+      {
+        id: 'financial',
+        label: t('Financial Intelligence'),
+        to: ROUTES.financialIntelligence,
+        icon: Landmark,
+        requires: { resource: 'budget', action: 'view' },
+        domain: 'budget',
+        description: t('Consolidated financial position and the Financial Health Index.'),
+      },
+      {
+        id: 'budget',
+        label: t('Budget Intelligence'),
+        to: ROUTES.budget,
+        icon: Wallet,
+        requires: { resource: 'budget', action: 'view' },
+        domain: 'budget',
+        description: t('Allocation, utilisation, variance and scenario analysis.'),
+      },
+      {
+        id: 'public-money',
+        label: t('Public Money & Investment'),
+        to: ROUTES.publicMoney,
+        icon: Banknote,
+        requires: { resource: 'intelligence', action: 'view' },
+        domain: 'projects',
+        description: t('The budget and every publicly identified work, on a real map of the city, each figure with its source.'),
+      },
+    ],
+  },
+  {
+    id: 'property-tax',
+    label: t('Property Tax'),
+    items: [
+      {
+        id: 'property',
+        label: t('Property Intelligence'),
+        to: ROUTES.property,
+        icon: Building,
+        requires: { resource: 'revenue', action: 'view' },
+        domain: 'property',
+        description: t('Assessment base, segments and reassessment position.'),
+      },
+      {
+        id: 'reconciliation',
+        label: t('Registry Reconciliation'),
+        to: ROUTES.reconciliation,
+        icon: Scale,
+        requires: { resource: 'revenue', action: 'view' },
+        domain: 'revenue',
+        description: t('Where the corporation’s own registers disagree about the same property.'),
+      },
+      {
+        id: 'recovery-worklist',
+        label: t('Recovery Worklist'),
+        to: ROUTES.recoveryWorklist,
+        icon: ListChecks,
+        requires: { resource: 'revenue', action: 'view' },
+        domain: 'revenue',
+        description: t('Assessment review candidates assigned to a named officer for verification.'),
+      },
+      {
+        id: 'recovery-pilot',
+        label: t('Recovery Pilot & Returns'),
+        to: ROUTES.recoveryPilot,
+        icon: Target,
+        requires: { resource: 'revenue', action: 'view' },
+        domain: 'revenue',
+        description: t('Single-ward pilot scorecard and the statutory property tax return.'),
+      },
+    ],
+  },
+  {
+    id: 'decisions-actions',
+    label: t('Decisions'),
+    items: [
+      {
         id: 'decisions',
         label: t('Decision Centre'),
         to: ROUTES.decisions,
@@ -400,15 +517,6 @@ function build$NAV_SECTIONS(): NavSection[] {
         description: t('Tasks assigned to you, and tasks you have assigned to others.'),
       },
       {
-        id: 'alerts',
-        label: t('Alerts & Escalations'),
-        to: ROUTES.alerts,
-        icon: AlertTriangle,
-        requires: { resource: 'alert', action: 'view' },
-        badge: 'critical-alerts',
-        description: t('Operational alerts with SLA position and ownership.'),
-      },
-      {
         id: 'reports',
         label: t('Report Workspace'),
         to: ROUTES.reports,
@@ -419,29 +527,8 @@ function build$NAV_SECTIONS(): NavSection[] {
     ],
   },
   {
-    // A dedicated top-level entry rather than a line inside Command Centre's
-    // dropdown - the wedge this platform is being pitched on deserves its own
-    // place in the bar, not a buried mention. It also appears a second time
-    // inside Citizen Services & Social Development, beside Citizen Service
-    // Intelligence, since that is where the complaints it reasons over are
-    // read day to day.
-    id: 'resolution',
-    label: t('Resolution Intelligence'),
-    items: [
-      {
-        id: 'resolution-intelligence',
-        label: t('Resolution Intelligence'),
-        to: ROUTES.resolutionIntelligence,
-        icon: Workflow,
-        requires: { resource: 'intelligence', action: 'view' },
-        domain: 'citizen-services',
-        description: t('Every complaint as a resolution case - explainable ownership, multi-department orchestration and transfer-loop detection.'),
-      },
-    ],
-  },
-  {
     id: 'wards-localities',
-    label: t('Wards & Localities'),
+    label: t('Wards'),
     items: [
       {
         id: 'wards',
@@ -461,10 +548,6 @@ function build$NAV_SECTIONS(): NavSection[] {
         domain: 'citizen-services',
         description: t('Localities where several distinct problems are stacking at once.'),
       },
-      // The decision surfaces. The two above answer "how is this ward?"; these
-      // answer "which ward first?", "are we funding the right ones?", "which is
-      // getting worse?", "what did we promise?" and "is it the ward or the way
-      // it is being run?".
       {
         id: 'ward-league',
         label: t('Ward League Table'),
@@ -513,13 +596,8 @@ function build$NAV_SECTIONS(): NavSection[] {
     ],
   },
   {
-    // Life safety sits above the service wings deliberately. The Situation
-    // Room in Command handles a live event; this section is where the
-    // corporation's standing preparedness against the hazards it has
-    // identified is read - the statutory ground of the City Disaster
-    // Management Plan.
     id: 'disaster',
-    label: t('Disaster & Emergency Response'),
+    label: t('Disaster'),
     items: [
       {
         id: 'disaster',
@@ -561,9 +639,6 @@ function build$NAV_SECTIONS(): NavSection[] {
     ],
   },
   {
-    // The sanitation wing as a corporation is organised: supply, disposal,
-    // drainage and refuse are one chain of custody over the same water and
-    // the same ward, and are read together.
     id: 'water-sanitation',
     label: t('Water & Sanitation'),
     items: [
@@ -607,7 +682,7 @@ function build$NAV_SECTIONS(): NavSection[] {
   },
   {
     id: 'roads-transport',
-    label: t('Roads, Transport & Lighting'),
+    label: t('Roads & Transport'),
     items: [
       {
         id: 'roads',
@@ -638,13 +713,8 @@ function build$NAV_SECTIONS(): NavSection[] {
     ],
   },
   {
-    // The Health Department as it is actually constituted: medical services,
-    // the Registrar of Births and Deaths, the burial and cremation grounds,
-    // the veterinary cadre, and the market and slaughterhouse hygiene
-    // inspectorate. Registration and animal welfare read as odd neighbours
-    // only to someone reading the subject rather than the establishment.
     id: 'public-health',
-    label: t('Public Health & Medical Services'),
+    label: t('Health'),
     items: [
       {
         id: 'health',
@@ -704,7 +774,7 @@ function build$NAV_SECTIONS(): NavSection[] {
   },
   {
     id: 'environment',
-    label: t('Environment & Public Realm'),
+    label: t('Environment'),
     items: [
       {
         id: 'environment',
@@ -732,15 +802,12 @@ function build$NAV_SECTIONS(): NavSection[] {
         requires: { resource: 'intelligence', action: 'view' },
         description: t('Open space per resident, garden condition and tree cover.'),
       },
-      {
-        id: 'amenities',
-        label: t('Parking & Public Amenities'),
-        to: ROUTES.amenities,
-        icon: CircleParking,
-        requires: { resource: 'intelligence', action: 'view' },
-        domain: 'amenities',
-        description: t('Parking, public conveniences, bus shelters and the residents-per-facility ratio.'),
-      },
+    ],
+  },
+  {
+    id: 'culture-amenities',
+    label: t('Culture & Amenities'),
+    items: [
       {
         id: 'heritage',
         label: t('Heritage & Tourism'),
@@ -750,14 +817,20 @@ function build$NAV_SECTIONS(): NavSection[] {
         domain: 'heritage',
         description: t('Listed heritage structures and precincts, museums, the zoo and the tourism-facing public realm.'),
       },
+      {
+        id: 'amenities',
+        label: t('Parking & Public Amenities'),
+        to: ROUTES.amenities,
+        icon: CircleParking,
+        requires: { resource: 'intelligence', action: 'view' },
+        domain: 'amenities',
+        description: t('Parking, public conveniences, bus shelters and the residents-per-facility ratio.'),
+      },
     ],
   },
   {
-    // Where the corporation faces the citizen directly, and the urban poverty
-    // alleviation functions - slum upgradation, welfare schemes, livelihoods -
-    // that the Twelfth Schedule assigns to it as one obligation.
     id: 'citizen-social',
-    label: t('Citizen Services & Social Development'),
+    label: t('Citizen Services'),
     items: [
       {
         id: 'citizen-services',
@@ -769,13 +842,21 @@ function build$NAV_SECTIONS(): NavSection[] {
         description: t('Recurring complaints, root-cause association and SLA position.'),
       },
       {
-        id: 'resolution-intelligence-citizen',
-        label: t('Resolution Intelligence'),
+        id: 'resolution-intelligence',
+        label: t('Grievance Resolution'),
         to: ROUTES.resolutionIntelligence,
-        icon: GitBranch,
+        icon: Workflow,
         requires: { resource: 'intelligence', action: 'view' },
         domain: 'citizen-services',
-        description: t('Where a complaint\'s ownership is contested, decomposed across departments, or bouncing between them instead of resolving.'),
+        description: t('Every complaint as a resolution case - explainable ownership, multi-department orchestration and transfer-loop detection.'),
+      },
+      {
+        id: 'notified-services',
+        label: t('Notified Services Register'),
+        to: ROUTES.notifiedServices,
+        icon: FileCheck2,
+        requires: { resource: 'intelligence', action: 'view' },
+        description: t('Every statutory certificate, licence and permit measured against its published turnaround, across every department.'),
       },
       {
         id: 'civic-participation',
@@ -786,6 +867,12 @@ function build$NAV_SECTIONS(): NavSection[] {
         domain: 'civic-participation',
         description: t('Consultations, suggestion schemes and public feedback the Corporation has run.'),
       },
+    ],
+  },
+  {
+    id: 'social-development',
+    label: t('Social & Education'),
+    items: [
       {
         id: 'housing',
         label: t('Slum & Housing Intelligence'),
@@ -823,11 +910,8 @@ function build$NAV_SECTIONS(): NavSection[] {
     ],
   },
   {
-    // The town planning wing: what the city is permitted to become, what has
-    // been built under that permission, and the spatial model both are read
-    // against.
     id: 'planning',
-    label: t('Planning & Development Control'),
+    label: t('Planning'),
     items: [
       {
         id: 'planning',
@@ -866,7 +950,7 @@ function build$NAV_SECTIONS(): NavSection[] {
       },
       {
         id: 'development-plan',
-        label: t('Development Plan 2034'),
+        label: t('Development Plan & Zoning'),
         to: ROUTES.developmentPlan,
         icon: LandPlot,
         requires: { resource: 'intelligence', action: 'view' },
@@ -885,94 +969,8 @@ function build$NAV_SECTIONS(): NavSection[] {
     ],
   },
   {
-    // Everything the corporation raises and everything it spends, in the
-    // order the money moves: the assessment base, collection against it,
-    // the registers reconciled, recovery, then the consolidated position
-    // and the budget written on top of it.
-    id: 'finance',
-    label: t('Revenue & Municipal Finance'),
-    items: [
-      {
-        id: 'property',
-        label: t('Property Intelligence'),
-        to: ROUTES.property,
-        icon: Building,
-        requires: { resource: 'revenue', action: 'view' },
-        domain: 'property',
-        description: t('Assessment base, segments and reassessment position.'),
-      },
-      {
-        id: 'revenue',
-        label: t('Revenue Intelligence'),
-        to: ROUTES.revenue,
-        icon: Banknote,
-        requires: { resource: 'revenue', action: 'view' },
-        domain: 'revenue',
-        description: t('Collection efficiency, arrears and reconciliation candidates.'),
-      },
-      {
-        id: 'reconciliation',
-        label: t('Registry Reconciliation'),
-        to: ROUTES.reconciliation,
-        icon: Scale,
-        requires: { resource: 'revenue', action: 'view' },
-        domain: 'revenue',
-        description: t('Where the corporation’s own registers disagree about the same property.'),
-      },
-      {
-        id: 'recovery-worklist',
-        label: t('Recovery Worklist'),
-        to: ROUTES.recoveryWorklist,
-        icon: ListChecks,
-        requires: { resource: 'revenue', action: 'view' },
-        domain: 'revenue',
-        description: t('Assessment review candidates assigned to a named officer for verification.'),
-      },
-      {
-        id: 'recovery-pilot',
-        label: t('Recovery Pilot & Returns'),
-        to: ROUTES.recoveryPilot,
-        icon: Target,
-        requires: { resource: 'revenue', action: 'view' },
-        domain: 'revenue',
-        description: t('Single-ward pilot scorecard and the statutory property tax return.'),
-      },
-      // Licence fee is a revenue head, not a delivery function - it belongs
-      // beside the other things the corporation collects.
-      {
-        id: 'licensing',
-        label: t('Licences & Trade'),
-        to: ROUTES.licensing,
-        icon: Stamp,
-        requires: { resource: 'revenue', action: 'view' },
-        domain: 'revenue',
-        description: t('Trade licences, renewals, compliance and licence fee position.'),
-      },
-      {
-        id: 'financial',
-        label: t('Financial Intelligence'),
-        to: ROUTES.financialIntelligence,
-        icon: Landmark,
-        requires: { resource: 'budget', action: 'view' },
-        domain: 'budget',
-        description: t('Consolidated financial position and the Financial Health Index.'),
-      },
-      {
-        id: 'budget',
-        label: t('Budget Intelligence'),
-        to: ROUTES.budget,
-        icon: Wallet,
-        requires: { resource: 'budget', action: 'view' },
-        domain: 'budget',
-        description: t('Allocation, utilisation, variance and scenario analysis.'),
-      },
-    ],
-  },
-  {
-    // Capital delivery end to end: the tender, who won it, what they are
-    // building, and the estate it becomes once handed over.
     id: 'delivery',
-    label: t('Projects, Procurement & Assets'),
+    label: t('Projects & Assets'),
     items: [
       {
         id: 'procurement',
@@ -1021,11 +1019,8 @@ function build$NAV_SECTIONS(): NavSection[] {
     ],
   },
   {
-    // The corporation as an institution rather than as a service provider:
-    // what the House has resolved, who is on the establishment to carry it
-    // out, and what the institution has already learned.
     id: 'institution',
-    label: t('Council & Establishment'),
+    label: t('Council'),
     items: [
       {
         id: 'council-resolutions',
@@ -1045,14 +1040,6 @@ function build$NAV_SECTIONS(): NavSection[] {
         description: t('The statutory ward committees, their sittings, and corporator casework distinct from the house.'),
       },
       {
-        id: 'notified-services',
-        label: t('Notified Services Register'),
-        to: ROUTES.notifiedServices,
-        icon: FileCheck2,
-        requires: { resource: 'intelligence', action: 'view' },
-        description: t('Every statutory certificate, licence and permit measured against its published turnaround, across every department.'),
-      },
-      {
         id: 'correspondence',
         label: t('Government Correspondence'),
         to: ROUTES.correspondence,
@@ -1070,6 +1057,12 @@ function build$NAV_SECTIONS(): NavSection[] {
         domain: 'legal',
         description: t('Court matters, RTI applications and contractor arbitration the Corporation is party to.'),
       },
+    ],
+  },
+  {
+    id: 'establishment',
+    label: t('HR & Establishment'),
+    items: [
       {
         id: 'workforce',
         label: t('Workforce Intelligence'),
@@ -1091,11 +1084,8 @@ function build$NAV_SECTIONS(): NavSection[] {
     ],
   },
   {
-    // Above the operating year: how the corporation compares, what its
-    // spending actually achieved, what it would do under a different
-    // assumption, and how any one thing connects to everything else.
     id: 'strategic',
-    label: t('Strategy & Performance'),
+    label: t('Strategy'),
     items: [
       {
         id: 'benchmarking',
@@ -1146,18 +1136,22 @@ function build$NAV_SECTIONS(): NavSection[] {
         icon: BookMarked,
         requires: { resource: 'intelligence', action: 'view' },
         domain: 'executive',
-        description: t('The citation register behind this platform\'s factual spine - every published figure, and exactly where it was read.'),
+        description: t('The citations behind the corporation\'s own baseline record.'),
+      },
+      {
+        id: 'evidence-registry',
+        label: t('Evidence Registry'),
+        to: ROUTES.evidenceRegistry,
+        icon: Library,
+        requires: { resource: 'intelligence', action: 'view' },
+        domain: 'executive',
+        description: t('Every source and figure, traceable to the original document.'),
       },
     ],
   },
   {
-    // The AI an officer operates, not the AI the corporation governs. The
-    // registers that authorise and audit what is listed here are in the Trust
-    // Centre. The Municipal Copilot is deliberately not here either - it is a
-    // daily instrument and is read in Command, beside the work it answers
-    // questions about.
     id: 'ai',
-    label: t('AI & Automation'),
+    label: t('AI'),
     items: [
       {
         id: 'ai-centre',
@@ -1196,19 +1190,8 @@ function build$NAV_SECTIONS(): NavSection[] {
     ],
   },
   {
-    // Assurance only. Whether the platform is *running* is an operations
-    // question and is answered a section below; this section answers whether
-    // what it produced can be relied upon and who was allowed to see it.
-    //
-    // The model, evaluation, prompt and incident registers sit here rather
-    // than beside the AI screens officers work in, because they are not tools
-    // - they are the evidence that the tools were controlled. An officer
-    // asked to justify an AI-assisted decision should find the approval, the
-    // evaluation behind it, the prompt that produced it and any incident
-    // recorded against it in one place, next to the audit trail and the
-    // lineage, rather than in the section they use day to day.
     id: 'trust',
-    label: t('Trust Centre'),
+    label: t('Trust & Security'),
     items: [
       {
         id: 'trust-home',
@@ -1249,6 +1232,28 @@ function build$NAV_SECTIONS(): NavSection[] {
         requires: { resource: 'dataset', action: 'view' },
         description: t('Datasets, purpose limitation, minimisation and retention.'),
       },
+      {
+        id: 'evidence-audit',
+        label: t('Evidence & Audit'),
+        to: ROUTES.evidenceAudit,
+        icon: FileSearch,
+        requires: { resource: 'audit', action: 'view' },
+        description: t('Provenance chains and the immutable-style audit timeline.'),
+      },
+      {
+        id: 'lineage',
+        label: t('Data Lineage'),
+        to: ROUTES.lineage,
+        icon: Link2,
+        requires: { resource: 'dataset', action: 'view' },
+        description: t('Source → ingestion → metric → intelligence → decision.'),
+      },
+    ],
+  },
+  {
+    id: 'ai-governance-registers',
+    label: t('AI Governance'),
+    items: [
       {
         id: 'ai-governance',
         label: t('AI Governance'),
@@ -1292,30 +1297,11 @@ function build$NAV_SECTIONS(): NavSection[] {
         domain: 'ai-governance',
         description: t('Recorded AI incidents through detection to review.'),
       },
-      {
-        id: 'evidence-audit',
-        label: t('Evidence & Audit'),
-        to: ROUTES.evidenceAudit,
-        icon: FileSearch,
-        requires: { resource: 'audit', action: 'view' },
-        description: t('Provenance chains and the immutable-style audit timeline.'),
-      },
-      {
-        id: 'lineage',
-        label: t('Data Lineage'),
-        to: ROUTES.lineage,
-        icon: Link2,
-        requires: { resource: 'dataset', action: 'view' },
-        description: t('Source → ingestion → metric → intelligence → decision.'),
-      },
     ],
   },
   {
-    // Running the platform. Health, the feeds behind it, and the
-    // configuration that governs both - one section, because an operator
-    // diagnosing a stale figure moves between them in a single sitting.
-    id: 'platform-admin',
-    label: t('Platform & Administration'),
+    id: 'platform-health',
+    label: t('Platform'),
     items: [
       {
         id: 'platform',
@@ -1360,6 +1346,30 @@ function build$NAV_SECTIONS(): NavSection[] {
         domain: 'platform',
         description: t('What has actually been verified against this build, how, and what has not - stated plainly.'),
       },
+      {
+        id: 'capability-roadmap',
+        label: t('Capability Roadmap'),
+        to: ROUTES.capabilityRoadmap,
+        icon: Target,
+        requires: { resource: 'intelligence', action: 'view' },
+        domain: 'executive',
+        description: t('What public evidence proves now, and what authorised data unlocks.'),
+      },
+      {
+        id: 'systems-map',
+        label: t('Capability Map'),
+        to: ROUTES.systemsMap,
+        icon: Layers,
+        requires: { resource: 'report', action: 'view' },
+        domain: 'executive',
+        description: t('The systems the corporation already runs, the decision this platform adds to each, and where it stands.'),
+      },
+    ],
+  },
+  {
+    id: 'platform-admin',
+    label: t('Admin'),
+    items: [
       {
         id: 'users',
         label: t('Users & Roles'),

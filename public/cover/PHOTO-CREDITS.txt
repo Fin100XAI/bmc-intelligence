@@ -1,0 +1,147 @@
+Photographs of Mumbai used by the BMC Intelligence Infrastructure demonstration
+===============================================================================
+
+Every photograph in public/cover/ is a real photograph from Wikimedia Commons, published
+under the free licence named below. Each was downloaded from upload.wikimedia.org (a
+resized rendition of the original; no other changes). They are civic imagery captioned
+for what they show; none of them is an official image of the Brihanmumbai Municipal
+Corporation.
+
+CC BY / CC BY-SA / FAL licences require attribution: author and licence are shown on the
+portal page ("Mumbai in pictures").
+
+mumbai-skyline-marine-drive.jpg
+  Subject:  The Mumbai skyline over Marine Drive at night
+  Title:    File:Mumbai Skyline Marine Drive Night.jpg
+  Author:   Av9
+  Licence:  CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0)
+  Source:   https://commons.wikimedia.org/wiki/File:Mumbai_Skyline_Marine_Drive_Night.jpg
+  File URL: https://thumb.wikimedia.org/wikipedia/commons/thumb/6/69/Mumbai_Skyline_Marine_Drive_Night.jpg/1920px-Mumbai_Skyline_Marine_Drive_Night.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail
+
+marine-drive.jpg
+  Subject:  Marine Drive and the Queen’s Necklace, Mumbai
+  Title:    File:Mumbai 03-2016 27 skyline at Marine Drive.jpg
+  Author:   A.Savin
+  Licence:  FAL (http://artlibre.org/licence/lal/en)
+  Source:   https://commons.wikimedia.org/wiki/File:Mumbai_03-2016_27_skyline_at_Marine_Drive.jpg
+  File URL: https://thumb.wikimedia.org/wikipedia/commons/thumb/7/74/Mumbai_03-2016_27_skyline_at_Marine_Drive.jpg/1920px-Mumbai_03-2016_27_skyline_at_Marine_Drive.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail
+
+sewri-flamingos.jpg
+  Subject:  Flamingos on the Sewri mudflats, Mumbai
+  Title:    File:Sewri Flamingo Point , Bombay, India 01.JPG
+  Author:   Harvinder Chandigarh
+  Licence:  CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0)
+  Source:   https://commons.wikimedia.org/wiki/File:Sewri_Flamingo_Point_,_Bombay,_India_01.JPG
+  File URL: https://thumb.wikimedia.org/wikipedia/commons/thumb/0/02/Sewri_Flamingo_Point_%2C_Bombay%2C_India_01.JPG/1920px-Sewri_Flamingo_Point_%2C_Bombay%2C_India_01.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail
+
+powai-lake-after-rain.jpg
+  Subject:  Powai Lake after heavy rain
+  Title:    File:Powai lake after heavy rain.jpg
+  Author:   Shishirdasika
+  Licence:  CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0)
+  Source:   https://commons.wikimedia.org/wiki/File:Powai_lake_after_heavy_rain.jpg
+  File URL: https://thumb.wikimedia.org/wikipedia/commons/thumb/9/9c/Powai_lake_after_heavy_rain.jpg/1920px-Powai_lake_after_heavy_rain.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail
+
+bandra-worli-sea-link.jpg
+  Subject:  The Bandra-Worli Sea Link at sunset
+  Title:    File:Bandra worli sea-link at sunset.jpg
+  Author:   Capturedmumbai
+  Licence:  CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0)
+  Source:   https://commons.wikimedia.org/wiki/File:Bandra_worli_sea-link_at_sunset.jpg
+  File URL: https://upload.wikimedia.org/wikipedia/commons/d/d5/Bandra_worli_sea-link_at_sunset.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled
+
+csmt.jpg
+  Subject:  Chhatrapati Shivaji Maharaj Terminus, Mumbai
+  Title:    File:Chhatrapati Shivaji Terminus (Victoria Terminus).jpg
+  Author:   Joe Ravi
+  Licence:  CC BY-SA 3.0 (https://creativecommons.org/licenses/by-sa/3.0)
+  Source:   https://commons.wikimedia.org/wiki/File:Chhatrapati_Shivaji_Terminus_(Victoria_Terminus).jpg
+  File URL: https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c5/Chhatrapati_Shivaji_Terminus_%28Victoria_Terminus%29.jpg/1920px-Chhatrapati_Shivaji_Terminus_%28Victoria_Terminus%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail
+
+best-double-decker.jpg
+  Subject:  A BEST double-decker bus near CSMT
+  Title:    File:Double decker best bus CST 01.jpg
+  Author:   Shishirdasika
+  Licence:  CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0)
+  Source:   https://commons.wikimedia.org/wiki/File:Double_decker_best_bus_CST_01.jpg
+  File URL: https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0e/Double_decker_best_bus_CST_01.jpg/1920px-Double_decker_best_bus_CST_01.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail
+
+monsoon-colaba.jpg
+  Subject:  Monsoon rain at Apollo Bunder, Colaba
+  Title:    File:Rain soaked Taj Mahal Palace Hotel! (35980105405).jpg
+  Author:   Rajarshi MITRA from Mumbai, India
+  Licence:  CC BY 2.0 (https://creativecommons.org/licenses/by/2.0)
+  Source:   https://commons.wikimedia.org/wiki/File:Rain_soaked_Taj_Mahal_Palace_Hotel!_(35980105405).jpg
+  File URL: https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b4/Rain_soaked_Taj_Mahal_Palace_Hotel%21_%2835980105405%29.jpg/1920px-Rain_soaked_Taj_Mahal_Palace_Hotel%21_%2835980105405%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail
+
+crawford-market.jpg
+  Subject:  Mahatma Jyotiba Phule Mandai (Crawford Market)
+  Title:    File:Mahatma Jyotiba Phule Mandai.jpg
+  Author:   Saarang Rajguru (सारंग राजगुरू)
+  Licence:  CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0)
+  Source:   https://commons.wikimedia.org/wiki/File:Mahatma_Jyotiba_Phule_Mandai.jpg
+  File URL: https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c9/Mahatma_Jyotiba_Phule_Mandai.jpg/1920px-Mahatma_Jyotiba_Phule_Mandai.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail
+
+vihar-lake.jpg
+  Subject:  Vihar Lake and the Mulund skyline from Yogi Hills
+  Title:    File:Mulund skyline and Vihar Lake from Yogi Hills.jpg
+  Author:   Planemad
+  Licence:  CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0)
+  Source:   https://commons.wikimedia.org/wiki/File:Mulund_skyline_and_Vihar_Lake_from_Yogi_Hills.jpg
+  File URL: https://thumb.wikimedia.org/wikipedia/commons/thumb/9/96/Mulund_skyline_and_Vihar_Lake_from_Yogi_Hills.jpg/1920px-Mulund_skyline_and_Vihar_Lake_from_Yogi_Hills.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail
+
+mithi-river.jpg
+  Subject:  The Mithi River at CST Road, Kalina
+  Title:    File:Mithi river at CST road.JPG
+  Author:   Trinidade
+  Licence:  CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0)
+  Source:   https://commons.wikimedia.org/wiki/File:Mithi_river_at_CST_road.JPG
+  File URL: https://thumb.wikimedia.org/wikipedia/commons/thumb/4/42/Mithi_river_at_CST_road.JPG/1920px-Mithi_river_at_CST_road.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail
+
+bmc-head-office.jpg
+  Subject:  The Brihanmumbai Municipal Corporation head office, Fort
+  Title:    File:Brihanmumbai Municipal Corporation Office at Fort.jpg
+  Author:   Pradeep717
+  Licence:  CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0)
+  Source:   https://commons.wikimedia.org/wiki/File:Brihanmumbai_Municipal_Corporation_Office_at_Fort.jpg
+
+girgaon-chowpatty.jpg
+  Subject:  Girgaon Chowpatty beach
+  Title:    File:Mumbai, India, Girgaon Chowpatty Beach.jpg
+  Author:   Vyacheslav Argenberg
+  Licence:  CC BY 4.0 (https://creativecommons.org/licenses/by/4.0)
+  Source:   https://commons.wikimedia.org/wiki/File:Mumbai,_India,_Girgaon_Chowpatty_Beach.jpg
+  File URL: https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b4/Mumbai%2C_India%2C_Girgaon_Chowpatty_Beach.jpg/1920px-Mumbai%2C_India%2C_Girgaon_Chowpatty_Beach.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail
+
+local-train.jpg
+  Subject:  A Mumbai suburban local train
+  Title:    File:Mumbai Local Train passing.jpg
+  Author:   Pratishkhedekar
+  Licence:  CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0)
+  Source:   https://commons.wikimedia.org/wiki/File:Mumbai_Local_Train_passing.jpg
+  File URL: https://thumb.wikimedia.org/wikipedia/commons/thumb/0/01/Mumbai_Local_Train_passing.jpg/1920px-Mumbai_Local_Train_passing.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail
+
+coastal-road-night.jpg
+  Subject:  The Mumbai Coastal Road by night
+  Title:    File:Coastal Road (Mumbai), by night.jpg
+  Author:   Qiw007
+  Licence:  CC BY 4.0 (https://creativecommons.org/licenses/by/4.0)
+  Source:   https://commons.wikimedia.org/wiki/File:Coastal_Road_(Mumbai),_by_night.jpg
+  File URL: https://thumb.wikimedia.org/wikipedia/commons/thumb/4/46/Coastal_Road_%28Mumbai%29%2C_by_night.jpg/1920px-Coastal_Road_%28Mumbai%29%2C_by_night.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail
+
+hanging-gardens.jpg
+  Subject:  The Hanging Gardens, Malabar Hill
+  Title:    File:Mumbai 03-2016 22 Hanging Garden.jpg
+  Author:   A.Savin
+  Licence:  FAL (http://artlibre.org/licence/lal/en)
+  Source:   https://commons.wikimedia.org/wiki/File:Mumbai_03-2016_22_Hanging_Garden.jpg
+  File URL: https://thumb.wikimedia.org/wikipedia/commons/thumb/5/58/Mumbai_03-2016_22_Hanging_Garden.jpg/1920px-Mumbai_03-2016_22_Hanging_Garden.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail
+
+bandra-kurla-complex.jpg
+  Subject:  Bandra-Kurla Complex
+  Title:    File:Bandra-Kurla-Complex-Mumbai-Maharashtra-India.jpg
+  Author:   N. Vivekananthamoorthy
+  Licence:  CC BY 4.0 (https://creativecommons.org/licenses/by/4.0)
+  Source:   https://commons.wikimedia.org/wiki/File:Bandra-Kurla-Complex-Mumbai-Maharashtra-India.jpg
+  File URL: https://thumb.wikimedia.org/wikipedia/commons/thumb/9/91/Bandra-Kurla-Complex-Mumbai-Maharashtra-India.jpg/1920px-Bandra-Kurla-Complex-Mumbai-Maharashtra-India.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail
+

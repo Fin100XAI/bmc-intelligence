@@ -6,8 +6,6 @@ export const MR_PART_42: Record<string, string> = {
   'Resolution Intelligence': 'निराकरण बुद्धिमत्ता',
   'Every complaint as a resolution case - explainable ownership, multi-department orchestration and transfer-loop detection.':
     'प्रत्येक तक्रार एक निराकरण प्रकरण म्हणून - स्पष्टीकरणीय मालकी, बहु-विभागीय समन्वय आणि हस्तांतरण-फेरी शोध.',
-  "Where a complaint's ownership is contested, decomposed across departments, or bouncing between them instead of resolving.":
-    'जिथे तक्रारीची मालकी विवादित आहे, विभागांमध्ये विभागली गेली आहे, किंवा निराकरण होण्याऐवजी त्यांच्यामध्ये फिरत आहे.',
 
   // src/domains/resolution/engine.ts
   'Category / rule match': 'श्रेणी / नियम जुळणी',

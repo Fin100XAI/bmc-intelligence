@@ -1,5 +1,6 @@
 import { useCurrentDrawer } from '@/stores/ui.store'
 import { EvidenceDrawer } from './EvidenceDrawer'
+import { SourceEvidenceDrawer } from '@/components/decision'
 import {
   ActionDrawer,
   AlertDrawer,
@@ -25,6 +26,8 @@ export function DrawerHost(): React.JSX.Element | null {
   if (!current) return null
 
   switch (current.kind) {
+    case 'source-evidence':
+      return <SourceEvidenceDrawer evidenceId={current.id} />
     case 'evidence':
       return <EvidenceDrawer evidenceId={current.id} />
     case 'intelligence':

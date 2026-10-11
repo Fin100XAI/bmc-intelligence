@@ -3,19 +3,15 @@ import { useNavigate } from 'react-router-dom'
 import {
   ArrowRight,
   Building2,
-  ChevronLeft,
+  Camera,
   ChevronRight,
   CloudRain,
   Droplets,
   FileText,
-  Flame,
   Gauge,
-  GraduationCap,
-  HeartPulse,
   IndianRupee,
   Info,
   Landmark,
-  Leaf,
   LogIn,
   AtSign,
   MapPin,
@@ -33,9 +29,11 @@ import {
   Siren,
   Smartphone,
   Trash2,
+  Waves,
   type LucideIcon,
 } from 'lucide-react'
 import { corporationName } from '@/config/corporations'
+import { coverPhotos, type CoverPhoto } from '@/config/coverPhotos'
 import { municipality } from '@/config/municipality.config'
 import { NAV_SECTIONS, ROUTES } from '@/config/navigation'
 import { useActiveCorporation } from '@/stores/corporation.store'
@@ -54,53 +52,38 @@ import { registerLayer } from '@/data/runtime'
  *
  * The platform's own front page, wearing the CHROME of a municipal
  * corporation's portal - the utility strip with its accessibility and language
- * controls, the masthead, the tab bar, the notice board, the link tiles, the
- * three-column footer with its compliance marks - because that is the shape a
- * Maharashtra government officer already knows how to read.
+ * controls, the masthead, the notice board, the link tiles, the three-column
+ * footer with its compliance marks - because that is the shape a Maharashtra
+ * government officer already knows how to read.
  *
  * IT IS READ BY OFFICERS, NOT BY CITIZENS. That is the one thing to hold on to
  * when editing anything here, because every instinct the chrome invites is the
  * wrong one. A citizen portal puts "pay property tax" on a tile, because paying
  * it is the errand. An officer never pays it: they are asked at ten in the
  * morning why collection is behind in three wards, so the tile is the screen
- * that answers that. Likewise the navigation is segmented by DECISION SURFACE
- * rather than by audience, the notice board carries circulars and escalations
- * rather than civic announcements, and the update line reports what is waiting
- * on an approval rather than what the control room is advising.
+ * that answers that.
  *
- * The bands, in order:
+ * The bands, in order - the same form as the Navi Mumbai deployment, so the two
+ * corporations' portals read as one family:
  *
- *   hero            what this is, and the door to sign in
- *   use cases       the decisions it is built to carry          [photographic]
+ *   hero            what this is, over real photographs of Mumbai
+ *   coverage        every service the city runs           [photographic]
  *   surfaces        what an officer works from behind sign-in
  *   assurance       why any of it should be believed
  *   notices         circulars, escalations and what has changed
  *   links           the screens an officer opens daily
- *   related         the departmental surfaces, four to a page
+ *   pictures        every photograph on the page, with its credit
  *   footer          the office, the service desk, the marks
  *
- * Three things about this page are deliberate and worth stating.
- *
- * It is DEPLOYMENT-NEUTRAL. Every name, figure, address and statistic is read
- * from the ACTIVE corporation, so this is Pune's portal when Pune is selected
- * and Jalna's when Jalna is - the same way every other surface in the platform
- * behaves. The masthead therefore leads with the PLATFORM and names the
- * corporation one line down as the deployment, rather than the reverse.
- *
- * SIGN-IN IS A DESTINATION, NOT A PANEL. The door leads to `/login`, where the
- * position, the passphrase and the audit notice belong together. Nothing on
- * this page transacts.
+ * It is DEPLOYMENT-NEUTRAL in its figures: every name, number and address is
+ * read from the ACTIVE corporation record. The photographs are of Mumbai, from
+ * Wikimedia Commons, each captioned for what it shows and credited in the
+ * "Mumbai in pictures" band - a civic image is never a claim about whose page
+ * this is.
  *
  * It is NOT a claim to be the corporation's live portal, and must never be
- * allowed to read as one. The environment badge sits in the utility strip, the
- * footer states what this is, and the photographs are captioned as state
- * institutions so that a civic building is never read as a claim about whose
- * page this is.
- *
- * Every entry in the navigation and in the tiles below is a surface this
- * platform actually implements, so the page never offers a destination it
- * cannot reach. A visitor who signs in should recognise the command rail as
- * the same structure they have just been browsing.
+ * allowed to read as one. The environment badge sits in the utility strip and
+ * the footer states what this is.
  */
 
 /* ==========================================================================
@@ -118,65 +101,36 @@ interface PortalLink {
 /**
  * Where a portal tile or menu link actually goes.
  *
- * The portal is public again - a visitor with no session and an officer who
- * has just signed in or out all read the same page. For the former, following
- * a module link directly would land on `RequireAuth`'s own redirect with
- * nothing said about why, so it mints `/login/direct?next=…` instead: the
- * card still READS as the module it names, and the visitor lands somewhere
- * that can take them there. `?next=` carries the intent across the sign-in so
- * the click is not thrown away; `LoginPage` re-checks it against the
- * permission engine before honouring it, so naming a route here can never
- * grant one. For a principal who already holds a session, the destination is
- * reached directly - `RequirePermission` still re-evaluates on arrival, so a
- * link to a module this role may not read is refused there exactly as it
- * would be otherwise.
+ * On this deployment sign-in comes BEFORE the portal, so every destination
+ * leads straight into the platform. Nothing is granted by a link:
+ * `RequireAuth` and `RequirePermission` re-evaluate on arrival, so a visitor
+ * without a session, or a role without the permission, is refused there.
  */
 function signInFor(to: string, isAuthenticated: boolean): string {
-  return isAuthenticated ? to : `${ROUTES.loginDirect}?next=${encodeURIComponent(to)}`
+  void isAuthenticated
+  return to
 }
 
 interface PortalMenu {
   id: string
   label: string
-  /**
-   * Columns of the drop panel. `heading` is optional: a menu derived from a
-   * single navigation section has nothing to say above its own links that the
-   * tab has not already said, and repeating the tab's label inside its own
-   * panel reads as a stutter.
-   */
   groups: Array<{ heading?: string; links: PortalLink[] }>
 }
 
 function build$PORTAL_MENUS(): PortalMenu[] {
   // The portal's menu IS the platform's navigation, derived from it rather
-  // than restated beside it.
-  //
-  // It used to be eight hand-written tabs that collapsed the platform's
-  // sixteen sections — so the front page advertised a structure the console
-  // behind it did not have, and every route added to the rail was missing here
-  // until someone remembered to add it twice. Reading `NAV_SECTIONS` means the
-  // two cannot drift: a section added to the navigation appears on the portal
-  // the same day, under the same name, pointing at the same route.
-  //
-  // Every label and description here is already a translated `t()` string in
-  // the navigation config, so deriving them introduces no new message the
-  // catalogue has to carry.
+  // than restated beside it, so the two cannot drift.
   return NAV_SECTIONS.map((section) => {
     const links: PortalLink[] = section.items.map((item) => ({
       label: item.label,
       to: item.to,
       note: item.description,
     }))
-
-    // Spread across up to three columns so the drop panel uses the grid it
-    // already lays out, instead of running one long column down the page.
-    // Sections carrying four or fewer destinations stay in a single column.
     const columns = Math.min(3, Math.max(1, Math.ceil(links.length / 4)))
     const perColumn = Math.ceil(links.length / columns)
     const groups = Array.from({ length: columns }, (_, index) => ({
       links: links.slice(index * perColumn, (index + 1) * perColumn),
     })).filter((group) => group.links.length > 0)
-
     return { id: section.id, label: section.label, groups }
   })
 }
@@ -184,39 +138,28 @@ function build$PORTAL_MENUS(): PortalMenu[] {
 let PORTAL_MENUS: PortalMenu[] = build$PORTAL_MENUS()
 
 function build$QUICK_LINKS(): PortalTile[] {
-  // What an OFFICER opens, not what a citizen transacts. A citizen portal puts
-  // "pay property tax" here because paying it is the errand. An officer never
-  // pays it - they are asked at ten in the morning why collection is behind in
-  // three wards, and the tile has to be the screen that answers that.
+  // What an OFFICER opens, not what a citizen transacts - one tile per page,
+  // named exactly as the menu names it, in the order a working day reaches
+  // them.
   return [
-    { icon: Gauge, label: t('Executive Overview'), note: t('The whole city, ordered by what needs deciding today.'), to: ROUTES.executive },
-    { icon: Radar, label: t('Situation Room'), note: t('Live incidents and the control-room picture as it stands.'), to: ROUTES.situationRoom },
-    { icon: Megaphone, label: t('Alerts & Escalations'), note: t('What has passed its standard, and who is holding it.'), to: ROUTES.alerts },
-    { icon: FileText, label: t('Decision Centre'), note: t('Decisions awaiting approval, with the evidence attached.'), to: ROUTES.decisions },
-    { icon: MapPin, label: t('Ward Intelligence'), note: t('Every ward scored on service, equity and delivery.'), to: ROUTES.wards },
-    { icon: IndianRupee, label: t('Revenue Intelligence'), note: t('Demand, collection and arrears against the register.'), to: ROUTES.revenue },
-    { icon: Droplets, label: t('Water Intelligence'), note: t('Supply, pressure, non-revenue water and treatment load.'), to: ROUTES.water },
-    { icon: Trash2, label: t('Solid Waste Intelligence'), note: t('Collection routes, lifting, processing and disposal.'), to: ROUTES.waste },
-    { icon: Route, label: t('Roads Intelligence'), note: t('Surface condition, works in progress and defect liability.'), to: ROUTES.roads },
-    { icon: CloudRain, label: t('Monsoon Intelligence'), note: t('Rainfall, desilting progress and where the water will stand.'), to: ROUTES.monsoon },
-    { icon: Building2, label: t('Project Delivery'), note: t('Sanctioned works, and physical against financial progress.'), to: ROUTES.projects },
-    { icon: Scale, label: t('Trust Centre'), note: t('Where every figure came from, and which of them are modelled.'), to: ROUTES.trustCentre },
+    { icon: Gauge, label: t('Commissioner Cockpit'), note: t('What needs attention today, ranked by severity and exposure.'), to: ROUTES.cockpit },
+    { icon: FileText, label: t('Decision Centre'), note: t('Every decision waiting on a post, with its evidence assembled.'), to: ROUTES.decisions },
+    { icon: IndianRupee, label: t('Project Intelligence'), note: t('Capital works, their money and their physical progress.'), to: ROUTES.projects },
+    { icon: Radar, label: t('Situation Room'), note: t('Live incidents, alerts and the response as it stands.'), to: ROUTES.situationRoom },
+    { icon: MapPin, label: t('Ward Intelligence'), note: t('Every administrative ward, compared and profiled.'), to: ROUTES.wards },
+    { icon: Megaphone, label: t('Grievance Resolution'), note: t('Why problems keep returning, and who should own them.'), to: ROUTES.resolutionIntelligence },
+    { icon: Waves, label: t('Monsoon Intelligence'), note: t('Rain on a high tide, flooding spots, pumping stations and nullahs.'), to: ROUTES.monsoon },
+    { icon: Droplets, label: t('Water Intelligence'), note: t('From the lakes to the tap - storage, supply and losses.'), to: ROUTES.water },
+    { icon: Route, label: t('Roads Intelligence'), note: t('Condition, defects and the explainable priority engine.'), to: ROUTES.roads },
+    { icon: Building2, label: t('Revenue Intelligence'), note: t('Collection efficiency, arrears and revenue by stream against target.'), to: ROUTES.revenue },
+    { icon: Trash2, label: t('Solid Waste Intelligence'), note: t('Collection, routes, processing and hotspots.'), to: ROUTES.waste },
+    { icon: Scale, label: t('Evidence & Audit'), note: t('Every source and figure, traceable to the original record.'), to: ROUTES.evidenceAudit },
   ]
 }
 let QUICK_LINKS: PortalTile[] = build$QUICK_LINKS()
 
 /* ==========================================================================
    The bands below the fold
-   --------------------------------------------------------------------------
-   Everything a visitor is told between the sign-in and the helpline. Three
-   bands, each answering one question a first-time visitor actually has: what
-   is behind this, how far does it reach, and why should any of it be
-   believed.
-
-   Both lists are built rather than declared, for the same reason the service
-   catalogue above is: they name the corporation's own unit terminology, and a
-   module-scoped constant would freeze that to whichever corporation and
-   whichever language happened to be loaded first.
    ========================================================================== */
 
 interface PortalSurface {
@@ -227,56 +170,15 @@ interface PortalSurface {
 }
 
 function build$SURFACES(): PortalSurface[] {
-  const unit = municipality.terminology.primaryUnitPlural
   return [
-    {
-      icon: Gauge,
-      label: t('Commissioner’s cockpit'),
-      note: t('The whole city on one screen, ordered by what needs a decision today.'),
-      to: ROUTES.cockpit,
-    },
-    {
-      icon: Radar,
-      label: t('Situation room'),
-      note: t('Live incidents, escalations and the control-room picture as it stands.'),
-      to: ROUTES.situationRoom,
-    },
-    {
-      icon: MapPin,
-      label: t('{0} intelligence', municipality.terminology.primaryUnitSingular),
-      note: t('Every one of the {0} scored on service, equity and delivery.', unit),
-      to: ROUTES.wards,
-    },
-    {
-      icon: IndianRupee,
-      label: t('Revenue and property tax'),
-      note: t('Demand, collection, arrears and the recovery worklist behind them.'),
-      to: ROUTES.property,
-    },
-    {
-      icon: Droplets,
-      label: t('Water and sewerage'),
-      note: t('Supply, pressure, non-revenue water and treatment load.'),
-      to: ROUTES.water,
-    },
-    {
-      icon: Trash2,
-      label: t('Solid waste'),
-      note: t('Collection routes, lifting, processing and the load on disposal.'),
-      to: ROUTES.waste,
-    },
-    {
-      icon: CloudRain,
-      label: t('Monsoon and storm water'),
-      note: t('Rainfall, desilting progress and where the water will stand.'),
-      to: ROUTES.monsoon,
-    },
-    {
-      icon: Siren,
-      label: t('Disaster and emergency'),
-      note: t('Preparedness, response and the city’s standing resilience picture.'),
-      to: ROUTES.disaster,
-    },
+    { icon: Gauge, label: t('Commissioner Cockpit'), note: t('What in Mumbai needs attention today, ranked with transparent weights.'), to: ROUTES.cockpit },
+    { icon: FileText, label: t('Decision Centre'), note: t('Each signal carried from evidence to a named decision, an action and a measured outcome.'), to: ROUTES.decisions },
+    { icon: IndianRupee, label: t('Project Intelligence'), note: t('Capital works - the Coastal Road, flyovers, bridges and drains - mapped and tracked.'), to: ROUTES.projects },
+    { icon: Scale, label: t('Scenario Intelligence'), note: t('Pumps, crews, desilting and staffing options compared before deciding.'), to: ROUTES.scenarios },
+    { icon: MapPin, label: t('Ward Intelligence'), note: t('Every administrative ward profiled, compared and tracked over time.'), to: ROUTES.wards },
+    { icon: CloudRain, label: t('Monsoon Intelligence'), note: t('Heavy rain on a high tide, flooding spots and IMD Mumbai advisories - the season that matters most.'), to: ROUTES.monsoon },
+    { icon: Droplets, label: t('Water Intelligence'), note: t('The seven lakes from source to tap, and the sewage treatment that follows.'), to: ROUTES.water },
+    { icon: Siren, label: t('Situation Room'), note: t('Live incidents, alerts and signals, and the response as it stands.'), to: ROUTES.situationRoom },
   ]
 }
 let SURFACES: PortalSurface[] = build$SURFACES()
@@ -285,37 +187,18 @@ let SURFACES: PortalSurface[] = build$SURFACES()
    The banner
    ========================================================================== */
 
-interface BannerPhoto {
-  src: string
-  /** Passed straight to `object-position`. */
-  focus: string
-}
-
-/* The three usable civic photographs, with the crop each one needs. Everything
-   else on disk is a 144px thumbnail, which the 13rem frame would render soft. */
-const BANNER_PHOTOS = {
-  secretariat: { src: '/civic/secretariat.jpg', focus: '50% 45%' },
-  legislature: { src: '/civic/legislature.jpg', focus: '38% 55%' },
-  assembly: { src: '/civic/assembly.jpg', focus: '50% 42%' },
-} satisfies Record<string, BannerPhoto>
-
 interface BannerSlide {
   heading: string
   features: string[]
   action: string
   to: string
-  /**
-   * Two civic photographs, cut into the circular frames of the collage.
-   *
-   * Each carries its own focal point, because a circular crop of a building
-   * photographed from the ground centres on sky and roadway if left alone -
-   * `object-position` is what puts the façade in the frame instead.
-   */
-  photos: [BannerPhoto, BannerPhoto]
+  /** The civic photograph that fills the band behind the copy. */
+  photo: CoverPhoto
 }
 
 function build$BANNER_SLIDES(): BannerSlide[] {
   const unit = municipality.terminology.primaryUnitSingular
+  const photos = coverPhotos()
   return [
     {
       heading: municipality.branding.productShortName,
@@ -327,17 +210,19 @@ function build$BANNER_SLIDES(): BannerSlide[] {
       ],
       action: t('See what it decides'),
       to: '#surfaces',
+      photo: photos.skylineNight,
     },
     {
       heading: t('The city on one screen, ordered by what needs deciding'),
       features: [
         t('Live incidents, escalations and the control-room picture'),
         t('Each {0} scored on service, equity and delivery', unit),
-        t('Cross-domain correlation, so a cause is read once'),
+        t('Rain, tide and flooding spots read together, so a cause is read once'),
         t('Standing resilience picture ahead of the incident'),
       ],
       action: t('Open the commissioner’s cockpit'),
       to: ROUTES.cockpit,
+      photo: photos.seaLink,
     },
     {
       heading: t('Every rupee demanded, collected and accounted for'),
@@ -349,20 +234,157 @@ function build$BANNER_SLIDES(): BannerSlide[] {
       ],
       action: t('Open revenue and finance'),
       to: ROUTES.financialIntelligence,
+      photo: photos.bmcHeadOffice,
     },
-    // A different pair on each slide, rather than the same two mapped onto all
-    // three. A band that rotates three times and shows the same photographs
-    // each time reads as broken rather than as rotating.
-  ].map((slide, index) => ({
-    ...slide,
-    photos: [
-      [BANNER_PHOTOS.secretariat, BANNER_PHOTOS.legislature],
-      [BANNER_PHOTOS.assembly, BANNER_PHOTOS.secretariat],
-      [BANNER_PHOTOS.legislature, BANNER_PHOTOS.assembly],
-    ][index] as [BannerPhoto, BannerPhoto],
-  }))
+  ]
 }
 let BANNER_SLIDES: BannerSlide[] = build$BANNER_SLIDES()
+
+interface CoverageCard {
+  photo: CoverPhoto
+  title: string
+  line: string
+  links: Array<{ label: string; to: string }>
+}
+
+function buildCoverageCards(): CoverageCard[] {
+  const photos = coverPhotos()
+  return [
+    {
+      photo: photos.mithiRiver,
+      title: t('Rivers, nullahs & storm water'),
+      line: t('The Mithi and the city’s nullahs, pumping stations, flooding spots and the subways that flood first.'),
+      links: [
+        { label: t('Storm Water Intelligence'), to: ROUTES.stormwater },
+        { label: t('Monsoon Intelligence'), to: ROUTES.monsoon },
+      ],
+    },
+    {
+      photo: photos.monsoonColaba,
+      title: t('Monsoon & Arabian Sea cyclones'),
+      line: t('IMD Mumbai advisories, shelters, pre-positioned resources and ward exposure.'),
+      links: [
+        { label: t('Monsoon Intelligence'), to: ROUTES.monsoon },
+        { label: t('Disaster Intelligence'), to: ROUTES.disaster },
+      ],
+    },
+    {
+      photo: photos.viharLake,
+      title: t('Water supply & sewage treatment'),
+      line: t('The seven lakes that feed the city, from storage to the tap, and the treatment plants downstream.'),
+      links: [
+        { label: t('Water Intelligence'), to: ROUTES.water },
+        { label: t('Solid Waste Intelligence'), to: ROUTES.waste },
+      ],
+    },
+    {
+      photo: photos.marineDrive,
+      title: t('Roads, street lighting & bridges'),
+      line: t('Road defects, potholes, flyovers, street lights and the works that dig them up.'),
+      links: [
+        { label: t('Roads Intelligence'), to: ROUTES.roads },
+        { label: t('Traffic & Mobility'), to: ROUTES.traffic },
+      ],
+    },
+    {
+      photo: photos.bestBus,
+      title: t('Mobility & the city map'),
+      line: t('Incidents, works and wards on a real map of Mumbai.'),
+      links: [
+        { label: t('City Command Map'), to: ROUTES.cityCommandMap },
+        { label: t('Urban Digital Twin'), to: ROUTES.digitalTwin },
+      ],
+    },
+    {
+      photo: photos.coastalRoad,
+      title: t('Capital works & contractors'),
+      line: t('Project risk, delivery, contractor records and coordination.'),
+      links: [
+        { label: t('Project Intelligence'), to: ROUTES.projects },
+        { label: t('Procurement Intelligence'), to: ROUTES.procurement },
+      ],
+    },
+    {
+      photo: photos.chowpatty,
+      title: t('Festivals, crowds & public spaces'),
+      line: t('Ganeshotsav immersions, beaches, gardens and the places the city gathers.'),
+      links: [
+        { label: t('Gardens & Open Space'), to: ROUTES.gardens },
+        { label: t('Situation Room'), to: ROUTES.situationRoom },
+      ],
+    },
+    {
+      photo: photos.localTrain,
+      title: t('Citizen services & ward offices'),
+      line: t('Service requests, certificates, the citizen facilitation centres and grievance resolution.'),
+      links: [
+        { label: t('Citizen Service Intelligence'), to: ROUTES.citizenServices },
+        { label: t('Grievance Resolution'), to: ROUTES.resolutionIntelligence },
+      ],
+    },
+    {
+      photo: photos.bkc,
+      title: t('Wards & localities'),
+      line: t('All {0} administrative wards scored on service, equity and delivery.', formatNumber(municipality.administrativeUnits.wards)),
+      links: [
+        { label: t('Ward Intelligence'), to: ROUTES.wards },
+        { label: t('Ward Equity & Allocation'), to: ROUTES.wardEquity },
+      ],
+    },
+    {
+      photo: photos.crawfordMarket,
+      title: t('Revenue & municipal finance'),
+      line: t('Property tax, collection, arrears, markets and the corporation’s budget.'),
+      links: [
+        { label: t('Revenue Intelligence'), to: ROUTES.revenue },
+        { label: t('Budget Intelligence'), to: ROUTES.budget },
+      ],
+    },
+    {
+      photo: photos.skylineNight,
+      title: t('Command centre & decisions'),
+      line: t('The whole city on one screen, ranked by what needs deciding.'),
+      links: [
+        { label: t('Executive Overview'), to: ROUTES.executive },
+        { label: t('Decision Centre'), to: ROUTES.decisions },
+      ],
+    },
+    {
+      photo: photos.bmcHeadOffice,
+      title: t('Council resolutions & establishment'),
+      line: t('Implementation of every corporation and committee resolution, and the staff behind it.'),
+      links: [
+        { label: t('Council & Committees'), to: ROUTES.councilResolutions },
+        { label: t('Workforce Intelligence'), to: ROUTES.workforce },
+      ],
+    },
+  ]
+}
+
+/**
+ * Every photograph of Mumbai on this page, with the credit its licence asks
+ * for. The same records, with source links, are in
+ * `public/cover/PHOTO-CREDITS.txt`.
+ */
+function buildGallery(): CoverPhoto[] {
+  const p = coverPhotos()
+  return [
+    p.flamingos,
+    p.skylineNight,
+    p.seaLink,
+    p.csmt,
+    p.viharLake,
+    p.bmcHeadOffice,
+    p.marineDrive,
+    p.powaiRain,
+    p.bestBus,
+    p.crawfordMarket,
+    p.chowpatty,
+    p.coastalRoad,
+    p.monsoonColaba,
+    p.hangingGardens,
+  ]
+}
 
 interface PortalAssurance {
   label: string
@@ -375,7 +397,7 @@ function build$ASSURANCES(): PortalAssurance[] {
   return [
     {
       label: t('Sovereign by deployment'),
-      note: t('The platform contacts nothing over a network — not a model, not a map tile, not a font. It runs entirely where the corporation runs it.'),
+      note: t('No AI model or citizen data leaves the deployment; base-map tiles come from OpenStreetMap.'),
       linkLabel: t('Security posture'),
       to: ROUTES.security,
     },
@@ -401,20 +423,6 @@ function build$ASSURANCES(): PortalAssurance[] {
 }
 let ASSURANCES: PortalAssurance[] = build$ASSURANCES()
 
-/* --------------------------------------------------------------------------
-   One tile, three sections
-   --------------------------------------------------------------------------
-   Notices, important links and related links were three different shapes: a
-   pair of feature cards beside a tab panel, a row of icon-and-label strips,
-   and a carousel of centred cards on a coloured plinth. Three treatments for
-   three lists of links is three things for a reader to learn.
-
-   They are one shape now - the same tile the surfaces band already uses, in
-   the same four-column grid. What differs between the sections is what sits
-   ABOVE the grid: tabs on the notice board, arrows under the related links,
-   nothing on the important ones. The tile itself never changes.
-   -------------------------------------------------------------------------- */
-
 interface PortalTile {
   icon: LucideIcon
   label: string
@@ -424,36 +432,29 @@ interface PortalTile {
   isNew?: boolean
 }
 
-/**
- * The two feature cards that lead the notice board.
- *
- * The reference portal's notices section is ASYMMETRIC by design - a narrow
- * column of illustrated cards beside a wider tabbed board - and that asymmetry
- * is the whole of its shape. It was briefly folded into the uniform tile grid
- * the other two link sections use; this is the reference's own arrangement,
- * restored deliberately.
- */
+/** The two feature cards that lead the notice board. */
 interface NoticeFeature {
-  /** A civic photograph, square-cropped into the card's thumbnail. */
-  photo: BannerPhoto
+  /** A civic photograph, set across the head of the card. */
+  photo: CoverPhoto
   title: string
   blurb: string
   to: string
 }
 
 function build$NOTICE_FEATURES(): NoticeFeature[] {
+  const photos = coverPhotos()
   return [
     {
-      photo: BANNER_PHOTOS.secretariat,
+      photo: photos.csmt,
       title: t('How access is granted'),
       blurb: t('Sign-in is by the post held, not by the person. The post carries the authority and the data scope, and the officer is named against every action taken under it.'),
       to: ROUTES.accessGovernance,
     },
     {
-      photo: BANNER_PHOTOS.legislature,
+      photo: photos.powaiRain,
       title: t('Where every figure comes from'),
       blurb: t('Each surface states the source of its numbers and which of them are modelled. An officer who cannot cite a figure in a meeting cannot use it.'),
-      to: ROUTES.trustCentre,
+      to: ROUTES.evidenceAudit,
     },
   ]
 }
@@ -472,193 +473,52 @@ function build$NOTICE_TABS(): NoticeTab[] {
       id: 'new',
       label: t('New'),
       items: [
-        {
-          icon: MapPin,
-          label: t('{0} equity and allocation', unit),
-          note: t('Allocation read against need rather than against last year.'),
-          to: ROUTES.wardEquity,
-          isNew: true,
-        },
-        {
-          icon: MessageCircle,
-          label: t('Copilot on procurement'),
-          note: t('Contractor performance and tender history, asked in plain language.'),
-          to: ROUTES.copilot,
-          isNew: true,
-        },
-        {
-          icon: Radar,
-          label: t('Integration health'),
-          note: t('Which departmental feed is stale, and since when.'),
-          to: ROUTES.integrations,
-          isNew: true,
-        },
-        {
-          icon: CloudRain,
-          label: t('Monsoon scenario workspace'),
-          note: t('What the city looks like under a heavier spell than last year.'),
-          to: ROUTES.scenarios,
-          isNew: true,
-        },
+        { icon: MapPin, label: t('{0} equity and allocation', unit), note: t('Allocation read against need rather than against last year.'), to: ROUTES.wardEquity, isNew: true },
+        { icon: MessageCircle, label: t('Municipal Copilot on procurement'), note: t('Contractor performance and tender history, asked in plain language.'), to: ROUTES.copilot, isNew: true },
+        { icon: Radar, label: t('Integration health'), note: t('Which departmental feed is stale, and since when.'), to: ROUTES.integrations, isNew: true },
+        { icon: CloudRain, label: t('Monsoon scenario workspace'), note: t('What the city looks like under a heavier spell on a higher tide than last year.'), to: ROUTES.scenarios, isNew: true },
       ],
     },
     {
       id: 'circulars',
       label: t('Circulars'),
       items: [
-        {
-          icon: FileText,
-          label: t('Standing orders and circulars'),
-          note: t('The orders in force, and the ones each of them supersedes.'),
-          to: ROUTES.institutionalMemory,
-        },
-        {
-          icon: Landmark,
-          label: t('Government resolutions'),
-          note: t('State resolutions, and what each obliges the corporation to do.'),
-          to: ROUTES.institutionalMemory,
-        },
-        {
-          icon: Scale,
-          label: t('Delegation of powers'),
-          note: t('Which post may sanction what, and up to what value.'),
-          to: ROUTES.accessGovernance,
-        },
-        {
-          icon: Megaphone,
-          label: t('Citizens’ charter standards'),
-          note: t('The time each counter service must be delivered in.'),
-          to: ROUTES.citizenServices,
-        },
+        { icon: FileText, label: t('Standing orders and circulars'), note: t('The orders in force, and the ones each of them supersedes.'), to: ROUTES.correspondence },
+        { icon: Landmark, label: t('Government resolutions'), note: t('Government resolutions (GRs) of the Urban Development Department, and what each obliges the corporation to do.'), to: ROUTES.correspondence },
+        { icon: Scale, label: t('Delegation of powers'), note: t('Which post may sanction what, and up to what value.'), to: ROUTES.accessGovernance },
+        { icon: Megaphone, label: t('Right to Public Services timelines'), note: t('The time each notified service must be delivered in, under the Maharashtra Right to Public Services Act, 2015.'), to: ROUTES.citizenServices },
       ],
     },
     {
       id: 'escalations',
       label: t('Escalations'),
       items: [
-        {
-          icon: Gauge,
-          label: t('Decisions awaiting approval'),
-          note: t('Sitting with a post, with the evidence already assembled.'),
-          to: ROUTES.decisions,
-          isNew: true,
-        },
-        {
-          icon: Siren,
-          label: t('Alerts past their standard'),
-          note: t('Beyond their window, and now with the department head.'),
-          to: ROUTES.alerts,
-        },
-        {
-          icon: Megaphone,
-          label: t('Complaints breaching today'),
-          note: t('Due to breach the charter before the day closes.'),
-          to: ROUTES.citizenServices,
-        },
-        {
-          icon: Building2,
-          label: t('Works behind schedule'),
-          note: t('Physical progress trailing the money already released.'),
-          to: ROUTES.projects,
-        },
+        { icon: Gauge, label: t('Decisions awaiting approval'), note: t('Sitting with a post, with the evidence already assembled.'), to: ROUTES.decisions, isNew: true },
+        { icon: Siren, label: t('Alerts past their standard'), note: t('Beyond their window, and now with the department head.'), to: ROUTES.alerts },
+        { icon: Megaphone, label: t('Complaints breaching today'), note: t('Due to breach the charter before the day closes.'), to: ROUTES.citizenServices },
+        { icon: Building2, label: t('Works behind schedule'), note: t('Physical progress trailing the money already released.'), to: ROUTES.projects },
       ],
     },
     {
       id: 'reference',
       label: t('Reference'),
       items: [
-        {
-          icon: Rss,
-          label: t('Data sources'),
-          note: t('Every feed, its owner, and when it last landed.'),
-          to: ROUTES.dataSources,
-        },
-        {
-          icon: Radar,
-          label: t('Model registry'),
-          note: t('What each model does, and how it scored on evaluation.'),
-          to: ROUTES.modelRegistry,
-        },
-        {
-          icon: Route,
-          label: t('Lineage of a figure'),
-          note: t('From the screen back to the record it was drawn from.'),
-          to: ROUTES.lineage,
-        },
-        {
-          icon: Scale,
-          label: t('Access and roles'),
-          note: t('The scope each position carries, and who granted it.'),
-          to: ROUTES.accessGovernance,
-        },
+        { icon: Rss, label: t('Data sources'), note: t('Every feed, its owner, and when it last landed.'), to: ROUTES.dataSources },
+        { icon: Radar, label: t('Model registry'), note: t('What each model does, and how it scored on evaluation.'), to: ROUTES.modelRegistry },
+        { icon: Route, label: t('Lineage of a figure'), note: t('From the screen back to the record it was drawn from.'), to: ROUTES.lineage },
+        { icon: Scale, label: t('Access and roles'), note: t('The scope each position carries, and who granted it.'), to: ROUTES.accessGovernance },
       ],
     },
   ]
 }
 let NOTICE_TABS: NoticeTab[] = build$NOTICE_TABS()
 
-function build$RELATED_LINKS(): PortalTile[] {
-  return [
-    {
-      icon: Building2,
-      label: t('Building Permission'),
-      note: t('Development control, permission and unauthorised construction.'),
-      to: ROUTES.buildings,
-    },
-    {
-      icon: Siren,
-      label: t('Disaster Intelligence'),
-      note: t('Preparedness, response and the standing resilience picture.'),
-      to: ROUTES.disaster,
-    },
-    {
-      icon: HeartPulse,
-      label: t('Hospital Intelligence'),
-      note: t('Facility load, critical care occupancy and referrals.'),
-      to: ROUTES.hospitals,
-    },
-    {
-      icon: GraduationCap,
-      label: t('Education Intelligence'),
-      note: t('Enrolment, attendance and school infrastructure.'),
-      to: ROUTES.education,
-    },
-    {
-      icon: Flame,
-      label: t('Fire & Emergency'),
-      note: t('Response times, appliance availability and fire safety.'),
-      to: ROUTES.emergency,
-    },
-    {
-      icon: Landmark,
-      label: t('Workforce Intelligence'),
-      note: t('Sanctioned posts, deployment and vacancy by department.'),
-      to: ROUTES.workforce,
-    },
-    {
-      icon: Scale,
-      label: t('Council Resolutions'),
-      note: t('Subjects tabled before the house, and how each was decided.'),
-      to: ROUTES.councilResolutions,
-    },
-    {
-      icon: Leaf,
-      label: t('Environment Intelligence'),
-      note: t('Air, noise, tree cover and the environment status report.'),
-      to: ROUTES.environment,
-    },
-  ]
-}
-let RELATED_LINKS: PortalTile[] = build$RELATED_LINKS()
-
 /**
  * The four Google brand hues, cycled across the columns.
  *
  * The grids run four across at `lg`, so index modulo four gives each COLUMN its
  * own hue rather than scattering colour through the rows - which is what makes
- * it read as an infographic rather than as decoration. Below `lg` the grid falls
- * to three columns and then two, and the sequence simply alternates; there is no
- * column left to encode.
+ * it read as an infographic rather than as decoration.
  *
  * Written as whole class strings rather than composed from a hue name, because
  * Tailwind scans source text for class names and a template literal would name
@@ -667,11 +527,7 @@ let RELATED_LINKS: PortalTile[] = build$RELATED_LINKS()
 const COLUMN_HUES = [
   'bg-google-blue-600 text-white',
   'bg-google-red-600 text-white',
-  // Yellow takes a dark glyph. Google's yellow ramp tops out around #F29900, so
-  // white on it never clears 3:1 at any weight - there is no darker step to
-  // reach for. Google's own material sets dark content on this colour for the
-  // same reason, which is why it reads as intentional rather than as the one
-  // badge that failed.
+  // Yellow takes a dark glyph: white on Google's yellow never clears 3:1.
   'bg-google-yellow-500 text-ink-900',
   'bg-google-green-700 text-white',
 ] as const
@@ -679,15 +535,7 @@ const COLUMN_HUES = [
 /**
  * The same four hues as `COLUMN_HUES`, read at a whisper instead of a shout -
  * a pale wash for the CARD ITSELF, indexed the same way so a tile's ground
- * always carries the same hue as its own icon badge. This is what turns a
- * column of white cards with one coloured chip each into a page that reads as
- * colourful at a glance, the way the rest of this platform's panels do.
- *
- * Two variants: the wash alone for a static container, and the wash with its
- * own `hover` step for an element that is itself the click target. Written as
- * whole class strings rather than composed from a hue name, for the same
- * reason `COLUMN_HUES` is - Tailwind scans source text for class names, and a
- * template literal would name classes it never generates.
+ * always carries the same hue as its own icon badge.
  */
 const CARD_WASH = [
   'bg-google-blue-50',
@@ -703,6 +551,14 @@ const CARD_WASH_HOVER = [
   'bg-google-green-50 hover:bg-google-green-100',
 ] as const
 
+/** The assurance cards' top rule, in the same column order as `COLUMN_HUES`. */
+const ASSURANCE_BARS = [
+  'bg-google-blue-600',
+  'bg-google-red-600',
+  'bg-google-yellow-500',
+  'bg-google-green-700',
+] as const
+
 /** Paired one-to-one with `CARD_WASH`, for the two-item notice feature cards. */
 const NOTICE_ACCENT = ['border-b-google-blue-600', 'border-b-google-red-600'] as const
 
@@ -715,17 +571,9 @@ const HERO_DOT_HUES = [
 ] as const
 
 /**
- * The important-links grid, in the reference's own form.
- *
- * Separate white cards with the icon on the LEFT and the label beside it, and
- * no description under either. The reference gives these tiles a label and
- * nothing else, and it is right to: a sentence under each of twelve entries
- * turns a directory a reader scans into a page they have to read.
- *
- * Colour lives in the ICON BADGE rather than in the card. That is where the
- * reference puts its own illustrations, it keeps the four Google hues coding
- * the columns, and it stops twelve saturated blocks from becoming the loudest
- * thing on a government page.
+ * The important-links grid: separate cards with the icon on the LEFT and the
+ * label beside it. Colour lives in the icon badge and a pale wash of the same
+ * hue, so the four Google hues code the columns.
  */
 function PortalLinkGrid({ tiles, isAuthenticated }: { tiles: PortalTile[]; isAuthenticated: boolean }): React.JSX.Element {
   return (
@@ -750,7 +598,7 @@ function PortalLinkGrid({ tiles, isAuthenticated }: { tiles: PortalTile[]; isAut
             </span>
             <span className="min-w-0 text-[0.8125rem] leading-snug font-semibold break-words text-ink-800">{tile.label}</span>
             {tile.isNew ? (
-              <span className="ml-auto shrink-0 rounded-sm bg-crit-500 px-1.5 py-0.5 text-[0.5625rem] font-bold tracking-[0.08em] text-white uppercase">
+              <span className="ml-auto shrink-0 rounded-sm bg-crit-500 px-1.5 py-0.5 text-[0.625rem] font-bold tracking-[0.08em] text-white uppercase">
                 {t('New')}
               </span>
             ) : null}
@@ -762,37 +610,34 @@ function PortalLinkGrid({ tiles, isAuthenticated }: { tiles: PortalTile[]; isAut
 }
 
 /**
- * The related-links cards, in the reference's own form: a large round badge
- * centred over a centred label, four across, standing on a coloured plinth
- * that begins below the cards' heads so the row reads as one band rather than
- * as four loose tiles.
+ * A photograph laid behind a dark band, under a navy wash heavy enough that
+ * white copy over it clears contrast wherever the picture is bright.
+ * Decorative: the band's own heading carries the meaning, and the photograph
+ * is captioned beside it with `PhotoCaption`.
  */
-function PortalCardRow({ tiles, isAuthenticated }: { tiles: PortalTile[]; isAuthenticated: boolean }): React.JSX.Element {
+function PhotoBackdrop({ photo }: { photo: CoverPhoto }): React.JSX.Element {
   return (
-    <ul className="relative grid grid-cols-2 gap-4 px-4 pb-16 lg:grid-cols-4 lg:px-8">
-      {tiles.map((tile, index) => (
-        <li key={tile.label}>
-          <a
-            href={signInFor(tile.to, isAuthenticated)}
-            className={cn(
-              'interactive-surface flex h-full flex-col items-center gap-3 rounded-lg border border-ink-200 px-4 py-6 text-center shadow-card transition-colors',
-              CARD_WASH_HOVER[index % CARD_WASH_HOVER.length],
-            )}
-          >
-            <span
-              className={cn(
-                'flex h-14 w-14 items-center justify-center rounded-full',
-                COLUMN_HUES[index % COLUMN_HUES.length],
-              )}
-              aria-hidden
-            >
-              <tile.icon className="h-7 w-7" />
-            </span>
-            <span className="text-[0.8125rem] leading-snug font-semibold text-ink-800">{tile.label}</span>
-          </a>
-        </li>
-      ))}
-    </ul>
+    <div aria-hidden className="absolute inset-0 -z-10">
+      <img
+        src={photo.src}
+        alt=""
+        loading="lazy"
+        decoding="async"
+        style={{ objectPosition: photo.focus }}
+        className="h-full w-full object-cover"
+      />
+      <span className="absolute inset-0 bg-gradient-to-r from-[#0b1636]/90 via-[#0f2257]/65 to-[#0b1636]/35" />
+    </div>
+  )
+}
+
+/** What a backdrop photograph shows, set small in the band's corner. */
+function PhotoCaption({ caption }: { caption: string }): React.JSX.Element {
+  return (
+    <p className="inline-flex w-fit items-center gap-1.5 rounded-full bg-black/30 px-3 py-1 text-[0.625rem] text-white/75 ring-1 ring-white/15 backdrop-blur">
+      <Camera className="h-3 w-3" aria-hidden />
+      {t('Photo: {0}', caption)}
+    </p>
   )
 }
 
@@ -804,7 +649,6 @@ registerLayer(() => {
   ASSURANCES = build$ASSURANCES()
   NOTICE_FEATURES = build$NOTICE_FEATURES()
   NOTICE_TABS = build$NOTICE_TABS()
-  RELATED_LINKS = build$RELATED_LINKS()
 })
 
 /* ==========================================================================
@@ -819,6 +663,48 @@ export function PortalLandingPage(): React.JSX.Element {
   // whether a destination is reached directly or must detour through sign-in
   // first. See `signInFor`.
   const isAuthenticated = useCurrentUser() !== null
+  const coverageCards = buildCoverageCards()
+  const gallery = buildGallery()
+  const photos = coverPhotos()
+  /* Headline figures for the hero. Every value is read from the corporation
+     record (src/config/corporations.ts), where each carries its source. */
+  const heroFacts = [
+    {
+      label: t('Residents in corporation limits'),
+      value: formatNumber(corporation.population2011),
+      source: t('Census of India 2011'),
+    },
+    {
+      label: t('Corporator seats'),
+      value: corporation.electoralWards ? formatNumber(corporation.electoralWards) : '—',
+      source: t('Elected corporators'),
+    },
+    {
+      label: t('Budget {0}', corporation.budgetFinancialYear ?? ''),
+      value: corporation.budgetCrore ? t('₹{0} cr', formatNumber(corporation.budgetCrore, 2)) : '—',
+      source: t('Approved by the General Body'),
+    },
+    {
+      label: t('Water supplied daily'),
+      value: corporation.waterSupplyMLD ? t('{0} MLD', formatNumber(corporation.waterSupplyMLD)) : '—',
+      source: t('Reported daily supply'),
+    },
+    {
+      label: t('Area'),
+      value: t('{0} km²', formatNumber(corporation.areaSqKm, 2)),
+      source: t('Corporation jurisdiction'),
+    },
+    {
+      label: t('Administrative wards'),
+      value: formatNumber(corporation.administrativeWards ?? municipality.administrativeUnits.wards),
+      source: t('Ward offices of the corporation'),
+    },
+    {
+      label: t('Sewage treatment'),
+      value: corporation.sewageTreatmentMLD ? t('{0} MLD', formatNumber(corporation.sewageTreatmentMLD)) : '—',
+      source: t('Combined treatment capacity'),
+    },
+  ].filter((fact) => fact.value !== '—')
 
   const [query, setQuery] = useState('')
   const [fontStep, setFontStep] = useState(0)
@@ -826,15 +712,11 @@ export function PortalLandingPage(): React.JSX.Element {
   const [bannerSlide, setBannerSlide] = useState(0)
   const [bannerPaused, setBannerPaused] = useState(false)
   const [noticeTab, setNoticeTab] = useState(NOTICE_TABS[0]?.id ?? 'new')
-  const [relatedPage, setRelatedPage] = useState(0)
 
   // The related-links carousel runs four to a page and wraps at both ends.
   // The page is clamped on read rather than reset in an effect: a language
   // switch rebuilds the catalogue, and a carousel parked past the last page
   // would render an empty band until the reader happened to press an arrow.
-  const relatedPages = Math.max(1, Math.ceil(RELATED_LINKS.length / 4))
-  const relatedStart = Math.min(relatedPage, relatedPages - 1) * 4
-  const shownRelated = RELATED_LINKS.slice(relatedStart, relatedStart + 4)
 
   /**
    * The banner's rotation.
@@ -898,8 +780,12 @@ export function PortalLandingPage(): React.JSX.Element {
    * progress, and the two or three dates that carry a deadline for a citizen.
    *
    * PUBLIC NOTICES ONLY. This band sits ahead of sign-in, so nothing on it may
-   * be drawn from the intelligence surfaces behind it - the figures here are
-   * the ones a corporation already publishes on its own portal, and no more.
+   * be drawn from the intelligence surfaces behind it - the items here are the
+   * kind a corporation already publishes on its own portal, and no more.
+   *
+   * MODELLED, and labelled so on the strip itself. No corporation notice feed
+   * is connected: every count is a deterministic demonstration value, and a
+   * reader must never take one for a published corporation bulletin.
    *
    * Seeded by corporation and dated off the demonstration anchor like every
    * other figure on this page. The line moves; the numbers on it do not, so a
@@ -1001,11 +887,11 @@ export function PortalLandingPage(): React.JSX.Element {
       {/* ============================================================ */}
       {/* Utility strip                                                */}
       {/* ============================================================ */}
-      {/* mcgm.gov.in opens on a solid deep-blue utility bar - it is the single
-          most recognisable thing about the corporation's own portal, and a
-          Mumbai citizen arriving here should land on the same band. The
-          controls inside it are unchanged; only the ground they sit on is. */}
-      <div className="bg-portal-700 text-white">
+      {/* A solid deep-blue utility bar, the band Indian government portals
+          (GIGW-pattern sites) open on - an officer arriving here should land
+          on a shape they already know. The controls inside it are unchanged;
+          only the ground they sit on is. */}
+      <div className="bg-navy-950 text-white">
         <div className="mx-auto flex max-w-[80rem] flex-wrap items-center justify-between gap-2 px-4 py-1.5">
           <div className="flex items-center gap-3">
             <span className="text-[0.6875rem] font-medium text-white/90">
@@ -1064,7 +950,7 @@ export function PortalLandingPage(): React.JSX.Element {
           #f2f7fc was invisible. Inverting the strip keeps the contrast well
           clear of the WCAG AA floor in both directions rather than trading one
           unreadable combination for another. */}
-      <div className="sticky top-0 z-30 border-b border-portal-900 bg-portal-800 shadow-sm">
+      <div className="sticky top-0 z-30 border-b border-navy-950 bg-navy-900 shadow-sm">
         <div className="mx-auto flex max-w-[80rem] items-center gap-2.5 px-4 py-1.5">
           <span className="flex shrink-0 items-center gap-1.5 rounded-sm bg-crit-500 px-1.5 py-0.5 text-[0.625rem] font-bold tracking-[0.08em] text-white uppercase ring-1 ring-crit-300 ring-inset">
             <span aria-hidden className="animate-pulse-soft h-1.5 w-1.5 rounded-full bg-white" />
@@ -1072,6 +958,14 @@ export function PortalLandingPage(): React.JSX.Element {
           </span>
           <span className="hidden shrink-0 text-[0.6875rem] font-semibold text-white sm:inline">
             {t('Latest updates')}
+          </span>
+          {/* The notices are modelled, and the strip says so where they are
+              read rather than only in the footer. */}
+          <span
+            className="shrink-0 rounded-sm bg-white/15 px-1.5 py-0.5 text-[0.625rem] font-semibold tracking-[0.06em] text-white/85 uppercase ring-1 ring-white/25 ring-inset"
+            title={t('Demonstration notices, modelled. Not published by the corporation.')}
+          >
+            {t('Modelled')}
           </span>
 
           <div className="marquee-viewport relative min-w-0 flex-1">
@@ -1146,9 +1040,9 @@ export function PortalLandingPage(): React.JSX.Element {
       <header className="border-b-[3px] border-gold-500 bg-surface">
         <div className="mx-auto flex max-w-[80rem] flex-col gap-4 px-4 py-5 md:flex-row md:items-center md:justify-between">
           {/* The masthead leads with the PLATFORM, not with the corporation.
-              This build serves twenty-nine corporations from one core, and a
-              masthead reading "Brihanmumbai Municipal Corporation" told every
-              visitor the opposite - that they were looking at one city's site.
+              The core is deployment-neutral, and a masthead reading only
+              "Brihanmumbai Municipal Corporation" would tell every visitor the
+              opposite - that they were looking at the corporation's own site.
               The corporation is still named, one line down, as the deployment
               this render is for. Which is what it is. */}
           <div className="flex min-w-0 items-center gap-4">
@@ -1177,12 +1071,15 @@ export function PortalLandingPage(): React.JSX.Element {
           </div>
 
           <div className="flex flex-col items-stretch gap-2 md:items-end">
+            {/* 112 is India's single national emergency number and is answered
+                in Maharashtra. The corporation's own complaint line is not
+                printed here: this demonstration holds no verified number for it. */}
             <a
-              href={`tel:1916`}
+              href={`tel:112`}
               className="inline-flex items-center gap-2 self-start rounded-md bg-crit-500 px-2.5 py-1 text-[0.75rem] font-semibold text-white ring-1 ring-crit-300 ring-inset md:self-auto"
             >
               <Phone className="h-3.5 w-3.5" aria-hidden />
-              {t('24×7 helpline 1916')}
+              {t('Emergency 112')}
             </a>
             <div className="relative w-full md:w-72">
               <Search className="pointer-events-none absolute top-1/2 left-2.5 h-4 w-4 -translate-y-1/2 text-ink-400" aria-hidden />
@@ -1259,8 +1156,29 @@ export function PortalLandingPage(): React.JSX.Element {
               also better behaviour: the track is the part a reader is
               actually pointing at, and the decorative wave below it no longer
               counts as hovering the carousel. */}
+          {/* Full-bleed photographs of Mumbai, cross-fading with the slides
+              they belong to. Decorative: the copy carries the meaning. */}
+          <div aria-hidden className="absolute inset-0 -z-10">
+            {BANNER_SLIDES.map((slide, index) => (
+              <img
+                key={slide.heading}
+                src={slide.photo.src}
+                alt=""
+                loading={index === 0 ? 'eager' : 'lazy'}
+                decoding="async"
+                style={{ objectPosition: slide.photo.focus }}
+                className={cn(
+                  'absolute inset-0 h-full w-full object-cover transition-opacity duration-700',
+                  index === bannerSlide ? 'opacity-100' : 'opacity-0',
+                )}
+              />
+            ))}
+            <span className="absolute inset-0 bg-gradient-to-r from-[#0b1636]/95 via-[#0f2257]/80 to-[#0f2257]/25" />
+            <span className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#0b1636]/80 to-transparent" />
+          </div>
+
           <div
-            className="mx-auto grid max-w-[80rem] grid-cols-1 px-4 pt-12 pb-28 lg:pt-14 lg:pb-32"
+            className="mx-auto grid max-w-[80rem] grid-cols-1 px-4 pt-14 pb-14 lg:pt-20 lg:pb-20"
             onMouseEnter={() => setBannerPaused(true)}
             onMouseLeave={() => setBannerPaused(false)}
             onFocusCapture={() => setBannerPaused(true)}
@@ -1272,101 +1190,75 @@ export function PortalLandingPage(): React.JSX.Element {
               return (
                 <div
                   key={slide.heading}
-                  className="mcgm-slide grid grid-cols-1 items-center gap-10 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)]"
+                  className="mcgm-slide grid grid-cols-1 items-center gap-10 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]"
                   data-active={active}
                   aria-hidden={!active}
                 >
                   <div className="min-w-0">
-                    <Heading className="max-w-2xl text-[clamp(1.75rem,3.4vw,2.75rem)] leading-[1.18] font-extrabold tracking-[-0.02em] text-white">
+                    <p className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-[0.6875rem] font-bold tracking-[0.14em] text-white uppercase ring-1 ring-white/25 backdrop-blur">
+                      {t('{0} · Maharashtra', corporationName(corporation))}
+                    </p>
+                    <Heading className="mt-5 max-w-2xl text-[clamp(2rem,4.2vw,3.4rem)] leading-[1.08] font-extrabold tracking-[-0.025em] text-white drop-shadow-[0_2px_12px_rgb(0_0_0/0.45)]">
                       {slide.heading}
                     </Heading>
 
-                    <p className="mt-7 text-[1.0625rem] font-semibold text-white">{t('Key features:')}</p>
-                    <ul className="mt-3 flex flex-col gap-2.5">
-                      {slide.features.map((feature, index) => (
+                    <ul className="mt-7 grid max-w-2xl grid-cols-1 gap-2.5 sm:grid-cols-2">
+                      {slide.features.map((feature, featureIndex) => (
                         <li
                           key={feature}
-                          className="flex items-start gap-3 text-[0.9375rem] leading-relaxed text-white/90"
+                          className="flex items-start gap-2.5 rounded-lg bg-white/10 px-3 py-2 text-[0.875rem] leading-snug text-white/95 ring-1 ring-white/15 backdrop-blur-sm"
                         >
                           <span
                             aria-hidden
-                            className={cn('mt-2 h-1.5 w-1.5 shrink-0 rounded-full', HERO_DOT_HUES[index % HERO_DOT_HUES.length])}
+                            className={cn('mt-1.5 h-2 w-2 shrink-0 rounded-full', HERO_DOT_HUES[featureIndex % HERO_DOT_HUES.length])}
                           />
                           {feature}
                         </li>
                       ))}
                     </ul>
 
-                    <a
-                      href={signInFor(slide.to, isAuthenticated)}
-                      tabIndex={active ? undefined : -1}
-                      className="interactive-surface mt-8 inline-flex items-center gap-2 rounded-md bg-white px-6 py-3.5 text-[0.9375rem] font-bold text-[color:var(--mcgm-ground-deep)] shadow-lg transition-transform hover:scale-[1.02] hover:bg-white/90"
-                    >
-                      {slide.action}
-                      <ArrowRight className="h-4 w-4" aria-hidden />
-                    </a>
+                    <div className="mt-8 flex flex-wrap items-center gap-3">
+                      <a
+                        href={signInFor(slide.to, isAuthenticated)}
+                        tabIndex={active ? undefined : -1}
+                        className="interactive-surface inline-flex items-center gap-2 rounded-md bg-white px-6 py-3.5 text-[0.9375rem] font-bold text-[color:var(--mcgm-ground-deep)] shadow-lg transition-transform hover:scale-[1.02] hover:bg-white/90"
+                      >
+                        {slide.action}
+                        <ArrowRight className="h-4 w-4" aria-hidden />
+                      </a>
+                      <a
+                        href="#coverage"
+                        tabIndex={active ? undefined : -1}
+                        className="interactive-surface inline-flex items-center gap-2 rounded-md px-5 py-3.5 text-[0.9375rem] font-semibold text-white ring-1 ring-white/50 hover:bg-white/10"
+                      >
+                        {t('See what we cover')}
+                      </a>
+                    </div>
                   </div>
 
-                  {/* The collage. Two circular cut-outs in gold rings over a
-                      large tinted disc, as the reference sets it. Photographs
-                      are the civic ones already credited in the footer - no
-                      new imagery, and nothing that could read as this
-                      corporation's own building. */}
-                  <div aria-hidden className="relative hidden h-[19rem] lg:block">
-                    <span className="absolute top-4 right-0 h-[15rem] w-[15rem] rounded-full bg-[color:var(--mcgm-skyline)] opacity-25" />
-                    <img
-                      src={slide.photos[0].src}
-                      alt=""
-                      loading={index === 0 ? 'eager' : 'lazy'}
-                      decoding="async"
-                      style={{ objectPosition: slide.photos[0].focus }}
-                      className="mcgm-cutout absolute top-0 right-[7.5rem] h-[13rem] w-[13rem] rounded-full object-cover"
-                    />
-                    <img
-                      src={slide.photos[1].src}
-                      alt=""
-                      loading="lazy"
-                      decoding="async"
-                      style={{ objectPosition: slide.photos[1].focus }}
-                      className="mcgm-cutout absolute right-[16.5rem] bottom-0 h-[9.5rem] w-[9.5rem] rounded-full object-cover"
-                    />
+                  {/* Published figures, in large type on glass. Every value is
+                      read from the corporation record, which carries its source. */}
+                  <div className="hidden grid-cols-2 gap-3 lg:grid">
+                    {heroFacts.map((fact, index) => (
+                      <div
+                        key={fact.label}
+                        className={cn(
+                          'rounded-xl bg-white/10 p-4 ring-1 ring-white/20 backdrop-blur-md',
+                          // An odd count would leave a hole in the two-column
+                          // grid; the lead figure takes the full row instead.
+                          heroFacts.length % 2 === 1 && index === 0 && 'col-span-2',
+                        )}
+                      >
+                        <p className="numeric text-[1.75rem] leading-none font-extrabold text-white">{fact.value}</p>
+                        <p className="mt-1.5 text-[0.75rem] leading-snug font-semibold text-white/90">{fact.label}</p>
+                        <p className="mt-0.5 text-[0.625rem] text-white/60">{fact.source}</p>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )
             })}
           </div>
-
-          {/* The wave and the skyline. One inline SVG rather than an image:
-              it is two flat shapes, it has to sit exactly on the band's foot
-              at every width, and it must not cost a request. */}
-          <svg
-            aria-hidden
-            viewBox="0 0 1440 150"
-            preserveAspectRatio="none"
-            className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-[7.5rem] w-full"
-          >
-            <path d="M0 78C220 26 470 8 720 30c250 22 470 66 720 52v68H0Z" fill="var(--mcgm-wave)" />
-            {/* The skyline stands ON the wave, so it is translated down onto
-                the curve rather than sitting on the viewBox floor. */}
-            <g fill="var(--mcgm-skyline)" transform="translate(150 46)">
-              <rect x="0" y="26" width="14" height="34" />
-              <rect x="18" y="14" width="10" height="46" />
-              <path d="M32 60V22l12-12 12 12v38Z" />
-              <rect x="60" y="30" width="16" height="30" />
-              <rect x="80" y="6" width="8" height="54" />
-              <path d="M92 60V26h26v34Z" />
-              <circle cx="105" cy="20" r="9" />
-              <rect x="122" y="34" width="12" height="26" />
-              <path d="M138 60V18l10-10 10 10v42Z" />
-              <rect x="162" y="28" width="18" height="32" />
-              <rect x="184" y="12" width="9" height="48" />
-              <path d="M197 60V30h22v30Z" />
-              <circle cx="208" cy="24" r="8" />
-              <rect x="223" y="36" width="14" height="24" />
-              <rect x="241" y="20" width="11" height="40" />
-              <path d="M256 60V32h20v28Z" />
-            </g>
-          </svg>
         </section>
 
         {/* The slider's own controls, on the pale ground under the band so
@@ -1389,7 +1281,7 @@ export function PortalLandingPage(): React.JSX.Element {
                       setBannerSlide(index)
                       setBannerPaused(true)
                     }}
-                    className="mcgm-dot h-2 w-2 rounded-full"
+                    className="mcgm-dot relative h-2 w-2 rounded-full before:absolute before:-inset-2.5 before:content-['']"
                     data-active={index === bannerSlide}
                   />
                 ))}
@@ -1411,14 +1303,15 @@ export function PortalLandingPage(): React.JSX.Element {
             </div>
 
             {/* The active corporation's own figures. Deliberately labelled
-                with the generic terms rather than
-                `terminology.primaryUnitPlural`: the composed term reaches
+                with literal terms ("Administrative wards", "Zones")
+                rather than `terminology.primaryUnitPlural`: the composed term reaches
                 `t()` through a template literal, which the catalogue
                 extractor cannot see, and the entry that renders here would be
                 reported as orphaned and pruned. */}
             <dl className="flex flex-wrap items-center gap-x-6 gap-y-2">
               {[
-                { label: t('Wards'), value: formatNumber(municipality.administrativeUnits.wards) },
+                { label: t('Administrative wards'), value: formatNumber(municipality.administrativeUnits.wards) },
+                { label: t('Corporator seats'), value: corporation.electoralWards ? formatNumber(corporation.electoralWards) : '—' },
                 { label: t('Zones'), value: formatNumber(municipality.administrativeUnits.zones) },
                 { label: t('Area'), value: t('{0} km²', formatNumber(corporation.areaSqKm, 0)) },
                 {
@@ -1454,47 +1347,116 @@ export function PortalLandingPage(): React.JSX.Element {
         </div>
 
         {/* ============================================================ */}
-        {/* What the platform runs on this deployment                    */}
+        {/* What we cover - real photographs of Mumbai                   */}
         {/* ============================================================ */}
-        {/* The banner's first slide scrolls here. It used to target the
-            use-cases band; with that band gone this is the nearest thing to
-            "see what it decides", and an anchor pointing at nothing would send
-            the reader to the top of the page instead. */}
-        <section id="surfaces" className="border-b border-ink-200 bg-surface">
-          <div className="mx-auto max-w-[80rem] px-4 py-12 lg:py-14">
-            <div className="max-w-2xl">
-              <p className="text-[0.6875rem] font-bold tracking-[0.14em] text-govt-600 uppercase">
-                {t('The platform')}
-              </p>
-              <h2 className="mt-2 text-[1.75rem] leading-tight font-semibold tracking-[-0.02em] text-ink-900">
-                {t('The intelligence surfaces behind this portal')}
-              </h2>
-              <p className="mt-3 text-[0.9375rem] leading-relaxed text-ink-600">
-                {t('What this page shows is the front of it. Behind sign-in the same figures are assembled into the surfaces an officer actually decides from — one for each domain the corporation operates.')}
-              </p>
+        <section id="coverage" className="border-b border-ink-200 bg-surface-sunken">
+          <div className="mx-auto max-w-[80rem] px-4 py-12 lg:py-16">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+              <div className="max-w-2xl">
+                <p className="text-[0.6875rem] font-bold tracking-[0.14em] text-govt-600 uppercase">{t('What we cover')}</p>
+                <h2 className="mt-2 text-[2rem] leading-tight font-extrabold tracking-[-0.02em] text-ink-900">
+                  {t('Every service the city runs, on one intelligence platform')}
+                </h2>
+                <p className="mt-3 text-[0.9375rem] leading-relaxed text-ink-600">
+                  {t('From the island city to the eastern and western suburbs - each area below opens its own live intelligence, built on Mumbai’s published facts and clearly labelled demonstration data.')}
+                </p>
+              </div>
+              <dl className="flex gap-6">
+                {[
+                  { value: formatNumber(coverageCards.length), label: t('areas') },
+                  { value: '120+', label: t('intelligence modules') },
+                  { value: '2', label: t('languages') },
+                ].map((stat) => (
+                  <div key={stat.label}>
+                    <dd className="numeric text-[1.75rem] leading-none font-extrabold text-govt-700">{stat.value}</dd>
+                    <dt className="mt-1 text-[0.6875rem] font-semibold tracking-wide text-ink-500 uppercase">{stat.label}</dt>
+                  </div>
+                ))}
+              </dl>
             </div>
 
-            <ul className="mt-9 grid grid-cols-1 gap-px overflow-hidden rounded-lg bg-ink-100 ring-1 ring-ink-200 sm:grid-cols-2 lg:grid-cols-4">
+            <ul className="mt-9 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {coverageCards.map((card) => (
+                <li key={card.title}>
+                  <figure className="group flex h-full flex-col overflow-hidden rounded-xl bg-surface shadow-sm ring-1 ring-ink-200 transition-shadow hover:shadow-lg">
+                    <div className="relative h-44 overflow-hidden">
+                      <img
+                        src={card.photo.src}
+                        alt={card.photo.caption}
+                        loading="lazy"
+                        decoding="async"
+                        style={{ objectPosition: card.photo.focus }}
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                      <span aria-hidden className="absolute inset-0 bg-gradient-to-t from-[#0b1636]/85 via-[#0b1636]/20 to-transparent" />
+                      <h3 className="absolute right-3 bottom-2.5 left-3 text-[1.0625rem] leading-tight font-bold text-white drop-shadow">
+                        {card.title}
+                      </h3>
+                    </div>
+                    <figcaption className="flex flex-1 flex-col gap-2 p-3.5">
+                      <p className="text-[0.8125rem] leading-snug text-ink-700">{card.line}</p>
+                      <p className="text-[0.625rem] text-ink-400 italic">{t('Photo: {0}', card.photo.caption)}</p>
+                      <div className="mt-auto flex flex-wrap gap-1.5 pt-1">
+                        {card.links.map((link) => (
+                          <a
+                            key={link.to}
+                            href={signInFor(link.to, isAuthenticated)}
+                            className="interactive-surface inline-flex items-center gap-1 rounded-full bg-govt-50 px-2.5 py-1 text-[0.6875rem] font-semibold text-govt-700 ring-1 ring-govt-200 hover:bg-govt-100"
+                          >
+                            {link.label}
+                            <ArrowRight className="h-3 w-3" aria-hidden />
+                          </a>
+                        ))}
+                      </div>
+                    </figcaption>
+                  </figure>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+
+        {/* The banner's first slide scrolls here. A dark band over the Sewri
+            flamingos, so the page alternates light and dark the way the hero
+            sets it. */}
+        <section id="surfaces" className="relative isolate overflow-hidden bg-[#0b1636]">
+          <PhotoBackdrop photo={photos.flamingos} />
+          <div className="mx-auto max-w-[80rem] px-4 py-14 lg:py-20">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+              <div className="max-w-2xl">
+                <p className="text-[0.6875rem] font-bold tracking-[0.14em] text-google-blue-300 uppercase">{t('The platform')}</p>
+                <h2 className="mt-2 text-[clamp(1.75rem,3vw,2.5rem)] leading-tight font-extrabold tracking-[-0.02em] text-white">
+                  {t('The intelligence surfaces behind this portal')}
+                </h2>
+                <p className="mt-3 text-[0.9375rem] leading-relaxed text-white/80">
+                  {t('What this page shows is the front of it. Behind sign-in the same figures are assembled into the surfaces an officer actually decides from — one for each domain the corporation operates.')}
+                </p>
+              </div>
+              <PhotoCaption caption={photos.flamingos.caption} />
+            </div>
+
+            <ul className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {SURFACES.map((surface, index) => (
                 <li key={surface.label}>
                   <a
                     href={signInFor(surface.to, isAuthenticated)}
-                    className={cn(
-                      'interactive-surface flex h-full flex-col gap-2.5 p-5 transition-colors',
-                      CARD_WASH_HOVER[index % CARD_WASH_HOVER.length],
-                    )}
+                    className="interactive-surface group flex h-full flex-col gap-3 rounded-xl bg-white/10 p-5 ring-1 ring-white/15 backdrop-blur-md transition-all hover:-translate-y-0.5 hover:bg-white/15 hover:ring-white/30"
                   >
                     <span
                       className={cn(
-                        'flex h-9 w-9 items-center justify-center rounded-lg',
+                        'flex h-11 w-11 items-center justify-center rounded-xl shadow-lg',
                         COLUMN_HUES[index % COLUMN_HUES.length],
                       )}
                       aria-hidden
                     >
-                      <surface.icon className="h-[1.125rem] w-[1.125rem]" />
+                      <surface.icon className="h-5 w-5" />
                     </span>
-                    <span className="text-[0.875rem] leading-tight font-semibold text-ink-900">{surface.label}</span>
-                    <span className="text-[0.75rem] leading-relaxed text-ink-500">{surface.note}</span>
+                    <span className="text-[0.9375rem] leading-tight font-bold text-white">{surface.label}</span>
+                    <span className="text-[0.75rem] leading-relaxed text-white/70">{surface.note}</span>
+                    <span className="mt-auto inline-flex items-center gap-1 pt-1 text-[0.6875rem] font-semibold text-google-blue-300 group-hover:text-white">
+                      {t('Open')}
+                      <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden />
+                    </span>
                   </a>
                 </li>
               ))}
@@ -1506,34 +1468,57 @@ export function PortalLandingPage(): React.JSX.Element {
         {/* Assurance - what this platform is answerable for             */}
         {/* ============================================================ */}
         <section className="border-b border-ink-200 bg-surface-sunken">
-          <div className="mx-auto max-w-[80rem] px-4 py-12 lg:py-14">
-            <div className="max-w-2xl">
-              <p className="text-[0.6875rem] font-bold tracking-[0.14em] text-govt-600 uppercase">{t('Assurance')}</p>
-              <h2 className="mt-2 text-[1.75rem] leading-tight font-semibold tracking-[-0.02em] text-ink-900">
+          <div className="mx-auto grid max-w-[80rem] grid-cols-1 gap-8 px-4 py-14 lg:grid-cols-[5fr_7fr] lg:py-20">
+            {/* The heading set over the corporation's own head office - a
+                building that has housed the city's administration since 1893
+                carries the idea of the band, a record that outlasts whoever
+                wrote it. */}
+            <figure className="relative isolate flex min-h-[22rem] flex-col justify-end overflow-hidden rounded-2xl p-7 shadow-xl">
+              <img
+                src={photos.bmcHeadOffice.src}
+                alt={photos.bmcHeadOffice.caption}
+                loading="lazy"
+                decoding="async"
+                style={{ objectPosition: photos.bmcHeadOffice.focus }}
+                className="absolute inset-0 -z-10 h-full w-full object-cover"
+              />
+              <span aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-t from-[#0b1636] via-[#0b1636]/70 to-[#0b1636]/10" />
+              <p className="text-[0.6875rem] font-bold tracking-[0.14em] text-gold-300 uppercase">{t('Assurance')}</p>
+              <h2 className="mt-2 text-[clamp(1.75rem,3vw,2.5rem)] leading-tight font-extrabold tracking-[-0.02em] text-white">
                 {t('Built to be answerable')}
               </h2>
-              <p className="mt-3 text-[0.9375rem] leading-relaxed text-ink-600">
+              <p className="mt-3 text-[0.9375rem] leading-relaxed text-white/85">
                 {t('A decision an officer cannot account for is worse than no decision. Four properties hold across every surface behind this portal, and each of them is inspectable from inside the platform.')}
               </p>
-            </div>
+              <figcaption className="mt-5">
+                <PhotoCaption caption={photos.bmcHeadOffice.caption} />
+              </figcaption>
+            </figure>
 
-            <ul className="mt-9 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {ASSURANCES.map((item, index) => (
                 <li
                   key={item.label}
-                  className={cn('rounded-lg border border-ink-200 p-5 shadow-card', CARD_WASH[index % CARD_WASH.length])}
+                  className="group relative flex flex-col overflow-hidden rounded-2xl bg-surface p-6 shadow-card ring-1 ring-ink-200 transition-shadow hover:shadow-lg"
                 >
-                  <span className="numeric text-[0.6875rem] font-bold tracking-[0.1em] text-ink-300">
+                  <span aria-hidden className={cn('absolute inset-x-0 top-0 h-1', ASSURANCE_BARS[index % ASSURANCE_BARS.length])} />
+                  <span
+                    aria-hidden
+                    className={cn(
+                      'numeric flex h-12 w-12 items-center justify-center rounded-xl text-[1.125rem] font-extrabold shadow-md',
+                      COLUMN_HUES[index % COLUMN_HUES.length],
+                    )}
+                  >
                     {String(index + 1).padStart(2, '0')}
                   </span>
-                  <p className="mt-2 text-[0.9375rem] leading-snug font-semibold text-ink-900">{item.label}</p>
-                  <p className="mt-2 text-[0.75rem] leading-relaxed text-ink-500">{item.note}</p>
+                  <p className="mt-4 text-[1.0625rem] leading-snug font-bold text-ink-900">{item.label}</p>
+                  <p className="mt-2 text-[0.8125rem] leading-relaxed text-ink-600">{item.note}</p>
                   <a
                     href={signInFor(item.to, isAuthenticated)}
-                    className="mt-3 inline-flex items-center gap-1 text-[0.75rem] font-semibold text-govt-700 hover:underline"
+                    className="mt-auto inline-flex items-center gap-1 pt-4 text-[0.75rem] font-semibold text-govt-700 hover:underline"
                   >
                     {item.linkLabel}
-                    <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+                    <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden />
                   </a>
                 </li>
               ))}
@@ -1552,7 +1537,8 @@ export function PortalLandingPage(): React.JSX.Element {
             produced a better page that was no longer the reference's. */}
         <section className="border-b border-ink-200 bg-surface">
           <div className="mx-auto max-w-[80rem] px-4 py-12 lg:py-14">
-            <h2 className="text-center text-[1.625rem] leading-tight font-semibold tracking-[-0.02em] text-ink-900">
+            <p className="text-center text-[0.6875rem] font-bold tracking-[0.14em] text-govt-600 uppercase">{t('This week')}</p>
+            <h2 className="mt-2 text-center text-[clamp(1.75rem,3vw,2.5rem)] leading-tight font-extrabold tracking-[-0.02em] text-ink-900">
               {t('Notices and updates')}
             </h2>
             <span aria-hidden className="mcgm-heading-rule mx-auto mt-3 block h-[3px] w-14 rounded-full" />
@@ -1564,40 +1550,44 @@ export function PortalLandingPage(): React.JSX.Element {
                   <li
                     key={feature.title}
                     className={cn(
-                      'flex flex-col rounded-lg border border-ink-200 border-b-2 p-4 shadow-card',
+                      'group flex flex-1 flex-col overflow-hidden rounded-xl border border-ink-200 border-b-4 shadow-card transition-shadow hover:shadow-lg',
                       NOTICE_ACCENT[index % NOTICE_ACCENT.length],
                       CARD_WASH[index % CARD_WASH.length],
                     )}
                   >
-                    <div className="flex items-start gap-3.5">
+                    <div className="relative h-32 overflow-hidden">
                       <img
                         src={feature.photo.src}
-                        alt=""
+                        alt={feature.photo.caption}
                         loading="lazy"
                         decoding="async"
-                        aria-hidden
                         style={{ objectPosition: feature.photo.focus }}
-                        className="h-[4.5rem] w-[4.5rem] shrink-0 rounded-md object-cover ring-1 ring-ink-200"
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                       />
-                      <div className="min-w-0">
-                        <p className="text-[0.875rem] leading-snug font-bold text-ink-900">{feature.title}</p>
-                        <p className="mt-1.5 text-[0.75rem] leading-relaxed text-ink-500">{feature.blurb}</p>
+                      <span aria-hidden className="absolute inset-0 bg-gradient-to-t from-[#0b1636]/90 via-[#0b1636]/25 to-transparent" />
+                      <p className="absolute right-4 bottom-3 left-4 text-[1.0625rem] leading-snug font-bold text-white drop-shadow">
+                        {feature.title}
+                      </p>
+                    </div>
+                    <div className="flex flex-1 flex-col p-4">
+                      <p className="text-[0.8125rem] leading-relaxed text-ink-600">{feature.blurb}</p>
+                      <div className="mt-3 flex items-center justify-between gap-3">
+                        <p className="text-[0.625rem] text-ink-400 italic">{t('Photo: {0}', feature.photo.caption)}</p>
+                        <a
+                          href={signInFor(feature.to, isAuthenticated)}
+                          className="flex shrink-0 items-center gap-1 text-[0.75rem] font-semibold text-google-blue-700 hover:underline"
+                        >
+                          {t('Read more')}
+                          <ChevronRight className="h-3.5 w-3.5" aria-hidden />
+                        </a>
                       </div>
                     </div>
-                    {/* Bottom-right, as the reference sets it. */}
-                    <a
-                      href={signInFor(feature.to, isAuthenticated)}
-                      className="mt-3 flex items-center justify-end gap-1 text-[0.75rem] font-semibold text-google-blue-700 hover:underline"
-                    >
-                      {t('Read more')}
-                      <ChevronRight className="h-3.5 w-3.5" aria-hidden />
-                    </a>
                   </li>
                 ))}
               </ul>
 
               {/* ---- The tabbed board -------------------------------- */}
-              <div className="rounded-lg border border-ink-200 bg-surface p-4 shadow-card">
+              <div className="rounded-xl border border-ink-200 bg-surface p-5 shadow-card">
                 {/* Pills, filled rather than outlined: the reference fills its
                     inactive tabs too, and an outlined tab beside a filled one
                     reads as disabled rather than as unselected. */}
@@ -1636,18 +1626,26 @@ export function PortalLandingPage(): React.JSX.Element {
                     id={`notice-panel-${tab.id}`}
                     aria-labelledby={`notice-tab-${tab.id}`}
                     hidden={noticeTab !== tab.id}
-                    className="mt-4 divide-y divide-ink-100 border-y border-ink-100"
+                    className="mt-4 divide-y divide-ink-100"
                   >
                     {tab.items.map((item) => (
                       <li key={item.label}>
                         <a
                           href={signInFor(item.to, isAuthenticated)}
-                          className="flex items-center gap-2.5 px-1 py-2.5 text-[0.8125rem] text-ink-700 transition-colors hover:text-google-blue-700"
+                          className="group flex items-center gap-3.5 rounded-lg px-2 py-3.5 text-ink-700 transition-colors hover:bg-google-blue-50"
                         >
-                          <item.icon className="h-4 w-4 shrink-0 text-google-blue-700" aria-hidden />
-                          <span className="min-w-0 flex-1">{item.label}</span>
+                          <span
+                            aria-hidden
+                            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-google-blue-50 text-google-blue-700 ring-1 ring-google-blue-100 group-hover:bg-google-blue-600 group-hover:text-white"
+                          >
+                            <item.icon className="h-[1.125rem] w-[1.125rem]" />
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block text-[0.875rem] font-semibold text-ink-900 group-hover:text-google-blue-700">{item.label}</span>
+                            <span className="mt-0.5 block text-[0.75rem] leading-snug text-ink-500">{item.note}</span>
+                          </span>
                           {item.isNew ? (
-                            <span className="shrink-0 rounded-sm bg-crit-500 px-1.5 py-0.5 text-[0.5625rem] font-bold tracking-[0.08em] text-white uppercase">
+                            <span className="shrink-0 rounded-sm bg-crit-500 px-1.5 py-0.5 text-[0.625rem] font-bold tracking-[0.08em] text-white uppercase">
                               {t('New')}
                             </span>
                           ) : null}
@@ -1672,12 +1670,17 @@ export function PortalLandingPage(): React.JSX.Element {
         {/* ============================================================ */}
         {/* Important links                                              */}
         {/* ============================================================ */}
-        <section className="border-b border-ink-200 bg-surface-sunken">
-          <div className="mx-auto max-w-[80rem] px-4 py-12 lg:py-14">
-            <h2 className="text-center text-[1.625rem] leading-tight font-semibold tracking-[-0.02em] text-ink-900">
-              {t('Important links')}
-            </h2>
-            <span aria-hidden className="mcgm-heading-rule mx-auto mt-3 block h-[3px] w-14 rounded-full" />
+        <section className="relative isolate overflow-hidden bg-[#0b1636]">
+          <PhotoBackdrop photo={photos.marineDrive} />
+          <div className="mx-auto max-w-[80rem] px-4 py-14 lg:py-20">
+            <div className="flex flex-col items-center gap-3 text-center">
+              <p className="text-[0.6875rem] font-bold tracking-[0.14em] text-gold-300 uppercase">{t('Every day')}</p>
+              <h2 className="text-[clamp(1.75rem,3vw,2.5rem)] leading-tight font-extrabold tracking-[-0.02em] text-white">
+                {t('Important links')}
+              </h2>
+              <span aria-hidden className="mcgm-heading-rule block h-[3px] w-14 rounded-full" />
+              <PhotoCaption caption={photos.marineDrive.caption} />
+            </div>
 
             <PortalLinkGrid tiles={QUICK_LINKS} isAuthenticated={isAuthenticated} />
 
@@ -1739,47 +1742,70 @@ export function PortalLandingPage(): React.JSX.Element {
         </section>
 
         {/* ============================================================ */}
-        {/* Related links                                                */}
+        {/* Mumbai in pictures - every photograph, credited               */}
         {/* ============================================================ */}
-        <section className="border-b border-ink-200 bg-surface">
-          <div className="mx-auto max-w-[80rem] px-4 py-12 lg:py-14">
-            <h2 className="text-center text-[1.625rem] leading-tight font-semibold tracking-[-0.02em] text-ink-900">
-              {t('Related links')}
-            </h2>
-            <span aria-hidden className="mcgm-heading-rule mx-auto mt-3 block h-[3px] w-14 rounded-full" />
-
-            {/* The cards stand on a coloured plinth that starts below their
-                heads, so the row reads as one band rather than four loose
-                tiles - which is how the reference sets this section, and the
-                one place on its page where a solid colour block appears under
-                content rather than behind a heading. The plinth is decoration
-                and is marked as such. */}
-            <div className="relative mt-8">
-              <span aria-hidden className="absolute inset-x-0 top-14 bottom-0 rounded-xl bg-google-blue-700" />
-              <PortalCardRow tiles={shownRelated} isAuthenticated={isAuthenticated} />
-
-              <div className="absolute inset-x-0 bottom-5 flex items-center justify-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => setRelatedPage((page) => (page - 1 + relatedPages) % relatedPages)}
-                  aria-label={t('Previous related links')}
-                  className="flex h-8 w-8 items-center justify-center rounded-full bg-surface text-google-blue-700 shadow-card transition-colors hover:bg-google-blue-50"
-                >
-                  <ChevronLeft className="h-4 w-4" aria-hidden />
-                </button>
-                <span className="numeric text-[0.75rem] font-semibold text-white">
-                  {t('{0} of {1}', formatNumber(Math.min(relatedPage, relatedPages - 1) + 1), formatNumber(relatedPages))}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setRelatedPage((page) => (page + 1) % relatedPages)}
-                  aria-label={t('Next related links')}
-                  className="flex h-8 w-8 items-center justify-center rounded-full bg-surface text-google-blue-700 shadow-card transition-colors hover:bg-google-blue-50"
-                >
-                  <ChevronRight className="h-4 w-4" aria-hidden />
-                </button>
+        {/* The CC BY-SA licences ask for the author and licence to be
+            reachable by a visitor, so each photograph on the page is shown
+            here once more with both, rather than only behind sign-in. */}
+        <section className="relative isolate overflow-hidden bg-[#0b1636]">
+          <div className="mx-auto max-w-[80rem] px-4 py-14 lg:py-20">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+              <div className="max-w-2xl">
+                <p className="text-[0.6875rem] font-bold tracking-[0.14em] text-gold-300 uppercase">{t('The city we serve')}</p>
+                <h2 className="mt-2 text-[clamp(1.75rem,3vw,2.5rem)] leading-tight font-extrabold tracking-[-0.02em] text-white">
+                  {t('Mumbai in pictures')}
+                </h2>
+                <p className="mt-3 text-[0.9375rem] leading-relaxed text-white/75">
+                  {t('Its sea front, its lakes, its railways and its people. Every photograph on this page is a real picture of Mumbai from Wikimedia Commons, credited to the person who took it.')}
+                </p>
               </div>
+              <a
+                href="/cover/PHOTO-CREDITS.txt"
+                target="_blank"
+                rel="noreferrer noopener"
+                className="interactive-surface inline-flex w-fit items-center gap-2 rounded-md px-4 py-2.5 text-[0.8125rem] font-semibold text-white ring-1 ring-white/40 hover:bg-white/10"
+              >
+                {t('Full photo credits and licences')}
+                <ArrowRight className="h-4 w-4" aria-hidden />
+              </a>
             </div>
+
+            <ul className="mt-10 grid grid-flow-row-dense auto-rows-[11rem] grid-cols-2 gap-3 md:grid-cols-4 lg:auto-rows-[13rem]">
+              {gallery.map((item, index) => (
+                <li
+                  key={item.src}
+                  className={cn(
+                    'group relative overflow-hidden rounded-xl ring-1 ring-white/10',
+                    // One large tile and two wide ones, so the wall reads as a
+                    // mosaic rather than a contact sheet. With fourteen pictures
+                    // these fill exactly eighteen cells at two columns and
+                    // twenty at four.
+                    index === 0 && 'col-span-2 row-span-2',
+                    index === 7 && 'md:col-span-2',
+                    index === 11 && 'col-span-2',
+                    index === 13 && 'md:col-span-2',
+                  )}
+                >
+                  <figure className="h-full">
+                    <img
+                      src={item.src}
+                      alt={item.caption}
+                      loading="lazy"
+                      decoding="async"
+                      style={{ objectPosition: item.focus }}
+                      className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    />
+                    <span aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-transparent" />
+                    <figcaption className="absolute inset-x-0 bottom-0 p-3">
+                      <p className="text-[0.75rem] leading-snug font-semibold text-white">{item.caption}</p>
+                      <p className="mt-0.5 text-[0.625rem] text-white/65">
+                        {item.author} · {item.licence}
+                      </p>
+                    </figcaption>
+                  </figure>
+                </li>
+              ))}
+            </ul>
           </div>
         </section>
       </main>
@@ -1798,38 +1824,38 @@ export function PortalLandingPage(): React.JSX.Element {
       {/* ============================================================ */}
       {/* Footer                                                       */}
       {/* ============================================================ */}
-      <footer className="border-t border-ink-200 bg-surface-sunken">
+      <footer className="border-t-[3px] border-gold-500 bg-gradient-to-br from-navy-950 via-navy-900 to-navy-950">
         <div className="mx-auto max-w-[80rem] px-4 py-10">
           <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
             {/* ---- Find the office ------------------------------- */}
             <div>
-              <p className="flex items-center gap-2 text-[0.9375rem] font-bold text-ink-900">
-                <MapPin className="h-4 w-4 text-google-blue-700" aria-hidden />
+              <p className="flex items-center gap-2 text-[0.9375rem] font-bold text-white">
+                <MapPin className="h-4 w-4 text-gold-300" aria-hidden />
                 {t('Finding the office')}
               </p>
-              <p className="mt-3 text-[0.75rem] leading-relaxed text-ink-600">{corporation.headquarters}</p>
-              <p className="mt-2 text-[0.75rem] leading-relaxed text-ink-600">
-                {t('The control room answers round the clock, on every day of the year, for civic emergencies and for lodging a complaint.')}
+              <p className="mt-3 text-[0.75rem] leading-relaxed text-white/75">{corporation.headquarters}</p>
+              <p className="mt-2 text-[0.75rem] leading-relaxed text-white/75">
+                {t('For an emergency, dial 112, India’s national emergency number. Civic complaints are lodged through the corporation’s own online services and its ward offices; this demonstration does not connect to either.')}
               </p>
               <a
-                href={`tel:1916`}
+                href={`tel:112`}
                 className="mt-3 inline-flex items-center gap-2 rounded-md bg-crit-50 px-2.5 py-1.5 text-[0.8125rem] font-semibold text-crit-700 ring-1 ring-crit-200 ring-inset"
               >
                 <Phone className="h-4 w-4" aria-hidden />
-                {t('24×7 helpline 1916')}
+                {t('Emergency 112')}
               </a>
             </div>
 
             {/* ---- Contact --------------------------------------- */}
             <div>
-              <p className="flex items-center gap-2 text-[0.9375rem] font-bold text-ink-900">
-                <MessageCircle className="h-4 w-4 text-google-blue-700" aria-hidden />
+              <p className="flex items-center gap-2 text-[0.9375rem] font-bold text-white">
+                <MessageCircle className="h-4 w-4 text-gold-300" aria-hidden />
                 {t('Contact')}
               </p>
-              <p className="mt-3 text-[0.75rem] leading-relaxed text-ink-600">
+              <p className="mt-3 text-[0.75rem] leading-relaxed text-white/75">
                 {t('Where an officer goes when the platform is the problem rather than the city.')}
               </p>
-              <ul className="mt-3 flex flex-col gap-1.5 text-[0.75rem] text-ink-600">
+              <ul className="mt-3 flex flex-col gap-1.5 text-[0.75rem] text-white/75">
                 {[
                   { icon: MessageCircle, label: t('Platform service desk') },
                   { icon: AtSign, label: t('Requesting access for a post') },
@@ -1837,7 +1863,7 @@ export function PortalLandingPage(): React.JSX.Element {
                   { icon: Rss, label: t('Release notes and changes') },
                 ].map((row) => (
                   <li key={row.label} className="flex items-center gap-2">
-                    <row.icon className="h-3.5 w-3.5 shrink-0 text-ink-400" aria-hidden />
+                    <row.icon className="h-3.5 w-3.5 shrink-0 text-white/55" aria-hidden />
                     {row.label}
                   </li>
                 ))}
@@ -1846,11 +1872,11 @@ export function PortalLandingPage(): React.JSX.Element {
 
             {/* ---- Information ----------------------------------- */}
             <div>
-              <p className="flex items-center gap-2 text-[0.9375rem] font-bold text-ink-900">
-                <Info className="h-4 w-4 text-google-blue-700" aria-hidden />
+              <p className="flex items-center gap-2 text-[0.9375rem] font-bold text-white">
+                <Info className="h-4 w-4 text-gold-300" aria-hidden />
                 {t('Information')}
               </p>
-              <dl className="mt-3 flex flex-col gap-1.5 text-[0.75rem] text-ink-600">
+              <dl className="mt-3 flex flex-col gap-1.5 text-[0.75rem] text-white/75">
                 {[
                   { label: t('Last reviewed and updated'), value: formatDate(DEMO_NOW) },
                   { label: t('Visitors today'), value: formatNumber(counters.today) },
@@ -1858,7 +1884,7 @@ export function PortalLandingPage(): React.JSX.Element {
                 ].map((row) => (
                   <div key={row.label} className="flex items-baseline justify-between gap-3">
                     <dt>{row.label}</dt>
-                    <dd className="numeric font-semibold text-ink-800">{row.value}</dd>
+                    <dd className="numeric font-semibold text-white">{row.value}</dd>
                   </div>
                 ))}
               </dl>
@@ -1866,7 +1892,7 @@ export function PortalLandingPage(): React.JSX.Element {
                 {['GIGW', 'W3C', 'WCAG 2.1'].map((mark) => (
                   <span
                     key={mark}
-                    className="rounded border border-ink-200 bg-surface px-1.5 py-0.5 text-[0.625rem] font-semibold text-ink-500"
+                    className="rounded border border-white/15 bg-white/10 px-1.5 py-0.5 text-[0.625rem] font-semibold text-white/70"
                   >
                     {mark}
                   </span>
@@ -1875,7 +1901,7 @@ export function PortalLandingPage(): React.JSX.Element {
             </div>
           </div>
 
-          <ul className="mt-8 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-ink-200 pt-4 text-[0.75rem] text-ink-600">
+          <ul className="mt-8 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-white/15 pt-4 text-[0.75rem] text-white/75">
             {[
               t('Privacy policy'),
               t('Disclaimer'),
@@ -1883,7 +1909,7 @@ export function PortalLandingPage(): React.JSX.Element {
               t('Accessibility statement'),
               t('Site map'),
             ].map((label) => (
-              <li key={label} className="border-l border-ink-300 pl-3 first:border-l-0 first:pl-0">
+              <li key={label} className="border-l border-white/25 pl-3 first:border-l-0 first:pl-0">
                 {label}
               </li>
             ))}
@@ -1892,15 +1918,17 @@ export function PortalLandingPage(): React.JSX.Element {
           {/* What this page is. Stated in the footer, where a government
               portal states its ownership, because a portal facade that does
               not say so is the one thing on this page that could mislead. */}
-          <p className="mt-4 border-t border-ink-200 pt-3 text-[0.6875rem] leading-relaxed text-ink-400">
+          <p className="mt-4 border-t border-white/15 pt-3 text-[0.6875rem] leading-relaxed text-white/55">
             {t('This is a demonstration of the {0} platform, rendered for {1}. It is not the corporation’s live portal, no municipal system is contacted, and no transaction on this page is real.', municipality.branding.productFamily, corporationName(corporation))}
           </p>
-          {/* The photographs are of state institutions, not of this
-              corporation. Said here as well as in the caption, because a
-              building on a government page is read as a claim about whose
-              page it is. */}
-          <p className="text-[0.6875rem] leading-relaxed text-ink-400">
-            {t('The photograph on this page is of Mantralaya in Mumbai, the seat of the state government, shown as civic imagery. It is not the headquarters of {0}.', corporationName(corporation))}
+          {/* The photographs are civic imagery. Said here as well as in the
+              photo credits file,
+              because a building on a government page is read as a claim about
+              whose page it is. The CC BY-SA licences require the author and
+              licence to be reachable by a visitor, so the short credit sits on
+              the page itself, not only behind sign-in. */}
+          <p className="text-[0.6875rem] leading-relaxed text-white/55">
+            {t('The photographs on this page are pictures of Mumbai from Wikimedia Commons, each captioned with what it shows and credited to its author and licence in “Mumbai in pictures” above. They are civic imagery and do not imply endorsement by {0}. Full credits and source links are in the photo credits file.', corporationName(corporation))}
           </p>
         </div>
       </footer>

@@ -1,11 +1,6 @@
 /** Marathi catalogue, part 41. Keyed by the exact English source.
  * TestingPage.tsx coverage register and RouteGuard.tsx. */
 export const MR_PART_41: Record<string, string> = {
-  // Corporation `city` field values - passed to `t()` dynamically via
-  // `cityName()` in corporations.ts, so no static i18n-audit scan ever finds
-  // this call site; only a runtime sweep (or reading the source) surfaces it.
-  Mumbai: 'मुंबई',
-  Pune: 'पुणे',
   'Verified manually': 'स्वहस्ते पडताळणी केली',
   'Not yet covered': 'अद्याप समाविष्ट नाही',
   'Requires automation': 'स्वयंचलीकरण आवश्यक',

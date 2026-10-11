@@ -72,6 +72,14 @@
   --color-portal-900: #15455d;
   --color-portal-950: #023a51;
 
+  /* The landing page's deep navy - its hero, its photographic bands and its
+     page banners. The portal, the sign-in and the console's photo banners
+     all wear it, so the three read as one system. */
+  --color-navy-700: #1b3170;
+  --color-navy-800: #142a63;
+  --color-navy-900: #0f2257;
+  --color-navy-950: #0b1636;
+
   --color-gold-50: #fdf9ec;
   --color-gold-100: #f5ebcc;
   --color-gold-200: #ecdba0;
@@ -1064,6 +1072,64 @@
   100% {
     opacity: 0.35;
   }
+}
+
+/* The sign-in panel's photographs drift slowly inward while on screen, so the
+   panel reads as alive rather than as a still. */
+@keyframes mi-kenburns {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.08);
+  }
+}
+.login-kenburns {
+  animation: mi-kenburns 14s ease-out infinite alternate;
+}
+
+/* Figure tiles in a MetricGrid - every screen's headline numbers. A rule in
+   one of the four brand colours across the top (cycled by column, as on the
+   landing page), a soft tint, and a lift on hover, so a row of figures reads
+   as a designed band rather than a row of grey boxes. */
+.metric-grid > * {
+  position: relative;
+  overflow: hidden;
+  background-image: linear-gradient(180deg, color-mix(in oklab, var(--color-govt-50) 70%, transparent), transparent 65%);
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+.metric-grid > *::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: var(--color-google-blue-600);
+}
+.metric-grid > *:nth-child(4n + 2)::before {
+  background: var(--color-google-red-600);
+}
+.metric-grid > *:nth-child(4n + 3)::before {
+  background: var(--color-google-yellow-500);
+}
+.metric-grid > *:nth-child(4n + 4)::before {
+  background: var(--color-google-green-700);
+}
+.metric-grid > *:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px -8px rgb(15 34 87 / 0.25);
+}
+/* Only neutral figures turn navy; a figure coloured to signal a state
+   (critical red, healthy green) keeps its colour. */
+.metric-grid .text-metric.text-ink-900,
+.metric-grid .text-metric-sm.text-ink-900,
+.metric-grid .text-metric-lg.text-ink-900 {
+  font-weight: 800;
+  color: var(--color-navy-900);
+}
+
+/* The page banner's photograph fades in as a screen opens, then holds. */
+.hero-fade {
+  animation: mi-fade-in 700ms ease-out both;
 }
 
 /* Respect operator preference - operations software should feel calm.

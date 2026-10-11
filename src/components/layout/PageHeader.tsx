@@ -1,4 +1,6 @@
 import { type ReactNode, useEffect } from 'react'
+import { useLocation } from 'react-router-dom'
+import { sectionForPath } from '@/config/navigation'
 import type { DataFreshness } from '@/types/common'
 import { cn } from '@/utils/cn'
 import { FreshnessLine, ProvenanceBadge } from '@/components/ui/badges'
@@ -63,7 +65,15 @@ export function PageHeader({
   hideProvenance,
 }: PageHeaderProps): React.JSX.Element {
   const setTrail = useBreadcrumbStore((s) => s.set)
-  const trailKey = JSON.stringify(breadcrumbs ?? [])
+  const { pathname } = useLocation()
+  // The trail's first leg names the menu section the screen sits under, read
+  // from the menu itself, so the trail and the menu bar can never disagree -
+  // a page's own wording for its section is replaced, the rest of its trail
+  // (screen, record) is kept.
+  const sectionLabel = sectionForPath(pathname)?.label
+  const crumbs = breadcrumbs ?? []
+  const trail = sectionLabel && crumbs.length > 0 ? [{ ...crumbs[0], label: sectionLabel }, ...crumbs.slice(1)] : crumbs
+  const trailKey = JSON.stringify(trail)
   useEffect(() => {
     setTrail(JSON.parse(trailKey))
     return () => setTrail([])

@@ -103,6 +103,11 @@ const DigitalTwinPage = lazy(() => import('@/pages/strategic/DigitalTwinPage'))
 const KnowledgeGraphPage = lazy(() => import('@/pages/strategic/KnowledgeGraphPage'))
 const InfrastructureGraphPage = lazy(() => import('@/pages/strategic/InfrastructureGraphPage'))
 const DataResourcesPage = lazy(() => import('@/pages/strategic/DataResourcesPage'))
+const EvidenceRegistryPage = lazy(() => import('@/pages/decision/EvidenceRegistryPage'))
+const PublicMoneyPage = lazy(() => import('@/pages/decision/PublicMoneyPage'))
+const CapabilityRoadmapPage = lazy(() => import('@/pages/decision/CapabilityRoadmapPage'))
+const SystemsMapPage = lazy(() => import('@/pages/decision/SystemsMapPage'))
+const CapabilityAreaPage = lazy(() => import('@/pages/decision/CapabilityAreaPage'))
 const OutcomeIntelligencePage = lazy(() => import('@/pages/strategic/OutcomeIntelligencePage'))
 const InstitutionalMemoryPage = lazy(() => import('@/pages/strategic/InstitutionalMemoryPage'))
 const ScenarioIntelligencePage = lazy(() => import('@/pages/strategic/ScenarioIntelligencePage'))
@@ -269,6 +274,11 @@ export const router = createBrowserRouter([
       { path: ROUTES.digitalTwin, element: guarded(<DigitalTwinPage />) },
       { path: ROUTES.knowledgeGraph, element: guarded(<KnowledgeGraphPage />) },
       { path: ROUTES.dataResources, element: guarded(<DataResourcesPage />) },
+      { path: ROUTES.evidenceRegistry, element: guarded(<EvidenceRegistryPage />) },
+      { path: ROUTES.publicMoney, element: guarded(<PublicMoneyPage />) },
+      { path: ROUTES.capabilityRoadmap, element: guarded(<CapabilityRoadmapPage />) },
+      { path: ROUTES.systemsMap, element: guarded(<SystemsMapPage />) },
+      { path: ROUTES.capabilityArea, element: guarded(<CapabilityAreaPage />) },
       { path: ROUTES.infrastructureGraph, element: guarded(<InfrastructureGraphPage />) },
       { path: ROUTES.outcomes, element: guarded(<OutcomeIntelligencePage />) },
       { path: ROUTES.institutionalMemory, element: guarded(<InstitutionalMemoryPage />) },

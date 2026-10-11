@@ -249,6 +249,7 @@ export type DrawerKind =
   | 'graph-node'
   | 'asset'
   | 'contract'
+  | 'source-evidence'
 
 export interface DrawerRequest {
   kind: DrawerKind

@@ -15,6 +15,7 @@ import { useActiveVersion } from '@/data/runtime'
 import { cn } from '@/utils/cn'
 import { AppMasthead } from '@/components/layout/AppMasthead'
 import { MenuBar } from '@/components/layout/MenuBar'
+import { PageHero } from '@/components/layout/PageHero'
 import { Sidebar, type SidebarBadges } from '@/components/layout/Sidebar'
 import { ContextBar, Topbar, type TopbarStatus } from '@/components/layout/Topbar'
 import { CommandPalette } from '@/components/layout/CommandPalette'
@@ -166,6 +167,11 @@ export function AppShell(): React.JSX.Element {
                 every figure on screen at once rather than only where the next
                 state update happens to land. */}
             <div key={`${corporationVersion}:${formatSignature}`} className="contents">
+              {/* Every screen opens on a photograph of the city, the page's
+                  name and the corporation's published figures. Not in the
+                  Situation Room's reduced mode, where the workspace takes the
+                  whole screen. */}
+              {!reduced ? <PageHero /> : null}
               <Outlet />
             </div>
           </Suspense>

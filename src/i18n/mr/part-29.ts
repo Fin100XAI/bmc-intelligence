@@ -27,7 +27,6 @@ export const MR_PART_29: Record<string, string> = {
   'Decrease text size': 'अक्षर आकार कमी करा',
   'Normal text size': 'नेहमीचा अक्षर आकार',
   'Increase text size': 'अक्षर आकार वाढवा',
-  '24×7 helpline 1916': '24×7 मदत क्रमांक 1916',
   'Search services and information': 'सेवा व माहिती शोधा',
 
   /* --- Hero -------------------------------------------------------------------
@@ -67,16 +66,9 @@ export const MR_PART_29: Record<string, string> = {
     'महानगरपालिकेच्या स्वतःच्या संकेतस्थळावर प्रसिद्ध. हा या प्रात्यक्षिकाचा भाग नाही.',
   'Click here': 'क्लिक करा',
 
-  /* --- Related links --------------------------------------------------------- */
-  'Related links': 'संबंधित दुवे',
-  'Previous related links': 'मागील संबंधित दुवे',
-  'Next related links': 'पुढील संबंधित दुवे',
-
   /* --- The feedback tab and the footer -------------------------------------- */
   Feedback: 'प्रतिक्रिया',
   'Finding the office': 'कार्यालय शोधणे',
-  'The control room answers round the clock, on every day of the year, for civic emergencies and for lodging a complaint.':
-    'नागरी आपत्कालीन परिस्थिती व तक्रार नोंदणीसाठी नियंत्रण कक्ष वर्षातील प्रत्येक दिवशी चोवीस तास उपलब्ध आहे.',
   Contact: 'संपर्क',
   Information: 'माहिती',
   'Last reviewed and updated': 'अंतिम पुनरावलोकन व अद्यतन',
@@ -88,8 +80,6 @@ export const MR_PART_29: Record<string, string> = {
      headings and surface names the command rail behind sign-in also carries.
      "Intelligence" follows the catalogue's existing rendering, बुद्धिमत्ता. */
   'Service delivery': 'सेवा वितरण',
-  'Building Permission': 'बांधकाम परवानगी',
-  'Council Resolutions': 'सभागृह ठराव',
 
   /* --- The notice board, read by officers ----------------------------------- */
   'Read more': 'अधिक वाचा',
@@ -102,24 +92,17 @@ export const MR_PART_29: Record<string, string> = {
   '{0} equity and allocation': '{0} समन्याय व वाटप',
   'Allocation read against need rather than against last year.':
     'गेल्या वर्षाच्या नव्हे तर गरजेच्या तुलनेत वाटप.',
-  'Copilot on procurement': 'खरेदीवरील सहायक',
   'Contractor performance and tender history, asked in plain language.':
     'कंत्राटदार कामगिरी व निविदा इतिहास, सोप्या भाषेत विचारून.',
   'Integration health': 'एकात्मिकरण आरोग्य',
   'Which departmental feed is stale, and since when.': 'कोणता विभागीय स्रोत जुना आहे, आणि कधीपासून.',
   'Monsoon scenario workspace': 'पावसाळी परिदृश्य कार्यक्षेत्र',
-  'What the city looks like under a heavier spell than last year.':
-    'गेल्या वर्षापेक्षा जोरदार पावसात शहराची स्थिती कशी दिसते.',
   'Standing orders and circulars': 'स्थायी आदेश व परिपत्रके',
   'The orders in force, and the ones each of them supersedes.':
     'लागू असलेले आदेश, आणि प्रत्येकाने रद्द केलेले आदेश.',
   'Government resolutions': 'शासन निर्णय',
-  'State resolutions, and what each obliges the corporation to do.':
-    'राज्याचे निर्णय, आणि प्रत्येकाने महानगरपालिकेवर टाकलेले बंधन.',
   'Delegation of powers': 'अधिकारांचे प्रदान',
   'Which post may sanction what, and up to what value.': 'कोणते पद काय मंजूर करू शकते, आणि किती रकमेपर्यंत.',
-  'Citizens’ charter standards': 'नागरिकांच्या सनदेची मानके',
-  'The time each counter service must be delivered in.': 'प्रत्येक काउंटर सेवा किती वेळेत द्यावी लागते.',
   'Sitting with a post, with the evidence already assembled.': 'पुरावा तयार असून पदाकडे प्रलंबित.',
   'Alerts past their standard': 'मुदत ओलांडलेले इशारे',
   'Beyond their window, and now with the department head.': 'मुदतीबाहेर, आणि आता विभागप्रमुखांकडे.',
@@ -135,37 +118,6 @@ export const MR_PART_29: Record<string, string> = {
   'From the screen back to the record it was drawn from.':
     'पडद्यावरून मागे, ज्या नोंदीतून तो घेतला त्या नोंदीपर्यंत.',
   'The scope each position carries, and who granted it.': 'प्रत्येक पदाची व्याप्ती, आणि ती कोणी दिली.',
-
-  /* --- The tiles, shared by all three link sections -------------------------- */
-  'The whole city, ordered by what needs deciding today.': 'संपूर्ण शहर, आज कशावर निर्णय हवा त्या क्रमाने.',
-  'Live incidents and the control-room picture as it stands.': 'सद्यस्थितीतील घटना व नियंत्रण कक्षाचे चित्र.',
-  'What has passed its standard, and who is holding it.': 'मुदत ओलांडलेले काय, आणि ते कोणाकडे प्रलंबित.',
-  'Decisions awaiting approval, with the evidence attached.': 'मंजुरीच्या प्रतीक्षेतील निर्णय, पुराव्यासह.',
-  'Every ward scored on service, equity and delivery.':
-    'प्रत्येक प्रभागाचे सेवा, समन्याय व वितरणावर गुणांकन.',
-  'Demand, collection and arrears against the register.': 'नोंदवहीच्या तुलनेत मागणी, वसुली व थकबाकी.',
-  'Collection routes, lifting, processing and disposal.': 'संकलन मार्ग, उचल, प्रक्रिया व विल्हेवाट.',
-  'Surface condition, works in progress and defect liability.':
-    'पृष्ठभागाची स्थिती, सुरू असलेली कामे व दोष दायित्व.',
-  'Sanctioned works, and physical against financial progress.':
-    'मंजूर कामे, आणि आर्थिक प्रगतीच्या तुलनेत प्रत्यक्ष प्रगती.',
-  'Where every figure came from, and which of them are modelled.':
-    'प्रत्येक आकडा कोठून आला, आणि त्यातील कोणते प्रतिरूपित आहेत.',
-  'Development control, permission and unauthorised construction.':
-    'विकास नियंत्रण, परवानगी व अनधिकृत बांधकाम.',
-  'Preparedness, response and the standing resilience picture.':
-    'सज्जता, प्रतिसाद व शहराचे स्थायी लवचिकता चित्र.',
-  'Facility load, critical care occupancy and referrals.':
-    'सुविधांवरील ताण, अतिदक्षता व्याप्ती व संदर्भसेवा.',
-  'Enrolment, attendance and school infrastructure.': 'पटनोंदणी, उपस्थिती व शालेय पायाभूत सुविधा.',
-  'Response times, appliance availability and fire safety.':
-    'प्रतिसाद वेळ, वाहन उपलब्धता व अग्निसुरक्षा.',
-  'Sanctioned posts, deployment and vacancy by department.':
-    'विभागनिहाय मंजूर पदे, प्रत्यक्ष नियुक्ती व रिक्त पदे.',
-  'Subjects tabled before the house, and how each was decided.':
-    'सभागृहासमोर मांडलेले विषय, आणि प्रत्येकावर झालेला निर्णय.',
-  'Air, noise, tree cover and the environment status report.':
-    'हवा, ध्वनी, वृक्ष आच्छादन व पर्यावरण सद्यस्थिती अहवाल.',
   /* Marathi puts the total before the ordinal - "3 पैकी 1", not "1 of 3". */
   '{0} of {1}': '{1} पैकी {0}',
 

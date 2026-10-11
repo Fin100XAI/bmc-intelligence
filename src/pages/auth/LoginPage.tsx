@@ -1,8 +1,9 @@
-import { useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import {
   AlertTriangle,
   ArrowRight,
+  Camera,
   Eye,
   EyeOff,
   FileCheck2,
@@ -20,10 +21,12 @@ import { ServiceError } from '@/services/client'
 import { isApiEnabled } from '@/services/http'
 import { useAuthStore, useIsAuthenticated } from '@/stores/auth.store'
 import { useActiveCorporation } from '@/stores/corporation.store'
-import { cityName } from '@/config/corporations'
+import { cityName, corporationName } from '@/config/corporations'
+import { coverPhotos, photoCredit, type CoverPhoto } from '@/config/coverPhotos'
 import { useApplyLocale } from '@/stores/locale.store'
 import { LanguageSwitcher } from '@/components/layout/LanguageSwitcher'
 import { cn } from '@/utils/cn'
+import { formatNumber } from '@/utils/format'
 import { Badge, ClassificationBadge, EnvironmentBadge } from '@/components/ui/badges'
 import { Button, Card, Input, Label } from '@/components/ui/primitives'
 import { t } from '@/i18n'
@@ -59,9 +62,27 @@ function build$PANEL_PILLARS(): Array<{ icon: LucideIcon; title: string; detail:
 ]
 }
 let PANEL_PILLARS: Array<{ icon: LucideIcon; title: string; detail: string }> = build$PANEL_PILLARS()
+
+/* Real photographs of Mumbai from Wikimedia Commons, cross-fading behind the
+   institutional panel. Each is captioned for what it shows and credited in the
+   corner while it is on screen; full records are in
+   public/cover/PHOTO-CREDITS.txt (machine-readable: public/cover/photos.json). */
+function build$PANEL_PHOTOS(): CoverPhoto[] {
+  const photos = coverPhotos()
+  return [photos.skylineNight, photos.seaLink, photos.csmt, photos.marineDrive, photos.flamingos]
+}
+let PANEL_PHOTOS: CoverPhoto[] = build$PANEL_PHOTOS()
+
 registerLayer(() => {
   PANEL_PILLARS = build$PANEL_PILLARS()
+  PANEL_PHOTOS = build$PANEL_PHOTOS()
 })
+
+/** Two-letter initials for the position badge, from the designation. */
+function initialsOf(designation: string): string {
+  const words = designation.split(/[\s-]+/).filter((word) => /^[A-Za-z]/.test(word))
+  return ((words[0]?.[0] ?? '') + (words[1]?.[0] ?? '')).toUpperCase() || '•'
+}
 
 export function LoginPage(): React.JSX.Element {
   const isAuthenticated = useIsAuthenticated()
@@ -89,6 +110,16 @@ export function LoginPage(): React.JSX.Element {
   /** True while the server session is being established, so the form cannot be
    *  submitted twice and the operator can see that something is happening. */
   const [signingIn, setSigningIn] = useState(false)
+
+  /* The panel's slideshow. Held still for a reader who has asked the system
+     for reduced motion. */
+  const [photoIndex, setPhotoIndex] = useState(0)
+  useEffect(() => {
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
+    const timer = window.setInterval(() => setPhotoIndex((index) => (index + 1) % PANEL_PHOTOS.length), 6500)
+    return () => window.clearInterval(timer)
+  }, [])
+  const activePhoto = PANEL_PHOTOS[photoIndex % PANEL_PHOTOS.length]
 
   /** Positions grouped by institutional band, most senior first. */
   const grouped = useMemo(() => {
@@ -210,88 +241,183 @@ export function LoginPage(): React.JSX.Element {
       {/* Institutional panel                                              */}
       {/* ---------------------------------------------------------------- */}
       <aside
-        className="relative hidden flex-col justify-between overflow-hidden px-12 py-11 text-white lg:flex"
+        className="relative isolate hidden flex-col justify-between overflow-hidden px-12 py-11 text-white lg:flex"
         style={{ backgroundColor: municipality.branding.panelColor }}
       >
-        <div className="grid-backdrop pointer-events-none absolute inset-0 opacity-[0.13]" aria-hidden />
-        <div
-          className="pointer-events-none absolute -top-40 -right-32 h-[30rem] w-[30rem] rounded-full bg-white/[0.07] blur-3xl"
-          aria-hidden
-        />
+        {/* Photographs of the city, cross-fading. Decorative: the caption
+            chip below names the one on screen. */}
+        <div aria-hidden className="absolute inset-0 -z-10">
+          {PANEL_PHOTOS.map((photo, index) => (
+            <img
+              key={photo.src}
+              src={photo.src}
+              alt=""
+              loading={index === 0 ? 'eager' : 'lazy'}
+              decoding="async"
+              style={{ objectPosition: photo.focus }}
+              className={cn(
+                'login-kenburns absolute inset-0 h-full w-full object-cover transition-opacity duration-[1500ms]',
+                index === photoIndex ? 'opacity-100' : 'opacity-0',
+              )}
+            />
+          ))}
+          <span className="absolute inset-0 bg-gradient-to-r from-[#0b1636]/90 via-[#0f2257]/55 to-[#0b1636]/20" />
+          <span className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-[#0b1636]/90 to-transparent" />
+        </div>
 
         {/* Identity ---------------------------------------------------- */}
         <div className="relative">
-          {/* The mark fills its box rather than sitting inset on a white
-              chip: the chip was a field for a flat glyph, and a photograph
-              brings its own. On this deep panel the hairline is white. */}
-          <img
-            src={municipality.branding.markPath}
-            alt=""
-            className="h-12 w-12 rounded-xl object-cover shadow-lg ring-1 ring-white/25"
-          />
+          <div className="flex items-center gap-3">
+            {/* The mark fills its box rather than sitting inset on a white
+                chip: a photograph brings its own field. */}
+            <img
+              src={municipality.branding.markPath}
+              alt=""
+              className="h-12 w-12 rounded-xl object-cover shadow-lg ring-1 ring-white/25"
+            />
+            <p className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-[0.6875rem] font-bold tracking-[0.14em] text-white uppercase ring-1 ring-white/25 backdrop-blur">
+              {t('{0} · Maharashtra', corporationName(corporation))}
+            </p>
+          </div>
 
-          <h1 className="mt-14 max-w-xl text-[2.75rem] leading-[1.08] font-semibold tracking-[-0.03em] text-white">
+          <h1 className="mt-12 max-w-2xl text-[clamp(2.5rem,4vw,3.75rem)] leading-[1.04] font-extrabold tracking-[-0.03em] text-white drop-shadow-[0_2px_16px_rgb(0_0_0/0.45)]">
             {municipality.branding.productShortName}
           </h1>
-          <p className="mt-5 max-w-lg text-base leading-relaxed text-white/85">
+          <p className="mt-5 max-w-xl text-[1.0625rem] leading-relaxed font-medium text-white/90">
             {municipality.branding.productSubtitle}
           </p>
-
-          <p className="mt-7 max-w-lg text-[0.8125rem] leading-relaxed text-white/70">
+          <p className="mt-4 max-w-xl text-[0.8125rem] leading-relaxed text-white/70">
             {t('A governed urban intelligence and decision-support layer connecting municipal operations, infrastructure, finances, wards, projects, risks, citizen services and institutional knowledge into one evidence-backed operating environment for {0}.', cityName(corporation))}
           </p>
+
+          {/* Published figures, read from the corporation record. */}
+          <dl className="mt-8 grid max-w-2xl grid-cols-2 gap-3 xl:grid-cols-4">
+            {[
+              { label: t('Residents (Census 2011)'), value: formatNumber(corporation.population2011) },
+              { label: t('Corporator seats'), value: corporation.electoralWards ? formatNumber(corporation.electoralWards) : '—' },
+              { label: t('Budget {0}', corporation.budgetFinancialYear ?? ''), value: corporation.budgetCrore ? t('₹{0} cr', formatNumber(corporation.budgetCrore, 2)) : '—' },
+              { label: t('Water supplied daily'), value: corporation.waterSupplyMLD ? t('{0} MLD', formatNumber(corporation.waterSupplyMLD)) : '—' },
+              { label: t('Area'), value: t('{0} km²', formatNumber(corporation.areaSqKm, 2)) },
+              { label: t('Administrative wards'), value: formatNumber(corporation.administrativeWards ?? municipality.administrativeUnits.wards) },
+              { label: t('Sewage treatment'), value: corporation.sewageTreatmentMLD ? t('{0} MLD', formatNumber(corporation.sewageTreatmentMLD)) : '—' },
+              { label: t('Established'), value: corporation.establishedYear ? String(corporation.establishedYear) : '—' },
+            ]
+              .filter((fact) => fact.value !== '—')
+              .map((fact) => (
+                <div key={fact.label} className="rounded-xl bg-white/10 px-4 py-3 ring-1 ring-white/20 backdrop-blur-md">
+                  <dd className="numeric text-[1.375rem] leading-none font-extrabold text-white">{fact.value}</dd>
+                  <dt className="mt-1.5 text-[0.6875rem] leading-snug font-medium text-white/75">{fact.label}</dt>
+                </div>
+              ))}
+          </dl>
         </div>
 
         {/* Capabilities + footer — anchors the panel and states what the
             platform is, without any environment or hierarchy detail. */}
-        <div className="relative">
-          <ul className="max-w-lg space-y-4">
+        <div className="relative mt-10">
+          <ul className="grid max-w-3xl grid-cols-1 gap-3 xl:grid-cols-3">
             {PANEL_PILLARS.map((pillar) => (
-              <li key={pillar.title} className="flex items-start gap-3.5">
+              <li key={pillar.title} className="rounded-xl bg-black/25 p-4 ring-1 ring-white/15 backdrop-blur-md">
                 <span
-                  className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10 ring-1 ring-white/15 ring-inset"
+                  className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-google-blue-500 to-intel-500 shadow-lg"
                   aria-hidden
                 >
                   <pillar.icon className="h-4 w-4 text-white" />
                 </span>
-                <div className="min-w-0">
-                  <p className="text-[0.8125rem] font-semibold text-white">{pillar.title}</p>
-                  <p className="mt-0.5 text-[0.75rem] leading-relaxed text-white/65">{pillar.detail}</p>
-                </div>
+                <p className="mt-3 text-[0.8125rem] font-bold text-white">{pillar.title}</p>
+                <p className="mt-1 text-[0.6875rem] leading-relaxed text-white/70">{pillar.detail}</p>
               </li>
             ))}
           </ul>
 
-          <p className="mt-9 border-t border-white/15 pt-5 text-[0.6875rem] font-medium tracking-wide text-white/60">
-            {municipality.branding.deploymentLine}
-          </p>
+          <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-white/15 pt-5">
+            <p className="text-[0.6875rem] font-medium tracking-wide text-white/60">{municipality.branding.deploymentLine}</p>
+            <div className="flex items-center gap-3">
+              <div className="flex gap-1.5" aria-hidden>
+                {PANEL_PHOTOS.map((photo, index) => (
+                  <span
+                    key={photo.src}
+                    className={cn('h-1.5 rounded-full transition-all duration-500', index === photoIndex ? 'w-6 bg-white' : 'w-1.5 bg-white/40')}
+                  />
+                ))}
+              </div>
+              {activePhoto ? (
+                <p className="inline-flex items-center gap-1.5 rounded-full bg-black/35 px-3 py-1 text-[0.625rem] text-white/80 ring-1 ring-white/15 backdrop-blur">
+                  <Camera className="h-3 w-3" aria-hidden />
+                  {t('Photo: {0}', activePhoto.caption)}
+                  <span className="text-white/55">· {photoCredit(activePhoto)}</span>
+                </p>
+              ) : null}
+            </div>
+          </div>
         </div>
       </aside>
 
       {/* ---------------------------------------------------------------- */}
       {/* Sign-in panel                                                    */}
       {/* ---------------------------------------------------------------- */}
-      <div className="flex min-h-screen flex-col justify-center bg-surface px-5 py-10 sm:px-10">
+      <div className="relative flex min-h-screen flex-col justify-center bg-surface px-5 py-10 sm:px-10">
+        {/* A rule in the platform's colours along the panel's head. */}
+        <span aria-hidden className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-google-blue-600 via-intel-500 to-gold-500" />
         <div className="mx-auto w-full max-w-md">
-          {/* Mobile brand - the institutional panel is hidden below lg. */}
-          <div className="mb-8 flex items-center gap-3 lg:hidden">
+          {/* Mobile brand - the institutional panel is hidden below lg, so a
+              photograph of the city heads the form instead. */}
+          <div className="relative isolate mb-8 overflow-hidden rounded-2xl p-5 shadow-lg lg:hidden">
             <img
-              src={municipality.branding.markPath}
+              src={PANEL_PHOTOS[0]?.src}
               alt=""
               aria-hidden
-              className="h-10 w-10 shrink-0 rounded-lg object-cover shadow-xs ring-1 ring-black/10"
+              style={{ objectPosition: PANEL_PHOTOS[0]?.focus }}
+              className="absolute inset-0 -z-10 h-full w-full object-cover"
             />
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-ink-900">{municipality.branding.productShortName}</p>
+            <span aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-br from-[#0b1636]/90 to-[#0f2257]/60" />
+            <div className="flex items-center gap-3">
+              <img
+                src={municipality.branding.markPath}
+                alt=""
+                aria-hidden
+                className="h-10 w-10 shrink-0 rounded-lg object-cover shadow-xs ring-1 ring-white/30"
+              />
+              <p className="min-w-0 text-[0.9375rem] leading-snug font-bold text-white">{municipality.branding.productShortName}</p>
             </div>
+            {PANEL_PHOTOS[0] ? (
+              <p className="mt-3 text-[0.625rem] text-white/70">
+                {t('Photo: {0}', PANEL_PHOTOS[0].caption)} · {photoCredit(PANEL_PHOTOS[0])}
+              </p>
+            ) : null}
           </div>
 
-          <div className="mb-6">
-            <h2 className="text-2xl font-semibold tracking-tight text-ink-900">{t('Sign in')}</h2>
-            <p className="mt-1.5 text-[0.8125rem] leading-relaxed text-ink-500">
+          <div className="mb-7">
+            <p className="text-[0.6875rem] font-bold tracking-[0.14em] text-govt-600 uppercase">{t('Officer access')}</p>
+            <h2 className="mt-1.5 text-[2rem] leading-tight font-extrabold tracking-[-0.02em] text-ink-900">{t('Sign in')}</h2>
+            <p className="mt-2 text-[0.8125rem] leading-relaxed text-ink-500">
               {t('Select the position you are signing in as. The position determines your data scope, the modules you can reach and the actions you are permitted to take.')}
             </p>
           </div>
+
+          {/* The position about to be assumed, named large before the form. */}
+          {selectedUser && selectedRole ? (
+            <div className="relative mb-5 flex items-center gap-3.5 overflow-hidden rounded-xl bg-gradient-to-br from-[#0f2257] to-google-blue-700 p-4 text-white shadow-lg">
+              <span aria-hidden className="pointer-events-none absolute -top-10 -right-10 h-32 w-32 rounded-full bg-white/10" />
+              <span
+                aria-hidden
+                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white text-[1rem] font-extrabold text-google-blue-700 shadow-md ring-4 ring-white/20"
+              >
+                {initialsOf(selectedUser.designation)}
+              </span>
+              <div className="relative min-w-0">
+                <p className="truncate text-[0.9375rem] font-bold">{selectedUser.designation}</p>
+                <p className="truncate text-[0.6875rem] text-white/75">
+                  {selectedRole.name !== selectedUser.designation
+                    ? selectedRole.name
+                    : grouped.find((group) => group.band === selectedRole.band)?.label}
+                </p>
+              </div>
+              <span className="relative ml-auto shrink-0">
+                <ClassificationBadge classification={selectedRole.maxClassification} />
+              </span>
+            </div>
+          ) : null}
 
           <form onSubmit={(event) => void handleSubmit(event)} noValidate>
             {/* Position ------------------------------------------------- */}
@@ -377,6 +503,7 @@ export function LoginPage(): React.JSX.Element {
               block
               type="submit"
               disabled={signingIn}
+              className="h-12 text-[0.9375rem] font-bold shadow-lg"
               iconRight={<ArrowRight className="h-4 w-4" />}
             >
               {signingIn ? t('Signing in…') : t('Sign in')}

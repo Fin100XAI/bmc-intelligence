@@ -154,16 +154,16 @@ export function EmptyState({
   return (
     <div
       className={cn(
-        'flex flex-col items-center justify-center rounded-lg border border-dashed border-ink-200 bg-surface-sunken text-center',
+        'flex flex-col items-center justify-center rounded-xl border border-dashed border-govt-200 bg-gradient-to-b from-govt-50/60 to-surface text-center',
         compact ? 'px-4 py-6' : 'px-6 py-12',
         className,
       )}
     >
-      <span className="mb-2.5 flex h-9 w-9 items-center justify-center rounded-full bg-ink-100 text-ink-400">
+      <span className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-navy-900 text-white shadow-md">
         {icon ?? <Inbox className="h-4 w-4" aria-hidden />}
       </span>
-      <p className="text-[0.8125rem] font-medium text-ink-700">{title}</p>
-      {detail ? <p className="mt-1 max-w-md text-xs leading-relaxed text-ink-500">{detail}</p> : null}
+      <p className="text-[0.875rem] font-bold text-ink-900">{title}</p>
+      {detail ? <p className="mt-1 max-w-md text-xs leading-relaxed text-ink-600">{detail}</p> : null}
       {action ? <div className="mt-3">{action}</div> : null}
     </div>
   )

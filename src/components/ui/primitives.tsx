@@ -767,7 +767,9 @@ export function MetricGrid({
     5: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5',
     6: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-6',
   }
-  return <div className={cn('grid gap-3', cols[columns], className)}>{children}</div>
+  // `metric-grid` gives every figure tile its accent rule, tint and hover -
+  // one rule in the stylesheet, so every screen reads alike.
+  return <div className={cn('metric-grid grid gap-3', cols[columns], className)}>{children}</div>
 }
 
 export function Divider({ className, label }: { className?: string; label?: ReactNode }): React.JSX.Element {

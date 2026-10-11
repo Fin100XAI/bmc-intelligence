@@ -46,6 +46,9 @@ import { MR_PART_44 } from './part-44'
 import { MR_PART_45 } from './part-45'
 import { MR_PART_47 } from './part-47'
 import { MR_PART_49 } from './part-49'
+import { MR_PART_50 } from './part-50'
+import { MR_PART_51 } from './part-51'
+import { MR_PART_52 } from './part-52'
 
 /**
  * The Marathi catalogue.
@@ -107,3 +110,6 @@ registerMessages('mr', MR_PART_44)
 registerMessages('mr', MR_PART_45)
 registerMessages('mr', MR_PART_47)
 registerMessages('mr', MR_PART_49)
+registerMessages('mr', MR_PART_50)
+registerMessages('mr', MR_PART_51)
+registerMessages('mr', MR_PART_52)
