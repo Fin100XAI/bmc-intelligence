@@ -47,7 +47,6 @@ export const MR_PART_12: Record<string, string> = {
   'Mean completion': 'सरासरी पूर्तता',
   'Mean composite across the ward’s reported localities.':
     'प्रभागातील नोंदवलेल्या वस्त्यांमधील सरासरी एकत्रित निर्देशांक.',
-  'Mean condition index:': 'सरासरी स्थिती निर्देशांक:',
   'Mean disbursement delay': 'सरासरी वितरण विलंब',
   'Mean family wait': 'कुटुंबांचा सरासरी प्रतीक्षा काळ',
   'Mean locality composite': 'सरासरी वस्ती एकत्रित निर्देशांक',
@@ -104,7 +103,6 @@ export const MR_PART_12: Record<string, string> = {
   'Money disbursed and residents newly brought onto the rolls are read together deliberately. Disbursement can rise on arrears released to people already enrolled, which moves the financial figure without reaching a single new household - new enrolments are the only line that closes the coverage gap.':
     'वितरित रक्कम आणि नव्याने नोंदणीत आलेले रहिवासी हे जाणीवपूर्वक एकत्र वाचले जातात. आधीच नोंदणी झालेल्या लोकांची थकबाकी दिल्यानेही वितरण वाढू शकते — त्यामुळे आर्थिक आकडा हलतो पण एकाही नव्या कुटुंबापर्यंत पोहोच होत नाही. व्याप्तीतील तफावत भरून काढणारी एकमेव ओळ म्हणजे नव्या नोंदण्या.',
   'Monitoring station register': 'देखरेख केंद्र नोंदवही',
-  Monsoon: 'पावसाळा',
   'Monsoon Readiness': 'पावसाळी सज्जता',
   'Monsoon Readiness - City Position': 'पावसाळी सज्जता — शहराची स्थिती',
   'Monthly cremations and burials': 'मासिक दहन व दफन',
@@ -271,7 +269,6 @@ export const MR_PART_12: Record<string, string> = {
   'No health indicators available': 'आरोग्य निर्देशक उपलब्ध नाहीत',
   'No high-priority defects currently recorded.':
     'सध्या उच्च प्राधान्याचे कोणतेही दोष नोंदवलेले नाहीत.',
-  'No high-priority defects recorded.': 'उच्च प्राधान्याचे कोणतेही दोष नोंदवलेले नाहीत.',
   'No hospital records': 'रुग्णालय नोंदी नाहीत',
   'No hospitals recorded as impacted.': 'बाधित म्हणून कोणतेही रुग्णालय नोंदवलेले नाही.',
   'No implemented capability matches the current filters':

@@ -144,6 +144,16 @@ export function det(namespace: string): Deterministic {
  */
 export const DEMO_NOW = new Date('2026-07-24T09:20:00+05:30')
 
+/** Start of the financial year the demonstration clock sits in (FY 2026-27). */
+export const FY_START = new Date('2026-04-01T00:00:00+05:30')
+
+/** Share of the financial year elapsed at the demonstration clock, 0-1. */
+export const FY_ELAPSED_FRACTION =
+  Math.round(((DEMO_NOW.getTime() - FY_START.getTime()) / (365 * 86_400_000)) * 100) / 100
+
+/** The same share as a whole percentage. */
+export const FY_ELAPSED_PCT = Math.round(FY_ELAPSED_FRACTION * 100)
+
 /** Offset minutes from the demonstration anchor, returned as ISO-8601. */
 export function isoFromAnchor(offsetMinutes: number): string {
   return new Date(DEMO_NOW.getTime() + offsetMinutes * 60_000).toISOString()

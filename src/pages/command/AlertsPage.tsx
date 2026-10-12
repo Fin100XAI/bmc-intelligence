@@ -9,10 +9,15 @@ import {
   ShieldAlert,
   Siren,
   Table2,
+  TrendingUp,
   UserPlus,
+  UserX,
 } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
-import { Button, Card, IconButton, MetricGrid, Select, SegmentedControl, Textarea } from '@/components/ui/primitives'
+import { Button, Card, IconButton, ScoreDial, Select, SegmentedControl, Textarea } from '@/components/ui/primitives'
+import { CHART_COLOURS, CompositionBar } from '@/components/charts'
+import { KpiTile } from '@/components/infographic'
+import { BreakdownBars, Meter, SegmentDonut } from '@/components/infographic/work-surface'
 import { GovPanel } from '@/components/gov/GovPanel'
 import { Badge, ConfidenceBadge, SeverityBadge, SeverityRail } from '@/components/ui/badges'
 import { DataTable, type Column } from '@/components/ui/DataTable'
@@ -20,7 +25,6 @@ import { ConfirmDialog, Modal } from '@/components/ui/overlays'
 import { DemonstrationNotice, EmptyState, ErrorState, LoadingState } from '@/components/ui/states'
 import { LiveIndicator } from '@/components/ui/LiveIndicator'
 import { ActiveFilterChips, FilterBar } from '@/components/filters/FilterBar'
-import { MetricCard } from '@/components/cards/MetricCard'
 import { AlertCard } from '@/components/cards/domain-cards'
 import { useServiceAction, useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
@@ -35,7 +39,8 @@ import { departmentName, officerDesignation, officerDisplayName, wardName } from
 import { DEMO_NOW } from '@/utils/deterministic'
 import { formatDateTime, formatDuration, formatRelative, sanitiseText } from '@/utils/format'
 import { cn } from '@/utils/cn'
-import { DOMAIN_LABEL, type ConfidenceLevel, type DateRangeKey, type IntelligenceDomain, type Severity } from '@/types/common'
+import { SHADE } from '@/components/ui/shade'
+import { DOMAIN_LABEL, SEVERITY_LABEL, type ConfidenceLevel, type DateRangeKey, type IntelligenceDomain, type Severity } from '@/types/common'
 import { ALERT_STATUS_LABEL, type Alert, type AlertStatus } from '@/types/intelligence'
 import { t } from '@/i18n'
 
@@ -83,6 +88,26 @@ function matchesGlobalFilters(alert: Alert, filters: FilterState): boolean {
     if (!alert.title.toLowerCase().includes(q) && !alert.description.toLowerCase().includes(q)) return false
   }
   return true
+}
+
+const SEVERITY_ORDER_LIST: Severity[] = ['critical', 'high', 'medium', 'low', 'info']
+
+const SEVERITY_COLOUR: Record<Severity, string> = {
+  critical: CHART_COLOURS.critical,
+  high: CHART_COLOURS.risk,
+  medium: CHART_COLOURS.warn,
+  low: CHART_COLOURS.primary,
+  info: CHART_COLOURS.neutral,
+}
+
+/** Status colours: red for unattended, amber for in hand, green for settled. */
+const STATUS_COLOUR: Record<AlertStatus, string> = {
+  open: CHART_COLOURS.critical,
+  escalated: CHART_COLOURS.risk,
+  acknowledged: CHART_COLOURS.warn,
+  assigned: CHART_COLOURS.primary,
+  resolved: CHART_COLOURS.positive,
+  closed: CHART_COLOURS.neutral,
 }
 
 const STATUS_TONE: Record<AlertStatus, 'neutral' | 'warn' | 'critical' | 'positive' | 'info'> = {
@@ -199,7 +224,7 @@ export function AlertsPage(): React.JSX.Element {
   function runAction(promise: Promise<unknown>): void {
     setActionError(null)
     promise.catch((err: unknown) => {
-      setActionError(err instanceof Error ? err.message : 'The action could not be completed.')
+      setActionError(err instanceof Error ? err.message : t('The action could not be completed.'))
     })
   }
 
@@ -208,7 +233,7 @@ export function AlertsPage(): React.JSX.Element {
     setActionError(null)
     doCreateIncident(alert.intelligenceId)
       .then((incident) => setRaised((prev) => ({ ...prev, [alert.id]: { ...prev[alert.id], incidentRef: incident.reference } })))
-      .catch((err: unknown) => setActionError(err instanceof Error ? err.message : 'The incident could not be created.'))
+      .catch((err: unknown) => setActionError(err instanceof Error ? err.message : t('The incident could not be created.')))
   }
 
   function handleCreateDecision(alert: Alert): void {
@@ -216,7 +241,7 @@ export function AlertsPage(): React.JSX.Element {
     setActionError(null)
     doCreateDecision(alert.intelligenceId)
       .then((decision) => setRaised((prev) => ({ ...prev, [alert.id]: { ...prev[alert.id], decisionRef: decision.reference } })))
-      .catch((err: unknown) => setActionError(err instanceof Error ? err.message : 'The decision case could not be created.'))
+      .catch((err: unknown) => setActionError(err instanceof Error ? err.message : t('The decision case could not be created.')))
   }
 
   function openAssign(alertsToAssign: Alert[]): void {
@@ -229,7 +254,7 @@ export function AlertsPage(): React.JSX.Element {
       ids: alertsToAssign.map((a) => a.id),
       wardIds,
       departmentId,
-      label: alertsToAssign.length === 1 ? (alertsToAssign[0]?.title ?? '') : `${alertsToAssign.length} selected alerts`,
+      label: alertsToAssign.length === 1 ? (alertsToAssign[0]?.title ?? '') : t('{0} selected alerts', alertsToAssign.length),
     })
   }
 
@@ -241,7 +266,7 @@ export function AlertsPage(): React.JSX.Element {
         setAssignContext(null)
         setSelectedKeys([])
       })
-      .catch((err: unknown) => setActionError(err instanceof Error ? err.message : 'Assignment could not be completed.'))
+      .catch((err: unknown) => setActionError(err instanceof Error ? err.message : t('Assignment could not be completed.')))
   }
 
   function bulkAcknowledge(): void {
@@ -250,7 +275,7 @@ export function AlertsPage(): React.JSX.Element {
     setActionError(null)
     Promise.all(eligible.map((a) => doAcknowledge(a.id)))
       .then(() => setSelectedKeys([]))
-      .catch((err: unknown) => setActionError(err instanceof Error ? err.message : 'Bulk acknowledgement could not be completed.'))
+      .catch((err: unknown) => setActionError(err instanceof Error ? err.message : t('Bulk acknowledgement could not be completed.')))
   }
 
   const officerCandidates = useMemo(() => {
@@ -284,6 +309,20 @@ export function AlertsPage(): React.JSX.Element {
   }
 
   const sla = slaQuery.data
+  const slaCompliancePct = sla && sla.total > 0 ? (sla.withinSla / sla.total) * 100 : 100
+  // Open = not yet resolved or closed, the same test the SLA summary applies.
+  const openShown = filtered.filter((a) => a.status !== 'closed' && a.status !== 'resolved')
+  const domainRows = (sla?.byDomain ?? [])
+    .filter((d) => d.open > 0)
+    .sort((a, b) => b.open - a.open)
+    .slice(0, 8)
+    .map((d) => ({
+      id: d.domain,
+      label: DOMAIN_LABEL[d.domain],
+      value: d.open,
+      note: d.breached > 0 ? t('{0} breached', d.breached) : undefined,
+      colour: d.breached > 0 ? CHART_COLOURS.risk : CHART_COLOURS.primary,
+    }))
 
   const columns: Array<Column<Alert>> = [
     {
@@ -366,10 +405,17 @@ export function AlertsPage(): React.JSX.Element {
       cell: (row) => {
         const breached = row.slaRemainingHours < 0
         const soon = !breached && row.slaRemainingHours <= 2
+        // Share of the SLA window already consumed - a full red bar is a breach.
+        const consumed = row.slaHours > 0 ? ((row.slaHours - row.slaRemainingHours) / row.slaHours) * 100 : 100
         return (
-          <Badge tone={breached ? 'critical' : soon ? 'warn' : 'neutral'} className={cn(breached && 'font-semibold')}>
-            {breached ? `Breached ${formatDuration(Math.abs(row.slaRemainingHours))} ago` : `${formatDuration(row.slaRemainingHours)} left`}
-          </Badge>
+          <div className="min-w-[7.5rem] space-y-1">
+            <Badge tone={breached ? 'critical' : soon ? 'warn' : 'neutral'} className={cn(breached && 'font-semibold')}>
+              {breached
+                ? t('Breached {0} ago', formatDuration(Math.abs(row.slaRemainingHours)))
+                : t('{0} left', formatDuration(row.slaRemainingHours))}
+            </Badge>
+            <Meter value={consumed} tone={breached ? 'critical' : soon ? 'warn' : consumed >= 50 ? 'neutral' : 'positive'} className="w-24" />
+          </div>
         )
       },
       sortValue: (row) => row.slaRemainingHours,
@@ -395,7 +441,7 @@ export function AlertsPage(): React.JSX.Element {
           <IconButton
             label={t('Acknowledge')}
             disabled={!canEdit}
-            title={canEdit ? 'Acknowledge this alert' : 'Your role does not hold alert:edit'}
+            title={canEdit ? t('Acknowledge this alert') : t('Your role does not hold alert:edit')}
             onClick={() => runAction(doAcknowledge(row.id))}
           >
             <CheckCircle2 className="h-3.5 w-3.5" />
@@ -405,7 +451,7 @@ export function AlertsPage(): React.JSX.Element {
           <IconButton
             label={t('Escalate')}
             disabled={!canEscalatePerm}
-            title={canEscalatePerm ? 'Escalate to higher authority' : 'Your role does not hold alert:escalate'}
+            title={canEscalatePerm ? t('Escalate to higher authority') : t('Your role does not hold alert:escalate')}
             onClick={() => setConfirmAction({ kind: 'escalate', alert: row })}
           >
             <Siren className="h-3.5 w-3.5" />
@@ -415,7 +461,7 @@ export function AlertsPage(): React.JSX.Element {
           <IconButton
             label={t('Mark resolved')}
             disabled={!canEdit}
-            title={canEdit ? 'Mark the underlying condition resolved' : 'Your role does not hold alert:edit'}
+            title={canEdit ? t('Mark the underlying condition resolved') : t('Your role does not hold alert:edit')}
             onClick={() => runAction(doResolve(row.id))}
           >
             <ShieldAlert className="h-3.5 w-3.5" />
@@ -425,7 +471,7 @@ export function AlertsPage(): React.JSX.Element {
           <IconButton
             label={t('Assign')}
             disabled={!canAssignPerm}
-            title={canAssignPerm ? 'Assign an owning officer' : 'Your role does not hold alert:assign'}
+            title={canAssignPerm ? t('Assign an owning officer') : t('Your role does not hold alert:assign')}
             onClick={() => openAssign([row])}
           >
             <UserPlus className="h-3.5 w-3.5" />
@@ -435,7 +481,7 @@ export function AlertsPage(): React.JSX.Element {
           <IconButton
             label={t('Close')}
             disabled={!canEdit}
-            title={canEdit ? 'Close this alert into the permanent record' : 'Your role does not hold alert:edit'}
+            title={canEdit ? t('Close this alert into the permanent record') : t('Your role does not hold alert:edit')}
             onClick={() => setConfirmAction({ kind: 'close', alert: row })}
           >
             <Ban className="h-3.5 w-3.5" />
@@ -446,12 +492,12 @@ export function AlertsPage(): React.JSX.Element {
           disabled={Boolean(incidentAlready) || !row.intelligenceId || !canCreateIncidentPerm}
           title={
             incidentAlready
-              ? `Incident already raised (${incidentAlready})`
+              ? t('Incident already raised ({0})', incidentAlready)
               : !row.intelligenceId
-                ? 'No source intelligence item to raise an incident from'
+                ? t('No source intelligence item to raise an incident from')
                 : canCreateIncidentPerm
-                  ? 'Raise an incident from the source intelligence'
-                  : 'Your role does not hold incident:create'
+                  ? t('Raise an incident from the source intelligence')
+                  : t('Your role does not hold incident:create')
           }
           onClick={() => handleCreateIncident(row)}
         >
@@ -462,12 +508,12 @@ export function AlertsPage(): React.JSX.Element {
           disabled={Boolean(decisionAlready) || !row.intelligenceId || !canCreateDecisionPerm}
           title={
             decisionAlready
-              ? `Decision case already raised (${decisionAlready})`
+              ? t('Decision case already raised ({0})', decisionAlready)
               : !row.intelligenceId
-                ? 'No source intelligence item to raise a decision case from'
+                ? t('No source intelligence item to raise a decision case from')
                 : canCreateDecisionPerm
-                  ? 'Raise a decision case from the source intelligence'
-                  : 'Your role does not hold decision:create'
+                  ? t('Raise a decision case from the source intelligence')
+                  : t('Your role does not hold decision:create')
           }
           onClick={() => handleCreateDecision(row)}
         >
@@ -480,13 +526,13 @@ export function AlertsPage(): React.JSX.Element {
   return (
     <PageBody>
       <PageHeader
-        eyebrow={t('Command')}
-        breadcrumbs={[{ label: t('Command') }, { label: t('Alerts & Escalations') }]}
+        eyebrow={t('City Operations')}
+        breadcrumbs={[{ label: t('City Operations') }, { label: t('Situation Room') }, { label: t('Alerts & escalations') }]}
         actions={
           <div className="flex items-center gap-3">
             <LiveIndicator dataUpdatedAt={alertsQuery.dataUpdatedAt} isFetching={alertsQuery.isFetching} />
             <SegmentedControl
-              ariaLabel="View"
+              ariaLabel={t('View')}
               value={view}
               onChange={setView}
               options={[
@@ -501,41 +547,133 @@ export function AlertsPage(): React.JSX.Element {
             show={['date', 'ward', 'department', 'domain', 'severity', 'status', 'search']}
             statusOptions={statusOptions}
             domainOptions={domainOptions}
-            searchPlaceholder="Search alerts"
+            searchPlaceholder={t('Search alerts')}
           />
         }
       />
 
+      {/* ── Hero: SLA compliance gauge, then the headline figures ──────
+          The gauge and the three SLA tiles are the service's SLA summary
+          for every open alert in the officer's scope; the remaining tiles
+          and the breakdowns below describe the alerts the current filter
+          shows, and say so. */}
       {sla ? (
-        <MetricGrid columns={3}>
-          <MetricCard
-            label={t('SLA breached')}
-            value={sla.breached}
-            tone={sla.breached > 0 ? 'critical' : 'default'}
-            icon={<AlertTriangle className="h-3.5 w-3.5" />}
-            support={t('Open alerts past their SLA target')}
-            background="red"
+        <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,4fr)_minmax(0,8fr)]">
+          <div className={cn('flex flex-col items-center gap-4 rounded-xl border p-4 shadow-xs sm:flex-row', SHADE[slaCompliancePct >= 85 ? 'green' : slaCompliancePct >= 60 ? 'amber' : 'red'].tile)}>
+            <ScoreDial score={Math.round(slaCompliancePct)} size={136} label="%" caption={t('Open alerts within SLA')} />
+            <div className="w-full min-w-0 flex-1 space-y-2 text-center sm:text-left">
+              <p className="text-[0.6875rem] font-bold tracking-[0.09em] text-ink-500 uppercase">{t('SLA position')}</p>
+              <p className={`text-lg leading-tight font-bold ${sla.breached > 0 ? 'text-crit-700' : 'text-ok-700'}`}>
+                {sla.breached > 0 ? t('{0} open alert(s) past SLA', sla.breached) : t('No open alert past SLA')}
+              </p>
+              <p className="text-[0.75rem] text-ink-600">{t('{0} open alert(s) tracked against SLA', sla.total)}</p>
+              {sla.total > 0 ? (
+                <CompositionBar
+                  height={10}
+                  segments={[
+                    { id: 'breached', label: t('Breached'), value: sla.breached, colour: CHART_COLOURS.critical },
+                    { id: 'soon', label: t('Breaching soon'), value: sla.approachingBreach, colour: CHART_COLOURS.warn },
+                    { id: 'within', label: t('Within SLA'), value: sla.withinSla, colour: CHART_COLOURS.positive },
+                  ].filter((s) => s.value > 0)}
+                />
+              ) : null}
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+            <KpiTile
+              icon={<AlertTriangle className="h-5 w-5" />}
+              label={t('SLA breached')}
+              value={sla.breached}
+              reading={t('Open alerts past their SLA target')}
+              tone={sla.breached > 0 ? 'critical' : 'positive'}
+              shade="tone"
           />
-          <MetricCard
-            label={t('Breaching soon (≤ 2h)')}
-            value={sla.approachingBreach}
-            tone={sla.approachingBreach > 0 ? 'warn' : 'default'}
-            icon={<Siren className="h-3.5 w-3.5" />}
-            support={t('Requires attention within two hours')}
-            background="amber"
+            <KpiTile
+              icon={<Siren className="h-5 w-5" />}
+              label={t('Breaching soon (≤ 2h)')}
+              value={sla.approachingBreach}
+              reading={t('Requires attention within two hours')}
+              tone={sla.approachingBreach > 0 ? 'warn' : 'positive'}
+              shade="tone"
           />
-          <MetricCard
-            label={t('Within SLA')}
-            value={sla.withinSla}
-            tone="positive"
-            icon={<CheckCircle2 className="h-3.5 w-3.5" />}
-            support={t('{0} open alert(s) tracked against SLA', sla.total)}
-            background="green"
+            <KpiTile
+              icon={<CheckCircle2 className="h-5 w-5" />}
+              label={t('Within SLA')}
+              value={sla.withinSla}
+              reading={t('{0} open alert(s) tracked against SLA', sla.total)}
+              tone="positive"
+              shade="tone"
           />
-        </MetricGrid>
+            <KpiTile
+              icon={<ShieldAlert className="h-5 w-5" />}
+              label={t('Critical, still open')}
+              value={openShown.filter((a) => a.severity === 'critical').length}
+              reading={t('In the alerts shown')}
+              tone={openShown.some((a) => a.severity === 'critical') ? 'critical' : 'positive'}
+              shade="tone"
+          />
+            <KpiTile
+              icon={<UserX className="h-5 w-5" />}
+              label={t('Unassigned')}
+              value={openShown.filter((a) => !a.ownerId).length}
+              reading={t('Open alerts with no owning officer')}
+              tone={openShown.some((a) => !a.ownerId) ? 'warn' : 'positive'}
+              shade="tone"
+          />
+            <KpiTile
+              icon={<TrendingUp className="h-5 w-5" />}
+              label={t('Escalated')}
+              value={filtered.filter((a) => a.status === 'escalated').length}
+              reading={t('With a higher authority')}
+              tone={filtered.some((a) => a.status === 'escalated') ? 'risk' : 'neutral'}
+              shade="tone"
+          />
+          </div>
+        </div>
       ) : null}
 
-      <ActiveFilterChips />
+      {/* ── The shape of the register: severity · status · domain ────── */}
+      {filtered.length > 0 ? (
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
+          <GovPanel title={t('Open alerts by severity')} subtitle={t('Select a bar to filter the register')} tone="red" dense>
+            <div className="p-3">
+              <BreakdownBars
+                rows={SEVERITY_ORDER_LIST.map((s) => ({
+                  id: s,
+                  label: SEVERITY_LABEL[s],
+                  value: openShown.filter((a) => a.severity === s).length,
+                  colour: SEVERITY_COLOUR[s],
+                }))}
+                onSelect={(id) => toggleInFilter('severities', id)}
+              />
+            </div>
+          </GovPanel>
+          <GovPanel title={t('Alerts by status')} subtitle={t('Of the {0} alert(s) shown', filtered.length)} tone="green" dense>
+            <div className="p-3">
+              <SegmentDonut
+                segments={(Object.keys(ALERT_STATUS_LABEL) as AlertStatus[]).map((s) => ({
+                  id: s,
+                  label: ALERT_STATUS_LABEL[s],
+                  value: filtered.filter((a) => a.status === s).length,
+                  colour: STATUS_COLOUR[s],
+                }))}
+                centreLabel={t('alerts')}
+                size={150}
+              />
+            </div>
+          </GovPanel>
+          <GovPanel title={t('Open alerts by domain')} subtitle={t('Breached SLA noted against each')} tone="amber" dense>
+            <div className="p-3">
+              {domainRows.length === 0 ? (
+                <p className="py-4 text-center text-[0.75rem] text-ink-400">{t('No open alerts.')}</p>
+              ) : (
+                <BreakdownBars rows={domainRows} />
+              )}
+            </div>
+          </GovPanel>
+        </div>
+      ) : null}
+      <ActiveFilterChips statusOptions={statusOptions} />
 
       {actionError ? (
         <Card tone="critical" className="flex items-start justify-between gap-3">
@@ -579,7 +717,7 @@ export function AlertsPage(): React.JSX.Element {
           {t('Sorted by SLA remaining - the most urgent position first.')}
         </p>
         {filtered.length === 0 ? (
-          <EmptyState className="m-3" title={t('No alerts match the current filters')} detail="Widen the date range or clear a filter to see more results." />
+          <EmptyState className="m-3" title={t('No alerts match the current filters')} detail={t('Widen the date range or clear a filter to see more results.')} />
         ) : view === 'table' ? (
           <DataTable
             rows={filtered}
@@ -595,7 +733,7 @@ export function AlertsPage(): React.JSX.Element {
             onSelectionChange={setSelectedKeys}
             rowActions={renderActions}
             rowAccent={(row) => <SeverityRail severity={row.severity} className="h-full" />}
-            ariaLabel="Alerts"
+            ariaLabel={t('Alerts')}
           />
         ) : (
           <div className="grid grid-cols-1 gap-3 p-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -628,13 +766,13 @@ export function AlertsPage(): React.JSX.Element {
           if (confirmAction.kind === 'escalate') runAction(doEscalate(confirmAction.alert.id, reason))
           else runAction(doClose(confirmAction.alert.id, reason))
         }}
-        title={confirmAction?.kind === 'escalate' ? `Escalate "${confirmAction.alert.title}"` : `Close "${confirmAction?.alert.title ?? ''}"`}
+        title={confirmAction?.kind === 'escalate' ? t('Escalate "{0}"', confirmAction.alert.title) : t('Close "{0}"', confirmAction?.alert.title ?? '')}
         description={
           confirmAction?.kind === 'escalate'
-            ? 'The alert is raised to a higher authority for immediate attention. State the institutional basis for escalation.'
-            : 'The alert is closed into the permanent record. Confirm the underlying condition has been addressed.'
+            ? t('The alert is raised to a higher authority for immediate attention. State the institutional basis for escalation.')
+            : t('The alert is closed into the permanent record. Confirm the underlying condition has been addressed.')
         }
-        confirmLabel={confirmAction?.kind === 'close' ? 'Close alert' : 'Escalate'}
+        confirmLabel={confirmAction?.kind === 'close' ? t('Close alert') : t('Escalate')}
         intent={confirmAction?.kind === 'close' ? 'primary' : 'critical'}
         requireReason
       />

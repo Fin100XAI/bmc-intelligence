@@ -1,15 +1,28 @@
 import { useMemo, useState } from 'react'
-import { Activity, ArrowDownAZ, Clock, GitBranch, LayoutGrid, Rows3, ShieldQuestion, SlidersHorizontal } from 'lucide-react'
+import {
+  Activity,
+  AlertOctagon,
+  ArrowDownAZ,
+  BadgeCheck,
+  Clock,
+  GitBranch,
+  LayoutGrid,
+  Rows3,
+  ShieldQuestion,
+  SlidersHorizontal,
+  Users,
+} from 'lucide-react'
 import { PageBody, PageHeader, SplitLayout } from '@/components/layout/PageHeader'
-import { MetricGrid, SegmentedControl } from '@/components/ui/primitives'
+import { SegmentedControl } from '@/components/ui/primitives'
 import { GovPanel } from '@/components/gov/GovPanel'
 import { Badge } from '@/components/ui/badges'
 import { Tabs } from '@/components/ui/overlays'
 import { DemonstrationNotice, EmptyState, ErrorState, LoadingState } from '@/components/ui/states'
 import { ActiveFilterChips, FilterBar } from '@/components/filters/FilterBar'
-import { MetricCard } from '@/components/cards/MetricCard'
 import { IntelligenceCard } from '@/components/cards/domain-cards'
-import { CompositionBar, MiniBar } from '@/components/charts/charts'
+import { CHART_COLOURS } from '@/components/charts'
+import { BigFigure, KpiTile } from '@/components/infographic'
+import { CountBars, LegendDonut, SEVERITY_COLOUR, StackMeter } from '@/components/infographic/command-kit'
 import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { intelligenceService } from '@/services'
@@ -18,12 +31,15 @@ import { useFilterStore } from '@/stores/ui.store'
 import type { FilterState } from '@/stores/ui.store'
 import { usePageMasthead } from '@/stores/masthead.store'
 import { DEMO_NOW } from '@/utils/deterministic'
+import { formatCompact, formatNumber, formatPercent } from '@/utils/format'
 import {
   DOMAIN_LABEL,
+  SEVERITY_LABEL,
   SEVERITY_ORDER,
   type ConfidenceLevel,
   type DateRangeKey,
   type IntelligenceDomain,
+  type Severity,
 } from '@/types/common'
 import {
   INTELLIGENCE_STATUS_LABEL,
@@ -39,6 +55,11 @@ import { t } from '@/i18n'
  * across every domain, from source evidence through to recommended action.
  * This is an operations register, not a social stream: every item states its
  * confidence, its evidence count and the named owner accountable for it.
+ *
+ * The register stays the work surface; above it, a picture strip states what
+ * the items currently shown add up to - severity mix, where they sit in the
+ * workflow, how confident the platform is - and each summary bar doubles as a
+ * filter, so the picture is also the way into the list.
  */
 
 const DATE_RANGE_HOURS: Record<DateRangeKey, number> = {
@@ -85,11 +106,12 @@ function sortItems(items: IntelligenceItem[], key: SortKey): IntelligenceItem[] 
   return sorted
 }
 
-const SEVERITY_TONE_MAP = { critical: '#e5484d', high: '#f97316', medium: '#f59e0b', low: '#2f6feb', info: '#8195ac' } as const
+const SEVERITIES: Severity[] = ['critical', 'high', 'medium', 'low', 'info']
 
 export function IntelligenceFeedPage(): React.JSX.Element {
   const openDrawer = useDrawerStore((s) => s.open)
   const filters = useFilterStore((s) => s.filters)
+  const toggleInFilter = useFilterStore((s) => s.toggleInFilter)
 
   const [statusTab, setStatusTab] = useState<'all' | IntelligenceStatus>('all')
   const [sortKey, setSortKey] = useState<SortKey>('severity')
@@ -148,23 +170,47 @@ export function IntelligenceFeedPage(): React.JSX.Element {
       .sort((a, b) => b.count - a.count)
   }, [filtered])
 
-  const severityComposition = useMemo(() => {
-    const order: Array<{ id: keyof typeof SEVERITY_TONE_MAP; label: string }> = [
-      { id: 'critical', label: t('Critical') },
-      { id: 'high', label: t('High') },
-      { id: 'medium', label: t('Medium') },
-      { id: 'low', label: t('Low') },
-      { id: 'info', label: t('Informational') },
-    ]
-    return order
-      .map((o) => ({
-        id: o.id,
-        label: o.label,
-        value: filtered.filter((i) => i.severity === o.id).length,
-        colour: SEVERITY_TONE_MAP[o.id],
-      }))
-      .filter((s) => s.value > 0)
+  const severityComposition = useMemo(
+    () =>
+      SEVERITIES.map((sev) => ({
+        id: sev,
+        label: SEVERITY_LABEL[sev],
+        value: filtered.filter((i) => i.severity === sev).length,
+        colour: SEVERITY_COLOUR[sev],
+      })),
+    [filtered],
+  )
+
+  const confidenceMix = useMemo(() => {
+    const colour: Record<ConfidenceLevel, string> = {
+      high: CHART_COLOURS.positive,
+      medium: CHART_COLOURS.warn,
+      low: CHART_COLOURS.risk,
+    }
+    const label: Record<ConfidenceLevel, string> = {
+      high: t('High confidence'),
+      medium: t('Medium confidence'),
+      low: t('Low confidence'),
+    }
+    return CONFIDENCE_OPTIONS.map((c) => ({ id: c, label: label[c], value: filtered.filter((i) => i.confidence === c).length, colour: colour[c] }))
   }, [filtered])
+
+  // Signals overlap: three items in one ward usually describe the same
+  // residents. Summing them double-counts towards half the city, so the tile
+  // takes the largest exposure in each ward and adds those up - every resident
+  // counted at most once per ward. An item spanning wards is credited to its
+  // first ward.
+  const shownCitizensAffected = useMemo(() => {
+    const largestByWard = new Map<string, number>()
+    for (const i of filtered) {
+      const n = i.citizensAffected ?? 0
+      if (n <= 0) continue
+      const ward = i.wardIds[0] ?? 'city'
+      largestByWard.set(ward, Math.max(largestByWard.get(ward) ?? 0, n))
+    }
+    return [...largestByWard.values()].reduce((s, n) => s + n, 0)
+  }, [filtered])
+  const shownWithAction = useMemo(() => filtered.filter((i) => i.decisionCaseId || i.incidentId).length, [filtered])
 
   if (feedQuery.isLoading || countsQuery.isLoading) {
     return (
@@ -197,7 +243,7 @@ export function IntelligenceFeedPage(): React.JSX.Element {
     filtered.length === 0 ? (
       <EmptyState
         title={t('No intelligence items match the current filters')}
-        detail="Widen the date range, clear a filter, or select a different workflow stage."
+        detail={t('Widen the date range, clear a filter, or select a different workflow stage.')}
       />
     ) : grouped ? (
       <div className="space-y-5">
@@ -226,13 +272,13 @@ export function IntelligenceFeedPage(): React.JSX.Element {
   return (
     <PageBody>
       <PageHeader
-        eyebrow={t('Command')}
-        breadcrumbs={[{ label: t('Command') }, { label: t('Intelligence Feed') }]}
+        eyebrow={t('City Operations')}
+        breadcrumbs={[{ label: t('City Operations') }, { label: t('Situation Room') }, { label: t('Signal feed') }]}
         controls={
           <FilterBar
             show={['date', 'ward', 'department', 'domain', 'severity', 'search']}
             domainOptions={domainOptions}
-            searchPlaceholder="Search intelligence"
+            searchPlaceholder={t('Search intelligence')}
             extra={
               <>
                 <div className="flex items-center gap-1">
@@ -283,27 +329,107 @@ export function IntelligenceFeedPage(): React.JSX.Element {
         }
       />
 
+      {/* ── Headline figures ── */}
       {counts ? (
-        <MetricGrid columns={4}>
-          <MetricCard label={t('Total in scope')} value={counts.total} icon={<Activity className="h-3.5 w-3.5" />} background="red" />
-          <MetricCard
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+          <KpiTile
+            icon={<Activity className="h-5 w-5" />}
+            label={t('Total in scope')}
+            value={formatNumber(counts.total)}
+            reading={t('{0} shown with current filters', filtered.length)}
+            tone="neutral"
+            shade="blue"
+          />
+          <KpiTile
+            icon={<AlertOctagon className="h-5 w-5" />}
             label={t('Critical + high')}
             value={counts.bySeverity.critical + counts.bySeverity.high}
-            tone={counts.bySeverity.critical > 0 ? 'critical' : 'default'}
-            background="amber"
+            reading={t('{0} critical', counts.bySeverity.critical)}
+            tone={counts.bySeverity.critical > 0 ? 'critical' : counts.bySeverity.high > 0 ? 'risk' : 'positive'}
+            shade="tone"
           />
-          <MetricCard label={t('Unassigned')} value={counts.unassigned} tone={counts.unassigned > 0 ? 'warn' : 'default'} icon={<ShieldQuestion className="h-3.5 w-3.5" />} background="green" />
-          <MetricCard label={t('Cross-domain items')} value={items.filter((i) => i.type === 'cross-domain').length} icon={<GitBranch className="h-3.5 w-3.5" />} />
-        </MetricGrid>
+          <KpiTile
+            icon={<ShieldQuestion className="h-5 w-5" />}
+            label={t('Unassigned')}
+            value={counts.unassigned}
+            reading={counts.unassigned > 0 ? t('No named owner yet') : t('Every item has an owner')}
+            tone={counts.unassigned > 0 ? 'warn' : 'positive'}
+            shade="tone"
+          />
+          <KpiTile
+            icon={<GitBranch className="h-5 w-5" />}
+            label={t('Cross-domain items')}
+            value={items.filter((i) => i.type === 'cross-domain').length}
+            reading={t('Signals spanning domains')}
+            tone="neutral"
+            shade="teal"
+          />
+          <KpiTile
+            icon={<BadgeCheck className="h-5 w-5" />}
+            label={t('Taken into action')}
+            value={shownWithAction}
+            reading={t('Shown items with a decision case or incident')}
+            tone={shownWithAction > 0 ? 'positive' : 'neutral'}
+            shade="green"
+          />
+          <KpiTile
+            icon={<Users className="h-5 w-5" />}
+            label={t('Citizens affected')}
+            value={formatCompact(shownCitizensAffected)}
+            reading={t('Modelled estimate - largest exposure per ward, not a sum of overlapping items')}
+            tone="neutral"
+            shade="amber"
+          />
+        </div>
       ) : null}
 
       <ActiveFilterChips />
+
+      {/* ── What the items shown add up to ── */}
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
+        <GovPanel title={t('Severity composition')} subtitle={t('Of the items currently shown.')} tone="red" dense>
+          <div className="p-3">
+            <LegendDonut
+              segments={severityComposition}
+              centreValue={formatNumber(filtered.length)}
+              centreLabel={t('items')}
+              size={140}
+              emptyLabel={t('No items to summarise.')}
+            />
+          </div>
+        </GovPanel>
+
+        <GovPanel title={t('Workflow stage')} subtitle={t('Select a stage to filter the feed')} tone="amber" dense>
+          <div className="p-2">
+            <CountBars
+              rows={tabItems.map((tab) => ({ id: tab.id, label: tab.label, value: tab.count }))}
+              activeIds={[statusTab]}
+              onSelect={(id) => setStatusTab(id as 'all' | IntelligenceStatus)}
+              emptyLabel={t('No items to summarise.')}
+            />
+          </div>
+        </GovPanel>
+
+        <GovPanel title={t('Platform confidence')} subtitle={t('Of the items currently shown.')} tone="green" dense>
+          <div className="space-y-3 p-3">
+            <BigFigure
+              value={formatPercent(filtered.length > 0 ? ((confidenceMix[0]?.value ?? 0) / filtered.length) * 100 : 0, 0)}
+              caption={t('of items shown are raised at high confidence')}
+              tone="positive"
+            />
+            <StackMeter segments={confidenceMix} emptyLabel={t('No items to summarise.')} />
+            <p className="text-[0.625rem] leading-snug text-ink-500">
+              {t('Confidence is the platform\'s own assessment of its evidence - advisory, never a decision.')}
+            </p>
+          </div>
+        </GovPanel>
+      </div>
 
       <Tabs
         items={tabItems}
         value={statusTab}
         onChange={(id) => setStatusTab(id as 'all' | IntelligenceStatus)}
-        ariaLabel="Workflow status"
+        ariaLabel={t('Workflow status')}
       />
 
       <SplitLayout
@@ -312,7 +438,7 @@ export function IntelligenceFeedPage(): React.JSX.Element {
           <GovPanel title={t('{0} item(s) shown', filtered.length)} subtitle={t('Feed')} tone="amber" dense>
             <div className="flex flex-wrap items-center gap-2 border-b border-ink-100 px-3 py-2">
               <SegmentedControl
-                ariaLabel="Sort by"
+                ariaLabel={t('Sort by')}
                 size="xs"
                 value={sortKey}
                 onChange={setSortKey}
@@ -323,7 +449,7 @@ export function IntelligenceFeedPage(): React.JSX.Element {
                 ]}
               />
               <SegmentedControl
-                ariaLabel="Group by domain"
+                ariaLabel={t('Group by domain')}
                 size="xs"
                 value={groupByDomain ? 'grouped' : 'flat'}
                 onChange={(v) => setGroupByDomain(v === 'grouped')}
@@ -338,43 +464,34 @@ export function IntelligenceFeedPage(): React.JSX.Element {
         }
         aside={
           <>
-            <GovPanel title={t('Severity composition')} tone="amber">
-              <p className="mb-3 text-xs leading-relaxed text-ink-500">{t('Of the items currently shown.')}</p>
-              {severityComposition.length > 0 ? (
-                <CompositionBar segments={severityComposition} />
-              ) : (
-                <p className="text-xs text-ink-400">{t('No items to summarise.')}</p>
-              )}
+            <GovPanel title={t('Domain breakdown')} subtitle={t('Select a domain to filter')} tone="red" dense>
+              <div className="p-2">
+                <CountBars
+                  rows={domainBreakdown.map((d) => ({ id: d.domain, label: DOMAIN_LABEL[d.domain], value: d.count }))}
+                  activeIds={filters.domains}
+                  onSelect={(id) => toggleInFilter('domains', id)}
+                  emptyLabel={t('No items to summarise.')}
+                />
+              </div>
             </GovPanel>
-            <GovPanel title={t('Domain breakdown')} tone="red">
-              <p className="mb-3 text-xs leading-relaxed text-ink-500">{t('Top domains by item count.')}</p>
-              <ul className="space-y-2">
-                {domainBreakdown.map((d) => (
-                  <li key={d.domain} className="flex items-center justify-between gap-2 text-xs">
-                    <span className="min-w-0 truncate text-ink-600">{DOMAIN_LABEL[d.domain]}</span>
-                    <span className="flex shrink-0 items-center gap-1.5">
-                      <MiniBar value={d.count} max={Math.max(...domainBreakdown.map((x) => x.count), 1)} width={40} />
-                      <span className="numeric font-semibold text-ink-800">{d.count}</span>
-                    </span>
-                  </li>
-                ))}
-                {domainBreakdown.length === 0 ? <p className="text-xs text-ink-400">{t('No items to summarise.')}</p> : null}
-              </ul>
-            </GovPanel>
-            <GovPanel title={t('Type distribution')} tone="amber">
-              <p className="mb-3 text-xs leading-relaxed text-ink-500">{t('Signal type across the current filter set.')}</p>
-              <ul className="space-y-2">
-                {typeBreakdown.map((entry) => (
-                  <li key={entry.type} className="flex items-center justify-between gap-2 text-xs">
-                    <span className="min-w-0 truncate text-ink-600">{INTELLIGENCE_TYPE_LABEL[entry.type]}</span>
-                    <span className="flex shrink-0 items-center gap-1.5">
-                      <MiniBar value={entry.count} max={Math.max(...typeBreakdown.map((x) => x.count), 1)} width={40} />
-                      <span className="numeric font-semibold text-ink-800">{entry.count}</span>
-                    </span>
-                  </li>
-                ))}
-                {typeBreakdown.length === 0 ? <p className="text-xs text-ink-400">{t('No items to summarise.')}</p> : null}
-              </ul>
+            <GovPanel title={t('Type distribution')} subtitle={t('Select a type to filter')} tone="amber" dense>
+              <div className="p-2">
+                <CountBars
+                  rows={typeBreakdown.map((entry) => ({
+                    id: entry.type,
+                    label: INTELLIGENCE_TYPE_LABEL[entry.type],
+                    value: entry.count,
+                    colour: CHART_COLOURS.intel,
+                  }))}
+                  activeIds={typeFilter}
+                  onSelect={(id) =>
+                    setTypeFilter((prev) =>
+                      prev.includes(id as IntelligenceType) ? prev.filter((x) => x !== id) : [...prev, id as IntelligenceType],
+                    )
+                  }
+                  emptyLabel={t('No items to summarise.')}
+                />
+              </div>
             </GovPanel>
           </>
         }

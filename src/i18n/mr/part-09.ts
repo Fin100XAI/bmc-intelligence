@@ -335,7 +335,6 @@ export const MR_PART_09: Record<string, string> = {
   'Average actual physical progress against average planned progress, by project category.':
     'प्रकल्प श्रेणीनुसार, सरासरी नियोजित प्रगतीच्या तुलनेत सरासरी प्रत्यक्ष भौतिक प्रगती.',
   'Average availability': 'सरासरी उपलब्धता',
-  'Average bed occupancy:': 'सरासरी खाट भोगवटा:',
   'Average blockage risk across storm water drains in the ward.':
     'प्रभागातील पावसाळी पाणी गटारांमधील सरासरी अडथळा जोखीम.',
   'Average blockage-risk score of drains mapped in the ward.':

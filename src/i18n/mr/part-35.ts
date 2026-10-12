@@ -99,8 +99,6 @@ export const MR_PART_35: Record<string, string> = {
   "A tamper-evident, independently retained audit log on managed infrastructure. The current trail now survives a reload in development (see Implemented), but a git-ignored JSON file on one machine is not tamper-evident, backed up, or independently retained - it cannot alone satisfy an institutional assurance requirement.":
     'व्यवस्थापित पायाभूत सुविधांवरील छेडछाड-सुस्पष्ट, स्वतंत्रपणे जतन केलेली लेखापरीक्षा नोंद. सध्याची नोंद आता विकासामध्ये पुनर्भारणानंतरही टिकते (अंमलात आणलेले पाहा), परंतु एका यंत्रावरील git-वगळलेली JSON फाइल छेडछाड-सुस्पष्ट, बॅकअप घेतलेली किंवा स्वतंत्रपणे जतन केलेली नाही - ती एकटी संस्थात्मक हमीची आवश्यकता पूर्ण करू शकत नाही.',
   'Composite risk index across every domain, ward by ward.': 'प्रत्येक क्षेत्रातील, प्रभागनिहाय, संमिश्र जोखीम निर्देशांक.',
-  'Critical incidents pulse on the map - open one from the marker to jump into the Situation Room.':
-    'गंभीर घटना नकाशावर स्पंदन करतात - परिस्थिती कक्षात जाण्यासाठी चिन्हावरून एक उघडा.',
   'Elevated risk - several domains need attention.': 'वाढलेली जोखीम - अनेक क्षेत्रांकडे लक्ष देणे आवश्यक आहे.',
   'Enter Cockpit': 'कॉकपिटमध्ये प्रवेश करा',
   'Good morning, {0}.': 'सुप्रभात, {0}.',

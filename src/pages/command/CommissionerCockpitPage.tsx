@@ -1,43 +1,51 @@
 import { useMemo, useState, type ReactNode } from 'react'
+import { revenueRealisation } from '@/data/finance.data'
 import {
+  AlertTriangle,
   Ban,
+  Banknote,
   CalendarClock,
   CheckCircle2,
   ChevronRight,
   Clock,
+  Droplets,
   FileSearch,
+  Flame,
+  GitBranch,
+  HardHat,
+  HeartPulse,
+  History,
+  MapPinned,
   NotebookPen,
   Sparkles,
   UserPlus,
+  Users,
 } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
-import { Button, Card, IconButton, Label, MetricGrid, Select, Textarea } from '@/components/ui/primitives'
+import { Button, Card, CardHeader, IconButton, Label, MetricGrid, Select, Textarea } from '@/components/ui/primitives'
 import { Badge, ClassificationBadge, ConfidenceBadge, SeverityBadge } from '@/components/ui/badges'
 import { ConfirmDialog, Modal } from '@/components/ui/overlays'
 import { DemonstrationNotice, EmptyState, ErrorState, LoadingState } from '@/components/ui/states'
 import { MetricCard } from '@/components/cards/MetricCard'
-import { GovPanel, panelToneForIndex } from '@/components/gov/GovPanel'
-import { FilterBar } from '@/components/filters/FilterBar'
+import { GovPanel } from '@/components/gov/GovPanel'
 import { useActivityLog, useServiceAction, useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { decisionService, healthService, incidentService, intelligenceService, projectService, revenueService } from '@/services'
 import { buildCityPosition, buildCrossDomainInsights, type CrossDomainInsight } from '@/domains'
-import { CockpitBriefing } from '@/components/onboarding/CockpitBriefing'
-import { useDrawerStore, useFilterStore } from '@/stores/ui.store'
-import type { FilterState } from '@/stores/ui.store'
+import { useDrawerStore } from '@/stores/ui.store'
 import { useActiveCorporation } from '@/stores/corporation.store'
-import { cityName } from '@/config/corporations'
 import { useCurrentUser } from '@/stores/auth.store'
 import { usePageMasthead } from '@/stores/masthead.store'
-import { useIsFlowDismissed, useOnboardingStore } from '@/stores/onboarding.store'
 import { allowed } from '@/security'
 import { ROUTES } from '@/config/navigation'
 import { departmentName, officerDesignation, officerDisplayName, wardName } from '@/data/reference'
 import { DEMO_NOW } from '@/utils/deterministic'
 import { formatCompact, formatCrore, formatDateTime, formatPercent, formatRelative, sanitiseText } from '@/utils/format'
-import { DOMAIN_LABEL, SEVERITY_ORDER, type DateRangeKey, type IntelligenceDomain } from '@/types/common'
-import { INTELLIGENCE_STATUS_LABEL, type IntelligenceItem, type IntelligenceStatus } from '@/types/intelligence'
+import { DOMAIN_LABEL, SEVERITY_ORDER, type Severity } from '@/types/common'
+import { INTELLIGENCE_STATUS_LABEL, type IntelligenceItem } from '@/types/intelligence'
 import { t } from '@/i18n'
+import { cn } from '@/utils/cn'
+import { SHADE, type Shade } from '@/components/ui/shade'
 
 /**
  * Commissioner Cockpit - the flagship command briefing.
@@ -47,33 +55,6 @@ import { t } from '@/i18n'
  * actually get worked. Every action taken here is written to the audit trail
  * and to the visible session log below.
  */
-
-const DATE_RANGE_HOURS: Record<DateRangeKey, number> = {
-  '24h': 24,
-  '7d': 24 * 7,
-  '30d': 24 * 30,
-  '90d': 24 * 90,
-  fy: 24 * 365,
-}
-
-function withinDateRange(iso: string, range: DateRangeKey): boolean {
-  const ageMs = DEMO_NOW.getTime() - new Date(iso).getTime()
-  return ageMs <= DATE_RANGE_HOURS[range] * 3_600_000
-}
-
-function matchesGlobalFilters(item: IntelligenceItem, filters: FilterState): boolean {
-  if (filters.wardIds.length > 0 && !item.wardIds.some((w) => filters.wardIds.includes(w))) return false
-  if (filters.departmentIds.length > 0 && !filters.departmentIds.includes(item.departmentId)) return false
-  if (filters.domains.length > 0 && !filters.domains.includes(item.domain)) return false
-  if (filters.severities.length > 0 && !filters.severities.includes(item.severity)) return false
-  if (filters.statuses.length > 0 && !filters.statuses.includes(item.status)) return false
-  if (!withinDateRange(item.createdAt, filters.dateRange)) return false
-  if (filters.search.trim()) {
-    const q = filters.search.trim().toLowerCase()
-    if (!item.title.toLowerCase().includes(q) && !item.description.toLowerCase().includes(q)) return false
-  }
-  return true
-}
 
 interface ItemState {
   approved?: boolean
@@ -93,32 +74,34 @@ interface AssignState {
 }
 
 function BriefingTile({
-  index,
+  icon,
   title,
   count,
   tone,
+  shade,
   to,
   children,
 }: {
-  index: number
+  icon: ReactNode
   title: string
   count: number
   tone?: 'critical' | 'warn' | 'default'
+  /** What the tile is about (see `@/components/ui/shade`); a tile with nothing open reads green. */
+  shade: Shade
   to: string
   children: ReactNode
 }): React.JSX.Element {
+  const s = SHADE[count > 0 ? shade : 'green']
   return (
-    <GovPanel
-      title={title}
-      tone={panelToneForIndex(index)}
-      className="flex flex-col"
-      actions={
+    <div className={cn('flex flex-col rounded-lg border p-3 shadow-xs', s.tile)}>
+      <div className="flex items-center gap-2">
+        <span className={cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white', s.chip)}>{icon}</span>
+        <h3 className="min-w-0 flex-1 truncate text-[0.6875rem] font-bold tracking-[0.06em] text-ink-700 uppercase">{title}</h3>
         <Badge tone={tone === 'critical' ? 'critical' : tone === 'warn' ? 'warn' : 'neutral'}>{count}</Badge>
-      }
-    >
-      <div className="min-h-[2.5rem] flex-1 space-y-1.5">{children}</div>
+      </div>
+      <div className="mt-2.5 min-h-[2.5rem] flex-1 space-y-1.5">{children}</div>
       <LinkButtonRow to={to} />
-    </GovPanel>
+    </div>
   )
 }
 
@@ -130,15 +113,17 @@ function LinkButtonRow({ to }: { to: string }): React.JSX.Element {
   )
 }
 
+/** An insight card takes the shade of its severity. */
+const INSIGHT_SHADE: Record<Severity, Shade> = { critical: 'red', high: 'orange', medium: 'amber', low: 'blue', info: 'teal' }
+
+/** Ward risk score at or above which a ward counts as high-risk on the briefing. */
+const HIGH_RISK_WARD_THRESHOLD = 60
+
 export function CommissionerCockpitPage(): React.JSX.Element {
   const user = useCurrentUser()
   const corporation = useActiveCorporation()
   const openDrawer = useDrawerStore((s) => s.open)
-  const filters = useFilterStore((s) => s.filters)
   const activity = useActivityLog(user?.name ?? 'Municipal Commissioner')
-  const briefingDismissed = useIsFlowDismissed('cockpit-briefing')
-  const dismissFlow = useOnboardingStore((s) => s.dismiss)
-  const replayFlow = useOnboardingStore((s) => s.replay)
 
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [itemState, setItemState] = useState<Record<string, ItemState>>({})
@@ -150,20 +135,22 @@ export function CommissionerCockpitPage(): React.JSX.Element {
   const [openInsight, setOpenInsight] = useState<CrossDomainInsight | null>(null)
 
   // The shell renders the masthead; this page states what it should say.
-  usePageMasthead(t('Commissioner Cockpit'))
+  usePageMasthead(
+    t('Commissioner Cockpit'),
+    t('Today\'s {0} in one scannable briefing, and the ranked queue of issues that need a Commissioner\'s decision. Every action below is written to the permanent audit trail and to the session log at the foot of this page.', corporation.city),
+  )
 
   const cityPosition = useMemo(() => buildCityPosition(), [])
+  const highRiskWards = useMemo(
+    () => cityPosition.wardPerformance.filter((w) => w.risk >= HIGH_RISK_WARD_THRESHOLD).sort((x, y) => y.risk - x.risk),
+    [cityPosition],
+  )
   const insights = useMemo(() => buildCrossDomainInsights(), [])
 
   const priorityQuery = useServiceQuery(queryKeys.intelligence('cockpit-priority'), (u) =>
     intelligenceService.list(u, { severity: ['critical', 'high'], status: ['new', 'reviewed', 'assigned', 'in-progress'], pageSize: 200 }),
   )
-  // Incidents and decisions are now durable and can change from the
-  // dev-only live-simulation tick - polling keeps the day's opening picture
-  // from going stale the moment the Commissioner starts reading it.
-  const incidentsQuery = useServiceQuery(queryKeys.incidents('cockpit-active'), (u) => incidentService.active(u), {
-    refetchInterval: 25_000,
-  })
+  const incidentsQuery = useServiceQuery(queryKeys.incidents('cockpit-active'), (u) => incidentService.active(u))
   const projectsAtRiskQuery = useServiceQuery(queryKeys.projects('cockpit-at-risk'), (u) => projectService.atRisk(u, 60))
   const healthSignalsQuery = useServiceQuery(queryKeys.health('cockpit-outbreak'), (u) => healthService.outbreakSignals(u))
   const revenueAnomaliesQuery = useServiceQuery(queryKeys.revenue('cockpit-anomalies'), (u) =>
@@ -188,30 +175,12 @@ export function CommissionerCockpitPage(): React.JSX.Element {
 
   const queue = useMemo(() => {
     const items = priorityQuery.data?.items ?? []
-    return items
-      .filter((i) => matchesGlobalFilters(i, filters))
-      .sort((a, b) => {
-        const sev = SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity]
-        if (sev !== 0) return sev
-        return a.createdAt < b.createdAt ? 1 : -1
-      })
-  }, [priorityQuery.data, filters])
-
-  const domainOptions = useMemo<IntelligenceDomain[]>(
-    () =>
-      Array.from(new Set((priorityQuery.data?.items ?? []).map((i) => i.domain))).sort((a, b) =>
-        DOMAIN_LABEL[a].localeCompare(DOMAIN_LABEL[b]),
-      ),
-    [priorityQuery.data],
-  )
-  const statusOptions = useMemo(
-    () =>
-      Array.from(new Set((priorityQuery.data?.items ?? []).map((i) => i.status))).map((s: IntelligenceStatus) => ({
-        value: s,
-        label: INTELLIGENCE_STATUS_LABEL[s],
-      })),
-    [priorityQuery.data],
-  )
+    return [...items].sort((a, b) => {
+      const sev = SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity]
+      if (sev !== 0) return sev
+      return a.createdAt < b.createdAt ? 1 : -1
+    })
+  }, [priorityQuery.data])
 
   const decisionById = useMemo(() => new Map((decisionsQuery.data?.items ?? []).map((d) => [d.id, d])), [decisionsQuery.data])
   // The selected item drives the detail pop-up; nothing is open until a row is
@@ -311,36 +280,9 @@ export function CommissionerCockpitPage(): React.JSX.Element {
 
   return (
     <PageBody>
-      {!briefingDismissed && (
-        <CockpitBriefing
-          commissionerName={user?.name ?? t('Commissioner')}
-          cityName={cityName(corporation)}
-          healthScore={cityPosition.healthScore}
-          priorityCount={queue.length}
-          incidentCount={incidents.length}
-          overdueDecisions={overdueDecisions}
-          topInsight={insights[0]}
-          onDismiss={() => dismissFlow('cockpit-briefing')}
-        />
-      )}
-
       <PageHeader
         eyebrow={t('Command')}
         breadcrumbs={[{ label: t('Command') }, { label: t('Commissioner Cockpit') }]}
-        actions={
-          briefingDismissed ? (
-            <Button variant="ghost" size="xs" icon={<Sparkles className="h-3 w-3" />} onClick={() => replayFlow('cockpit-briefing')}>
-              {t('Replay briefing')}
-            </Button>
-          ) : undefined
-        }
-        controls={
-          <FilterBar
-            show={['date', 'ward', 'department', 'domain', 'severity', 'status', 'search']}
-            statusOptions={statusOptions}
-            domainOptions={domainOptions}
-          />
-        }
       />
 
       <MetricGrid columns={4}>
@@ -349,6 +291,7 @@ export function CommissionerCockpitPage(): React.JSX.Element {
           value={cityPosition.healthScore}
           unit="/100"
           tone={cityPosition.healthScore >= 78 ? 'positive' : cityPosition.healthScore >= 60 ? 'default' : cityPosition.healthScore >= 45 ? 'warn' : 'critical'}
+          shade={cityPosition.healthScore >= 78 ? 'green' : cityPosition.healthScore >= 45 ? 'amber' : 'red'}
           support={t('Composite across every domain - full breakdown on Executive Overview')}
           to={ROUTES.executive}
         />
@@ -356,12 +299,14 @@ export function CommissionerCockpitPage(): React.JSX.Element {
           label={t('Priority queue')}
           value={queue.length}
           tone={queue.length > 0 ? 'critical' : 'default'}
+          shade={queue.length > 0 ? 'red' : 'green'}
           support={t('Critical or high-severity items open')}
         />
         <MetricCard
           label={t('Active incidents')}
           value={incidents.length}
           tone={incidents.length > 0 ? 'critical' : 'default'}
+          shade={incidents.length > 0 ? 'amber' : 'green'}
           support={t('Detected, validated or active')}
           to={ROUTES.situationRoom}
         />
@@ -369,27 +314,27 @@ export function CommissionerCockpitPage(): React.JSX.Element {
           label={t('Overdue decisions')}
           value={overdueDecisions}
           tone={overdueDecisions > 0 ? 'warn' : 'default'}
+          shade={overdueDecisions > 0 ? 'orange' : 'blue'}
           support={t('Past the recorded due date')}
           to={ROUTES.decisions}
         />
       </MetricGrid>
 
       {/* Cross-domain insight strip - the platform's differentiator */}
-      <GovPanel
-        title={t('Exposures no single departmental view reveals')}
-        subtitle={t('Cross-domain intelligence')}
-        tone="amber"
-      >
-        <p className="mb-3 text-xs leading-relaxed text-ink-500">
-          {t('Correlation identifies a review candidate. It is never a finding, and never an assertion of cause.')}
-        </p>
-        <div className="scrollbar-slim flex gap-3 overflow-x-auto pb-1">
+      <Card tone="info">
+        <CardHeader
+          icon={<GitBranch className="h-4 w-4" />}
+          eyebrow={t('Cross-domain intelligence')}
+          title={t('Exposures no single departmental view reveals')}
+          description={t('Correlation identifies a review candidate. It is never a finding, and never an assertion of cause.')}
+        />
+        <div className="scrollbar-slim mt-3 flex gap-3 overflow-x-auto pb-1">
           {insights.map((insight) => (
             <button
               key={insight.id}
               type="button"
               onClick={() => setOpenInsight(insight)}
-              className="w-80 shrink-0 rounded-lg border border-ink-200 bg-surface p-3 text-left shadow-xs transition-colors hover:bg-govt-50/50"
+              className={cn('w-80 shrink-0 rounded-lg border p-3 text-left shadow-xs transition-shadow hover:shadow-sm', SHADE[INSIGHT_SHADE[insight.severity]].tile)}
             >
               <div className="flex items-center gap-1.5">
                 <SeverityBadge severity={insight.severity} />
@@ -401,7 +346,7 @@ export function CommissionerCockpitPage(): React.JSX.Element {
             </button>
           ))}
         </div>
-      </GovPanel>
+      </Card>
 
       {/* ── Two columns ──────────────────────────────────────────────
           The Commissioner's morning reading, in the order it is actually
@@ -411,9 +356,9 @@ export function CommissionerCockpitPage(): React.JSX.Element {
       <div className="grid grid-cols-1 gap-3 xl:grid-cols-12">
         {/* Column 1 — today's position ----------------------------- */}
         <div className="min-w-0 xl:col-span-8">
-          <GovPanel title={t("Today's {0}", cityName(corporation))} tone="primary" dense bodyClassName="p-3">
+          <GovPanel title={`Today's ${corporation.city}`} tone="primary" dense bodyClassName="p-3">
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 2xl:grid-cols-3">
-              <BriefingTile index={0} title={t('High-priority issues')} count={queue.length} tone={queue.length > 0 ? 'critical' : 'default'} to={ROUTES.intelligenceFeed}>
+              <BriefingTile icon={<AlertTriangle className="h-4 w-4" />} title={t('High-priority issues')} shade="red" count={queue.length} tone={queue.length > 0 ? 'critical' : 'default'} to={ROUTES.intelligenceFeed}>
                 {queue.slice(0, 3).map((i) => (
                   <p key={i.id} className="flex items-center gap-1.5 truncate text-xs text-ink-600">
                     <SeverityBadge severity={i.severity} size="xs" /> <span className="truncate">{i.title}</span>
@@ -422,8 +367,15 @@ export function CommissionerCockpitPage(): React.JSX.Element {
                 {queue.length === 0 ? <p className="text-xs text-ink-400">{t('No critical or high-severity items open.')}</p> : null}
               </BriefingTile>
 
-              <BriefingTile index={1} title={t('High-risk wards')} count={cityPosition.wardPerformance.filter((w) => w.risk >= 60).length} tone="warn" to={ROUTES.wards}>
-                {cityPosition.wardPerformance.slice(0, 3).map((w) => (
+              {/* The count and the rows read off the same set: wards at or above
+                  the risk threshold. With none above it the tile says so and
+                  shows the three highest, labelled as such, rather than listing
+                  wards under a heading that says there are none. */}
+              <BriefingTile icon={<MapPinned className="h-4 w-4" />} title={t('High-risk wards')} shade="orange" count={highRiskWards.length} tone={highRiskWards.length > 0 ? 'warn' : 'default'} to={ROUTES.wards}>
+                {highRiskWards.length === 0 ? (
+                  <p className="text-xs text-ink-400">{t('No ward at or above risk {0}. Highest:', HIGH_RISK_WARD_THRESHOLD)}</p>
+                ) : null}
+                {(highRiskWards.length > 0 ? highRiskWards : [...cityPosition.wardPerformance].sort((x, y) => y.risk - x.risk)).slice(0, 3).map((w) => (
                   <p key={w.wardId} className="flex items-center justify-between gap-2 text-xs text-ink-600">
                     <span className="truncate">{w.label}</span>
                     <span className="numeric font-semibold text-ink-800">{t('Risk {0}', w.risk)}</span>
@@ -431,13 +383,13 @@ export function CommissionerCockpitPage(): React.JSX.Element {
                 ))}
               </BriefingTile>
 
-              <BriefingTile index={2} title={t('Critical infrastructure')} count={cityPosition.water.zonesAtRisk + cityPosition.monsoon.wardsBelowThreshold} tone="warn" to={ROUTES.water}>
+              <BriefingTile icon={<Droplets className="h-4 w-4" />} title={t('Critical infrastructure')} shade="teal" count={cityPosition.water.zonesAtRisk + cityPosition.monsoon.wardsBelowThreshold} tone="warn" to={ROUTES.water}>
                 <p className="text-xs text-ink-600">{t('Water zones at risk:')}{' '}<span className="font-semibold text-ink-800">{cityPosition.water.zonesAtRisk}</span></p>
                 <p className="text-xs text-ink-600">{t('Wards below monsoon readiness:')}{' '}<span className="font-semibold text-ink-800">{cityPosition.monsoon.wardsBelowThreshold}</span></p>
                 <p className="text-xs text-ink-600">{t('Chronic waterlogging locations:')}{' '}<span className="font-semibold text-ink-800">{cityPosition.monsoon.chronicLocations}</span></p>
               </BriefingTile>
 
-              <BriefingTile index={3} title={t('Significant project delays')} count={projectsAtRisk.length} tone={projectsAtRisk.length > 0 ? 'warn' : 'default'} to={ROUTES.projects}>
+              <BriefingTile icon={<HardHat className="h-4 w-4" />} title={t('Significant project delays')} shade="blue" count={projectsAtRisk.length} tone={projectsAtRisk.length > 0 ? 'warn' : 'default'} to={ROUTES.projects}>
                 {projectsAtRisk.slice(0, 3).map((p) => (
                   <p key={p.id} className="flex items-center justify-between gap-2 text-xs text-ink-600">
                     <span className="truncate">{p.name}</span>
@@ -447,7 +399,7 @@ export function CommissionerCockpitPage(): React.JSX.Element {
                 {projectsAtRisk.length === 0 ? <p className="text-xs text-ink-400">{t('No projects above the risk threshold.')}</p> : null}
               </BriefingTile>
 
-              <BriefingTile index={4} title={t('Health alerts')} count={healthSignals.length} tone={healthSignals.length > 0 ? 'warn' : 'default'} to={ROUTES.health}>
+              <BriefingTile icon={<HeartPulse className="h-4 w-4" />} title={t('Health alerts')} shade="amber" count={healthSignals.length} tone={healthSignals.length > 0 ? 'warn' : 'default'} to={ROUTES.health}>
                 {healthSignals.slice(0, 3).map((h) => (
                   <p key={h.id} className="flex items-center justify-between gap-2 text-xs text-ink-600">
                     <span className="truncate">{wardName(h.wardId)} - {h.disease}</span>
@@ -457,7 +409,7 @@ export function CommissionerCockpitPage(): React.JSX.Element {
                 {healthSignals.length === 0 ? <p className="text-xs text-ink-400">{t('No elevated outbreak signals.')}</p> : null}
               </BriefingTile>
 
-              <BriefingTile index={5} title={t('Emergency events')} count={incidents.length} tone={incidents.length > 0 ? 'critical' : 'default'} to={ROUTES.situationRoom}>
+              <BriefingTile icon={<Flame className="h-4 w-4" />} title={t('Emergency events')} shade="red" count={incidents.length} tone={incidents.length > 0 ? 'critical' : 'default'} to={ROUTES.situationRoom}>
                 {incidents.slice(0, 3).map((inc) => (
                   <p key={inc.id} className="flex items-center gap-1.5 truncate text-xs text-ink-600">
                     <SeverityBadge severity={inc.severity} size="xs" /> <span className="truncate">{inc.title}</span>
@@ -466,9 +418,9 @@ export function CommissionerCockpitPage(): React.JSX.Element {
                 {incidents.length === 0 ? <p className="text-xs text-ink-400">{t('No active incidents.')}</p> : null}
               </BriefingTile>
 
-              <BriefingTile index={6} title={t('Revenue / budget exceptions')} count={revenueAnomalies.length} tone={revenueAnomalies.length > 0 ? 'warn' : 'default'} to={ROUTES.revenue}>
+              <BriefingTile icon={<Banknote className="h-4 w-4" />} title={t('Revenue / budget exceptions')} shade="gold" count={revenueAnomalies.length} tone={revenueAnomalies.length > 0 ? 'warn' : 'default'} to={ROUTES.revenue}>
                 <p className="text-xs text-ink-600">
-                  {t('Collection efficiency:')}{' '}<span className="font-semibold text-ink-800">{formatPercent(cityPosition.revenue.efficiencyPct)}</span>
+                  {t('Revenue realisation:')}{' '}<span className="font-semibold text-ink-800">{formatPercent(revenueRealisation().pct)}</span>
                 </p>
                 <p className="text-xs text-ink-600">
                   {t('Budget utilisation:')}{' '}<span className="font-semibold text-ink-800">{formatPercent(cityPosition.budget.utilisationPct)}</span>
@@ -478,7 +430,7 @@ export function CommissionerCockpitPage(): React.JSX.Element {
                 ) : null}
               </BriefingTile>
 
-              <BriefingTile index={7} title={t('Citizen grievance escalation')} count={totalSlaBreached} tone={totalSlaBreached > 0 ? 'warn' : 'default'} to={ROUTES.wards}>
+              <BriefingTile icon={<Users className="h-4 w-4" />} title={t('Citizen grievance escalation')} shade="orange" count={totalSlaBreached} tone={totalSlaBreached > 0 ? 'warn' : 'default'} to={ROUTES.wards}>
                 <p className="text-xs text-ink-600">
                   {t('Open complaints (city-wide):')}{' '}<span className="font-semibold text-ink-800">{formatCompact(totalOpenComplaints)}</span>
                 </p>
@@ -490,7 +442,7 @@ export function CommissionerCockpitPage(): React.JSX.Element {
                 ))}
               </BriefingTile>
 
-              <BriefingTile index={8} title={t('Priority decisions')} count={cityPosition.priorityDecisions} tone={cityPosition.priorityDecisions > 0 ? 'warn' : 'default'} to={ROUTES.decisions}>
+              <BriefingTile icon={<CalendarClock className="h-4 w-4" />} title={t('Priority decisions')} shade="amber" count={cityPosition.priorityDecisions} tone={cityPosition.priorityDecisions > 0 ? 'warn' : 'default'} to={ROUTES.decisions}>
                 <p className="text-xs text-ink-600">{t('Draft or under review, awaiting a human decision.')}</p>
                 <p className="text-xs text-ink-600">
                   {t('Financial impact under decision:')}{' '}
@@ -516,7 +468,7 @@ export function CommissionerCockpitPage(): React.JSX.Element {
 
           <GovPanel title={t('Commissioner Priority Queue')} tone="critical" dense>
             {queue.length === 0 ? (
-              <EmptyState compact title={t('No priority items')} detail="No critical or high-severity intelligence items are currently open." />
+              <EmptyState compact title={t('No priority items')} detail={t('No critical or high-severity intelligence items are currently open.')} />
             ) : (
               <div className="divide-y divide-ink-50">
                 {queue.map((item) => {
@@ -534,7 +486,7 @@ export function CommissionerCockpitPage(): React.JSX.Element {
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-[0.8125rem] font-semibold text-ink-900">{item.title}</p>
                         <p className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[0.6875rem] text-ink-400">
-                          <span>{item.wardIds.map((w) => wardName(w)).join(', ') || 'City-wide'}</span>
+                          <span>{item.wardIds.map((w) => wardName(w)).join(', ') || t('City-wide')}</span>
                           <span>{departmentName(item.departmentId)}</span>
                           <span>{officerDisplayName(item.ownerId)}</span>
                           <span className="inline-flex items-center gap-1"><FileSearch className="h-3 w-3" />{item.evidenceIds.length}</span>
@@ -561,11 +513,9 @@ export function CommissionerCockpitPage(): React.JSX.Element {
             )}
           </GovPanel>
 
-          <GovPanel title={t('Session activity log')} subtitle={t('Accountability')} tone="amber" dense>
-            <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
-              {t('What you have done in this session, with timestamps. Every entry here also produced a permanent audit record.')}
-            </p>
-            <div className="max-h-72 overflow-y-auto px-3 pb-3">
+          <Card flush>
+            <CardHeader bordered eyebrow={t('Accountability')} title={t('Session activity log')} description={t('What you have done in this session, with timestamps. Every entry here also produced a permanent audit record.')} icon={<History className="h-4 w-4" />} />
+            <div className="max-h-72 overflow-y-auto p-4">
               {activity.entries.length === 0 ? (
                 <p className="text-xs text-ink-400">{t('No actions recorded yet in this session.')}</p>
               ) : (
@@ -584,7 +534,7 @@ export function CommissionerCockpitPage(): React.JSX.Element {
                 </ol>
               )}
             </div>
-          </GovPanel>
+          </Card>
         </div>
       </div>
 
@@ -608,8 +558,8 @@ export function CommissionerCockpitPage(): React.JSX.Element {
 
             <p className="text-xs leading-relaxed text-ink-600">{selectedItem.explanation}</p>
 
-            <dl className="grid grid-cols-1 gap-1.5 rounded-lg bg-surface-sunken p-3 text-xs sm:grid-cols-2">
-              <div className="flex justify-between gap-2 sm:flex-col sm:justify-start sm:gap-0.5"><dt className="text-ink-400">{t('Wards')}</dt><dd className="text-right text-ink-700 sm:text-left">{selectedItem.wardIds.map((w) => wardName(w)).join(', ') || 'City-wide'}</dd></div>
+            <dl className="grid grid-cols-1 gap-1.5 rounded-[2px] bg-surface-sunken p-3 text-xs sm:grid-cols-2">
+              <div className="flex justify-between gap-2 sm:flex-col sm:justify-start sm:gap-0.5"><dt className="text-ink-400">{t('Wards')}</dt><dd className="text-right text-ink-700 sm:text-left">{selectedItem.wardIds.map((w) => wardName(w)).join(', ') || t('City-wide')}</dd></div>
               <div className="flex justify-between gap-2 sm:flex-col sm:justify-start sm:gap-0.5"><dt className="text-ink-400">{t('Department')}</dt><dd className="text-right text-ink-700 sm:text-left">{departmentName(selectedItem.departmentId)}</dd></div>
               <div className="flex justify-between gap-2 sm:flex-col sm:justify-start sm:gap-0.5"><dt className="text-ink-400">{t('Responsible officer')}</dt><dd className="text-right text-ink-700 sm:text-left">{officerDisplayName(selectedItem.ownerId)}</dd></div>
               <div className="flex justify-between gap-2 sm:flex-col sm:justify-start sm:gap-0.5"><dt className="text-ink-400">{t('Evidence')}</dt><dd className="text-right text-ink-700 sm:text-left">{t('{0} record(s)', selectedItem.evidenceIds.length)}</dd></div>
@@ -633,13 +583,13 @@ export function CommissionerCockpitPage(): React.JSX.Element {
               <Button size="xs" variant="outline" disabled={!canEscalatePerm} title={canEscalatePerm ? undefined : 'Your role does not hold intelligence:escalate'} onClick={() => setConfirmState({ kind: 'escalate', item: selectedItem })}>
                 {t('Escalate')}
               </Button>
-              <Button size="xs" variant="outline" disabled={!canRequestAnalysis} title={canRequestAnalysis ? undefined : 'Your role does not hold ai:create'} onClick={() => runAction(Promise.resolve(), { action: 'Requested analysis', detail: t('Analysis requested for "{0}"', selectedItem.title) })}>
+              <Button size="xs" variant="outline" disabled={!canRequestAnalysis} title={canRequestAnalysis ? undefined : t('Your role does not hold ai:create')} onClick={() => runAction(Promise.resolve(), { action: 'Requested analysis', detail: t('Analysis requested for "{0}"', selectedItem.title) })}>
                 {t('Request Analysis')}
               </Button>
-              <Button size="xs" variant="outline" disabled={selectedItem.evidenceIds.length === 0 || !canOpenEvidence} title={!canOpenEvidence ? 'Your role does not hold evidence:view' : selectedItem.evidenceIds.length === 0 ? 'No evidence recorded against this item' : undefined} onClick={() => { const firstId = selectedItem.evidenceIds[0]; if (firstId) { openDrawer({ kind: 'evidence', id: firstId }); activity.record('Opened evidence', `Evidence opened for "${selectedItem.title}"`) } }}>
+              <Button size="xs" variant="outline" disabled={selectedItem.evidenceIds.length === 0 || !canOpenEvidence} title={!canOpenEvidence ? t('Your role does not hold evidence:view') : selectedItem.evidenceIds.length === 0 ? t('No evidence recorded against this item') : undefined} onClick={() => { const firstId = selectedItem.evidenceIds[0]; if (firstId) { openDrawer({ kind: 'evidence', id: firstId }); activity.record('Opened evidence', `Evidence opened for "${selectedItem.title}"`) } }}>
                 {t('Open Evidence')}
               </Button>
-              <Button size="xs" variant="outline" disabled={selectedItem.recommendedActions.length === 0 || !canApprovePerm} title={!canApprovePerm ? 'Your role does not hold intelligence:approve' : selectedItem.recommendedActions.length === 0 ? 'No recommendation to approve' : undefined} onClick={() => setConfirmState({ kind: 'approve', item: selectedItem })}>
+              <Button size="xs" variant="outline" disabled={selectedItem.recommendedActions.length === 0 || !canApprovePerm} title={!canApprovePerm ? t('Your role does not hold intelligence:approve') : selectedItem.recommendedActions.length === 0 ? t('No recommendation to approve') : undefined} onClick={() => setConfirmState({ kind: 'approve', item: selectedItem })}>
                 {t('Approve Action')}
               </Button>
               <Button size="xs" variant="outline" disabled={!canReview} title={canReview ? undefined : 'Your role does not hold intelligence:edit'} onClick={() => setConfirmState({ kind: 'defer', item: selectedItem })}>
@@ -672,16 +622,16 @@ export function CommissionerCockpitPage(): React.JSX.Element {
         onConfirm={handleConfirm}
         title={
           confirmState?.kind === 'escalate'
-            ? `Escalate "${confirmState.item.title}"`
+            ? t('Escalate "{0}"', confirmState.item.title)
             : confirmState?.kind === 'defer'
-              ? `Defer "${confirmState.item.title}"`
+              ? t('Defer "{0}"', confirmState.item.title)
               : confirmState?.kind === 'approve'
-                ? `Approve recommendation for "${confirmState.item.title}"`
-                : `Close "${confirmState?.item.title ?? ''}"`
+                ? t('Approve recommendation for "{0}"', confirmState.item.title)
+                : t('Close "{0}"', confirmState?.item.title ?? '')
         }
         description={t('State the institutional basis for this action. It is written to the permanent audit record.')}
         confirmLabel={
-          confirmState?.kind === 'escalate' ? 'Escalate' : confirmState?.kind === 'defer' ? 'Defer' : confirmState?.kind === 'approve' ? 'Approve' : 'Close'
+          confirmState?.kind === 'escalate' ? t('Escalate') : confirmState?.kind === 'defer' ? t('Defer') : confirmState?.kind === 'approve' ? t('Approve') : t('Close')
         }
         intent={confirmState?.kind === 'approve' ? 'positive' : confirmState?.kind === 'close' || confirmState?.kind === 'escalate' ? 'critical' : 'primary'}
         requireReason

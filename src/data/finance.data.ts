@@ -17,7 +17,7 @@ import type {
   RiskDriver,
   TenderStage,
 } from '@/types/finance'
-import { det, isoDaysFromAnchor } from '@/utils/deterministic'
+import { FY_ELAPSED_FRACTION, det, isoDaysFromAnchor } from '@/utils/deterministic'
 import { DEPARTMENTS, WARDS, WARD_BY_ID, wardName } from './reference'
 import { EVIDENCE_ITEMS } from './evidence.data'
 import { CITY_SCALE, scaled, scaledCount } from './scale'
@@ -996,6 +996,37 @@ export function budgetTotals(): {
     actual: Math.round(actual * 10) / 10,
     committed: Math.round(committed * 10) / 10,
     utilisationPct: Math.round((actual / revised) * 1000) / 10,
+  }
+}
+
+export interface RevenueRealisation {
+  /** Collected to date / annual target, %. */
+  pct: number
+  collectedCrore: number
+  targetCrore: number
+  /** The share of the year elapsed, % - the bar `pct` is read against. */
+  phasedPct: number
+  /** `pct` minus `phasedPct`, percentage points. Positive = ahead. */
+  gapPp: number
+  label: string
+  definition: string
+}
+
+/** Revenue realisation: one definition, read the same on every screen. */
+export function revenueRealisation(): RevenueRealisation {
+  const cityRecords = REVENUE_RECORDS.filter((r) => !r.wardId)
+  const target = cityRecords.reduce((s, r) => s + r.targetCrore, 0)
+  const collected = cityRecords.reduce((s, r) => s + r.collectedCrore, 0)
+  const pct = target > 0 ? Math.round((collected / target) * 1000) / 10 : 0
+  const phasedPct = Math.round(FY_ELAPSED_FRACTION * 1000) / 10
+  return {
+    pct,
+    collectedCrore: Math.round(collected),
+    targetCrore: Math.round(target),
+    phasedPct,
+    gapPp: Math.round((pct - phasedPct) * 10) / 10,
+    label: t('Revenue realisation'),
+    definition: t('Receipts collected to date across the tracked revenue heads as a share of the year’s target for those heads, read against the {0}% of the financial year elapsed. Modelled demonstration figures.', Math.round(FY_ELAPSED_FRACTION * 100)),
   }
 }
 

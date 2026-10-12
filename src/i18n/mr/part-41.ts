@@ -75,5 +75,4 @@ export const MR_PART_41: Record<string, string> = {
     'शहरी सह्यता सध्या मान्सून सज्जता प्रतिबिंबित करते, जो {0} चा प्रमुख आवर्ती धोका आहे. संपूर्ण बहु-धोका चित्र नागरी सह्यता पडद्यावर उपलब्ध आहे.',
   "Coastal resilience is the inverse of the mean erosion and inundation vulnerability across monitored shoreline segments - {0}'s exposure to sea-level and storm-surge risk.":
     'किनारी सह्यता ही निरीक्षित किनारपट्टी विभागांतील सरासरी धूप व जलमग्नता असुरक्षिततेचा व्यस्तांक आहे - {0} चा समुद्र-पातळी व वादळी-लाट जोखिमेस असलेला संपर्क.',
-  "Today's {0}": 'आजचे {0}',
 }

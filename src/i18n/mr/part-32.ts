@@ -22,9 +22,6 @@ export const MR_PART_32: Record<string, string> = {
   'Contrib.': 'योगदान',
   'Thirty-day trend against the 75/100 target': '७५/१०० उद्दिष्टाच्या तुलनेत तीस दिवसांचा कल',
   'City health': 'शहर आरोग्य',
-
-  /* --- Ward register and map ---------------------------------------------- */
-  'Ward performance register': 'प्रभाग कामगिरी नोंदवही',
   '{0} wards': '{0} प्रभाग',
   'Search wards': 'प्रभाग शोधा',
   'Ward risk map': 'प्रभाग जोखीम नकाशा',
@@ -56,17 +53,12 @@ export const MR_PART_32: Record<string, string> = {
 
   /* --- Service delivery --------------------------------------------------- */
   'Complaints vs. notified services': 'तक्रारी वि. अधिसूचित सेवा',
-
-  /* --- Infrastructure ----------------------------------------------------- */
-  'Infrastructure standing': 'पायाभूत सुविधा स्थिती',
   '{0}/{1} MLD': '{0}/{1} एमएलडी',
-  '{0} chronic waterlogging location(s)': '{0} तीव्र पाणी साचण्याची ठिकाणे',
   'Emergency response': 'आपत्कालीन प्रतिसाद',
   '{0} station(s) below standard': '{0} केंद्रे मानकांखाली',
   '{0} min': '{0} मि.',
   'Waste collection coverage': 'कचरा संकलन व्याप्ती',
   '{0} hotspot(s)': '{0} संवेदनशील ठिकाणे',
-  'Priority road defects': 'प्राधान्य रस्ते दोष',
 
   /* --- Executive brief ---------------------------------------------------- */
   'Governed AI layer — advisory only': 'नियंत्रित AI स्तर — केवळ सल्लागार',

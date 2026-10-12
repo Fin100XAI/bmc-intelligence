@@ -239,7 +239,6 @@ export const MR_PART_14: Record<string, string> = {
   'Signal': 'संकेत',
   'Signal {0}': 'संकेत {0}',
   'Signal stacking': 'संकेतांचे स्तरीकरण',
-  'Signal type across the current filter set.': 'सध्याच्या गाळणी संचातील संकेत प्रकार.',
   'Signal weight {0}': 'संकेत भार {0}',
   'Signals present': 'उपस्थित संकेत',
   'Signed inter-departmental and, where relevant, inter-agency agreements establishing purpose, retention and access terms before any live feed is provisioned.':

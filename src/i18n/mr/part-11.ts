@@ -324,7 +324,6 @@ export const MR_PART_11: Record<string, string> = {
   'Hospital utilisation summary': 'रुग्णालय वापर सारांश',
   'Hospitals and fire / disaster / ambulance emergency stations.':
     'रुग्णालये आणि अग्निशमन / आपत्ती / रुग्णवाहिका आपत्कालीन केंद्रे.',
-  'Hospitals:': 'रुग्णालये:',
   'Hotspots': 'समस्याक्षेत्रे',
   'Hours a circuit was actually lit against the hours it should have been. A circuit dark at 21:00 is a safety matter, not a billing one.':
     'मार्गिका जितके तास प्रज्वलित असायला हवी होती त्या तुलनेत ती प्रत्यक्षात जितके तास प्रज्वलित होती ते. 21:00 वाजता अंधारात असलेली मार्गिका ही सुरक्षेची बाब आहे, देयकाची नाही.',

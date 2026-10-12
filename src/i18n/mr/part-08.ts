@@ -392,7 +392,6 @@ export const MR_PART_08: Record<string, string> = {
   '{0} open · {1} reopened · SLA {2}': '{0} प्रलंबित · {1} पुन्हा उघडले · सेवा-हमी {2}',
   '{0} open of {1} · {2} service categories · mean age {3}h':
     '{1} पैकी {0} प्रलंबित · {2} सेवा श्रेणी · सरासरी कालावधी {3} तास',
-  '{0} Operational Intelligence': '{0} कामकाज बुद्धिमत्ता',
   '{0} overflow event(s)': '{0} ओसंडण्याच्या घटना',
   '{0} parcels on the register': 'नोंदवहीवरील {0} मालमत्ता खंड',
   '{0} pipeline stages in total': 'एकूण {0} प्रक्रियासाखळी टप्पे',

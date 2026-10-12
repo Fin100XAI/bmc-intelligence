@@ -102,7 +102,6 @@ export const MR_PART_10: Record<string, string> = {
   'Collection efficiency is measured against assessed value for the current financial year to date, not against the full outstanding demand including prior-year arrears. A ward showing high arrears alongside high in-year efficiency is collecting well against current demand while carrying a legacy balance that requires separate recovery action.':
     'वसुली कार्यक्षमता चालू आर्थिक वर्षातील आजवरच्या आकारणी मूल्याच्या तुलनेत मोजली जाते, मागील वर्षांच्या थकबाकीसह असलेल्या संपूर्ण शिल्लक मागणीच्या तुलनेत नाही. उच्च थकबाकीसोबतच चालू वर्षात उच्च कार्यक्षमता दाखवणारा प्रभाग चालू मागणीविरुद्ध चांगली वसुली करत आहे, मात्र त्याच्याकडे स्वतंत्र वसुली कारवाई आवश्यक असलेली जुनी शिल्लक आहे.',
   'Collection efficiency, year to date': 'वसुली कार्यक्षमता, वर्षारंभापासून',
-  'Collection efficiency:': 'वसुली कार्यक्षमता:',
   'Collection patterns': 'संकलन नमुने',
   'Collection routes': 'संकलन मार्ग',
   'Collection summary': 'संकलन सारांश',
@@ -425,7 +424,6 @@ export const MR_PART_10: Record<string, string> = {
   'Emergency events': 'आपत्कालीन घटना',
   'Emergency load index': 'आपत्कालीन भार निर्देशांक',
   'Emergency route only': 'केवळ आपत्कालीन मार्ग',
-  'Emergency stations:': 'आपत्कालीन केंद्रे:',
   'Empanelment {0}': 'सूचीकरण {0}',
   'Employee code': 'कर्मचारी संकेतांक',
   'Enabled modules': 'कार्यान्वित विभाग',

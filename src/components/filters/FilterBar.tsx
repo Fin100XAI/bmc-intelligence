@@ -16,6 +16,7 @@ import { cn } from '@/utils/cn'
 import { Badge } from '@/components/ui/badges'
 import { Button, Checkbox, Input, Select } from '@/components/ui/primitives'
 import { t } from '@/i18n'
+import { enumLabel } from '@/utils/enum-label'
 
 /**
  * Reusable global filter bar.
@@ -41,7 +42,7 @@ export function FilterBar({
   show = ['date', 'ward', 'department', 'severity', 'search'],
   statusOptions,
   domainOptions,
-  searchPlaceholder = 'Search records',
+  searchPlaceholder = t('Search records'),
   extra,
   className,
   compact,
@@ -52,6 +53,12 @@ export function FilterBar({
   const toggleInFilter = useFilterStore((s) => s.toggleInFilter)
   const resetFilters = useFilterStore((s) => s.resetFilters)
   const [openPanel, setOpenPanel] = useState<string | null>(null)
+  // Phones only: the controls fold behind a single "Filters" toggle so a
+  // five-control bar does not push the page's content a screen down. From
+  // `sm` up the toggle is hidden and the controls always show. The controls
+  // stay MOUNTED while folded (hidden by CSS, not removed), so the filter
+  // harnesses and assistive technology still find every one of them.
+  const [expanded, setExpanded] = useState(false)
 
   const authorisedWards = useMemo(
     () => WARDS.filter((w) => canAccess(user, 'ward', 'view', { wardId: w.id }).allowed),
@@ -89,7 +96,7 @@ export function FilterBar({
     openPanel === id ? (
       <>
         <div className="fixed inset-0 z-20" onClick={() => setOpenPanel(null)} aria-hidden />
-        <div className="animate-in-scale absolute top-full left-0 z-30 mt-1 w-64 rounded-lg border border-ink-100 bg-surface p-2 shadow-overlay">
+        <div className="animate-in-scale absolute top-full left-0 z-30 mt-1 w-[min(16rem,calc(100vw-2rem))] rounded-lg border border-ink-100 bg-surface p-2 shadow-overlay">
           <div className="scrollbar-slim max-h-64 space-y-0.5 overflow-y-auto">{children}</div>
         </div>
       </>
@@ -97,10 +104,25 @@ export function FilterBar({
 
   return (
     <div data-filter-surface="bar" className={cn('flex flex-wrap items-center gap-2', className)}>
-      <span className="inline-flex items-center gap-1.5 text-ink-400">
+      <span className="hidden items-center gap-1.5 text-ink-400 sm:inline-flex">
         <Filter className="h-3.5 w-3.5" aria-hidden />
         {!compact ? <span className="label-institutional">{t('Filters')}</span> : null}
       </span>
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        aria-expanded={expanded}
+        className={cn(
+          'inline-flex h-9 items-center gap-1.5 rounded-lg border px-3 text-[0.8125rem] font-medium shadow-xs sm:hidden',
+          activeCount > 0 ? 'border-govt-300 bg-govt-50 text-govt-700' : 'border-ink-200 bg-surface text-ink-700',
+        )}
+      >
+        <Filter className="h-3.5 w-3.5" aria-hidden />
+        {activeCount > 0 ? t('Filters ({0})', activeCount) : t('Filters')}
+        <ChevronDown className={cn('h-3.5 w-3.5 text-ink-400 transition-transform', expanded && 'rotate-180')} aria-hidden />
+      </button>
+
+      <div className={cn('flex w-full flex-wrap items-center gap-2 sm:contents', !expanded && 'max-sm:hidden')}>
 
       {show.includes('date') ? (
         <Select
@@ -207,12 +229,13 @@ export function FilterBar({
           value={filters.search}
           onChange={(e) => setFilter('search', e.target.value)}
           placeholder={searchPlaceholder}
-          className="w-auto min-w-[12rem] flex-1 sm:max-w-xs"
+          className="w-full min-w-0 flex-1 sm:w-auto sm:min-w-[12rem] sm:max-w-xs"
           aria-label={searchPlaceholder}
         />
       ) : null}
 
       {extra}
+      </div>
 
       {activeCount > 0 ? (
         <Button size="xs" variant="ghost" onClick={resetFilters} icon={<RotateCcw className="h-3 w-3" />}>
@@ -224,7 +247,13 @@ export function FilterBar({
 }
 
 /** Renders the currently applied filters as removable chips. */
-export function ActiveFilterChips({ className }: { className?: string }): React.JSX.Element | null {
+export function ActiveFilterChips({
+  className,
+  statusOptions,
+}: {
+  className?: string
+  statusOptions?: Array<{ value: string; label: string }>
+}): React.JSX.Element | null {
   const filters = useFilterStore((s) => s.filters)
   const toggleInFilter = useFilterStore((s) => s.toggleInFilter)
   const setFilter = useFilterStore((s) => s.setFilter)
@@ -250,7 +279,7 @@ export function ActiveFilterChips({ className }: { className?: string }): React.
       label: DOMAIN_LABEL[d],
       remove: () => toggleInFilter('domains', d),
     })),
-    ...filters.statuses.map((s) => ({ key: `st-${s}`, label: s, remove: () => toggleInFilter('statuses', s) })),
+    ...filters.statuses.map((s) => ({ key: `st-${s}`, label: statusOptions?.find((o) => o.value === s)?.label ?? enumLabel(s), remove: () => toggleInFilter('statuses', s) })),
   ]
 
   if (filters.search.trim()) {
