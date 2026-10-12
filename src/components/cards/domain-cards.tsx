@@ -24,6 +24,7 @@ import type { Ward } from '@/types/organisation'
 import type { AIEvaluation, AIModel, AIRecommendationBlock } from '@/types/ai'
 import { cn } from '@/utils/cn'
 import { formatCompact, formatCrore, formatDate, formatDuration, formatRelative } from '@/utils/format'
+import { SHADE, type Shade } from '@/components/ui/shade'
 import { departmentName, officerDisplayName, wardName } from '@/data/reference'
 import { EVIDENCE_BY_ID } from '@/data/evidence.data'
 import { ROUTES } from '@/config/navigation'
@@ -43,6 +44,14 @@ import { t } from '@/i18n'
    Shared shell
    ========================================================================== */
 
+const SEVERITY_SHADE: Record<Severity, Shade> = {
+  critical: 'red',
+  high: 'orange',
+  medium: 'amber',
+  low: 'blue',
+  info: 'teal',
+}
+
 function CardShell({
   severity,
   onClick,
@@ -59,8 +68,12 @@ function CardShell({
   children: ReactNode
 }): React.JSX.Element {
   const shell = cn(
-    'group flex w-full gap-3 rounded-[10px] border bg-surface p-3.5 text-left shadow-card transition-shadow',
-    active ? 'border-govt-300 shadow-raised' : 'border-ink-100',
+    'group flex w-full gap-3 rounded-[10px] border p-3.5 text-left shadow-card transition-shadow',
+    // The platform's tinted card look (`@/components/ui/shade`), shaded by
+    // the item's severity; an item without one takes the informational
+    // blue / teal.
+    SHADE[severity ? SEVERITY_SHADE[severity] : 'auto'].tile,
+    active && 'border-govt-400 shadow-raised ring-1 ring-govt-300',
     (onClick || to) && 'cursor-pointer hover:shadow-raised',
     className,
   )
@@ -258,12 +271,12 @@ export function DecisionCard({
       <MetaRow>
         <span className="inline-flex items-center gap-1">
           <GitBranch className="h-3 w-3" />
-          {decision.alternatives.length} alternatives
+          {t('{0} alternatives', decision.alternatives.length)}
         </span>
-        <span className="numeric">{formatCrore(decision.financialImpactCrore)} impact</span>
+        <span className="numeric">{t('{0} impact', formatCrore(decision.financialImpactCrore))}</span>
         <span className="inline-flex items-center gap-1">
           <FileSearch className="h-3 w-3" />
-          {decision.evidenceIds.length} evidence
+          {t('{0} evidence', decision.evidenceIds.length)}
         </span>
         <span className={cn('inline-flex items-center gap-1', overdue && 'font-semibold text-crit-600')}>
           <CalendarClock className="h-3 w-3" />
@@ -312,7 +325,7 @@ export function AlertCard({
         <div className="flex-1" />
         <Badge tone={breached ? 'critical' : alert.slaRemainingHours < alert.slaHours * 0.25 ? 'warn' : 'neutral'} icon={<Timer className="h-3 w-3" />}>
           {breached
-            ? `SLA breached by ${formatDuration(Math.abs(alert.slaRemainingHours))}`
+            ? t('SLA breached by {0}', formatDuration(Math.abs(alert.slaRemainingHours)))
             : `${formatDuration(alert.slaRemainingHours)} to SLA`}
         </Badge>
       </div>
@@ -578,7 +591,7 @@ export function IncidentCard({
           <Users className="h-3 w-3" />
           {formatCompact(incident.affectedPopulation)}{' '}{t('affected (estimate)')}
         </span>
-        <span>{incident.responseTeams.length} teams</span>
+        <span>{t('{0} teams', incident.responseTeams.length)}</span>
         <span>{t('Detected {0}', formatRelative(incident.detectedAt))}</span>
       </MetaRow>
     </CardShell>
@@ -719,14 +732,14 @@ export function AIRecommendationCard({
         <div className="flex-1" />
         <Badge tone={status === 'accepted' ? 'positive' : status === 'rejected' ? 'critical' : 'warn'}>
           {status === 'accepted'
-            ? 'Accepted by officer'
+            ? t('Accepted by officer')
             : status === 'modified'
-              ? 'Modified by officer'
+              ? t('Modified by officer')
               : status === 'rejected'
-                ? 'Rejected by officer'
+                ? t('Rejected by officer')
                 : status === 'escalated'
                   ? 'Escalated'
-                  : 'Requires human approval'}
+                  : t('Requires human approval')}
         </Badge>
       </div>
 

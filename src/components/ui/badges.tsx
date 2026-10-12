@@ -282,11 +282,11 @@ export function ProvenanceBadge({
   const detail: Record<DataOrigin, string> = {
     demonstration: municipality.dataProvenanceStatement,
     'simulated-scenario':
-      'This figure is produced by a scenario simulation using deterministic local logic. It is a simulation, not a forecast.',
+      t('This figure is produced by a scenario simulation using deterministic local logic. It is a simulation, not a forecast.'),
     'derived-metric':
-      'This figure is derived from source records by a published computation. Open the lineage view to inspect every stage.',
+      t('This figure is derived from source records by a published computation. Open the lineage view to inspect every stage.'),
     'model-output':
-      'This figure is produced by a model. Model identity, version and confidence are recorded against the request.',
+      t('This figure is produced by a model. Model identity, version and confidence are recorded against the request.'),
   }
   return (
     <Badge

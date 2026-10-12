@@ -27,12 +27,15 @@ const rows = []
 
 for (const file of pages) {
   const src = readFileSync(file, 'utf8')
-  const name = file.replace('src/pages/', '')
+  const name = file.replaceAll('\\', '/').replace('src/pages/', '')
 
   const rendersFilterBar = /<FilterBar\b/.test(src)
   const usesFilterStore = /useFilterStore\(/.test(src)
-  // Does it read the store's filter values, not just render the bar?
-  const readsStoreFilters = /useFilterStore\(\s*\(s\)\s*=>\s*s\.filters\s*\)/.test(src)
+  // Does it read the store's filter values, not just render the bar? Either the
+  // whole filter object (`(s) => s.filters`) or one field of it
+  // (`(s) => s.filters.search`) counts - a page that renders only the search
+  // control legitimately subscribes to the search string alone.
+  const readsStoreFilters = /useFilterStore\(\s*\(?\s*(\w+)\s*\)?\s*=>\s*\1\.filters\b/.test(src)
 
   // Local filter state: useState hooks whose name suggests a filter.
   const localFilterStates = [

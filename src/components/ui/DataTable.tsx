@@ -104,12 +104,17 @@ export interface DataTableProps<T> {
   ariaLabel?: string
 }
 
+function sortIcon(active: boolean, direction: 'asc' | 'desc' | undefined) {
+  if (!active) return <SlidersHorizontal className="h-2.5 w-2.5 opacity-25" />
+  return direction === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+}
+
 export function DataTable<T>({
   rows,
   columns,
   rowKey,
   searchable = true,
-  searchPlaceholder = 'Search records',
+  searchPlaceholder = t('Search records'),
   pageSize: requestedPageSize,
   fixedPageSize,
   stickyHeader,
@@ -124,8 +129,8 @@ export function DataTable<T>({
   exportable = true,
   exportName = 'Register',
   exportFilters,
-  emptyTitle = 'No records match the current filters',
-  emptyDetail = 'Adjust the filters above, or clear the search term, to widen the result set.',
+  emptyTitle = t('No records match the current filters'),
+  emptyDetail = t('Adjust the filters above, or clear the search term, to widen the result set.'),
   initialSort,
   rowAccent,
   dense,
@@ -306,7 +311,7 @@ export function DataTable<T>({
                                 prev.includes(col.id) ? prev.filter((c) => c !== col.id) : [...prev, col.id],
                               )
                             }
-                            className="h-3.5 w-3.5 rounded-[3px] border-ink-300 text-govt-600"
+                            className="h-4 w-4 rounded-[3px] border-ink-300 text-govt-600"
                           />
                           <span className="truncate">{typeof col.header === 'string' ? col.header : col.id}</span>
                         </label>
@@ -320,7 +325,7 @@ export function DataTable<T>({
         </div>
       )}
 
-      <div className={cn('scrollbar-slim min-w-0 overflow-auto')} style={maxHeight ? { maxHeight } : undefined}>
+      <div className={cn('scrollbar-slim min-w-0 overflow-auto [contain:paint]')} style={maxHeight ? { maxHeight } : undefined}>
         <table className="w-full min-w-full border-collapse text-left" aria-label={ariaLabel}>
           <thead className={cn(stickyHeader && 'sticky top-0 z-10')}>
             <tr className="border-b border-ink-100 bg-surface-sunken">
@@ -332,7 +337,7 @@ export function DataTable<T>({
                     aria-label={t('Select all rows on this page')}
                     checked={allPagedSelected}
                     onChange={toggleAll}
-                    className="h-3.5 w-3.5 rounded-[3px] border-ink-300 text-govt-600"
+                    className="h-4 w-4 rounded-[3px] border-ink-300 text-govt-600"
                   />
                 </th>
               ) : null}
@@ -353,7 +358,24 @@ export function DataTable<T>({
                     )}
                     aria-sort={active ? (sort?.direction === 'asc' ? 'ascending' : 'descending') : undefined}
                   >
-                    {sortable ? (
+                    {sortable && typeof col.header !== 'string' ? (
+                      // A rich header can carry its own control (an explanation
+                      // hint is a button), and a button may not sit inside another.
+                      // The header stays outside; the sort control is the icon.
+                      <span
+                        className={cn('inline-flex items-center gap-1', col.align === 'right' && 'flex-row-reverse')}
+                      >
+                        {col.header}
+                        <button
+                          type="button"
+                          onClick={() => toggleSort(col)}
+                          aria-label={t('Sort')}
+                          className={cn('transition-colors hover:text-ink-800', active && 'text-govt-700')}
+                        >
+                          {sortIcon(active, sort?.direction)}
+                        </button>
+                      </span>
+                    ) : sortable ? (
                       <button
                         type="button"
                         onClick={() => toggleSort(col)}
@@ -364,15 +386,7 @@ export function DataTable<T>({
                         )}
                       >
                         {col.header}
-                        {active ? (
-                          sort?.direction === 'asc' ? (
-                            <ArrowUp className="h-3 w-3" />
-                          ) : (
-                            <ArrowDown className="h-3 w-3" />
-                          )
-                        ) : (
-                          <SlidersHorizontal className="h-2.5 w-2.5 opacity-25" />
-                        )}
+                        {sortIcon(active, sort?.direction)}
                       </button>
                     ) : (
                       col.header
@@ -434,7 +448,7 @@ export function DataTable<T>({
                             current.includes(key) ? current.filter((k) => k !== key) : [...current, key],
                           )
                         }}
-                        className="h-3.5 w-3.5 rounded-[3px] border-ink-300 text-govt-600"
+                        className="h-4 w-4 rounded-[3px] border-ink-300 text-govt-600"
                       />
                     </td>
                   ) : null}
@@ -469,7 +483,7 @@ export function DataTable<T>({
       {pageSize && sorted.length > pageSize ? (
         <div className="flex flex-wrap items-center justify-between gap-2 border-t border-ink-100 px-3 py-2">
           <p className="numeric text-xs text-ink-500">
-            {t('Showing')}{' '}{safePage * pageSize + 1}–{Math.min((safePage + 1) * pageSize, sorted.length)} of{' '}
+            {t('Showing')}{' '}{safePage * pageSize + 1}–{Math.min((safePage + 1) * pageSize, sorted.length)} {t('of')}{' '}
             {sorted.length.toLocaleString('en-IN')}
             {filtered.length !== rows.length ? (
               <span className="ml-1 text-ink-400">{t('(filtered from {0})', rows.length.toLocaleString('en-IN'))}</span>

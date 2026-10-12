@@ -276,6 +276,7 @@ export function TestingPage(): React.JSX.Element {
 
       <Card flush>
         <CardHeader
+          bordered
           icon={<Layers className="h-4 w-4" />}
           title={t('Coverage register')}
           description={t('Showing {0} of {1} checks.', filtered.length, rows.length)}

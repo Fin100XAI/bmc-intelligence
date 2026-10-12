@@ -297,7 +297,7 @@ export function Sidebar({
             'flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium text-rail-muted transition-colors hover:bg-ink-50 hover:text-rail-text',
             collapsed && 'justify-center px-0',
           )}
-          aria-label={collapsed ? 'Expand navigation' : 'Collapse navigation'}
+          aria-label={collapsed ? t('Expand navigation') : t('Collapse navigation')}
         >
           {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
           {!collapsed ? <span>{t('Collapse')}</span> : null}

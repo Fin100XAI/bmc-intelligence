@@ -774,6 +774,79 @@
 }
 
 /* ==========================================================================
+   Auto shade - the tinted card look for a figure with no particular meaning.
+
+   Cards whose tone says nothing (neutral / default) take the informational
+   shades, alternating blue and teal down a row of siblings so a strip of
+   plain counts never reads as one block of a single colour. Everything
+   resolves through custom properties so a nested auto card re-tints its own
+   chip and figure. `src/components/ui/shade.ts` hands these classes out.
+   Unlayered on purpose, like `.metric-cycle` above, but it sets no colour a
+   utility on the same element would also set.
+   ========================================================================== */
+
+.shade-auto {
+  --sh-bg: var(--color-google-blue-50);
+  --sh-border: var(--color-google-blue-200);
+  --sh-chip: var(--color-google-blue-600);
+  --sh-value: var(--color-google-blue-700);
+  background-color: var(--sh-bg);
+  border-color: var(--sh-border);
+}
+.shade-auto:nth-child(even) {
+  --sh-bg: var(--color-intel-50);
+  --sh-border: var(--color-intel-200);
+  --sh-chip: var(--color-intel-600);
+  --sh-value: var(--color-intel-700);
+}
+.shade-auto .shade-chip,
+.shade-chip.shade-auto {
+  background-color: var(--sh-chip);
+  color: #ffffff;
+}
+.shade-auto .shade-value {
+  color: var(--sh-value);
+}
+
+/* GovPanel's automatic band: a panel left untoned takes the next wash in a
+   blue / green / amber / teal cycle among its siblings, so a column of
+   panels reads as distinct returns. Red is left out - it means risk. */
+.gov-panel-auto {
+  --gp-band: var(--color-google-blue-50);
+  --gp-title: var(--color-google-blue-900);
+  --gp-support: var(--color-google-blue-700);
+  --gp-border: var(--color-google-blue-100);
+}
+.gov-panel-auto:nth-child(4n + 2) {
+  --gp-band: var(--color-google-green-50);
+  --gp-title: var(--color-google-green-900);
+  --gp-support: var(--color-google-green-700);
+  --gp-border: var(--color-google-green-100);
+}
+.gov-panel-auto:nth-child(4n + 3) {
+  --gp-band: var(--color-google-yellow-50);
+  --gp-title: var(--color-google-yellow-900);
+  --gp-support: var(--color-google-yellow-800);
+  --gp-border: var(--color-google-yellow-200);
+}
+.gov-panel-auto:nth-child(4n + 4) {
+  --gp-band: var(--color-intel-50);
+  --gp-title: var(--color-intel-900);
+  --gp-support: var(--color-intel-700);
+  --gp-border: var(--color-intel-100);
+}
+.gov-panel-auto > .gov-panel-band {
+  background-color: var(--gp-band);
+  border-color: var(--gp-border);
+}
+.gov-panel-auto > .gov-panel-band > h2 {
+  color: var(--gp-title);
+}
+.gov-panel-auto > .gov-panel-band > .gov-panel-support {
+  color: var(--gp-support);
+}
+
+/* ==========================================================================
    Utilities
    ========================================================================== */
 
@@ -1117,6 +1190,32 @@
 .metric-grid > *:hover {
   transform: translateY(-1px);
   box-shadow: 0 6px 18px -8px rgb(15 34 87 / 0.25);
+}
+/* A tinted, meaning-shaded card (`shade-tile`, see src/components/ui/shade.ts)
+   already says what it is in its own colour: no wash over it, and no
+   position-cycled accent rule that would clash with it. */
+.metric-grid > .shade-tile {
+  background-image: none;
+}
+.metric-grid > .shade-tile::before {
+  content: none;
+}
+/* A plain white card a page placed straight into a metric grid is a stat
+   card by definition: it takes the informational blue / teal tint too, so
+   no figure on any page is left on bare white. Cards that already carry a
+   reading (critical / warn / positive washes) are not `bg-surface` and keep
+   their own colour. */
+.metric-grid > .bg-surface:not(.shade-tile) {
+  background-color: var(--color-google-blue-50);
+  border-color: var(--color-google-blue-200);
+  background-image: none;
+}
+.metric-grid > .bg-surface:not(.shade-tile):nth-child(even) {
+  background-color: var(--color-intel-50);
+  border-color: var(--color-intel-200);
+}
+.metric-grid > .bg-surface:not(.shade-tile)::before {
+  content: none;
 }
 /* Only neutral figures turn navy; a figure coloured to signal a state
    (critical red, healthy green) keeps its colour. */

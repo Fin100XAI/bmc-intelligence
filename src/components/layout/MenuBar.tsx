@@ -335,7 +335,7 @@ export function MenuBar({ badges }: { badges: SidebarBadges }): React.JSX.Elemen
          mistake rather than as a hierarchy.
          The hairline is white at low opacity rather than a darker step of any
          ramp, so no third colour enters the band. */
-      className="relative z-30 hidden shrink-0 border-b border-white/10 bg-govt-900 lg:block"
+      className="relative z-30 block shrink-0 border-b border-white/10 bg-govt-900"
     >
       <div className="mx-auto max-w-[1600px] px-3">
         <div ref={barRef} className="relative flex items-center">
@@ -374,8 +374,11 @@ export function MenuBar({ badges }: { badges: SidebarBadges }): React.JSX.Elemen
                 data-section={section.id}
                 aria-haspopup="true"
                 aria-expanded={isOpen}
-                onPointerEnter={() => scheduleOpen(section.id)}
-                onPointerLeave={scheduleClose}
+                // Hover-to-open is for a mouse. On a touch screen the tap alone
+                // decides, or the synthetic pointerenter opens the panel and the
+                // click that follows closes it again.
+                onPointerEnter={(event) => event.pointerType === 'mouse' && scheduleOpen(section.id)}
+                onPointerLeave={(event) => event.pointerType === 'mouse' && scheduleClose()}
                 onClick={() => (isOpen ? closeNow() : setOpenId(section.id))}
                 onKeyDown={(event) => onTriggerKeyDown(event, index)}
                 className={cn(
@@ -459,7 +462,7 @@ export function MenuBar({ badges }: { badges: SidebarBadges }): React.JSX.Elemen
             <div
               ref={panelRef}
               onPointerEnter={clearTimers}
-              onPointerLeave={scheduleClose}
+              onPointerLeave={(event) => event.pointerType === 'mouse' && scheduleClose()}
               style={{ left: panelPos.left, top: panelPos.top }}
               className={cn(
                 'animate-in-fade absolute z-40 max-h-[70vh] overflow-y-auto',
@@ -474,7 +477,9 @@ export function MenuBar({ badges }: { badges: SidebarBadges }): React.JSX.Elemen
               <ul
                 className={cn(
                   'grid gap-0.5',
-                  openSection.items.length > 5 ? 'w-[38rem] grid-cols-2' : 'w-[19rem] grid-cols-1',
+                  openSection.items.length > 5
+                    ? 'w-[min(38rem,calc(100vw-1.5rem))] grid-cols-1 sm:grid-cols-2'
+                    : 'w-[min(19rem,calc(100vw-1.5rem))] grid-cols-1',
                 )}
               >
                 {openSection.items.map(renderItem)}

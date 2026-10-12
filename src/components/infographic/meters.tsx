@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { CHART_COLOURS } from '@/components/charts'
 import { formatNumber } from '@/utils/format'
 import { cn } from '@/utils/cn'
+import { SHADE, autoShade } from '@/components/ui/shade'
 import type { Severity } from '@/types/common'
 import type { InfoTone } from './index'
 
@@ -227,11 +228,13 @@ export function StatChip({
   caption: string
   tone?: InfoTone
 }): React.JSX.Element {
+  // Tinted by meaning, like every card in the platform (`@/components/ui/shade`).
+  const s = SHADE[autoShade(tone, value, caption)]
   return (
-    <div className="flex min-w-0 items-center gap-2 rounded-lg border border-ink-100 bg-surface-sunken px-2.5 py-2">
-      <span className={cn('shrink-0', TONE_TEXT[tone])}>{icon}</span>
+    <div className={cn('flex min-w-0 items-center gap-2 rounded-lg border px-2.5 py-2', s.tile)}>
+      <span className={cn('flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-white', s.chip)}>{icon}</span>
       <div className="min-w-0">
-        <p className={cn('numeric text-lg leading-none font-bold tabular-nums', TONE_TEXT[tone])}>{value}</p>
+        <p className={cn('numeric text-lg leading-none font-bold tabular-nums', s.value)}>{value}</p>
         <p className="mt-0.5 truncate text-[0.625rem] text-ink-500">{caption}</p>
       </div>
     </div>

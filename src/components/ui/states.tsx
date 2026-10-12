@@ -1,5 +1,6 @@
 import { type ReactNode } from 'react'
-import { AlertTriangle, Ban, Clock, Inbox, RefreshCw, ShieldX } from 'lucide-react'
+import { AlertTriangle, Ban, Clock, FilterX, Inbox, RefreshCw, ShieldX } from 'lucide-react'
+import { useFilterStore } from '@/stores/ui.store'
 import { formatRelative } from '@/utils/format'
 import { cn } from '@/utils/cn'
 import { Button, Card } from './primitives'
@@ -34,7 +35,7 @@ export function SkeletonText({ lines = 3, className }: { lines?: number; classNa
    ========================================================================== */
 
 export function LoadingState({
-  label = 'Retrieving intelligence',
+  label = t('Retrieving intelligence'),
   variant = 'block',
   rows = 4,
   className,
@@ -101,7 +102,7 @@ export function LoadingState({
    ========================================================================== */
 
 export function ErrorState({
-  title = 'Intelligence could not be retrieved',
+  title = t('Intelligence could not be retrieved'),
   detail,
   onRetry,
   className,
@@ -120,7 +121,7 @@ export function ErrorState({
         <p className="text-[0.8125rem] font-semibold text-crit-700">{title}</p>
         <p className="mt-0.5 text-xs leading-relaxed text-ink-600">
           {detail ??
-            'The service did not return a result. No partial or unverified figures are shown in place of the missing data.'}
+            t('The service did not return a result. No partial or unverified figures are shown in place of the missing data.')}
         </p>
         {onRetry ? (
           <Button size="xs" variant="outline" className="mt-2.5" onClick={onRetry} icon={<RefreshCw className="h-3 w-3" />}>
@@ -137,7 +138,7 @@ export function ErrorState({
    ========================================================================== */
 
 export function EmptyState({
-  title = 'Nothing to display',
+  title = t('Nothing to display'),
   detail,
   icon,
   action,
@@ -151,20 +152,36 @@ export function EmptyState({
   className?: string
   compact?: boolean
 }): React.JSX.Element {
+  // An empty panel is most often the page filters at work (a ward picked
+  // in the filter bar narrows every panel at once). Say so, and offer the one
+  // click that fixes it, rather than leaving the officer looking at nothing.
+  const activeFilters = useFilterStore((s) => s.activeCount())
+  const resetFilters = useFilterStore((s) => s.resetFilters)
+  const fallbackAction =
+    !action && activeFilters > 0 ? (
+      <Button size="sm" variant="primary" icon={<FilterX className="h-3.5 w-3.5" />} onClick={resetFilters}>
+        {t('Clear {0} page filter(s)', activeFilters)}
+      </Button>
+    ) : null
   return (
     <div
       className={cn(
         'flex flex-col items-center justify-center rounded-xl border border-dashed border-govt-200 bg-gradient-to-b from-govt-50/60 to-surface text-center',
-        compact ? 'px-4 py-6' : 'px-6 py-12',
+        compact ? 'px-4 py-7' : 'px-6 py-12',
         className,
       )}
     >
       <span className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-navy-900 text-white shadow-md">
-        {icon ?? <Inbox className="h-4 w-4" aria-hidden />}
+        {icon ?? <Inbox className="h-5 w-5" aria-hidden />}
       </span>
       <p className="text-[0.875rem] font-bold text-ink-900">{title}</p>
       {detail ? <p className="mt-1 max-w-md text-xs leading-relaxed text-ink-600">{detail}</p> : null}
-      {action ? <div className="mt-3">{action}</div> : null}
+      {!detail && activeFilters > 0 ? (
+        <p className="mt-1 max-w-md text-xs leading-relaxed text-ink-600">
+          {t('{0} page filter(s) are narrowing this view - a ward, department or date range chosen in the filter bar applies to every panel.', activeFilters)}
+        </p>
+      ) : null}
+      {action ?? fallbackAction ? <div className="mt-3">{action ?? fallbackAction}</div> : null}
     </div>
   )
 }
@@ -223,7 +240,7 @@ export function PartialDataWarning({
     >
       <AlertTriangle className="mt-px h-3.5 w-3.5 shrink-0" aria-hidden />
       <p className="leading-relaxed">
-        <span className="font-semibold">{t('Partial data.')}</span> {available} of {expected}{' '}{t('expected sources reported for this period.')}{' '}{detail ?? 'Figures are computed from the sources that reported and should be read with that limitation.'}
+        <span className="font-semibold">{t('Partial data.')}</span> {t('{0} of {1}', available, expected)}{' '}{t('expected sources reported for this period.')}{' '}{detail ?? t('Figures are computed from the sources that reported and should be read with that limitation.')}
       </p>
     </div>
   )
@@ -270,7 +287,7 @@ export function RedactedValue({ reason, className }: { reason?: string; classNam
   return (
     <span
       className={cn('inline-flex items-center gap-1 rounded bg-ink-100 px-1.5 py-0.5 text-[0.6875rem] text-ink-400', className)}
-      title={reason ?? 'Withheld: the classification of this value exceeds your authorised ceiling.'}
+      title={reason ?? t('Withheld: the classification of this value exceeds your authorised ceiling.')}
     >
       <Ban className="h-3 w-3" aria-hidden />
       {t('Withheld')}

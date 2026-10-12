@@ -6,6 +6,8 @@ import { cn } from '@/utils/cn'
 import { ConfidenceBadge, FreshnessLine, ProvenanceBadge, TrendBadge } from '@/components/ui/badges'
 import { InfoHint } from '@/components/ui/overlays'
 import { MiniBar, Sparkline } from '@/components/charts/charts'
+import { SHADE, autoShade, shadeForTone, type Shade } from '@/components/ui/shade'
+import { meaningIcon } from '@/components/ui/meaning-icon'
 
 /**
  * The single metric primitive used across every intelligence surface.
@@ -59,6 +61,17 @@ export interface MetricCardProps {
    * distinct measure rather than one uniform ledger.
    */
   background?: 'red' | 'amber' | 'green' | 'blue' | 'teal' | 'orange' | 'gold' | 'neutral'
+  /**
+   * The meaning-coloured card look (see `@/components/ui/shade`): tinted wash,
+   * matching border, solid icon chip and the figure in the same hue - the
+   * look of the Decision Room's brief tiles, now the platform's card style.
+   * Left unset it is derived: from the figure's reading (`tone` critical
+   * red, warn amber, positive green), else from `background` when the call
+   * site named a wash, else gold for money and the alternating
+   * informational blue / teal. An
+   * explicit shade overrides; `'none'` keeps the old plain ruled cell.
+   */
+  shade?: Shade | 'tone' | 'none'
   /** Explanation shown behind an info affordance. */
   explanation?: ReactNode
   size?: 'sm' | 'md' | 'lg'
@@ -75,6 +88,25 @@ const BACKGROUND_WASH: Record<NonNullable<MetricCardProps['background']>, string
   orange: 'bg-risk-50',
   gold: 'bg-gold-50',
   neutral: 'bg-ink-50',
+}
+
+/**
+ * Red / amber / green washes were handed out by position (an identity cycle),
+ * not by meaning. On the shaded card they would make a plain count read as
+ * critical or healthy, so a neutral figure on one of them takes the
+ * meaning-based shade instead (gold for money, else blue / teal).
+ */
+const IDENTITY_CYCLE = new Set<NonNullable<MetricCardProps['background']>>(['red', 'amber', 'green'])
+
+const BACKGROUND_SHADE: Record<NonNullable<MetricCardProps['background']>, Shade> = {
+  red: 'red',
+  amber: 'amber',
+  green: 'green',
+  blue: 'blue',
+  teal: 'teal',
+  orange: 'orange',
+  gold: 'gold',
+  neutral: 'neutral',
 }
 
 /**
@@ -115,17 +147,30 @@ export function MetricCard({
   explanation,
   tone = 'default',
   background,
+  shade,
   size = 'md',
   className,
   footer,
 }: MetricCardProps): React.JSX.Element {
   const interactive = Boolean(to || onClick)
+  const shadeName: Shade | null =
+    shade === 'none'
+      ? null
+      : shade === 'tone'
+        ? shadeForTone(tone)
+        : (shade ??
+          (tone !== 'default' && tone !== 'info'
+            ? shadeForTone(tone)
+            : background && !IDENTITY_CYCLE.has(background)
+              ? BACKGROUND_SHADE[background]
+              : autoShade(tone, value, label, unit)))
+  const sh = shadeName ? SHADE[shadeName] : null
 
-  const body = (
+  const content = (
     <>
       <div className="flex items-start justify-between gap-2">
         <div className="flex min-w-0 items-center gap-1.5">
-          {icon ? (
+          {icon && !sh ? (
             <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-ink-200 bg-surface-sunken text-ink-500">
               {icon}
             </span>
@@ -145,7 +190,7 @@ export function MetricCard({
       <div className="mt-1.5 flex items-end justify-between gap-2">
         <div className="min-w-0">
           <div className="flex items-baseline gap-1">
-            <span className={cn('numeric leading-none font-bold tabular-nums', VALUE_SIZE[size], VALUE_TONE[tone])}>
+            <span className={cn('numeric leading-none font-bold tabular-nums', VALUE_SIZE[size], sh ? sh.value : VALUE_TONE[tone])}>
               {value}
             </span>
             {unit ? <span className="text-[0.8125rem] font-medium text-ink-400">{unit}</span> : null}
@@ -184,17 +229,33 @@ export function MetricCard({
       )}
 
       {freshness ? <FreshnessLine freshness={freshness} className="mt-2" compact /> : null}
-      {footer ? <div className="mt-2 border-t border-ink-100 pt-2">{footer}</div> : null}
+      {footer ? <div className={cn('mt-2 border-t pt-2', sh ? 'border-black/10' : 'border-ink-100')}>{footer}</div> : null}
     </>
+  )
+
+  // The shaded card is laid out like the Executive Overview and Decision
+  // Room cards: a solid icon chip on the left (the call site's icon, or one
+  // fitting the label when none was given), the figure and its reading
+  // beside it.
+  const body = sh ? (
+    <div className="flex items-start gap-2.5">
+      <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', sh.chip)}>
+        {icon ?? meaningIcon(label, shadeName!)}
+      </span>
+      <div className="min-w-0 flex-1">{content}</div>
+    </div>
+  ) : (
+    content
   )
 
   const shell = cn(
     // A soft corner, not a right angle: a true right angle reads as an
     // unstyled box on screen. The same corner every panel on the platform
     // now carries.
-    'group relative block overflow-hidden rounded-lg border border-ink-200 p-3 shadow-xs',
-    background ? BACKGROUND_WASH[background] : 'bg-surface',
-    interactive && 'cursor-pointer transition-colors hover:border-govt-300 hover:bg-govt-50/50',
+    'group relative block overflow-hidden rounded-lg border p-3 shadow-xs',
+    sh ? sh.tile : cn('border-ink-200', background ? BACKGROUND_WASH[background] : 'bg-surface'),
+    interactive &&
+      (sh ? 'cursor-pointer transition-shadow hover:shadow-sm' : 'cursor-pointer transition-colors hover:border-govt-300 hover:bg-govt-50/50'),
     className,
   )
 

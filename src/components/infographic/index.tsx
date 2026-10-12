@@ -4,6 +4,8 @@ import { ScoreDial } from '@/components/ui/primitives'
 import { OPERATIONAL_STATE_LABEL, type OperationalState } from '@/types/common'
 import { formatNumber, formatPercent } from '@/utils/format'
 import { t } from '@/i18n'
+import { SHADE, autoShade, shadeForTone, type Shade } from '@/components/ui/shade'
+import { cn } from '@/utils/cn'
 
 /**
  * Infographic building blocks, shared by the Command Centre pages.
@@ -45,27 +47,50 @@ export const TONE_COLOUR: Record<InfoTone, string> = {
   critical: CHART_COLOURS.critical,
 }
 
-/** A headline figure: icon disc, large number, label and a one-line reading. */
+/** `shade` unset or `'tone'`: derived from the tone (and gold for money); an explicit shade overrides. */
+function resolveShade(shade: Shade | 'tone' | undefined, tone: InfoTone, ...moneyHints: unknown[]): Shade {
+  if (shade === 'tone') return shadeForTone(tone)
+  return shade ?? autoShade(tone, ...moneyHints)
+}
+
+/**
+ * A headline figure: icon chip, large number, label and a one-line reading.
+ *
+ * Drawn in the tinted, meaning-coloured look of the Decision Room's brief
+ * tiles (see `@/components/ui/shade`) - tinted wash, matching border, solid
+ * icon chip, figure in the same hue. Left unset, `shade` follows `tone`
+ * (critical red, risk orange, warn amber, positive green; a neutral figure
+ * takes gold when it is money, else the alternating blue / teal). An explicit
+ * `shade` overrides; `'none'` keeps the old plain white card.
+ */
 export function KpiTile({
   icon,
   label,
   value,
   reading,
   tone = 'neutral',
+  shade,
 }: {
   icon: ReactNode
   label: string
   value: ReactNode
   reading?: ReactNode
   tone?: InfoTone
+  shade?: Shade | 'tone' | 'none'
 }): React.JSX.Element {
+  const s = shade === 'none' ? null : SHADE[resolveShade(shade, tone, value, label)]
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-ink-200 bg-surface p-3 shadow-xs">
-      <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ring-1 ${TONE_RING[tone]}`}>
+    <div className={cn('flex items-center gap-3 rounded-xl border p-3 shadow-xs', s ? s.tile : 'border-ink-200 bg-surface')}>
+      <span
+        className={cn(
+          'flex h-11 w-11 shrink-0 items-center justify-center',
+          s ? cn('rounded-xl text-white', s.chip) : `rounded-full ring-1 ${TONE_RING[tone]}`,
+        )}
+      >
         {icon}
       </span>
       <div className="min-w-0">
-        <p className={`numeric text-2xl leading-none font-bold tabular-nums ${TONE_TEXT[tone]}`}>{value}</p>
+        <p className={cn('numeric text-2xl leading-none font-bold tabular-nums', s ? s.value : TONE_TEXT[tone])}>{value}</p>
         <p className="mt-1 truncate text-[0.6875rem] font-semibold text-ink-700">{label}</p>
         {reading ? <p className="truncate text-[0.625rem] text-ink-500">{reading}</p> : null}
       </div>
@@ -89,7 +114,7 @@ export function HealthHero({
   const delta = Math.round((score - first) * 10) / 10
   const tone: InfoTone = score >= 78 ? 'positive' : score >= 60 ? 'neutral' : score >= 45 ? 'warn' : 'critical'
   return (
-    <div className="flex flex-col items-center gap-4 rounded-xl border border-ink-200 bg-gradient-to-br from-govt-50 via-surface to-surface p-4 shadow-xs sm:flex-row">
+    <div className={cn('flex flex-col items-center gap-4 rounded-xl border p-4 shadow-xs sm:flex-row', SHADE[shadeForTone(tone)].tile)}>
       <ScoreDial score={score} size={150} label={t('of 100')} caption={t('City health index')} />
       <div className="min-w-0 flex-1 space-y-2 text-center sm:text-left">
         <p className="text-[0.6875rem] font-bold tracking-[0.09em] text-ink-500 uppercase">{t('Overall position')}</p>
@@ -187,7 +212,10 @@ export function TargetBar({
   )
 }
 
-/** One infrastructure service as a tile: icon, big reading, a fill meter, a note. */
+/**
+ * One infrastructure service as a tile: icon, big reading, a fill meter, a note.
+ * `shade` works as on `KpiTile`.
+ */
 export function ServiceTile({
   icon,
   label,
@@ -195,6 +223,7 @@ export function ServiceTile({
   meter,
   note,
   tone,
+  shade,
 }: {
   icon: ReactNode
   label: string
@@ -203,23 +232,32 @@ export function ServiceTile({
   meter?: number
   note: string
   tone: InfoTone
+  shade?: Shade | 'tone' | 'none'
 }): React.JSX.Element {
+  const s = shade === 'none' ? null : SHADE[resolveShade(shade, tone, value, label)]
   return (
-    <div className="flex flex-col gap-2 rounded-xl border border-ink-200 bg-surface p-3 shadow-xs">
+    <div className={cn('flex flex-col gap-2 rounded-xl border p-3 shadow-xs', s ? s.tile : 'border-ink-200 bg-surface')}>
       <div className="flex items-center gap-2">
-        <span className={`flex h-8 w-8 items-center justify-center rounded-lg ring-1 ${TONE_RING[tone]}`}>{icon}</span>
+        <span
+          className={cn(
+            'flex h-8 w-8 items-center justify-center rounded-lg',
+            s ? cn('text-white', s.chip) : `ring-1 ${TONE_RING[tone]}`,
+          )}
+        >
+          {icon}
+        </span>
         <span className="text-[0.6875rem] font-semibold text-ink-700">{label}</span>
       </div>
-      <p className={`numeric text-xl leading-none font-bold tabular-nums ${TONE_TEXT[tone]}`}>{value}</p>
+      <p className={cn('numeric text-xl leading-none font-bold tabular-nums', s ? s.value : TONE_TEXT[tone])}>{value}</p>
       {meter !== undefined ? (
-        <div className="h-2 rounded-full bg-ink-100">
+        <div className={cn('h-2 rounded-full', s ? 'bg-white/70' : 'bg-ink-100')}>
           <div
             className="h-full rounded-full"
             style={{ width: `${Math.max(0, Math.min(100, meter))}%`, backgroundColor: TONE_COLOUR[tone] }}
           />
         </div>
       ) : null}
-      <p className="text-[0.625rem] leading-snug text-ink-500">{note}</p>
+      <p className={cn('text-[0.625rem] leading-snug', s ? 'text-ink-600' : 'text-ink-500')}>{note}</p>
     </div>
   )
 }

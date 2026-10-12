@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react'
 import { cn } from '@/utils/cn'
+import { SHADE, autoShade, type Shade } from '@/components/ui/shade'
+import { meaningIcon } from '@/components/ui/meaning-icon'
 
 /**
  * Institutional panel furniture.
@@ -17,7 +19,7 @@ import { cn } from '@/utils/cn'
  * departmental return is read, instead of a mosaic that has to be scanned.
  */
 
-type PanelTone = 'default' | 'primary' | 'critical' | 'muted' | 'red' | 'amber' | 'green'
+type PanelTone = 'default' | 'primary' | 'critical' | 'muted' | 'red' | 'amber' | 'green' | 'blue' | 'teal' | 'gold'
 
 /**
  * Band background, title colour and the hairline that separates the band
@@ -54,7 +56,15 @@ const HEADER_TONE: Record<PanelTone, { band: string; title: string; support: str
   default: { band: 'bg-ink-50', title: 'text-ink-900', support: 'text-ink-600', border: 'border-ink-100' },
   // A shade deeper than `default`, reserved for the one panel on a page that
   // anchors it - a masthead among returns, not another return.
-  primary: { band: 'bg-ink-200', title: 'text-ink-900', support: 'text-ink-700', border: 'border-ink-300' },
+  // Now a deeper blue wash rather than grey ink, so the anchoring panel is
+  // tinted like every other card on the page while still reading a step
+  // heavier than the automatic blue band.
+  primary: {
+    band: 'bg-google-blue-100',
+    title: 'text-google-blue-900',
+    support: 'text-google-blue-800',
+    border: 'border-google-blue-200',
+  },
   // The one tone that stays a solid fill - severity earns weight the other
   // tones deliberately give up.
   critical: { band: 'bg-crit-600', title: 'text-white', support: 'text-white/80', border: 'border-crit-700' },
@@ -85,6 +95,29 @@ const HEADER_TONE: Record<PanelTone, { band: string; title: string; support: str
     support: 'text-google-green-700',
     border: 'border-google-green-100',
   },
+  // Meaning tones for the Command Centre / Decisions pages, matching the
+  // shades in `@/components/ui/shade`: blue for works, cases and
+  // informational registers; teal for intelligence, links and data; gold for
+  // money. Opt-in only - nothing cycles into these.
+  blue: {
+    band: 'bg-google-blue-50',
+    title: 'text-google-blue-900',
+    support: 'text-google-blue-700',
+    border: 'border-google-blue-100',
+  },
+  teal: {
+    band: 'bg-intel-50',
+    title: 'text-intel-900',
+    support: 'text-intel-700',
+    border: 'border-intel-100',
+  },
+  gold: {
+    band: 'bg-gold-50',
+    // No gold step is dark enough to set an 11px title in; ink carries it.
+    title: 'text-ink-800',
+    support: 'text-gold-700',
+    border: 'border-gold-200',
+  },
 }
 
 /**
@@ -102,7 +135,7 @@ export function panelToneForIndex(index: number): PanelTone {
 export function GovPanel({
   title,
   subtitle,
-  tone = 'default',
+  tone,
   actions,
   dense = false,
   className,
@@ -111,6 +144,12 @@ export function GovPanel({
 }: {
   title: ReactNode
   subtitle?: ReactNode
+  /**
+   * Left unset, the band takes the next wash in a blue / green / amber / teal
+   * cycle among its sibling panels (`.gov-panel-auto` in `src/styles/index.css`),
+   * so no page is left with a column of plain grey headers. `'default'` and
+   * `'muted'` take the same cycle.
+   */
   tone?: PanelTone
   actions?: ReactNode
   /** Removes body padding, for panels whose child owns its own edges. */
@@ -119,6 +158,10 @@ export function GovPanel({
   bodyClassName?: string
   children: ReactNode
 }): React.JSX.Element {
+  // A plain band (unset, `default` or `muted`) takes the automatic tinted
+  // cycle, so no page keeps a grey header among its tinted cards.
+  const auto = !tone || tone === 'default' || tone === 'muted'
+  const band = auto ? null : HEADER_TONE[tone]
   return (
     <section
       className={cn(
@@ -126,26 +169,34 @@ export function GovPanel({
         // as an unstyled box on screen, while a soft corner reads as a
         // designed surface. The difference is the whole effect.
         'flex flex-col overflow-hidden rounded-lg bg-surface shadow-xs',
+        auto && 'gov-panel-auto',
         className,
       )}
     >
       <header
         className={cn(
-          'flex items-center gap-2 border-b px-3 py-1.5',
-          HEADER_TONE[tone].band,
-          HEADER_TONE[tone].border,
+          'gov-panel-band flex flex-wrap items-center gap-x-2 gap-y-0.5 border-b px-3 py-1.5',
+          band?.band,
+          band?.border,
         )}
       >
         <h2
           className={cn(
-            'min-w-0 flex-1 truncate text-[0.6875rem] font-bold tracking-[0.09em] uppercase',
-            HEADER_TONE[tone].title,
+            // min-w keeps the title whole on a phone: the subtitle wraps under it
+            // rather than squeezing it to a few letters.
+            'min-w-[9rem] flex-1 truncate text-[0.6875rem] font-bold tracking-[0.09em] uppercase',
+            band?.title,
           )}
         >
           {title}
         </h2>
         {subtitle ? (
-          <span className={cn('shrink-0 text-[0.625rem] font-medium tracking-wide', HEADER_TONE[tone].support)}>
+          <span
+            className={cn(
+              'gov-panel-support max-w-full shrink-0 text-[0.625rem] font-medium tracking-wide',
+              band?.support,
+            )}
+          >
             {subtitle}
           </span>
         ) : null}
@@ -217,22 +268,20 @@ export function GovStat({
   reading?: ReactNode
   tone?: 'default' | 'critical' | 'warn' | 'positive'
 }): React.JSX.Element {
+  // The platform's tinted card look: the reading's shade, gold for money,
+  // else the alternating informational blue / teal.
+  const shadeName = autoShade(tone, value, label, unit)
+  const sh = SHADE[shadeName]
   return (
-    <div className="border-b border-ink-100 px-3 py-2.5 last:border-b-0">
-      <p className="text-[0.625rem] font-bold tracking-[0.08em] text-ink-500 uppercase">{label}</p>
+    <div className={cn('border-b px-3 py-2.5 last:border-b-0', sh.tile)}>
+      <p className="flex items-center gap-1.5 text-[0.625rem] font-bold tracking-[0.08em] text-ink-500 uppercase">
+        <span className={cn('flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-white', sh.chip)}>
+          {meaningIcon(label, shadeName, 'h-3.5 w-3.5')}
+        </span>
+        {label}
+      </p>
       <p className="mt-1 flex items-baseline gap-1">
-        <span
-          className={cn(
-            'numeric text-[1.75rem] leading-none font-bold tabular-nums',
-            tone === 'critical'
-              ? 'text-crit-600'
-              : tone === 'warn'
-                ? 'text-warn-700'
-                : tone === 'positive'
-                  ? 'text-google-green-700'
-                  : 'text-govt-900',
-          )}
-        >
+        <span className={cn('numeric text-[1.75rem] leading-none font-bold tabular-nums', sh.value)}>
           {value}
         </span>
         {unit ? <span className="text-[0.8125rem] font-medium text-ink-400">{unit}</span> : null}
@@ -335,18 +384,26 @@ export function GovStripCell({
   icon?: ReactNode
   background?: 'red' | 'amber' | 'green' | 'blue' | 'teal' | 'gold' | 'neutral'
 }): React.JSX.Element {
-  const toneClass =
-    tone === 'critical'
-      ? 'text-crit-600'
-      : tone === 'warn'
-        ? 'text-warn-700'
-        : tone === 'positive'
-          ? 'text-google-green-700'
-          : 'text-govt-900'
+  // A cell left without a wash takes the one its reading implies (critical
+  // red, warn amber, positive green; gold for money; else the alternating
+  // informational blue / teal). A figure's own reading still colours it on
+  // whichever wash the call site chose.
+  // Red / amber / green washes were handed out by position, not meaning; a
+  // cell given one takes the meaning-based shade instead, so a plain count
+  // never reads as critical or healthy. Blue / teal / gold / neutral washes
+  // were chosen for what the figure is, and stay.
+  const identity = background === 'red' || background === 'amber' || background === 'green'
+  const keepWash = Boolean(background) && !identity
+  const shadeName: Shade =
+    tone !== 'default' ? autoShade(tone) : keepWash ? (background as Shade) : autoShade(tone, value, label)
+  const sh = SHADE[shadeName]
+  const toneClass = sh.value
   return (
-    <div className={cn('min-w-[9.5rem] flex-1 px-4 py-3', background ? STRIP_BACKGROUND[background] : undefined)}>
+    <div className={cn('min-w-[9.5rem] flex-1 px-4 py-3', keepWash ? STRIP_BACKGROUND[background!] : sh.tile)}>
       <p className="flex items-center gap-1.5 text-[0.6875rem] font-bold tracking-[0.09em] text-ink-500 uppercase">
-        {icon ? <span className={cn('shrink-0', toneClass)}>{icon}</span> : null}
+        <span className={cn('flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-white', sh.chip)}>
+          {icon ?? meaningIcon(label, shadeName, 'h-3.5 w-3.5')}
+        </span>
         {label}
       </p>
       <p className={cn('numeric mt-1 text-[1.75rem] leading-none font-bold tabular-nums', toneClass)}>{value}</p>

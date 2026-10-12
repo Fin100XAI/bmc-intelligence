@@ -244,7 +244,7 @@ export function MonsoonIntelligencePage(): React.JSX.Element {
         eyebrow={t('City Intelligence')}
         breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Monsoon Intelligence') }]}
         freshness={freshness}
-        controls={<FilterBar show={['search']} searchPlaceholder="Search stations, drains or wards" />}
+        controls={<FilterBar show={['search']} searchPlaceholder={t('Search stations, drains or wards')} />}
       />
 
       <MonsoonPositionSection

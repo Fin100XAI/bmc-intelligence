@@ -278,7 +278,7 @@ export function CardHeader({
     >
       <div className="min-w-0 flex-1">
         {eyebrow ? (
-          <div className="mb-0.5 text-[0.5625rem] leading-none font-bold tracking-[0.12em] text-white/60 uppercase">
+          <div className="mb-0.5 text-[0.625rem] leading-none font-bold tracking-[0.12em] text-white/60 uppercase">
             {eyebrow}
           </div>
         ) : null}
