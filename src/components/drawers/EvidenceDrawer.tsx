@@ -12,10 +12,11 @@ import { useDrawerStore } from '@/stores/ui.store'
 import { formatDateTime, formatRelative } from '@/utils/format'
 import { cn } from '@/utils/cn'
 import { Badge, ClassificationBadge, ConfidenceBadge } from '@/components/ui/badges'
-import { Button, Card, DefinitionList, DefinitionRow, ProgressBar } from '@/components/ui/primitives'
+import { Button, Card, DefinitionList, DefinitionRow } from '@/components/ui/primitives'
 import { AccessDeniedState, EmptyState } from '@/components/ui/states'
 import { Drawer } from '@/components/ui/overlays'
 import { t } from '@/i18n'
+import { enumLabel } from '@/utils/enum-label'
 
 /**
  * Evidence & provenance drawer.
@@ -42,18 +43,18 @@ export function EvidenceDrawer({ evidenceId }: { evidenceId: string }): React.JS
     return {
       source: `${evidence.sourceSystem} - record ${evidence.sourceRecordRef}, observed ${formatDateTime(evidence.observedAt)}`,
       transformation: evidence.transformation,
-      metric: LINEAGE_BY_ID.get(evidence.lineageId)?.metricLabel ?? 'Derived municipal indicator',
+      metric: LINEAGE_BY_ID.get(evidence.lineageId)?.metricLabel ?? t('Derived municipal indicator'),
       ruleOrModel: evidence.modelId
-        ? `Model ${evidence.modelId} participated in producing this record.`
-        : 'Deterministic rule evaluation against the published departmental threshold. No model participated.',
+        ? t('Model {0} participated in producing this record.', evidence.modelId)
+        : t('Deterministic rule evaluation against the published departmental threshold. No model participated.'),
       intelligence:
-        'Where the evaluated indicator crosses its threshold, an intelligence item is raised with severity and confidence assigned from the driver set and input completeness.',
+        t('Where the evaluated indicator crosses its threshold, an intelligence item is raised with severity and confidence assigned from the driver set and input completeness.'),
       recommendation:
         t('Recommendations are produced with a stated rationale, expected impact, dependencies and risks, and always name an accountable human role.'),
       humanDecision:
-        'A named officer decides. The platform records the selected alternative, the rationale and the decision timestamp permanently.',
+        t('A named officer decides. The platform records the selected alternative, the rationale and the decision timestamp permanently.'),
       action:
-        'Approved decisions become assigned actions with an owner, a department, a due date and a verifiable completion state.',
+        t('Approved decisions become assigned actions with an owner, a department, a due date and a verifiable completion state.'),
       outcome:
         t('Outcome is measured against the indicators identified at approval and reported without adjustment, including where the intervention was not effective.'),
     }
@@ -69,7 +70,7 @@ export function EvidenceDrawer({ evidenceId }: { evidenceId: string }): React.JS
       <Drawer open onClose={close} title={t('Evidence record')} width="lg">
         <EmptyState
           title={t('Evidence record not found')}
-          detail="The requested evidence identifier does not exist in the evidence store. No substitute record is shown."
+          detail={t('The requested evidence identifier does not exist in the evidence store. No substitute record is shown.')}
         />
       </Drawer>
     )
@@ -96,7 +97,7 @@ export function EvidenceDrawer({ evidenceId }: { evidenceId: string }): React.JS
           <Badge tone="neutral" className="font-mono">
             {evidence.id}
           </Badge>
-          <Badge tone="info">{evidence.kind.replace(/-/g, ' ')}</Badge>
+          <Badge tone="info">{enumLabel(evidence.kind)}</Badge>
           <ClassificationBadge classification={evidence.classification} />
           {evidence.confidence ? <ConfidenceBadge confidence={evidence.confidence} /> : null}
         </>
@@ -135,11 +136,12 @@ export function EvidenceDrawer({ evidenceId }: { evidenceId: string }): React.JS
         <Card>
           <div className="flex items-baseline justify-between gap-3">
             <h4 className="label-institutional">{t('Data quality assessment')}</h4>
-            <span className="numeric text-sm font-semibold text-ink-800">{evidence.dataQuality}/100</span>
+            <span className="text-sm font-semibold text-ink-500">{t('Not measured')}</span>
           </div>
-          <ProgressBar value={evidence.dataQuality} className="mt-2" size="sm" />
+          {/* No BMC system is connected, so nothing has been ingested or
+              validated; a quality score here would be invented. */}
           <p className="mt-2 text-xs leading-relaxed text-ink-500">
-            {t('Quality is assessed at ingestion against completeness, referential integrity with master data, and plausibility ranges. Records failing validation are quarantined with a reason code rather than silently discarded.')}
+            {t('Not measured - no BMC system is connected, so no record has been ingested or validated. Once a feed is connected, quality is to be assessed against completeness, referential integrity with master data and plausibility ranges (design target).')}
           </p>
         </Card>
 
@@ -183,7 +185,7 @@ export function EvidenceDrawer({ evidenceId }: { evidenceId: string }): React.JS
                   ['Rule / model', chain.ruleOrModel],
                   ['Intelligence', chain.intelligence],
                   ['Recommendation', chain.recommendation],
-                  ['Human decision', chain.humanDecision],
+                  [t('Human decision'), chain.humanDecision],
                   ['Action', chain.action],
                   ['Outcome', chain.outcome],
                 ] as const

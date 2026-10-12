@@ -40,6 +40,7 @@ import { GovPanel } from '@/components/gov/GovPanel'
 import { CityMap } from '@/components/map/CityMap'
 import { ChartFrame, DonutChart, MiniBar, RankedBarChart } from '@/components/charts'
 import { t } from '@/i18n'
+import { enumLabel } from '@/utils/enum-label'
 
 /**
  * Urban Planning Intelligence.
@@ -94,10 +95,10 @@ function planningPressureFor(ward: Ward): number {
 
 function baselineGapsFor(ward: Ward, adequacy: number, transportIndex: number, readiness: WardMonsoonReadiness | undefined): string[] {
   const gaps: string[] = []
-  if (adequacy < ADEQUACY_THRESHOLD) gaps.push('Water and sewerage capacity assessed below the adequacy threshold')
-  if (transportIndex < 50) gaps.push('Transport access index below the operational standard')
-  if (ward.floodProne && (readiness?.readinessScore ?? 100) < 70) gaps.push('Monsoon readiness insufficient for a flood-prone ward')
-  if (ward.population / ward.areaSqKm > DENSITY_DESIGN_ASSUMPTION) gaps.push('Population density exceeds the infrastructure design assumption')
+  if (adequacy < ADEQUACY_THRESHOLD) gaps.push(t('Water and sewerage capacity assessed below the adequacy threshold'))
+  if (transportIndex < 50) gaps.push(t('Transport access index below the operational standard'))
+  if (ward.floodProne && (readiness?.readinessScore ?? 100) < 70) gaps.push(t('Monsoon readiness insufficient for a flood-prone ward'))
+  if (ward.population / ward.areaSqKm > DENSITY_DESIGN_ASSUMPTION) gaps.push(t('Population density exceeds the infrastructure design assumption'))
   return gaps
 }
 
@@ -258,7 +259,7 @@ export function UrbanPlanningPage(): React.JSX.Element {
     const colour: Partial<Record<OperationalState, string>> = { operational: '#10b981', degraded: '#f59e0b', 'at-risk': '#f97316', critical: '#e5484d' }
     return (['operational', 'degraded', 'at-risk', 'critical'] as OperationalState[])
       .filter((s) => bands[s] > 0)
-      .map((s) => ({ label: s.replace('-', ' '), value: Math.round(bands[s] * 10) / 10, colour: colour[s] }))
+      .map((s) => ({ label: enumLabel(s), value: Math.round(bands[s] * 10) / 10, colour: colour[s] }))
   }, [scopedWardRows, wards])
 
   const rankedAdequacy = useMemo(
@@ -368,7 +369,7 @@ export function UrbanPlanningPage(): React.JSX.Element {
 
       {!anyLoading && !anyError ? (
         wards.length === 0 ? (
-          <EmptyState title={t('No wards available')} detail="No ward records are visible within your authorised scope." />
+          <EmptyState title={t('No wards available')} detail={t('No ward records are visible within your authorised scope.')} />
         ) : (
           /* ── Two columns ───────────────────────────────────────────
              The city position, the ward register and the scenario engine that
@@ -379,11 +380,11 @@ export function UrbanPlanningPage(): React.JSX.Element {
           <div className="grid grid-cols-1 gap-3 xl:grid-cols-12">
             <div className="flex min-w-0 flex-col gap-3 xl:col-span-8">
               <GovPanel
-                title={isScenario ? 'City position - scenario applied' : 'City position - current'}
+                title={isScenario ? t('City position - scenario applied') : t('City position - current')}
                 tone="amber"
               >
                 <p className="mb-3 text-xs leading-relaxed text-ink-500">
-                  {isScenario ? PLANNING_SIMULATION_STATEMENT : 'Infrastructure adequacy as presently assessed, computed from the published planning scenario engine at zero adjustment.'}
+                  {isScenario ? PLANNING_SIMULATION_STATEMENT : t('Infrastructure adequacy as presently assessed, computed from the published planning scenario engine at zero adjustment.')}
                 </p>
                 <MetricGrid columns={5} className="mt-3">
                   <MetricCard label={t('Mean adequacy')} value={`${position.scenarioAdequacy}/100`} support={isScenario ? `Baseline ${position.baselineAdequacy}/100` : undefined} />
@@ -403,7 +404,7 @@ export function UrbanPlanningPage(): React.JSX.Element {
                   pageSize={9}
                   stickyHeader
                   maxHeight="26rem"
-                  searchPlaceholder="Search wards"
+                  searchPlaceholder={t('Search wards')}
                   onRowClick={(row) => setSelectedWardId(row.wardId === selectedWardId ? null : row.wardId)}
                   activeRowKey={selectedWardId ?? undefined}
                   initialSort={{ columnId: 'adequacy', direction: 'asc' }}
@@ -467,7 +468,7 @@ export function UrbanPlanningPage(): React.JSX.Element {
                           return v === undefined ? undefined : Math.min(100, (v / 60_000) * 100)
                         },
                         higherIsWorse: true,
-                        unit: ' (scaled /60,000 per km²)',
+                        unit: t(' (scaled /60,000 per km²)'),
                         description: t('Population density scaled to a 0–100 band for shading; hover a ward for the underlying figure.'),
                       },
                     ]}
@@ -479,7 +480,7 @@ export function UrbanPlanningPage(): React.JSX.Element {
               </GovPanel>
 
               <Card>
-                <ChartFrame title={t('Adequacy ranking - lowest first')} unit="/100" timeframe="Current view" height={280}>
+                <ChartFrame title={t('Adequacy ranking - lowest first')} unit="/100" timeframe={t('Current view')} height={280}>
                   <RankedBarChart data={rankedAdequacy} higherIsWorse={false} unit="/100" />
                 </ChartFrame>
               </Card>
@@ -490,10 +491,10 @@ export function UrbanPlanningPage(): React.JSX.Element {
                 </p>
                 <div className="mt-3 grid grid-cols-2 gap-3">
                   <div className="h-40">
-                    <DonutChart data={regionComposition} centreValue={String(wards.length)} centreLabel="Wards" />
+                    <DonutChart data={regionComposition} centreValue={String(wards.length)} centreLabel={t('Wards')} />
                   </div>
                   <div className="h-40">
-                    <DonutChart data={landAreaByAdequacyBand} unit={t('km²')} centreValue={`${Math.round(wards.reduce((s, w) => s + w.areaSqKm, 0))}`} centreLabel="km² total" />
+                    <DonutChart data={landAreaByAdequacyBand} unit={t('km²')} centreValue={`${Math.round(wards.reduce((s, w) => s + w.areaSqKm, 0))}`} centreLabel={t('km² total')} />
                   </div>
                 </div>
                 <div className="mt-2 flex justify-around text-[0.625rem] text-ink-400">

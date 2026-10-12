@@ -18,7 +18,6 @@ export const MR_PART_10: Record<string, string> = {
     'नोंदणीपेक्षा प्रमाणपत्रे अधिक असतात, कारण एकाच नोंदणीकृत घटनेचे सामान्यतः एकापेक्षा अधिक वेळा प्रमाणपत्र घेतले जाते - शाळेसाठी, नियोक्त्यासाठी आणि एखाद्या दाव्यासाठी - म्हणूनच खिडकीवरील भार आणि नोंदणीचे प्रमाण एकसारखे नसते.',
   'Certificates issued': 'जारी केलेली प्रमाणपत्रे',
   'Certification claimed': 'दावा केलेले प्रमाणन',
-  'Certification status': 'प्रमाणन स्थिती',
   'Chain composition': 'साखळीची रचना',
   'Charter compliance': 'सनद अनुपालन',
   'children per teacher in post': 'कार्यरत शिक्षकामागे मुले',
@@ -41,7 +40,6 @@ export const MR_PART_10: Record<string, string> = {
   'City': 'शहर',
   'City adequacy': 'शहर पर्याप्तता',
   'City assessment position': 'शहर आकारणी स्थिती',
-  'City average AQI': 'शहर सरासरी AQI',
   'City budget position': 'शहर अर्थसंकल्प स्थिती',
   'City flood risk': 'शहर पूर जोखीम',
   'City map': 'शहर नकाशा',
@@ -52,8 +50,6 @@ export const MR_PART_10: Record<string, string> = {
   'City signals become intelligence, decisions, field actions and measured outcomes — one connected operating chain.':
     'शहरातील संकेतांचे बुद्धिमत्ता, निर्णय, क्षेत्रीय कृती आणि मोजलेल्या निष्पत्तींमध्ये रूपांतर होते — एक जोडलेली कार्यसाखळी.',
   'City Water Position': 'शहर पाणी स्थिती',
-  'City-wide capacity position across major, peripheral, maternity and dispensary facilities.':
-    'प्रमुख, परिघीय, प्रसूती आणि दवाखाना सुविधांमधील शहरव्यापी क्षमता स्थिती.',
   'City-wide chronological record - automatic entries from incident actions, plus entries you post directly.':
     'शहरव्यापी कालानुक्रमे नोंद - घटनांवरील कृतींतून आपोआप येणाऱ्या नोंदी, तसेच तुम्ही थेट टाकलेल्या नोंदी.',
   'City-wide flood risk': 'शहरव्यापी पूर जोखीम',
@@ -121,8 +117,6 @@ export const MR_PART_10: Record<string, string> = {
   'Compare Wards': 'प्रभागांची तुलना करा',
   'Compares the phased (year-to-date) target, not the full annual target, against actual collection for each stream.':
     'प्रत्येक प्रवाहाच्या प्रत्यक्ष वसुलीशी संपूर्ण वार्षिक लक्ष्याची नव्हे, तर टप्प्याटप्प्याच्या (वर्षारंभापासूनच्या) लक्ष्याची तुलना करते.',
-  'Comparing hospital accessibility between flood-prone / low-lying wards and other wards.':
-    'पूरप्रवण / सखल प्रभाग आणि इतर प्रभाग यांच्यातील रुग्णालय सुलभतेची तुलना.',
   'Comparison': 'तुलना',
   'Comparison table': 'तुलना तक्ता',
   'Comparison unavailable': 'तुलना उपलब्ध नाही',
@@ -251,7 +245,6 @@ export const MR_PART_10: Record<string, string> = {
   'Create incident from this scenario': 'या परिस्थितीतून घटना नोंदवा',
   'Creek': 'खाडी',
   'Cremations': 'दहन',
-  'Critical / high alerts open': 'अतितीव्र / उच्च प्रलंबित इशारे',
   'Critical + high': 'अतितीव्र + उच्च',
   'Critical alerts': 'अतितीव्र इशारे',
   'Critical assets at risk': 'जोखमीतील अतिमहत्त्वाच्या मालमत्ता',

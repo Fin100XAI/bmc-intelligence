@@ -77,12 +77,12 @@ export function TrafficIntelligencePage(): React.JSX.Element {
   const corridorsQuery = useServiceQuery(queryKeys.roads('corridors'), (u) => roadsService.corridors(u))
   const segmentsQuery = useServiceQuery(queryKeys.roads('segments'), (u) => roadsService.segments(u))
 
-  const breadcrumbs = [{ label: t('City Intelligence') }, { label: t('Traffic & Mobility') }]
+  const breadcrumbs = [{ label: t('City Services') }, { label: t('Roads, Traffic & Lighting') }, { label: t('Corridors & traffic') }]
 
   if (corridorsQuery.isLoading || segmentsQuery.isLoading) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={breadcrumbs} />
+        <PageHeader eyebrow={t('City Services')} breadcrumbs={breadcrumbs} />
         <LoadingState variant="metrics" />
         <LoadingState variant="table" rows={8} />
       </PageBody>
@@ -93,7 +93,7 @@ export function TrafficIntelligencePage(): React.JSX.Element {
   if (anyError) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={breadcrumbs} />
+        <PageHeader eyebrow={t('City Services')} breadcrumbs={breadcrumbs} />
         <ErrorState
           detail={anyError.message}
           onRetry={() => {
@@ -121,8 +121,8 @@ export function TrafficIntelligencePage(): React.JSX.Element {
   if (corridors.length === 0) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={breadcrumbs} />
-        <EmptyState title={t('No corridor data available')} detail="No traffic corridor records were returned for the current scope." />
+        <PageHeader eyebrow={t('City Services')} breadcrumbs={breadcrumbs} />
+        <EmptyState title={t('No corridor data available')} detail={t('No traffic corridor records were returned for the current scope.')} />
         <DemonstrationNotice />
       </PageBody>
     )
@@ -203,10 +203,10 @@ export function TrafficIntelligencePage(): React.JSX.Element {
   return (
     <PageBody>
       <PageHeader
-        eyebrow={t('City Intelligence')}
+        eyebrow={t('City Services')}
         breadcrumbs={breadcrumbs}
         freshness={FRESHNESS}
-        controls={<FilterBar show={['ward', 'status', 'search']} statusOptions={corridorStatusOptions} searchPlaceholder="Search corridor or ward" />}
+        controls={<FilterBar show={['ward', 'status', 'search']} statusOptions={corridorStatusOptions} searchPlaceholder={t('Search corridor or ward')} />}
       />
 
       <MetricGrid columns={4}>
@@ -256,11 +256,11 @@ export function TrafficIntelligencePage(): React.JSX.Element {
             columns={corridorColumns}
             rowKey={(r) => r.id}
             pageSize={10}
-            searchPlaceholder="Search corridor or ward"
+            searchPlaceholder={t('Search corridor or ward')}
             onRowClick={(r) => setSelectedCorridorId(r.id === selectedCorridorId ? null : r.id)}
             activeRowKey={selectedCorridorId ?? undefined}
             initialSort={{ columnId: 'congestion', direction: 'desc' }}
-            ariaLabel="Traffic corridor register"
+            ariaLabel={t('Traffic corridor register')}
           />
         </GovPanel>
 
@@ -280,7 +280,7 @@ export function TrafficIntelligencePage(): React.JSX.Element {
             pageSize={10}
             searchable={false}
             initialSort={{ columnId: 'congestion', direction: 'desc' }}
-            ariaLabel="Corridor degradation and road condition cross-reference"
+            ariaLabel={t('Corridor degradation and road condition cross-reference')}
             columns={[
               { id: 'corridor', header: t('Corridor'), cell: (r) => <span className="font-medium text-ink-900">{r.corridor.name}</span>, sortValue: (r) => r.corridor.name, width: '15rem' },
               {
@@ -348,7 +348,7 @@ export function TrafficIntelligencePage(): React.JSX.Element {
               {t('Corridors currently carrying one or more closures, ranked by count.')}
             </p>
             {closureImpact.length === 0 ? (
-              <EmptyState compact className="m-4" title={t('No active closures')} detail="No corridor currently reports a closure." />
+              <EmptyState compact className="m-4" title={t('No active closures')} detail={t('No corridor currently reports a closure.')} />
             ) : (
               <ul className="divide-y divide-ink-50">
                 {closureImpact.map((c) => (
@@ -371,8 +371,8 @@ export function TrafficIntelligencePage(): React.JSX.Element {
           <Card>
             <ChartFrame
               title={t('Congestion profile - free-flow vs peak-hour speed')}
-              unit={'km/h'}
-              timeframe="Current reporting position"
+              unit={t('km/h')}
+              timeframe={t('Current reporting position')}
               description={t('Ranked by congestion index, highest first. The gap between free-flow and peak-hour speed is the corridor\'s congestion.')}
               height={Math.max(280, corridors.length * 26)}
             >

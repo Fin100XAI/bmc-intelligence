@@ -58,6 +58,7 @@ import { DEMO_NOW } from '@/utils/deterministic'
 import { formatCompact, formatRelative, sanitiseText } from '@/utils/format'
 import { t } from '@/i18n'
 import { registerLayer } from '@/data/runtime'
+import { SHADE } from '@/components/ui/shade'
 
 /**
  * Unified incident register across every incident type the platform
@@ -187,7 +188,7 @@ export function DisasterIntelligencePage(): React.JSX.Element {
   if (incidentsQuery.isLoading) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Disaster Intelligence') }]} />
+        <PageHeader eyebrow={t('City Operations')} breadcrumbs={[{ label: t('City Operations') }, { label: t('Situation Room') }, { label: t('Incident register') }]} />
         <LoadingState variant="metrics" />
         <LoadingState variant="table" rows={6} />
       </PageBody>
@@ -196,7 +197,7 @@ export function DisasterIntelligencePage(): React.JSX.Element {
   if (incidentsQuery.error) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Disaster Intelligence') }]} />
+        <PageHeader eyebrow={t('City Operations')} breadcrumbs={[{ label: t('City Operations') }, { label: t('Situation Room') }, { label: t('Incident register') }]} />
         <ErrorState detail={incidentsQuery.error.message} onRetry={() => incidentsQuery.refetch()} />
       </PageBody>
     )
@@ -410,8 +411,8 @@ export function DisasterIntelligencePage(): React.JSX.Element {
   return (
     <PageBody>
       <PageHeader
-        eyebrow={t('City Intelligence')}
-        breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Disaster Intelligence') }]}
+        eyebrow={t('City Operations')}
+        breadcrumbs={[{ label: t('City Operations') }, { label: t('Situation Room') }, { label: t('Incident register') }]}
         freshness={freshness}
         actions={
           <Button
@@ -434,7 +435,7 @@ export function DisasterIntelligencePage(): React.JSX.Element {
             const count = stage.countKey?.reduce((sum, s) => sum + countsByStatus[s], 0)
             return (
               <div key={stage.id} className="flex items-stretch">
-                <div className="flex w-36 shrink-0 flex-col rounded-md border border-ink-100 bg-surface-sunken p-2.5">
+                <div className={`flex w-36 shrink-0 flex-col rounded-md border p-2.5 ${SHADE[typeof count === 'number' && count > 0 ? 'blue' : 'neutral'].tile}`}>
                   <div className="flex items-center justify-between gap-1.5">
                     <span className="text-xs font-semibold text-ink-800">{stage.label}</span>
                     {typeof count === 'number' ? (
@@ -490,7 +491,7 @@ export function DisasterIntelligencePage(): React.JSX.Element {
           <SegmentedControl
             value={view}
             onChange={setView}
-            ariaLabel="View mode"
+            ariaLabel={t('View mode')}
             options={[
               { value: 'table', label: t('Table'), icon: <ListChecks className="h-3.5 w-3.5" /> },
               { value: 'cards', label: t('Cards'), icon: <LayoutGrid className="h-3.5 w-3.5" /> },
@@ -502,7 +503,7 @@ export function DisasterIntelligencePage(): React.JSX.Element {
           <Tabs items={tabItems} value={statusTab} onChange={(id) => setStatusTab(id as 'all' | IncidentStatus)} />
         </div>
         <div className="flex flex-wrap items-center gap-2 px-3 pt-3">
-          <FilterBar show={['ward', 'severity', 'search']} searchPlaceholder="Search title, description or location" compact />
+          <FilterBar show={['ward', 'severity', 'search']} searchPlaceholder={t('Search title, description or location')} compact />
           <div className="flex items-center gap-1.5">
             <Label className="mb-0 whitespace-nowrap">{t('Type')}</Label>
             <Select
@@ -530,7 +531,7 @@ export function DisasterIntelligencePage(): React.JSX.Element {
             <EmptyState
               className="m-3"
               title={t('No incidents match the current filters')}
-              detail="Adjust the status tab, type, ward, severity or search term above to widen the result set."
+              detail={t('Adjust the status tab, type, ward, severity or search term above to widen the result set.')}
             />
           )
         ) : view === 'table' ? (
@@ -542,10 +543,10 @@ export function DisasterIntelligencePage(): React.JSX.Element {
               rowAccent={(row) => <SeverityRail severity={row.severity} />}
               onRowClick={(row) => openDrawer({ kind: 'incident', id: row.id })}
               searchable
-              searchPlaceholder="Quick search within this list"
+              searchPlaceholder={t('Quick search within this list')}
               pageSize={12}
               initialSort={{ columnId: 'detected', direction: 'desc' }}
-              ariaLabel="Incident register"
+              ariaLabel={t('Incident register')}
             />
           </div>
         ) : (
@@ -570,7 +571,7 @@ export function DisasterIntelligencePage(): React.JSX.Element {
                   label: t('Open Incident Load'),
                   valueFor: (wardId) => Math.min(100, (openLoadByWard.get(wardId) ?? 0) * 20),
                   higherIsWorse: true,
-                  unit: ' open incident(s), scaled',
+                  unit: t(' open incident(s), scaled'),
                   description: t('Count of currently open incidents recorded against the ward across the full register, independent of the filters applied below.'),
                 },
               ]}

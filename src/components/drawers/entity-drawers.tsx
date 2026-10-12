@@ -66,6 +66,7 @@ import { HumanConfirmationGate } from '@/features/human-oversight/HumanConfirmat
 import { ContributionBars } from '@/components/charts/charts'
 import { AIRecommendationCard } from '@/components/cards/domain-cards'
 import { t } from '@/i18n'
+import { enumLabel } from '@/utils/enum-label'
 
 /* ==========================================================================
    Shared: workflow action strip
@@ -110,7 +111,7 @@ function WorkflowStrip<S extends string>({
                 />
                 <span
                   className={cn(
-                    'truncate text-[0.5625rem] leading-tight',
+                    'truncate text-[0.625rem] leading-tight',
                     active ? 'font-semibold text-govt-700' : done ? 'text-ink-500' : 'text-ink-300',
                   )}
                 >
@@ -144,7 +145,7 @@ function WorkflowStrip<S extends string>({
                 title={
                   permitted
                     ? transition.description
-                    : `Your role does not hold ${transition.requires.resource}:${transition.requires.action}. This control is disabled by the permission engine.`
+                    : t('Your role does not hold {0}:{1}. This control is disabled by the permission engine.', transition.requires.resource, transition.requires.action)
                 }
                 onClick={() => setPending(transition)}
                 icon={!permitted ? <Ban className="h-3 w-3" /> : undefined}
@@ -169,13 +170,13 @@ function WorkflowStrip<S extends string>({
           onConfirm={(record) => {
             onTransition?.(
               pending.to,
-              `${record.rationale} - confirmed by ${record.confirmedBy} (${record.confirmedByRole}).`,
+              t('{0} - confirmed by {1} ({2}).', record.rationale, record.confirmedBy, record.confirmedByRole),
             )
             setPending(null)
           }}
           title={pending.label}
           description={pending.description}
-          consequence={`The record will move to "${machine.labels[pending.to]}". This transition is recorded permanently and cannot be amended afterwards.`}
+          consequence={t('The record will move to "{0}". This transition is recorded permanently and cannot be amended afterwards.', machine.labels[pending.to])}
           confirmLabel={t('{0} as the deciding officer', pending.label)}
           intent={pending.intent === 'critical' ? 'critical' : pending.intent === 'positive' ? 'positive' : 'primary'}
         />
@@ -262,7 +263,7 @@ export function IntelligenceDrawer({ id }: { id: string }): React.JSX.Element {
           ]}
           value={tab}
           onChange={setTab}
-          ariaLabel="Intelligence detail sections"
+          ariaLabel={t('Intelligence detail sections')}
         />
       }
       footer={
@@ -314,12 +315,12 @@ export function IntelligenceDrawer({ id }: { id: string }): React.JSX.Element {
               </DefinitionRow>
               <DefinitionRow label={t('Produced by')}>
                 {item.generator === 'rule-engine'
-                  ? 'Rule engine - deterministic threshold evaluation'
+                  ? t('Rule engine - deterministic threshold evaluation')
                   : item.generator === 'model'
-                    ? 'Model - statistical evaluation with stated confidence'
+                    ? t('Model - statistical evaluation with stated confidence')
                     : item.generator === 'correlation-engine'
-                      ? 'Correlation engine - multi-domain signal combination'
-                      : 'Analyst review'}
+                      ? t('Correlation engine - multi-domain signal combination')
+                      : t('Analyst review')}
               </DefinitionRow>
               {item.citizensAffected ? (
                 <DefinitionRow label={t('Citizens affected')}>
@@ -411,7 +412,7 @@ export function IntelligenceDrawer({ id }: { id: string }): React.JSX.Element {
                 setLog((prev) => [
                   {
                     at: new Date().toISOString(),
-                    text: `Status changed to ${intelligenceWorkflow.labels[to]}${reason ? ` - ${sanitiseText(reason, 300)}` : ''}`,
+                    text: t('Status changed to {0}{1}', intelligenceWorkflow.labels[to], reason ? ` - ${sanitiseText(reason, 300)}` : ''),
                   },
                   ...prev,
                 ])
@@ -527,7 +528,7 @@ export function DecisionDrawer({ id }: { id: string }): React.JSX.Element {
           ]}
           value={tab}
           onChange={setTab}
-          ariaLabel="Decision case sections"
+          ariaLabel={t('Decision case sections')}
         />
       }
       footer={
@@ -619,7 +620,7 @@ export function DecisionDrawer({ id }: { id: string }): React.JSX.Element {
                     </div>
                     <div className="shrink-0 text-right">
                       <span className="numeric text-lg font-semibold text-ink-900">{alt.score}</span>
-                      <p className="text-[0.625rem] text-ink-400">score</p>
+                      <p className="text-[0.625rem] text-ink-400">{t('score')}</p>
                     </div>
                   </div>
 
@@ -630,7 +631,7 @@ export function DecisionDrawer({ id }: { id: string }): React.JSX.Element {
                     </div>
                     <div>
                       <span className="text-ink-400">{t('Time to effect')}</span>
-                      <p className="numeric font-semibold text-ink-800">{alt.timeToEffectDays} days</p>
+                      <p className="numeric font-semibold text-ink-800">{t('{0} days', alt.timeToEffectDays)}</p>
                     </div>
                   </div>
 
@@ -790,7 +791,7 @@ export function DecisionDrawer({ id }: { id: string }): React.JSX.Element {
                   key={approval.id}
                   className="flex items-center gap-2.5 rounded-md border border-ink-100 bg-surface-sunken px-2.5 py-2"
                 >
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-govt-700 text-[0.5625rem] font-semibold text-white">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-govt-700 text-[0.625rem] font-semibold text-white">
                     {officerDisplayName(approval.approverId)
                       .split(' ')
                       .map((p) => p[0])
@@ -852,7 +853,7 @@ export function DecisionDrawer({ id }: { id: string }): React.JSX.Element {
                           : 'warn'
                     }
                   >
-                    {base.outcome.effectiveness.replace('-', ' ')}
+                    {enumLabel(base.outcome.effectiveness)}
                   </Badge>
                 </div>
                 <p className="text-xs leading-relaxed text-ink-600">{base.outcome.summary}</p>
@@ -885,7 +886,7 @@ export function DecisionDrawer({ id }: { id: string }): React.JSX.Element {
           ) : (
             <EmptyState
               title={t('Outcome not yet measured')}
-              detail="Outcome measurement follows implementation and verification. Results are recorded without adjustment, including where an intervention proved ineffective."
+              detail={t('Outcome measurement follows implementation and verification. Results are recorded without adjustment, including where an intervention proved ineffective.')}
             />
           )}
         </div>
@@ -958,7 +959,7 @@ export function ProjectDrawer({ id }: { id: string }): React.JSX.Element {
           ]}
           value={tab}
           onChange={setTab}
-          ariaLabel="Project sections"
+          ariaLabel={t('Project sections')}
         />
       }
       footer={
@@ -1091,7 +1092,7 @@ export function ProjectDrawer({ id }: { id: string }): React.JSX.Element {
       {tab === 'contract' ? (
         <div className="space-y-3">
           {relatedContracts.length === 0 ? (
-            <EmptyState title={t('No contract linked')} detail="No contract record is linked to this project reference." compact />
+            <EmptyState title={t('No contract linked')} detail={t('No contract record is linked to this project reference.')} compact />
           ) : (
             relatedContracts.map((contract) => (
               <Card key={contract.id}>
@@ -1199,7 +1200,7 @@ export function IncidentDrawer({ id }: { id: string }): React.JSX.Element {
           ]}
           value={tab}
           onChange={setTab}
-          ariaLabel="Incident sections"
+          ariaLabel={t('Incident sections')}
         />
       }
       footer={
@@ -1273,7 +1274,7 @@ export function IncidentDrawer({ id }: { id: string }): React.JSX.Element {
               <div className="min-w-0 flex-1">
                 <p className="text-[0.8125rem] font-medium text-ink-800">{team.name}</p>
                 <p className="text-[0.6875rem] text-ink-500">
-                  {t('{0} · {1} personnel · {2}', team.type.replace('-', ' '), team.strength, wardName(team.wardId))}
+                  {t('{0} · {1} personnel · {2}', enumLabel(team.type), team.strength, wardName(team.wardId))}
                 </p>
               </div>
               <Badge
@@ -1288,7 +1289,7 @@ export function IncidentDrawer({ id }: { id: string }): React.JSX.Element {
                 }
                 dot
               >
-                {team.status.replace('-', ' ')}
+                {enumLabel(team.status)}
               </Badge>
             </Card>
           ))}
@@ -1514,7 +1515,7 @@ export function AlertDrawer({ id }: { id: string }): React.JSX.Element {
               {alert.slaHours}{' '}{t('h target ·')}{' '}
               <span className={alert.slaRemainingHours < 0 ? 'font-semibold text-crit-600' : ''}>
                 {alert.slaRemainingHours < 0
-                  ? `breached by ${Math.abs(alert.slaRemainingHours).toFixed(1)} h`
+                  ? t('breached by {0} h', Math.abs(alert.slaRemainingHours).toFixed(1))
                   : `${alert.slaRemainingHours.toFixed(1)} h remaining`}
               </span>
             </DefinitionRow>
@@ -1578,7 +1579,7 @@ export function ActionDrawer({ id }: { id: string }): React.JSX.Element {
     try {
       await work
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : 'The change could not be recorded.')
+      setActionError(err instanceof Error ? err.message : t('The change could not be recorded.'))
     } finally {
       setSaving(false)
     }
@@ -1706,7 +1707,7 @@ export function SecurityEventDrawer({ id }: { id: string }): React.JSX.Element {
       onClose={close}
       width="lg"
       eyebrow={t('Security event')}
-      title={event.type.replace(/-/g, ' ').replace(/^\w/, (c) => c.toUpperCase())}
+      title={enumLabel(event.type).replace(/^\w/, (c) => c.toUpperCase())}
       meta={
         <>
           <Badge tone="neutral" className="font-mono">
@@ -1778,7 +1779,7 @@ export function SecurityEventDrawer({ id }: { id: string }): React.JSX.Element {
                 />
                 <span className="min-w-0 flex-1 text-ink-600">
                   {a.action} · <span className="font-mono">{a.resourceId}</span>
-                  {a.outcome === 'denied' ? <span className="ml-1 font-medium text-crit-600">denied</span> : null}
+                  {a.outcome === 'denied' ? <span className="ml-1 font-medium text-crit-600">{t('denied')}</span> : null}
                 </span>
                 <span className="shrink-0 text-ink-400">{formatRelative(a.at)}</span>
               </li>
@@ -1912,13 +1913,13 @@ export function AssetDrawer({ id }: { id: string }): React.JSX.Element {
         </Card>
         <Card>
           <DefinitionList>
-            <DefinitionRow label={t('Category')}>{asset.category.replace('-', ' ')}</DefinitionRow>
+            <DefinitionRow label={t('Category')}>{enumLabel(asset.category)}</DefinitionRow>
             <DefinitionRow label={t('Ward')}>{wardName(asset.wardId)}</DefinitionRow>
             <DefinitionRow label={t('Department')}>{departmentName(asset.departmentId)}</DefinitionRow>
             <DefinitionRow label={t('Installed')}>{asset.installedYear}</DefinitionRow>
-            <DefinitionRow label={t('Design life')}>{asset.designLifeYears} years</DefinitionRow>
+            <DefinitionRow label={t('Design life')}>{t('{0} years', asset.designLifeYears)}</DefinitionRow>
             <DefinitionRow label={t('Age against design life')}>
-              {2026 - asset.installedYear} years
+              {t('{0} years', 2026 - asset.installedYear)}
               {2026 - asset.installedYear > asset.designLifeYears ? (
                 <span className="ml-1 font-medium text-crit-600">{t('past design life')}</span>
               ) : null}

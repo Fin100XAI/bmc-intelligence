@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { CheckCircle2, CircleAlert, HelpCircle, Layers } from 'lucide-react'
+import { CheckCircle2, CircleAlert, HelpCircle, Layers, Bot, Building, CircleSlash } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { Badge } from '@/components/ui/badges'
 import { Card, CardHeader, MetricGrid, Select } from '@/components/ui/primitives'
@@ -8,6 +8,7 @@ import { FilterBar } from '@/components/filters/FilterBar'
 import { useFilterStore } from '@/stores/ui.store'
 import { usePageMasthead } from '@/stores/masthead.store'
 import { cn } from '@/utils/cn'
+import { SHADE } from '@/components/ui/shade'
 import { t } from '@/i18n'
 
 /**
@@ -252,25 +253,45 @@ export function TestingPage(): React.JSX.Element {
       </Card>
 
       <MetricGrid columns={4}>
-        <Card tone="sunken">
-          <p className="label-institutional">{t('Verified manually')}</p>
-          <p className="numeric mt-2 text-metric font-semibold text-ok-700">{verified}</p>
-          <p className="mt-0.5 text-[0.6875rem] text-ink-500">{t('of {0} checks in this register', rows.length)}</p>
+        <Card className={cn(SHADE.green.tile, 'flex items-start gap-3')}>
+          <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE.green.chip)}>
+            <CheckCircle2 className="h-4 w-4" aria-hidden />
+          </span>
+          <div className="min-w-0">
+            <p className="label-institutional">{t('Verified manually')}</p>
+            <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE.green.value)}>{verified}</p>
+            <p className="mt-0.5 text-[0.6875rem] text-ink-500">{t('of {0} checks in this register', rows.length)}</p>
+          </div>
         </Card>
-        <Card tone="critical">
-          <p className="label-institutional">{t('Not yet covered')}</p>
-          <p className="numeric mt-2 text-metric font-semibold text-ink-900">{notCovered}</p>
-          <p className="mt-0.5 text-[0.6875rem] text-ink-500">{t('No manual or automated check exists')}</p>
+        <Card className={cn(SHADE.red.tile, 'flex items-start gap-3')}>
+          <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE.red.chip)}>
+            <CircleSlash className="h-4 w-4" aria-hidden />
+          </span>
+          <div className="min-w-0">
+            <p className="label-institutional">{t('Not yet covered')}</p>
+            <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE.red.value)}>{notCovered}</p>
+            <p className="mt-0.5 text-[0.6875rem] text-ink-500">{t('No manual or automated check exists')}</p>
+          </div>
         </Card>
-        <Card tone="warn">
-          <p className="label-institutional">{t('Requires automation')}</p>
-          <p className="numeric mt-2 text-metric font-semibold text-ink-900">{requiresAutomation}</p>
-          <p className="mt-0.5 text-[0.6875rem] text-ink-500">{t('Checked once; needs a repeatable test')}</p>
+        <Card className={cn(SHADE.amber.tile, 'flex items-start gap-3')}>
+          <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE.amber.chip)}>
+            <Bot className="h-4 w-4" aria-hidden />
+          </span>
+          <div className="min-w-0">
+            <p className="label-institutional">{t('Requires automation')}</p>
+            <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE.amber.value)}>{requiresAutomation}</p>
+            <p className="mt-0.5 text-[0.6875rem] text-ink-500">{t('Checked once; needs a repeatable test')}</p>
+          </div>
         </Card>
-        <Card>
-          <p className="label-institutional">{t('Single-tenant only')}</p>
-          <p className="numeric mt-2 text-metric font-semibold text-ink-900">{singleTenantOnly}</p>
-          <p className="mt-0.5 text-[0.6875rem] text-ink-500">{t('Never exercised beyond Brihanmumbai')}</p>
+        <Card className={cn(SHADE.teal.tile, 'flex items-start gap-3')}>
+          <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE.teal.chip)}>
+            <Building className="h-4 w-4" aria-hidden />
+          </span>
+          <div className="min-w-0">
+            <p className="label-institutional">{t('Single-tenant only')}</p>
+            <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE.teal.value)}>{singleTenantOnly}</p>
+            <p className="mt-0.5 text-[0.6875rem] text-ink-500">{t('Never exercised beyond Brihanmumbai')}</p>
+          </div>
         </Card>
       </MetricGrid>
 

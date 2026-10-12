@@ -13,6 +13,8 @@ import { officerDisplayName } from '@/data/reference'
 import { DEMO_NOW, isoFromAnchor } from '@/utils/deterministic'
 import { formatRelative, truncate } from '@/utils/format'
 import type { DateRangeKey } from '@/types/common'
+import { DEMO_USERS } from '@/stores/auth.store'
+import { enumLabel } from '@/utils/enum-label'
 import type { AIModel } from '@/types/ai'
 import {
   Badge,
@@ -99,6 +101,14 @@ function matchesGlobalFilters(model: AIModel, filters: FilterState): boolean {
   return true
 }
 
+
+/** Owners are recorded as officer or demonstration-user ids; show the post, never the raw id. */
+function ownerLabel(id: string): string {
+  const name = officerDisplayName(id)
+  if (name !== id) return name
+  return DEMO_USERS.find((u) => u.id === id)?.designation ?? id
+}
+
 export function ModelRegistryPage(): React.JSX.Element {
   // The shell's masthead states the screen's name; the page states the wording.
   usePageMasthead(t('AI Model Registry'))
@@ -156,28 +166,28 @@ export function ModelRegistryPage(): React.JSX.Element {
     {
       id: 'environment',
       header: t('Environment'),
-      cell: (row) => <Badge tone="intel">{row.environment}</Badge>,
+      cell: (row) => <Badge tone="intel">{enumLabel(row.environment)}</Badge>,
       sortValue: (row) => row.environment,
       hideBelow: 'lg',
     },
     {
       id: 'risk',
       header: t('Risk class'),
-      cell: (row) => <Badge tone={RISK_TONE[row.riskClass]}>{row.riskClass}</Badge>,
+      cell: (row) => <Badge tone={RISK_TONE[row.riskClass]}>{enumLabel(row.riskClass)}</Badge>,
       sortValue: (row) => row.riskClass,
     },
     {
       id: 'owner',
       header: t('Owner'),
-      cell: (row) => officerDisplayName(row.ownerId),
-      sortValue: (row) => officerDisplayName(row.ownerId),
+      cell: (row) => ownerLabel(row.ownerId),
+      sortValue: (row) => ownerLabel(row.ownerId),
       hideBelow: 'lg',
     },
     { id: 'version', header: t('Version'), cell: (row) => <span className="font-mono text-xs">{row.version}</span>, sortValue: (row) => row.version, hideBelow: 'md' },
     {
       id: 'evaluation',
       header: t('Evaluation'),
-      cell: (row) => <Badge tone={EVAL_TONE[row.evaluationStatus]}>{row.evaluationStatus.replace(/-/g, ' ')}</Badge>,
+      cell: (row) => <Badge tone={EVAL_TONE[row.evaluationStatus]}>{enumLabel(row.evaluationStatus)}</Badge>,
       sortValue: (row) => row.evaluationStatus,
     },
     {
@@ -190,7 +200,7 @@ export function ModelRegistryPage(): React.JSX.Element {
     {
       id: 'status',
       header: t('Status'),
-      cell: (row) => <Badge tone={STATUS_TONE[row.status]} dot>{row.status.replace(/-/g, ' ')}</Badge>,
+      cell: (row) => <Badge tone={STATUS_TONE[row.status]} dot>{enumLabel(row.status)}</Badge>,
       sortValue: (row) => row.status,
     },
     { id: 'notes', header: t('Notes'), cell: (row) => <span className="text-ink-500">{truncate(row.notes, 60)}</span>, hideBelow: 'xl' },
@@ -217,7 +227,7 @@ export function ModelRegistryPage(): React.JSX.Element {
         <div className="flex min-w-0 flex-col gap-3 xl:col-span-8">
           {!modelsQuery.isLoading && !modelsQuery.error ? (
             rawModels.length === 0 ? (
-              <EmptyState title={t('No models registered')} detail="No AI model records are visible within your authorised scope." />
+              <EmptyState title={t('No models registered')} detail={t('No AI model records are visible within your authorised scope.')} />
             ) : (
               <>
                 <GovPanel
@@ -279,11 +289,11 @@ export function ModelRegistryPage(): React.JSX.Element {
                     stickyHeader
                     maxHeight="24rem"
                     searchable={false}
-                    searchPlaceholder="Search models"
+                    searchPlaceholder={t('Search models')}
                     onRowClick={(row) => setSelectedId(row.id)}
                     activeRowKey={selected?.id}
                     emptyTitle={t('No models match these filters')}
-                    emptyDetail="Adjust the risk, evaluation or status filters above."
+                    emptyDetail={t('Adjust the risk, evaluation or status filters above.')}
                   />
                 </GovPanel>
 
@@ -294,9 +304,9 @@ export function ModelRegistryPage(): React.JSX.Element {
                     tone="red"
                     actions={
                       <div className="flex flex-wrap items-center gap-1.5">
-                        <Badge tone={RISK_TONE[selected.riskClass]}>{selected.riskClass} risk</Badge>
-                        <Badge tone={EVAL_TONE[selected.evaluationStatus]}>{selected.evaluationStatus.replace(/-/g, ' ')}</Badge>
-                        <Badge tone={STATUS_TONE[selected.status]} dot>{selected.status.replace(/-/g, ' ')}</Badge>
+                        <Badge tone={RISK_TONE[selected.riskClass]}>{t('{0} risk', enumLabel(selected.riskClass))}</Badge>
+                        <Badge tone={EVAL_TONE[selected.evaluationStatus]}>{enumLabel(selected.evaluationStatus)}</Badge>
+                        <Badge tone={STATUS_TONE[selected.status]} dot>{enumLabel(selected.status)}</Badge>
                       </div>
                     }
                   >
@@ -335,10 +345,10 @@ export function ModelRegistryPage(): React.JSX.Element {
                     </div>
                     <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-1.5 border-t border-ink-100 pt-3 text-xs text-ink-500">
                       <span className="inline-flex items-center gap-1">
-                        <ChevronRight className="h-3 w-3" />{' '}{t('Owner:')}{' '}{officerDisplayName(selected.ownerId)}
+                        <ChevronRight className="h-3 w-3" />{' '}{t('Owner:')}{' '}{ownerLabel(selected.ownerId)}
                       </span>
                       <span>{t('Last evaluated {0}', formatRelative(selected.lastEvaluatedAt))}</span>
-                      <span>{t('Environment: {0}', selected.environment)}</span>
+                      <span>{t('Environment: {0}', enumLabel(selected.environment))}</span>
                     </div>
                   </GovPanel>
                 ) : null}
@@ -373,7 +383,7 @@ export function ModelRegistryPage(): React.JSX.Element {
                   <ul className="mt-3 space-y-1.5">
                     {flagged.map((m) => (
                       <li key={m.id} className="flex flex-wrap items-center gap-2 text-xs text-ink-700">
-                        <Badge tone={EVAL_TONE[m.evaluationStatus]}>{m.evaluationStatus.replace(/-/g, ' ')}</Badge>
+                        <Badge tone={EVAL_TONE[m.evaluationStatus]}>{enumLabel(m.evaluationStatus)}</Badge>
                         <span className="font-medium">{m.name}</span>
                         <span className="text-ink-400">- {m.notes}</span>
                       </li>

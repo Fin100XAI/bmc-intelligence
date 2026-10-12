@@ -48,8 +48,6 @@ export const MR_PART_15: Record<string, string> = {
     'संदर्भ यादीत या महानगरपालिकेविरुद्ध नोंदवलेल्या नद्या, खाड्या, तलाव आणि जलाशय. ही तिची प्रकाशित जलस्थळे आहेत, किनारी नोंदयादी नव्हे.',
   'The same core renders different institutional vocabulary per deployment.':
     'तोच गाभा प्रत्येक अंमलबजावणीसाठी वेगळी संस्थात्मक परिभाषा दाखवतो.',
-  'The same underlying values, rendered with the choices above.':
-    'तेच मूळ आकडे, वरील निवडींनुसार सादर केलेले.',
   'The signal raised, with severity and confidence assigned.':
     'उपस्थित केलेला संकेत, त्यास दिलेल्या तीव्रता व विश्वासार्हतेसह.',
   'The spine this graph is built to make traceable, from asset to attached incident.':
@@ -132,8 +130,6 @@ export const MR_PART_15: Record<string, string> = {
   'This page holds the regime, not the licensees': 'हे पान व्यवस्था ठेवते, परवानाधारक नाही',
   "This page reports on how well the statutory register is being kept - volumes, timeliness and backlog. It does not reproduce the register. No registered event, no name, no date and no certificate content appears anywhere behind this page. Vital records remain in the Registrar's statutory custody, which is where the law places them and where they should stay.":
     'हे पान वैधानिक नोंदवही किती चांगल्या प्रकारे ठेवली जाते याचा अहवाल देते - प्रमाण, वेळेवरपणा आणि अनुशेष. ते नोंदवहीची प्रत देत नाही. नोंदवलेली कोणतीही घटना, कोणतेही नाव, कोणतीही तारीख आणि प्रमाणपत्रातील कोणताही मजकूर या पानामागे कुठेही येत नाही. जन्म-मृत्यू नोंदी निबंधकाच्या वैधानिक ताब्यातच राहतात; कायद्याने त्या तिथेच ठेवल्या आहेत आणि तिथेच त्या राहायला हव्यात.',
-  "This platform is built on the premise that a Municipal Commissioner cannot act on intelligence they cannot interrogate. Every figure presented anywhere in this application is scoped by the permission engine, traceable through its evidence and lineage, and recorded to an audit trail the instant it is acted on. Nothing here claims a live {0} connection, a government approval, or any security or privacy certification - this Trust Centre exists to show precisely what is and is not true of this environment, in the platform's own words, not to assert a level of assurance it has not earned.":
-    'ज्या बुद्धिमत्तेची चौकशी करता येत नाही तिच्यावर महानगरपालिका आयुक्त कृती करू शकत नाहीत, या गृहीतकावर हा मंच उभारला आहे. या उपयोजनात कुठेही सादर होणारा प्रत्येक आकडा परवानगी यंत्रणेने व्याप्तीत बांधलेला असतो, त्याच्या पुराव्यातून व उगमसाखळीतून माग काढण्याजोगा असतो, आणि त्यावर कृती होताच तत्काळ लेखापरीक्षा नोंदीत नोंदवला जातो. येथे प्रत्यक्ष {0} जोडणीचा, शासकीय मान्यतेचा किंवा कोणत्याही सुरक्षा वा गोपनीयता प्रमाणनाचा दावा केलेला नाही - या वातावरणाबाबत नेमके काय खरे आहे आणि काय नाही हे मंचाच्याच शब्दांत दाखवण्यासाठी हे विश्वास केंद्र आहे, न कमावलेल्या आश्वासनाची पातळी सांगण्यासाठी नाही.',
   'This principal has not enrolled multi-factor authentication. See the Security Command Centre for the platform-wide MFA coverage position.':
     'या वापरकर्त्याने बहुघटक प्रमाणीकरण नोंदवलेले नाही. मंचव्यापी MFA व्याप्तीच्या स्थितीसाठी सुरक्षा नियंत्रण केंद्र पहा.',
   'This record and every subsequent status change is written to the permanent audit trail against your name. The record will be owned by {0} until reassigned.':
@@ -206,7 +202,6 @@ export const MR_PART_15: Record<string, string> = {
     'केवळ प्रक्रिया केंद्रे - मुख्य वाहिनी भागांसाठी अनुपालन आकडा नसतो. विभागीय निकषाच्या तुलनेत सर्वात कमीपासून सर्वाधिकपर्यंत क्रमवारी.',
   'Treatment facility register': 'प्रक्रिया केंद्र नोंदवही',
   'Treatment Plant': 'प्रक्रिया प्रकल्प',
-  'Tree Authority position by ward': 'प्रभागनिहाय वृक्ष प्राधिकरण स्थिती',
   'Trees required against permissions granted, and trees actually planted. Read together, never apart.':
     'दिलेल्या परवानग्यांच्या तुलनेत आवश्यक वृक्ष, आणि प्रत्यक्षात लावलेले वृक्ष. दोन्ही एकत्रच वाचावेत, कधीही वेगवेगळे नाही.',
   'Trigger: {0} · Owner {1} · Last run {2}': 'चालना: {0} · मालक {1} · शेवटची फेरी {2}',
@@ -259,8 +254,6 @@ export const MR_PART_15: Record<string, string> = {
   'View box': 'दृश्य चौकट',
   'View module': 'विभाग पहा',
   'Violations found': 'आढळलेली उल्लंघने',
-  'Volumes rise through the pre-monsoon heat and the monsoon months, so a facility that copes comfortably in March can queue in July. Capacity has to be planned against the peak a family arrives in, not against the annual mean.':
-    'पावसाळापूर्व उष्णता आणि पावसाळी महिन्यांत प्रमाण वाढते, त्यामुळे मार्चमध्ये सहज पुरे पडणारे केंद्र जुलैमध्ये रांगेत अडकू शकते. क्षमतेचे नियोजन कुटुंब ज्या सर्वोच्च गर्दीच्या काळात येते त्यानुसार करावे लागते, वार्षिक सरासरीनुसार नाही.',
   'vs baseline': 'आधाररेषेच्या तुलनेत',
   'Vulnerability {0}/100 · {1} segment{2}': 'असुरक्षितता {0}/100 · {1} भाग{2}',
   'Vulnerability index (0–100)': 'असुरक्षितता निर्देशांक (0–100)',
@@ -292,13 +285,11 @@ export const MR_PART_15: Record<string, string> = {
     'प्रभागाची छटा त्यात नोंदवलेल्या किनारी भागांच्या सरासरी असुरक्षितता निर्देशांकावर आधारित आहे; खुणा किमान एक किनारी भाग असलेले प्रभाग दर्शवतात.',
   'Ward shading reflects the reading from the station within that ward.':
     'प्रभागाची छटा त्या प्रभागातील केंद्राच्या वाचनावर आधारित आहे.',
-  'Ward Trajectory & Early Warning': 'प्रभागाची वाटचाल व पूर्वसूचना',
   'Ward trunk-network position': 'प्रभागातील मुख्य जाळ्याची स्थिती',
   'Ward variance': 'प्रभाग फरक',
   'Ward-by-ward position': 'प्रभागनिहाय स्थिती',
   'Ward-disease indicators monitored': 'देखरेखीखालील प्रभाग-रोग निर्देशक',
   'ward–segment records': 'प्रभाग–भाग नोंदी',
-  'ward(s) below threshold': 'मर्यादेखालील प्रभाग',
   'Wards above expectation': 'अपेक्षेपेक्षा वरचे प्रभाग',
   'Wards are flagged flood-prone based on structural, low-lying exposure - the same flag monsoon intelligence uses. The lower accessibility figures observed at facilities within these wards reflect a modelled':
     'संरचनात्मक, सखल भागातील धोक्याच्या आधारे प्रभाग पूरप्रवण म्हणून चिन्हांकित केले जातात - पावसाळी बुद्धिमत्ता वापरते तीच खूण. या प्रभागांतील केंद्रांवर आढळलेले कमी पोहोचक्षमता आकडे प्रतिरूपित',

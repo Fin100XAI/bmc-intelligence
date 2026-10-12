@@ -220,7 +220,7 @@ export function AssetIntelligencePage(): React.JSX.Element {
     {
       id: 'design-life',
       header: t('Design life'),
-      cell: (row) => <span className="numeric">{row.designLifeYears} yrs</span>,
+      cell: (row) => <span className="numeric">{t('{0} yrs', row.designLifeYears)}</span>,
       sortValue: (row) => row.designLifeYears,
       align: 'right',
       optional: true,
@@ -230,7 +230,7 @@ export function AssetIntelligencePage(): React.JSX.Element {
       header: t('Age vs design life'),
       cell: (row) => (
         <span className={`numeric ${pastDesignLife(row) ? 'font-semibold text-crit-700' : 'text-ink-600'}`}>
-          {ageOf(row)} / {row.designLifeYears} yrs
+          {t('{0} / {1} yrs', ageOf(row), row.designLifeYears)}
         </span>
       ),
       sortValue: (row) => ageOf(row) - row.designLifeYears,
@@ -295,8 +295,8 @@ export function AssetIntelligencePage(): React.JSX.Element {
   return (
     <PageBody>
       <PageHeader
-        eyebrow={t('Projects, Procurement & Assets')}
-        breadcrumbs={[{ label: t('Projects, Procurement & Assets') }, { label: t('Asset Intelligence') }]}
+        eyebrow={t('Revenue & Finance')}
+        breadcrumbs={[{ label: t('Revenue & Finance') }, { label: t('Municipal Assets') }]}
         freshness={FRESHNESS}
         actions={
           <LinkButton to={ROUTES.buildings} variant="outline" icon={<PackageSearch className="h-3.5 w-3.5" />}>
@@ -321,7 +321,7 @@ export function AssetIntelligencePage(): React.JSX.Element {
       {anyError ? <ErrorState detail={anyError.message} onRetry={() => { void assetsQuery.refetch() }} /> : null}
 
       {!anyLoading && !anyError && assets.length === 0 ? (
-        <EmptyState title={t('No assets available')} detail="No municipal assets were returned for your authorised scope." />
+        <EmptyState title={t('No assets available')} detail={t('No municipal assets were returned for your authorised scope.')} />
       ) : null}
 
       {!anyLoading && !anyError && assets.length > 0 ? (
@@ -357,7 +357,7 @@ export function AssetIntelligencePage(): React.JSX.Element {
               {t('A three-condition rule: an asset appears here only when (1) its age exceeds its design life, and (2) its condition index falls below the review threshold of 45, and (3) no capital project of a matching category is currently planned, tendered, awarded or in progress in its ward.')}
             </p>
             {lifecycleExposed.length === 0 ? (
-              <EmptyState title={t('No assets meet all three conditions')} detail="No asset in the current scope is simultaneously past design life, below the condition threshold and without a matching programme entry." compact className="m-4" />
+              <EmptyState title={t('No assets meet all three conditions')} detail={t('No asset in the current scope is simultaneously past design life, below the condition threshold and without a matching programme entry.')} compact className="m-4" />
             ) : (
               <div className="scrollbar-slim max-h-80 overflow-y-auto p-2">
                 {lifecycleExposed.map((a) => (
@@ -396,7 +396,7 @@ export function AssetIntelligencePage(): React.JSX.Element {
               pageSize={12}
               stickyHeader
               maxHeight="30rem"
-              searchPlaceholder="Search assets"
+              searchPlaceholder={t('Search assets')}
               onRowClick={(row) => openDrawer({ kind: 'asset', id: row.id })}
               rowAccent={(row) => (
                 <span className={`w-[3px] rounded-full ${row.conditionIndex < 30 ? 'bg-crit-500' : row.conditionIndex < CONDITION_THRESHOLD ? 'bg-risk-500' : 'bg-ok-500'}`} />
@@ -428,15 +428,15 @@ export function AssetIntelligencePage(): React.JSX.Element {
 
           <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
             <Card>
-              <ChartFrame title={t('Assets by category')} unit="assets" timeframe="Current scope" freshness={FRESHNESS} height={230}>
-                <DonutChart data={countByCategory} unit="assets" centreValue={formatNumber(filtered.length)} centreLabel="Assets" />
+              <ChartFrame title={t('Assets by category')} unit={t('assets')} timeframe={t('Current scope')} freshness={FRESHNESS} height={230}>
+                <DonutChart data={countByCategory} unit={t('assets')} centreValue={formatNumber(filtered.length)} centreLabel={t('Assets')} />
               </ChartFrame>
             </Card>
             <Card>
               <ChartFrame
                 title={t('Condition distribution by category')}
                 unit={t('condition index')}
-                timeframe="Current scope"
+                timeframe={t('Current scope')}
                 description={t('Average condition index (0–100, higher is better) by asset category, weakest first.')}
                 freshness={FRESHNESS}
                 height={230}

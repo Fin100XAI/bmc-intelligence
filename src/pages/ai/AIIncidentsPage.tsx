@@ -13,7 +13,7 @@ import { aiService } from '@/services'
 import { usePageMasthead } from '@/stores/masthead.store'
 import { useFilterStore } from '@/stores/ui.store'
 import type { FilterState } from '@/stores/ui.store'
-import type { AIIncident } from '@/types/ai'
+import type { AIIncident, AIRiskCategory } from '@/types/ai'
 import { AI_RISK_LABEL } from '@/types/ai'
 import type { DateRangeKey } from '@/types/common'
 import { AI_MODEL_BY_ID } from '@/data/ai.data'
@@ -22,6 +22,7 @@ import { cn } from '@/utils/cn'
 import { DEMO_NOW, isoFromAnchor } from '@/utils/deterministic'
 import { t } from '@/i18n'
 import { registerLayer } from '@/data/runtime'
+import { SHADE } from '@/components/ui/shade'
 
 /**
  * src/pages/ai/AIIncidentsPage.tsx
@@ -51,16 +52,28 @@ const FRESHNESS = {
 const STAGES: AIIncident['status'][] = ['detected', 'triaged', 'contained', 'resolved', 'reviewed']
 function build$STAGE_LABEL(): Record<AIIncident['status'], string> {
   return {
-  detected: t('Detected'),
-  triaged: t('Triaged'),
-  contained: t('Contained'),
-  resolved: t('Resolved'),
-  reviewed: t('Reviewed'),
-}
+    detected: t('Detected'),
+    triaged: t('Triaged'),
+    contained: t('Contained'),
+    resolved: t('Resolved'),
+    reviewed: t('Reviewed'),
+  }
 }
 let STAGE_LABEL: Record<AIIncident['status'], string> = build$STAGE_LABEL()
+/** What each lifecycle stage requires - the procedure every incident moves through. */
+function build$STAGE_RULE(): Record<AIIncident['status'], string> {
+  return {
+    detected: t('A control or an officer records the event with its reference.'),
+    triaged: t('The AI governance officer sets severity and an owner.'),
+    contained: t('Affected answers are withheld or re-issued.'),
+    resolved: t('The root cause is fixed and a regression check added.'),
+    reviewed: t('A second officer confirms closure on the record.'),
+  }
+}
+let STAGE_RULE: Record<AIIncident['status'], string> = build$STAGE_RULE()
 registerLayer(() => {
   STAGE_LABEL = build$STAGE_LABEL()
+  STAGE_RULE = build$STAGE_RULE()
 })
 
 const DATE_RANGE_HOURS: Record<DateRangeKey, number> = {
@@ -125,6 +138,7 @@ export function AIIncidentsPage(): React.JSX.Element {
   const filters = useFilterStore((s) => s.filters)
 
   const incidents = useMemo(() => query.data ?? [], [query.data])
+  const categories = Object.keys(AI_RISK_LABEL) as AIRiskCategory[]
   const statusOptions = useMemo(() => STAGES.map((s) => ({ value: s, label: STAGE_LABEL[s] })), [])
   const globallyFiltered = useMemo(
     () => incidents.filter((i) => matchesGlobalFilters(i, filters)),
@@ -196,10 +210,10 @@ export function AIIncidentsPage(): React.JSX.Element {
                 title={t('No incidents')}
                 detail={
                   openOnly
-                    ? 'No open incidents. Clear the filter to see closed ones.'
+                    ? t('No open incidents. Clear the filter to see closed ones.')
                     : incidents.length > 0
-                      ? 'No incidents match the current filters. Widen the date range or clear a filter to see more results.'
-                      : 'No AI incidents are on the register.'
+                      ? t('No incidents match the current filters. Widen the date range or clear a filter to see more results.')
+                      : t('No AI incidents are on the register.')
                 }
               />
             ) : (
@@ -231,6 +245,21 @@ export function AIIncidentsPage(): React.JSX.Element {
                 ))}
               </ul>
             )}
+          </GovPanel>
+
+          <GovPanel title={t('Incident lifecycle')} tone="default">
+            <p className="mb-3 text-xs leading-relaxed text-ink-500">
+              {t('Every AI incident moves through the same five stages, each owned by a named officer.')}
+            </p>
+            <ol className="grid grid-cols-1 gap-2 sm:grid-cols-5">
+              {STAGES.map((s, i) => (
+                <li key={s} className={`rounded-lg border p-2 ${SHADE.auto.tile}`}>
+                  <p className="text-[0.625rem] font-semibold text-ink-400">{t('Stage {0}', i + 1)}</p>
+                  <p className="text-[0.8125rem] font-semibold text-ink-800">{STAGE_LABEL[s]}</p>
+                  <p className="mt-0.5 text-[0.625rem] leading-relaxed text-ink-500">{STAGE_RULE[s]}</p>
+                </li>
+              ))}
+            </ol>
           </GovPanel>
         </div>
 
@@ -284,6 +313,25 @@ export function AIIncidentsPage(): React.JSX.Element {
                 </GovPanel>
               </>
             ) : null}
+
+            <GovPanel title={t('Risk categories')} tone="red">
+              <p className="mb-3 text-xs leading-relaxed text-ink-500">
+                {t('The categories an incident is filed under.')}
+              </p>
+              <ul className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-ink-700">
+                {categories.map((c) => (
+                  <li key={c}>{AI_RISK_LABEL[c]}</li>
+                ))}
+              </ul>
+            </GovPanel>
+
+            <GovPanel title={t('Controls that raise an incident')} tone="amber">
+              <ul className="space-y-1.5 text-xs leading-relaxed text-ink-700">
+                <li className="flex items-start gap-1.5"><ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-govt-600" />{t('Citation validation: an answer citing an evidence reference that does not resolve would be withheld.')}</li>
+                <li className="flex items-start gap-1.5"><ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-govt-600" />{t('Gateway block: a request for an act reserved to a named officer is refused before any answer is composed.')}</li>
+                <li className="flex items-start gap-1.5"><ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-govt-600" />{t('Officer report: a reviewing officer would flag an answer as wrong or unsafe.')}</li>
+              </ul>
+            </GovPanel>
 
             <DemonstrationNotice />
           </div>

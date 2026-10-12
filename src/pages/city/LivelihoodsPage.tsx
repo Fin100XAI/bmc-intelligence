@@ -62,7 +62,7 @@ import { registerLayer } from '@/data/runtime'
 
 const TITLE = 'Urban Livelihoods & Poverty Alleviation'
 function build$BREADCRUMBS() {
-  return [{ label: t('City Intelligence') }, { label: t('Urban Livelihoods') }]
+  return [{ label: t('Wards & Citizens') }, { label: t('Housing & Livelihoods') }, { label: t('Livelihoods & vending') }]
 }
 let BREADCRUMBS: ReturnType<typeof build$BREADCRUMBS> = build$BREADCRUMBS()
 registerLayer(() => {
@@ -122,7 +122,7 @@ export function LivelihoodsPage(): React.JSX.Element {
   if (isLoading) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={BREADCRUMBS} />
+        <PageHeader eyebrow={t('Wards & Citizens')} breadcrumbs={BREADCRUMBS} />
         <LoadingState variant="metrics" />
         <LoadingState variant="table" rows={8} />
       </PageBody>
@@ -131,7 +131,7 @@ export function LivelihoodsPage(): React.JSX.Element {
   if (error) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={BREADCRUMBS} />
+        <PageHeader eyebrow={t('Wards & Citizens')} breadcrumbs={BREADCRUMBS} />
         <ErrorState
           detail={error.message}
           onRetry={() => {
@@ -364,14 +364,14 @@ export function LivelihoodsPage(): React.JSX.Element {
   return (
     <PageBody>
       <PageHeader
-        eyebrow={t('City Intelligence')}
+        eyebrow={t('Wards & Citizens')}
         breadcrumbs={BREADCRUMBS}
         freshness={freshness}
       />
 
       <DemonstrationNotice />
 
-      <FilterBar show={['ward', 'search']} searchPlaceholder="Search premises and vending zones" />
+      <FilterBar show={['ward', 'search']} searchPlaceholder={t('Search premises and vending zones')} />
 
       <MetricGrid columns={4}>
         <MetricCard
@@ -422,7 +422,7 @@ export function LivelihoodsPage(): React.JSX.Element {
         {filteredZones.length === 0 ? (
           <EmptyState
             title={t('No vending zones match the current filters')}
-            detail="Clear a filter to widen the vending register."
+            detail={t('Clear a filter to widen the vending register.')}
           />
         ) : (
           <DataTable rows={filteredZones} columns={zoneColumns} rowKey={(r) => r.id} pageSize={12} />
@@ -436,7 +436,7 @@ export function LivelihoodsPage(): React.JSX.Element {
         {filteredCentres.length === 0 ? (
           <EmptyState
             title={t('No premises match the current filters')}
-            detail="Clear a filter to widen the estate."
+            detail={t('Clear a filter to widen the estate.')}
           />
         ) : (
           <DataTable rows={filteredCentres} columns={centreColumns} rowKey={(r) => r.id} pageSize={12} />
@@ -485,10 +485,10 @@ export function LivelihoodsPage(): React.JSX.Element {
                 <EmptyState
                   compact
                   title={t('No vending zones in scope')}
-                  detail="Clear a filter to widen the vending register."
+                  detail={t('Clear a filter to widen the vending register.')}
                 />
               ) : (
-                <RankedBarChart data={worstWards} unit=" vendors" />
+                <RankedBarChart data={worstWards} unit={t(' vendors')} />
               )}
             </div>
           </GovPanel>

@@ -313,7 +313,7 @@ export function GovernmentCorrespondencePage(): React.JSX.Element {
           {t('Every Government Resolution, circular and notification received, most recently issued first.')}
         </p>
         {filtered.length === 0 ? (
-          <EmptyState className="mx-3 mb-3" title={t('No correspondence matches the current filters')} detail="Clear a filter to widen the register." />
+          <EmptyState className="mx-3 mb-3" title={t('No correspondence matches the current filters')} detail={t('Clear a filter to widen the register.')} />
         ) : (
           <DataTable rows={filtered} columns={columns} rowKey={(g) => g.id} pageSize={15} />
         )}

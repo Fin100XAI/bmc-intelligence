@@ -32,8 +32,6 @@ export const MR_PART_39: Record<string, string> = {
     'संदर्भासाठी: भारताच्या जनगणना २०११ च्या प्रारूप आकडेवारीनुसार मुंबईच्या सुमारे {0}% लोकसंख्या झोपडपट्टी भागांत राहत होती, हे दुय्यम वृत्तांकनात मोठ्या प्रमाणात पुनरावृत्त झाले आहे - मूळ जनगणनेची "झोपडपट्ट्यांसाठी प्राथमिक जनगणना सारांश" सारणी स्वतः थेट सापडली नाही.',
   'For context: BMC operates {0} municipal markets citywide (2019 reporting put 92 of them in dilapidated condition); a separate 2022 count found 92 vegetable markets with 17,164 licensed vendors. No more recent citywide recount was found.':
     'संदर्भासाठी: BMC शहरभर {0} महानगरपालिका बाजार चालवते (२०१९ च्या वृत्तांकनानुसार त्यांपैकी ९२ जीर्ण अवस्थेत होते); एका स्वतंत्र २०२२ च्या गणनेत ९२ भाजी बाजार व १७,१६४ परवानाधारक विक्रेते आढळले. त्यानंतरची अधिक अलीकडील शहरव्यापी पुनर्गणना आढळली नाही.',
-  "For context: BMC's own network runs {0} specialised major hospitals, {1} health posts, {2} dispensaries and {3} maternity homes.":
-    'संदर्भासाठी: BMC चे स्वतःचे जाळे {0} विशेषोपचार प्रमुख रुग्णालये, {1} आरोग्य केंद्रे, {2} दवाखाने आणि {3} प्रसूतिगृहे चालवते.',
   'For context: BMC\'s own published road network is ~{0} km citywide. Its "Pedestrians First" enforcement drive separately cleared {1} km of encroached footpaths in 2025-26.':
     'संदर्भासाठी: BMC चे स्वतःचे प्रकाशित रस्ता जाळे शहरभर सुमारे {0} कि.मी. आहे. त्याच्या "पादचारी प्रथम" अंमलबजावणी मोहिमेने २०२५-२६ मध्ये स्वतंत्रपणे {1} कि.मी. अतिक्रमित पदपथ मोकळे केले.',
   "For context: BMC's eight existing STPs run ~{0} MLD combined dry-weather capacity today, most providing preliminary rather than full secondary treatment. Seven more plants totalling 2,464 MLD are under construction under MSDP-II.":

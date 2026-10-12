@@ -4,6 +4,7 @@ import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { GovPanel } from '@/components/gov/GovPanel'
 import { Badge } from '@/components/ui/badges'
 import { Select } from '@/components/ui/primitives'
+import { EmptyState } from '@/components/ui/states'
 import { KpiTile } from '@/components/infographic'
 import { EvidenceValue, VerificationBadge, useDecisionLayer, verificationLabel } from '@/components/decision'
 import { isSourceStale, sourceAgeDays, type VerificationState } from '@/domains/evidence/model'
@@ -56,8 +57,20 @@ export function EvidenceRegistryPage(): React.JSX.Element {
         <KpiTile icon={<FileWarning className="h-5 w-5" />} label={t('Figures in dispute')} value={formatNumber(conflicts)} reading={t('sources disagree - both shown')} tone="warn" />
       </div>
 
-      <GovPanel title={t('Evidence records')} subtitle={t('Click a value for its full trace: calculation, source, original text, date and confidence.')} dense>
-        <div className="overflow-x-auto">
+      <GovPanel
+        title={t('Evidence records')}
+        subtitle={t('Click a value for its full trace: calculation, source, original text, date and confidence.')}
+        dense
+        actions={
+          <Badge tone="neutral" size="sm">
+            {t('{0} of {1}', formatNumber(evidence.length), formatNumber(layer.evidence.length))}
+          </Badge>
+        }
+      >
+        {evidence.length === 0 ? (
+          <EmptyState compact title={t('No figures in this verification state')} detail={t('Choose "All verification states" to see every figure.')} />
+        ) : null}
+        <div className={evidence.length === 0 ? 'hidden' : 'overflow-x-auto'}>
           <table className="w-full min-w-[56rem] text-left text-[0.75rem]">
             <thead className="bg-surface-sunken text-[0.625rem] tracking-wide text-ink-500 uppercase">
               <tr>

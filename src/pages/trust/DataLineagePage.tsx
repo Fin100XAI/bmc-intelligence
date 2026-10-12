@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { ArrowDown, ArrowRight, GitBranch, ShieldAlert, Table2 } from 'lucide-react'
+import { ArrowDown, ArrowRight, Gauge, GitBranch, RefreshCw, ShieldAlert, Table2 } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { Badge, ClassificationBadge, StateBadge } from '@/components/ui/badges'
 import {
@@ -26,6 +26,7 @@ import { LINEAGE_STAGE_LABEL, type LineageGraph, type LineageStage } from '@/typ
 import { formatDate, formatRelative } from '@/utils/format'
 import { DEMO_NOW } from '@/utils/deterministic'
 import { cn } from '@/utils/cn'
+import { SHADE } from '@/components/ui/shade'
 import { t } from '@/i18n'
 
 /**
@@ -81,15 +82,18 @@ function averageQuality(graph: LineageGraph): number {
  * failed dashboard stage leaves the figure derived but unreadable. Stating it
  * per kind is what turns a diagram into something to act on.
  */
-const STAGE_IMPACT: Record<LineageStage['kind'], string> = {
-  source: 'The metric loses its input entirely. It is withheld rather than published from an older batch, because a figure whose source has stopped is not a current figure.',
-  ingestion: 'New records stop arriving. The metric continues to publish its last computed value with an ageing freshness label until it crosses the staleness threshold, then is withheld.',
-  validation: 'Records arrive but are not checked. The platform will not promote unvalidated records into the canonical entity, so the metric freezes at its last validated batch.',
-  'canonical-entity': 'Ward, department and asset references stop resolving. Every scoped figure derived from this metric loses its scope and is withheld rather than reported city-wide.',
-  'derived-metric': 'The computation itself stops. Anything citing this metric as evidence loses that citation and the associated intelligence drops its confidence accordingly.',
-  'intelligence-engine': 'The metric still computes but raises no signals. Alerts and intelligence items that would have been generated from it simply do not appear — a silent gap, which is why this stage is monitored rather than inferred.',
-  dashboard: 'The figure remains derived and citable but is not rendered. Evidence chains and exports continue to resolve; only the on-screen presentation is lost.',
-  decision: 'The metric can no longer be attached to a decision case. It remains readable, but decisions taken while this stage is down carry no recorded link to it.',
+function stageImpact(kind: LineageStage['kind']): string {
+  const impact: Record<LineageStage['kind'], string> = {
+  source: t('The metric loses its input entirely. It is withheld rather than published from an older batch, because a figure whose source has stopped is not a current figure.'),
+  ingestion: t('New records stop arriving. The metric continues to publish its last computed value with an ageing freshness label until it crosses the staleness threshold, then is withheld.'),
+  validation: t('Records arrive but are not checked. The platform will not promote unvalidated records into the canonical entity, so the metric freezes at its last validated batch.'),
+  'canonical-entity': t('Ward, department and asset references stop resolving. Every scoped figure derived from this metric loses its scope and is withheld rather than reported city-wide.'),
+  'derived-metric': t('The computation itself stops. Anything citing this metric as evidence loses that citation and the associated intelligence drops its confidence accordingly.'),
+  'intelligence-engine': t('The metric still computes but raises no signals. Alerts and intelligence items that would have been generated from it simply do not appear — a silent gap, which is why this stage is monitored rather than inferred.'),
+  dashboard: t('The figure remains derived and citable but is not rendered. Evidence chains and exports continue to resolve; only the on-screen presentation is lost.'),
+  decision: t('The metric can no longer be attached to a decision case. It remains readable, but decisions taken while this stage is down carry no recorded link to it.'),
+  }
+  return impact[kind]
 }
 
 export function DataLineagePage(): React.JSX.Element {
@@ -140,7 +144,7 @@ export function DataLineagePage(): React.JSX.Element {
   if (lineageQuery.error) return <ErrorState detail={lineageQuery.error.message} onRetry={() => lineageQuery.refetch()} />
 
   if (graphs.length === 0) {
-    return <EmptyState title={t('No lineage graphs published')} detail="No metric lineage was reachable for your principal's scope." />
+    return <EmptyState title={t('No lineage graphs published')} detail={t('No metric lineage was reachable for your principal\'s scope.')} />
   }
 
   const selected = filtered.find((g) => g.id === selectedId) ?? filtered[0] ?? graphs[0]!
@@ -222,7 +226,7 @@ export function DataLineagePage(): React.JSX.Element {
         const currency = currencyOf(g)
         return (
           <Badge tone={CURRENCY_TONE[currency]} dot>
-            {CURRENCY_LABEL[currency]}
+            {t(CURRENCY_LABEL[currency])}
           </Badge>
         )
       },
@@ -253,7 +257,7 @@ export function DataLineagePage(): React.JSX.Element {
             <SegmentedControl<'graph' | 'catalogue'>
               value={view}
               onChange={setView}
-              ariaLabel="Lineage view"
+              ariaLabel={t('Lineage view')}
               options={[
                 { value: 'graph', label: t('Pipeline'), icon: <GitBranch className="h-3.5 w-3.5" /> },
                 { value: 'catalogue', label: t('Catalogue'), icon: <Table2 className="h-3.5 w-3.5" /> },
@@ -287,25 +291,45 @@ export function DataLineagePage(): React.JSX.Element {
       />
 
       <MetricGrid columns={4}>
-        <Card>
-          <p className="label-institutional">{t('Lineage graphs published')}</p>
-          <p className="numeric mt-2 text-metric font-semibold text-ink-900">{graphs.length}</p>
-          <p className="mt-0.5 text-[0.6875rem] text-ink-500">{t('{0} pipeline stages in total', rollup.stages)}</p>
+        <Card className={cn(SHADE.blue.tile, 'flex items-start gap-3')}>
+          <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE.blue.chip)}>
+            <GitBranch className="h-4 w-4" aria-hidden />
+          </span>
+          <div className="min-w-0">
+            <p className="label-institutional">{t('Lineage graphs published')}</p>
+            <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE.blue.value)}>{graphs.length}</p>
+            <p className="mt-0.5 text-[0.6875rem] text-ink-500">{t('{0} pipeline stages in total', rollup.stages)}</p>
+          </div>
         </Card>
-        <Card>
-          <p className="label-institutional">{t('Mean stage quality')}</p>
-          <p className="numeric mt-2 text-metric font-semibold text-ink-900">{rollup.quality}/100</p>
-          <p className="mt-0.5 text-[0.6875rem] text-ink-500">{t('Across every published graph')}</p>
+        <Card className={cn(SHADE.teal.tile, 'flex items-start gap-3')}>
+          <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE.teal.chip)}>
+            <Gauge className="h-4 w-4" aria-hidden />
+          </span>
+          <div className="min-w-0">
+            <p className="label-institutional">{t('Mean stage quality')}</p>
+            <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE.teal.value)}>{rollup.quality}/100</p>
+            <p className="mt-0.5 text-[0.6875rem] text-ink-500">{t('Across every published graph')}</p>
+          </div>
         </Card>
-        <Card tone={rollup.ageing.length > 0 ? 'warn' : 'default'}>
-          <p className="label-institutional">{t('Approaching threshold')}</p>
-          <p className="numeric mt-2 text-metric font-semibold text-ink-900">{rollup.ageing.length}</p>
-          <p className="mt-0.5 text-[0.6875rem] text-ink-500">{t('Validated {0}–{1} days ago', WARNING_DAYS, FRESHNESS_DAYS)}</p>
+        <Card className={cn(SHADE[rollup.ageing.length > 0 ? 'amber' : 'green'].tile, 'flex items-start gap-3')}>
+          <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE[rollup.ageing.length > 0 ? 'amber' : 'green'].chip)}>
+            <RefreshCw className="h-4 w-4" aria-hidden />
+          </span>
+          <div className="min-w-0">
+            <p className="label-institutional">{t('Approaching threshold')}</p>
+            <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE[rollup.ageing.length > 0 ? 'amber' : 'green'].value)}>{rollup.ageing.length}</p>
+            <p className="mt-0.5 text-[0.6875rem] text-ink-500">{t('Validated {0}–{1} days ago', WARNING_DAYS, FRESHNESS_DAYS)}</p>
+          </div>
         </Card>
-        <Card tone={rollup.stale.length > 0 ? 'critical' : 'default'}>
-          <p className="label-institutional">{t('Withheld from evidence')}</p>
-          <p className="numeric mt-2 text-metric font-semibold text-ink-900">{rollup.stale.length}</p>
-          <p className="mt-0.5 text-[0.6875rem] text-ink-500">{t('Beyond the {0}-day threshold', FRESHNESS_DAYS)}</p>
+        <Card className={cn(SHADE[rollup.stale.length > 0 ? 'red' : 'green'].tile, 'flex items-start gap-3')}>
+          <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE[rollup.stale.length > 0 ? 'red' : 'green'].chip)}>
+            <ShieldAlert className="h-4 w-4" aria-hidden />
+          </span>
+          <div className="min-w-0">
+            <p className="label-institutional">{t('Withheld from evidence')}</p>
+            <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE[rollup.stale.length > 0 ? 'red' : 'green'].value)}>{rollup.stale.length}</p>
+            <p className="mt-0.5 text-[0.6875rem] text-ink-500">{t('Beyond the {0}-day threshold', FRESHNESS_DAYS)}</p>
+          </div>
         </Card>
       </MetricGrid>
 
@@ -340,7 +364,7 @@ export function DataLineagePage(): React.JSX.Element {
               columns={catalogueColumns}
               rowKey={(g) => g.id}
               searchable
-              searchPlaceholder="Search metrics and domains"
+              searchPlaceholder={t('Search metrics and domains')}
               pageSize={12}
               activeRowKey={selected.id}
               onRowClick={(g) => {
@@ -360,7 +384,7 @@ export function DataLineagePage(): React.JSX.Element {
             actions={
               <div className="flex items-center gap-1.5">
                 <Badge tone={CURRENCY_TONE[selectedCurrency]} dot>
-                  {CURRENCY_LABEL[selectedCurrency]}
+                  {t(CURRENCY_LABEL[selectedCurrency])}
                 </Badge>
                 <ClassificationBadge classification={selected.classification} />
               </div>
@@ -508,7 +532,7 @@ export function DataLineagePage(): React.JSX.Element {
 
             <GovPanel title={t('If this stage stops')} tone="amber">
               <p className="mb-2 text-xs leading-relaxed text-ink-500">{t('Impact assessment, not a hypothetical.')}</p>
-              <p className="mt-2 text-[0.8125rem] leading-relaxed text-ink-700">{STAGE_IMPACT[openStage.kind]}</p>
+              <p className="mt-2 text-[0.8125rem] leading-relaxed text-ink-700">{stageImpact(openStage.kind)}</p>
             </GovPanel>
           </div>
         ) : null}

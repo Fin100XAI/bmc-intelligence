@@ -45,7 +45,7 @@ import { t } from '@/i18n'
 import { registerLayer } from '@/data/runtime'
 
 /**
- * Storm Water Intelligence - nallahs, closed drains, culverts and the
+ * Storm Water Intelligence - major and minor nallahs, closed drains, culverts and the
  * pumping stations that discharge them, read against the pre-monsoon
  * desilting cycle and explained through the published blockage-risk
  * drivers carried on every reach.
@@ -53,8 +53,8 @@ import { registerLayer } from '@/data/runtime'
 
 function build$DRAIN_TYPE_LABEL(): Record<StormWaterDrain['type'], string> {
   return {
-  'major-nallah': t('Major Nallah'),
-  'minor-nallah': t('Minor Nallah'),
+  'major-nallah': t('Major nallah'),
+  'minor-nallah': t('Minor nallah'),
   'closed-drain': t('Closed Drain'),
   culvert: t('Culvert'),
 }
@@ -197,7 +197,7 @@ export function StormWaterIntelligencePage(): React.JSX.Element {
     return (
       <PageBody>
         <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={breadcrumbs} />
-        <EmptyState title={t('No storm water network data available')} detail="No drain or pumping station records were returned for the current scope." />
+        <EmptyState title={t('No storm water network data available')} detail={t('No drain or pumping station records were returned for the current scope.')} />
         <DemonstrationNotice />
       </PageBody>
     )
@@ -277,7 +277,7 @@ export function StormWaterIntelligencePage(): React.JSX.Element {
       x: point.x,
       y: point.y,
       label: p.name,
-      detail: `${p.pumpsOperational}/${p.pumpsTotal} pumps operational · Readiness ${p.readinessIndex}/100 · ${wardName(p.wardId)}`,
+      detail: t('{0}/{1} pumps operational · Readiness {2}/100 · {3}', p.pumpsOperational, p.pumpsTotal, p.readinessIndex, wardName(p.wardId)),
       kind: 'station',
       severity: p.readinessIndex < 60 ? 'critical' : p.readinessIndex < PUMP_READINESS_THRESHOLD ? 'high' : undefined,
     }
@@ -571,7 +571,7 @@ export function StormWaterIntelligencePage(): React.JSX.Element {
             {t('Open Monsoon Intelligence')}
           </LinkButton>
         }
-        controls={<FilterBar show={['ward', 'search']} searchPlaceholder="Search drain, reach or ward" />}
+        controls={<FilterBar show={['ward', 'search']} searchPlaceholder={t('Search drain, reach or ward')} />}
       />
 
       <MetricGrid columns={5}>
@@ -614,7 +614,7 @@ export function StormWaterIntelligencePage(): React.JSX.Element {
               {t('Sortable, searchable by reach or ward. Select a reach to inspect its published risk drivers.')}
             </p>
             {filteredDrains.length === 0 ? (
-              <EmptyState className="m-4" title={t('No reaches match the current filters')} detail="Adjust the ward or search term above." />
+              <EmptyState className="m-4" title={t('No reaches match the current filters')} detail={t('Adjust the ward or search term above.')} />
             ) : (
               <DataTable
                 rows={filteredDrains}
@@ -625,7 +625,7 @@ export function StormWaterIntelligencePage(): React.JSX.Element {
                 onRowClick={(r) => setSelectedDrainId(r.id === selectedDrainId ? null : r.id)}
                 activeRowKey={selectedDrainId ?? undefined}
                 initialSort={{ columnId: 'blockage', direction: 'desc' }}
-                ariaLabel="Storm water drain register"
+                ariaLabel={t('Storm water drain register')}
               />
             )}
           </GovPanel>
@@ -727,9 +727,9 @@ export function StormWaterIntelligencePage(): React.JSX.Element {
                 columns={contractorColumns}
                 rowKey={(r) => r.contractorId}
                 pageSize={8}
-                searchPlaceholder="Search contractor"
+                searchPlaceholder={t('Search contractor')}
                 initialSort={{ columnId: 'unverified-value', direction: 'desc' }}
-                ariaLabel="Contractor position on the desilting works programme"
+                ariaLabel={t('Contractor position on the desilting works programme')}
               />
             </GovPanel>
 
@@ -738,16 +738,16 @@ export function StormWaterIntelligencePage(): React.JSX.Element {
                 {t('One order per reach in the programme, with the quantum recorded against it and how that record was checked.')}
               </p>
               {filteredOrders.length === 0 ? (
-                <EmptyState className="m-4" title={t('No work orders match the current filters')} detail="Adjust the ward or search term above." />
+                <EmptyState className="m-4" title={t('No work orders match the current filters')} detail={t('Adjust the ward or search term above.')} />
               ) : (
                 <DataTable
                   rows={filteredOrders}
                   columns={orderColumns}
                   rowKey={(r) => r.id}
                   pageSize={10}
-                  searchPlaceholder="Search order, reach or contractor"
+                  searchPlaceholder={t('Search order, reach or contractor')}
                   initialSort={{ columnId: 'unverified-value', direction: 'desc' }}
-                  ariaLabel="Desilting work order register"
+                  ariaLabel={t('Desilting work order register')}
                 />
               )}
             </GovPanel>
@@ -801,16 +801,16 @@ export function StormWaterIntelligencePage(): React.JSX.Element {
                 {t('Every set in the fleet with its current state, duty over the last 30 days and whether it reports that state itself or is logged by hand at the site.')}
               </p>
               {filteredUnits.length === 0 ? (
-                <EmptyState className="m-4" title={t('No dewatering sets match the current filters')} detail="Adjust the ward or search term above." />
+                <EmptyState className="m-4" title={t('No dewatering sets match the current filters')} detail={t('Adjust the ward or search term above.')} />
               ) : (
                 <DataTable
                   rows={filteredUnits}
                   columns={unitColumns}
                   rowKey={(r) => r.id}
                   pageSize={10}
-                  searchPlaceholder="Search set, station or ward"
+                  searchPlaceholder={t('Search set, station or ward')}
                   initialSort={{ columnId: 'status', direction: 'asc' }}
-                  ariaLabel="Dewatering set register"
+                  ariaLabel={t('Dewatering set register')}
                 />
               )}
             </GovPanel>
@@ -826,9 +826,9 @@ export function StormWaterIntelligencePage(): React.JSX.Element {
             columns={pumpColumns}
             rowKey={(r) => r.id}
             pageSize={10}
-            searchPlaceholder="Search pumping station or ward"
+            searchPlaceholder={t('Search pumping station or ward')}
             initialSort={{ columnId: 'readiness', direction: 'asc' }}
-            ariaLabel="Pumping station readiness register"
+            ariaLabel={t('Pumping station readiness register')}
           />
         </GovPanel>
         </div>
@@ -859,7 +859,7 @@ export function StormWaterIntelligencePage(): React.JSX.Element {
                 </div>
               </div>
             ) : (
-              <EmptyState compact className="mt-3" title={t('No reach selected')} detail="Select a row in the drain register to inspect its risk drivers." />
+              <EmptyState compact className="mt-3" title={t('No reach selected')} detail={t('Select a row in the drain register to inspect its risk drivers.')} />
             )}
           </GovPanel>
 
@@ -876,7 +876,7 @@ export function StormWaterIntelligencePage(): React.JSX.Element {
                   label: t('Drain Blockage Risk'),
                   valueFor: (wardId) => average(drainRiskByWard.get(wardId)),
                   higherIsWorse: true,
-                  unit: '/100 blockage risk',
+                  unit: t('/100 blockage risk'),
                   description: t('Average blockage-risk score of drains mapped in the ward.'),
                 },
                 {
@@ -884,7 +884,7 @@ export function StormWaterIntelligencePage(): React.JSX.Element {
                   label: t('Pumping Station Readiness'),
                   valueFor: (wardId) => average(pumpReadinessByWard.get(wardId)),
                   higherIsWorse: false,
-                  unit: '/100 readiness index',
+                  unit: t('/100 readiness index'),
                   description: t('Average readiness index of pumping stations located in the ward.'),
                 },
               ]}
@@ -898,7 +898,7 @@ export function StormWaterIntelligencePage(): React.JSX.Element {
           <ChartFrame
             title={t('Desilting progress by ward')}
             unit={t('% completion')}
-            timeframe="Current pre-monsoon cycle"
+            timeframe={t('Current pre-monsoon cycle')}
             description={t('Every ward ranked from lowest to highest desilting completion against the 100% pre-monsoon target.')}
             height={Math.max(340, desiltingByWard.length * 15)}
             footnote={t('{0} reach(es) across {1} ward(s) remain below the {2}% operational threshold used departmentally to trigger priority attention.', belowThreshold.length, new Set(belowThreshold.map((d) => d.wardId)).size, DESILTING_OPERATIONAL_THRESHOLD)}
@@ -909,7 +909,7 @@ export function StormWaterIntelligencePage(): React.JSX.Element {
               layout="horizontal"
               series={[{ key: 'value', label: t('Desilting %'), colour: CHART_COLOURS.primary }]}
               referenceValue={PRE_MONSOON_DESILTING_TARGET}
-              referenceLabel="100% target"
+              referenceLabel={t('100% target')}
             />
           </ChartFrame>
         </Card>

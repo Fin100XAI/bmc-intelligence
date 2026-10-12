@@ -124,8 +124,6 @@ export const MR_PART_02: Record<string, string> = {
   'Produced by': 'कोणी तयार केले',
   'Project not found': 'प्रकल्प आढळला नाही',
   'Provenance chain': 'उगमसाखळी',
-  'Quality is assessed at ingestion against completeness, referential integrity with master data, and plausibility ranges. Records failing validation are quarantined with a reason code rather than silently discarded.':
-    'ग्रहणाच्या वेळी पूर्णता, मुख्य माहितीशी संदर्भ सुसंगती आणि संभाव्य मर्यादा यांवर गुणवत्ता तपासली जाते. पडताळणीत अपयशी ठरणाऱ्या नोंदी कारण संकेतासह वेगळ्या ठेवल्या जातात, त्या मुकाट्याने वगळल्या जात नाहीत.',
   'Raise a decision case from an intelligence item': 'बुद्धिमत्ता नोंदीवरून निर्णय प्रकरण उपस्थित करा',
   'Rank {0} of {1}': '{1} पैकी क्रमांक {0}',
   'Rationale:': 'कारणमीमांसा:',

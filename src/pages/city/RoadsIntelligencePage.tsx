@@ -193,7 +193,7 @@ export function RoadsIntelligencePage(): React.JSX.Element {
     return (
       <PageBody>
         <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={breadcrumbs} />
-        <EmptyState title={t('No road network data available')} detail="No segment records were returned for the current scope." />
+        <EmptyState title={t('No road network data available')} detail={t('No segment records were returned for the current scope.')} />
         <DemonstrationNotice />
       </PageBody>
     )
@@ -252,7 +252,7 @@ export function RoadsIntelligencePage(): React.JSX.Element {
     weight: ROAD_PRIORITY_WEIGHTS[key],
     contribution: Math.round(ROAD_PRIORITY_WEIGHTS[key] * 1000) / 10,
     rawScore: Math.round(ROAD_PRIORITY_WEIGHTS[key] * 100),
-    explanation: `Weighted at ${(ROAD_PRIORITY_WEIGHTS[key] * 100).toFixed(0)}% of every open defect's published priority score.`,
+    explanation: t('Weighted at {0}% of every open defect\'s published priority score.', (ROAD_PRIORITY_WEIGHTS[key] * 100).toFixed(0)),
   }))
 
   const selectedDefect = defects.find((d) => d.id === selectedDefectId) ?? null
@@ -371,7 +371,7 @@ export function RoadsIntelligencePage(): React.JSX.Element {
           <FilterBar
             show={['ward', 'status', 'search']}
             statusOptions={STATUS_PIPELINE.map((s) => ({ value: s, label: STATUS_LABEL[s] }))}
-            searchPlaceholder="Search segment or ward"
+            searchPlaceholder={t('Search segment or ward')}
           />
         }
       />
@@ -410,7 +410,7 @@ export function RoadsIntelligencePage(): React.JSX.Element {
             {t('Selecting a segment focuses the ward filter across the rest of this page.')}
           </p>
           {filteredSegments.length === 0 ? (
-            <EmptyState className="m-3" title={t('No segments match the current filters')} detail="Adjust the ward or search term above." />
+            <EmptyState className="m-3" title={t('No segments match the current filters')} detail={t('Adjust the ward or search term above.')} />
           ) : (
             <DataTable
               rows={filteredSegments}
@@ -420,7 +420,7 @@ export function RoadsIntelligencePage(): React.JSX.Element {
               searchable={false}
               onRowClick={(r) => setFilter('wardIds', filters.wardIds.length === 1 && filters.wardIds[0] === r.wardId ? [] : [r.wardId])}
               initialSort={{ columnId: 'condition', direction: 'asc' }}
-              ariaLabel="Road segment register"
+              ariaLabel={t('Road segment register')}
             />
           )}
         </GovPanel>
@@ -430,7 +430,7 @@ export function RoadsIntelligencePage(): React.JSX.Element {
             {t('Highest-priority open defects by published score, {0}. Excludes repaired and verified-closed defects.', bandWardId ? wardName(bandWardId) : 'city-wide')}
           </p>
           {rankedForBand.length === 0 ? (
-            <EmptyState className="m-3" compact title={t('No open defects in the priority queue')} detail="Every defect in this scope has been repaired or verified closed." />
+            <EmptyState className="m-3" compact title={t('No open defects in the priority queue')} detail={t('Every defect in this scope has been repaired or verified closed.')} />
           ) : (
             <ol className="divide-y divide-ink-50">
               {rankedForBand.slice(0, 8).map((d, i) => (
@@ -476,7 +476,7 @@ export function RoadsIntelligencePage(): React.JSX.Element {
             {t('Ranked by priority score. Select a row to inspect its driver breakdown.')}
           </p>
           {filteredDefects.length === 0 ? (
-            <EmptyState className="m-3" title={t('No defects match the current filters')} detail="Adjust the ward, type, status or emergency-route filter above." />
+            <EmptyState className="m-3" title={t('No defects match the current filters')} detail={t('Adjust the ward, type, status or emergency-route filter above.')} />
           ) : (
             <DataTable
               rows={filteredDefects}
@@ -487,7 +487,7 @@ export function RoadsIntelligencePage(): React.JSX.Element {
               onRowClick={(r) => setSelectedDefectId(r.id === selectedDefectId ? null : r.id)}
               activeRowKey={selectedDefectId ?? undefined}
               initialSort={{ columnId: 'priority', direction: 'desc' }}
-              ariaLabel="Road defect register"
+              ariaLabel={t('Road defect register')}
             />
           )}
         </GovPanel>
@@ -524,7 +524,7 @@ export function RoadsIntelligencePage(): React.JSX.Element {
             {t('Segments overdue against an indicative departmental resurfacing cycle by surface type (asphalt 6 years, paver block 10 years, mastic 8 years, concrete 15 years), used here for planning purposes only.')}
           </p>
           {overdueSegments.length === 0 ? (
-            <EmptyState compact title={t('No segment overdue against its indicative cycle')} detail="Every segment has been resurfaced within its indicative surface-type cycle." />
+            <EmptyState compact title={t('No segment overdue against its indicative cycle')} detail={t('Every segment has been resurfaced within its indicative surface-type cycle.')} />
           ) : (
             <ul className="divide-y divide-ink-50">
               {overdueSegments.slice(0, 12).map((r) => (
@@ -585,7 +585,7 @@ export function RoadsIntelligencePage(): React.JSX.Element {
                         size="xs"
                         variant="primary"
                         disabled={!mayEdit}
-                        title={mayEdit ? `Move to ${STATUS_LABEL[next]}` : 'Your role does not hold project:edit for this ward. This control is disabled by the permission engine.'}
+                        title={mayEdit ? t('Move to {0}', STATUS_LABEL[next]) : t('Your role does not hold project:edit for this ward. This control is disabled by the permission engine.')}
                         onClick={() => setPendingStatusChange({ defect: selectedDefect, next })}
                       >
                         {t('Move to {0}', STATUS_LABEL[next])}
@@ -602,12 +602,12 @@ export function RoadsIntelligencePage(): React.JSX.Element {
                 ) : null}
               </div>
             ) : (
-              <EmptyState compact title={t('No defect selected')} detail="Select a row in the defect register, an entry in the priority queue, or a marker on the map." />
+              <EmptyState compact title={t('No defect selected')} detail={t('Select a row in the defect register, an entry in the priority queue, or a marker on the map.')} />
             )}
           </GovPanel>
 
           <GovPanel title={t('Priority band distribution')} tone="amber">
-            <p className="mb-3 text-xs leading-relaxed text-ink-500">{bandWardId ? `Filtered to ${wardName(bandWardId)}.` : 'City-wide, all wards.'}</p>
+            <p className="mb-3 text-xs leading-relaxed text-ink-500">{bandWardId ? t('Filtered to {0}.', wardName(bandWardId)) : t('City-wide, all wards.')}</p>
             <div>
               <CompositionBar segments={bands.map((b) => ({ id: b.band, label: b.band, value: b.count, colour: BAND_COLOUR[b.tone] }))} />
             </div>
@@ -630,7 +630,7 @@ export function RoadsIntelligencePage(): React.JSX.Element {
           </GovPanel>
 
           <GovPanel title={t('Work-order pipeline')} tone="green">
-            <p className="mb-3 text-xs leading-relaxed text-ink-500">{bandWardId ? `Filtered to ${wardName(bandWardId)}.` : 'City-wide, all wards.'}</p>
+            <p className="mb-3 text-xs leading-relaxed text-ink-500">{bandWardId ? t('Filtered to {0}.', wardName(bandWardId)) : t('City-wide, all wards.')}</p>
             <div>
               <CompositionBar segments={pipeline.map((p) => ({ id: p.id, label: p.label, value: p.value, colour: PIPELINE_COLOUR[p.id as RoadDefect['status']] }))} />
             </div>
@@ -647,13 +647,13 @@ export function RoadsIntelligencePage(): React.JSX.Element {
             void updateDefectStatus(pendingStatusChange.defect.id, pendingStatusChange.next, reason)
           }
         }}
-        title={pendingStatusChange ? `Move to ${STATUS_LABEL[pendingStatusChange.next]}` : 'Update defect status'}
+        title={pendingStatusChange ? t('Move to {0}', STATUS_LABEL[pendingStatusChange.next]) : t('Update defect status')}
         description={
           pendingStatusChange
-            ? `Defect ${pendingStatusChange.defect.id} will move from ${STATUS_LABEL[pendingStatusChange.defect.status]} to ${STATUS_LABEL[pendingStatusChange.next]}. This action and your reason are written to the permanent audit trail.`
+            ? t('Defect {0} will move from {1} to {2}. This action and your reason are written to the permanent audit trail.', pendingStatusChange.defect.id, STATUS_LABEL[pendingStatusChange.defect.status], STATUS_LABEL[pendingStatusChange.next])
             : undefined
         }
-        confirmLabel={pendingStatusChange ? `Move to ${STATUS_LABEL[pendingStatusChange.next]}` : 'Confirm'}
+        confirmLabel={pendingStatusChange ? t('Move to {0}', STATUS_LABEL[pendingStatusChange.next]) : 'Confirm'}
         requireReason
       />
 

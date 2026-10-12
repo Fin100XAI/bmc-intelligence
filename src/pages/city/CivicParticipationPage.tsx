@@ -22,7 +22,6 @@ import { queryKeys } from '@/app/queryClient'
 import { civicParticipationService } from '@/services'
 import { usePageMasthead } from '@/stores/masthead.store'
 import { useFilterStore, type FilterState } from '@/stores/ui.store'
-import { activeCorporation } from '@/config/municipality.config'
 import { departmentName, wardShortName } from '@/data/reference'
 import {
   ENGAGEMENT_STATUS_LABEL,
@@ -36,6 +35,7 @@ import type { DateRangeKey } from '@/types/common'
 import { DEMO_NOW } from '@/utils/deterministic'
 import { formatDate, formatNumber } from '@/utils/format'
 import { t } from '@/i18n'
+import { activeCorporation } from '@/config/municipality.config'
 
 const DATE_RANGE_HOURS: Record<DateRangeKey, number> = {
   '24h': 24,
@@ -112,7 +112,7 @@ export function CivicParticipationPage(): React.JSX.Element {
   if (loading) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('Citizen Services & Social Development')} breadcrumbs={[{ label: t('Citizen Services & Social Development') }, { label: t('Civic Participation') }]} />
+        <PageHeader eyebrow={t('Wards & Citizens')} breadcrumbs={[{ label: t('Wards & Citizens') }, { label: t('Ward Offices & Welfare') }, { label: t('Civic participation') }]} />
         <LoadingState variant="metrics" />
         <LoadingState variant="table" rows={8} />
       </PageBody>
@@ -121,13 +121,19 @@ export function CivicParticipationPage(): React.JSX.Element {
   if (anyError) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('Citizen Services & Social Development')} breadcrumbs={[{ label: t('Citizen Services & Social Development') }, { label: t('Civic Participation') }]} />
+        <PageHeader eyebrow={t('Wards & Citizens')} breadcrumbs={[{ label: t('Wards & Citizens') }, { label: t('Ward Offices & Welfare') }, { label: t('Civic participation') }]} />
         <ErrorState detail={anyError.message} onRetry={() => { void positionQuery.refetch(); void engagementsQuery.refetch() }} />
       </PageBody>
     )
   }
 
   const position = positionQuery.data
+  // The incorporated share is read against the items that have actually been
+  // decided. Stated on its own it reads as "everything was taken up" while most
+  // consultations are still open or under review, so the tile names both counts.
+  const decidedCount = engagements.filter((e) => e.status === 'incorporated' || e.status === 'noted-not-incorporated').length
+  const incorporatedCount = engagements.filter((e) => e.status === 'incorporated').length
+  const pendingCount = engagements.filter((e) => e.status === 'open' || e.status === 'under-review').length
 
   const columns: Array<Column<CivicEngagementRecord>> = [
     {
@@ -189,10 +195,10 @@ export function CivicParticipationPage(): React.JSX.Element {
   return (
     <PageBody>
       <PageHeader
-        eyebrow={t('Citizen Services & Social Development')}
-        breadcrumbs={[{ label: t('Citizen Services & Social Development') }, { label: t('Civic Participation') }]}
+        eyebrow={t('Wards & Citizens')}
+        breadcrumbs={[{ label: t('Wards & Citizens') }, { label: t('Ward Offices & Welfare') }, { label: t('Civic participation') }]}
         hideProvenance
-        controls={<FilterBar show={['date', 'ward', 'department', 'search']} searchPlaceholder="Search engagements" />}
+        controls={<FilterBar show={['date', 'ward', 'department', 'search']} searchPlaceholder={t('Search engagements')} />}
       />
       <DemonstrationNotice />
 
@@ -201,7 +207,6 @@ export function CivicParticipationPage(): React.JSX.Element {
           label={t('Consultations active')}
           value={position?.consultationsActive ?? 0}
           icon={<Vote className="h-4 w-4" />}
-          background="red"
           footer={
             activeCorporation.id === 'bmc' && activeCorporation.civicWardCommitteeUnawarePct ? (
               <span className="text-[0.625rem] leading-snug text-ink-400">
@@ -209,14 +214,14 @@ export function CivicParticipationPage(): React.JSX.Element {
               </span>
             ) : undefined
           }
+          background="red"
         />
         <MetricCard label={t('Closed (12m)')} value={position?.consultationsClosed12m ?? 0} icon={<MessageSquareText className="h-4 w-4" />} background="amber" />
         <MetricCard label={t('Submissions received (12m)')} value={position ? formatNumber(position.totalSubmissions12m) : '-'} icon={<Users className="h-4 w-4" />} background="green" />
         <MetricCard
-          label={t('Incorporated into a decision')}
-          value={position?.incorporatedSharePct ?? 0}
-          unit="%"
-          support={t('Mean {0} days to respond', position?.meanResponseDays ?? 0)}
+          label={t('Incorporated, of items decided')}
+          value={t('{0} of {1}', incorporatedCount, decidedCount)}
+          support={t('{0} still open or under review · mean {1} days to respond', pendingCount, position?.meanResponseDays ?? 0)}
           icon={<Vote className="h-4 w-4" />}
         />
       </MetricGrid>
@@ -252,7 +257,7 @@ export function CivicParticipationPage(): React.JSX.Element {
           {t('Every consultation, suggestion scheme and public-comment period the Corporation has run, most recently opened first.')}
         </p>
         {filtered.length === 0 ? (
-          <EmptyState className="mx-3 mb-3" title={t('No engagements match the current filters')} detail="Clear a filter to widen the register." />
+          <EmptyState className="mx-3 mb-3" title={t('No engagements match the current filters')} detail={t('Clear a filter to widen the register.')} />
         ) : (
           <DataTable rows={filtered} columns={columns} rowKey={(e) => e.id} pageSize={12} />
         )}

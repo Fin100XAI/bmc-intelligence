@@ -15,7 +15,6 @@ export const MR_PART_12: Record<string, string> = {
   'm high tide at': 'मी. उंच भरती —',
   Major: 'प्रमुख',
   'Major Event': 'प्रमुख कार्यक्रम',
-  'Major Nallah': 'प्रमुख नाला',
   'Mandatory MFA at sign-in for every account, particularly privileged roles, closing the gap this environment surfaces but does not enforce.':
     'प्रत्येक खात्यासाठी, विशेषतः विशेषाधिकार भूमिकांसाठी, प्रवेशाच्या वेळी बहुघटक प्रमाणीकरण बंधनकारक करणे — हे वातावरण जी त्रुटी समोर आणते पण लागू करत नाही, ती यामुळे भरून निघते.',
   Mangrove: 'कांदळवन',
@@ -77,7 +76,6 @@ export const MR_PART_12: Record<string, string> = {
   'Minimisation is applied at the connector boundary, before a record ever reaches the intelligence layer - not as a downstream redaction step. {0} in this register contain personal data; the explicit measure recorded against each - identity fields dropped at ingestion, records aggregated below individual level, or pseudonymisation before analysis - is shown per dataset above, and any gap is flagged rather than assumed.':
     'किमानीकरण जोडणीच्या सीमेवरच लागू होते — नोंद बुद्धिमत्ता स्तरापर्यंत पोहोचण्यापूर्वीच, पुढील टप्प्यावरील गोपन कृती म्हणून नव्हे. या नोंदवहीतील {0} मध्ये वैयक्तिक माहिती आहे; प्रत्येकाविरुद्ध नोंदवलेला स्पष्ट उपाय — ग्रहणाच्या वेळी ओळख क्षेत्रे वगळणे, व्यक्तिगत पातळीखाली नोंदी एकत्रित करणे, किंवा विश्लेषणापूर्वी छद्मनामीकरण — वर प्रत्येक माहितीसंचानुसार दाखवला आहे, आणि कोणतीही उणीव गृहीत न धरता खुणांकित केली जाते.',
   'Minimisation measures applied': 'लागू केलेले किमानीकरण उपाय',
-  'Minor Nallah': 'लहान नाला',
   'missed point(s) this cycle.': 'या फेरीत चुकलेले थांबे.',
   'mm avg': 'मिमी सरासरी',
   'Model evaluation': 'प्रारूप मूल्यमापन',

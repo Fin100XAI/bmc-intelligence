@@ -226,7 +226,7 @@ export function WorkforceIntelligencePage(): React.JSX.Element {
     <PageBody>
       <PageHeader
         eyebrow={t('Council & Establishment')}
-        breadcrumbs={[{ label: t('Council & Establishment') }, { label: t('Workforce Intelligence') }]}
+        breadcrumbs={[{ label: t('Council & Establishment') }, { label: t('Workforce') }]}
         freshness={FRESHNESS}
         actions={
           <LinkButton to={ROUTES.assets} variant="outline" icon={<Boxes className="h-3.5 w-3.5" />}>
@@ -240,7 +240,7 @@ export function WorkforceIntelligencePage(): React.JSX.Element {
       {unitsQuery.error ? <ErrorState detail={unitsQuery.error.message} onRetry={() => unitsQuery.refetch()} /> : null}
 
       {!unitsQuery.isLoading && !unitsQuery.error && allUnits.length === 0 ? (
-        <EmptyState title={t('No workforce records available')} detail="No establishment records are recorded within your authorised scope." />
+        <EmptyState title={t('No workforce records available')} detail={t('No establishment records are recorded within your authorised scope.')} />
       ) : null}
 
       {!unitsQuery.isLoading && !unitsQuery.error && allUnits.length > 0 && units.length === 0 ? (
@@ -349,12 +349,12 @@ export function WorkforceIntelligencePage(): React.JSX.Element {
 
           <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
             <Card>
-              <ChartFrame title={t('Vacancy ranking - by department')} unit="%" timeframe="Current establishment" description={t('Departments ranked by vacancy against sanctioned strength, highest first.')} freshness={FRESHNESS} height={Math.max(220, vacancyRanking.length * 20)}>
+              <ChartFrame title={t('Vacancy ranking - by department')} unit="%" timeframe={t('Current establishment')} description={t('Departments ranked by vacancy against sanctioned strength, highest first.')} freshness={FRESHNESS} height={Math.max(220, vacancyRanking.length * 20)}>
                 <RankedBarChart data={vacancyRanking} unit="%" higherIsWorse />
               </ChartFrame>
             </Card>
             <Card>
-              <ChartFrame title={t('Workload distribution')} unit="cadres" timeframe="Current establishment" description={t('Count of department–cadre records in each workload-index band.')} freshness={FRESHNESS} height={240}>
+              <ChartFrame title={t('Workload distribution')} unit={t('cadres')} timeframe={t('Current establishment')} description={t('Count of department–cadre records in each workload-index band.')} freshness={FRESHNESS} height={240}>
                 <CategoryBarChart data={workloadDistribution} categoryKey="label" series={[{ key: 'cadres', label: t('Cadres'), colour: '#f59e0b' }]} />
               </ChartFrame>
             </Card>

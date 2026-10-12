@@ -113,8 +113,8 @@ export function AmenitiesPage(): React.JSX.Element {
     return (
       <PageBody>
         <PageHeader
-          eyebrow={t('City Intelligence')}
-          breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Parking & Public Amenities') }]}
+          eyebrow={t('City Services')}
+          breadcrumbs={[{ label: t('City Services') }, { label: t('Public Amenities') }]}
         />
         <LoadingState variant="metrics" />
         <LoadingState variant="table" rows={8} />
@@ -126,8 +126,8 @@ export function AmenitiesPage(): React.JSX.Element {
     return (
       <PageBody>
         <PageHeader
-          eyebrow={t('City Intelligence')}
-          breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Parking & Public Amenities') }]}
+          eyebrow={t('City Services')}
+          breadcrumbs={[{ label: t('City Services') }, { label: t('Public Amenities') }]}
         />
         <ErrorState
           detail={(amenitiesQuery.error ?? gapsQuery.error ?? trendQuery.error)?.message}
@@ -163,7 +163,7 @@ export function AmenitiesPage(): React.JSX.Element {
   const openComplaints = filtered.reduce((s, a) => s + a.openComplaints30d, 0)
 
   // The city ratio across the wards in view. Stated as the mean of the ward
-  // ratios rather than a single city-wide division, so that a large ward with
+  // ratios rather than a single city-wide ward, so that a large ward with
   // a good ratio cannot mask several small wards with terrible ones - which is
   // the arithmetic by which this figure is usually made to look acceptable.
   const residentsPerToilet = filteredGaps.length
@@ -255,7 +255,7 @@ export function AmenitiesPage(): React.JSX.Element {
           </Badge>
         ) : (
           <Badge tone={a.kind === 'public-toilet' ? 'critical' : 'muted'} size="sm">
-            {a.kind === 'public-toilet' ? 'None - not usable' : 'None'}
+            {a.kind === 'public-toilet' ? t('None - not usable') : 'None'}
           </Badge>
         ),
       sortValue: (a) => (a.waterSupplyAvailable ? 1 : 0),
@@ -394,14 +394,14 @@ export function AmenitiesPage(): React.JSX.Element {
   return (
     <PageBody>
       <PageHeader
-        eyebrow={t('City Intelligence')}
-        breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Parking & Public Amenities') }]}
+        eyebrow={t('City Services')}
+        breadcrumbs={[{ label: t('City Services') }, { label: t('Public Amenities') }]}
         freshness={freshness}
       />
 
       <DemonstrationNotice />
 
-      <FilterBar show={['ward', 'search']} searchPlaceholder="Search amenities, wards or classes" />
+      <FilterBar show={['ward', 'search']} searchPlaceholder={t('Search amenities, wards or classes')} />
 
       <MetricGrid columns={4}>
         <MetricCard
@@ -431,7 +431,7 @@ export function AmenitiesPage(): React.JSX.Element {
                 : 'positive'
           }
           icon={<Toilet className="h-4 w-4" />}
-          explanation="Ward residents divided by public toilet seats they could actually use - seats with a water supply and not in critical condition. Seats, not blocks: a block of four and a block of twenty are not the same amenity."
+          explanation={t('Ward residents divided by public toilet seats they could actually use - seats with a water supply and not in critical condition. Seats, not blocks: a block of four and a block of twenty are not the same amenity.')}
           background="amber"
           footer={<span className="text-[0.625rem] leading-snug text-ink-400">{t('For reference: Praja Foundation\'s RTI-based report (data as of Dec 2023) counted 7,646 public toilet blocks across Mumbai\'s 24 wards — a block count, a coarser unit than the usable-seat ratio above, which this page measures because it is the Swachh Bharat standard. The two figures are not directly comparable.')}</span>}
         />
@@ -442,7 +442,7 @@ export function AmenitiesPage(): React.JSX.Element {
           support={t('{0} of {1} amenities', formatNumber(accessible), formatNumber(filtered.length))}
           tone={accessibleSharePct < 40 ? 'critical' : accessibleSharePct < 60 ? 'warn' : 'positive'}
           icon={<Accessibility className="h-4 w-4" />}
-          explanation="Step-free approach, grab rails and a usable entrance width. An amenity a wheelchair user cannot enter is not available to them, however it is counted on the asset register."
+          explanation={t('Step-free approach, grab rails and a usable entrance width. An amenity a wheelchair user cannot enter is not available to them, however it is counted on the asset register.')}
           background="green"
         />
         <MetricCard
@@ -467,7 +467,7 @@ export function AmenitiesPage(): React.JSX.Element {
               <EmptyState
                 className="mx-3 mb-3"
                 title={t('No amenities match the current filters')}
-                detail="Clear a filter to widen the amenity register."
+                detail={t('Clear a filter to widen the amenity register.')}
               />
             ) : (
               <DataTable rows={filtered} columns={columns} rowKey={(a) => a.id} pageSize={12} />
@@ -482,7 +482,7 @@ export function AmenitiesPage(): React.JSX.Element {
               <EmptyState
                 className="mx-3 mb-3"
                 title={t('No wards match the current filters')}
-                detail="Clear the ward filter to see provision across the corporation."
+                detail={t('Clear the ward filter to see provision across the corporation.')}
               />
             ) : (
               <DataTable rows={filteredGaps} columns={gapColumns} rowKey={(g) => g.wardId} pageSize={12} />
@@ -525,7 +525,7 @@ export function AmenitiesPage(): React.JSX.Element {
             </p>
             <div className="px-4 pb-4" style={{ height: Math.max(210, worstToiletRatio.length * 26) }}>
               {worstToiletRatio.length === 0 ? (
-                <EmptyState compact title={t('No wards in scope')} detail="Widen the ward filter to rank provision." />
+                <EmptyState compact title={t('No wards in scope')} detail={t('Widen the ward filter to rank provision.')} />
               ) : (
                 <RankedBarChart
                   data={worstToiletRatio.map((g) => ({

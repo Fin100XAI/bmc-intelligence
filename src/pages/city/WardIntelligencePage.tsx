@@ -64,7 +64,9 @@ import {
 } from '@/utils/format'
 import { DEMO_NOW } from '@/utils/deterministic'
 import { t } from '@/i18n'
+import { meaningIcon } from '@/components/ui/meaning-icon'
 import { registerLayer } from '@/data/runtime'
+import { SHADE, shadeForTone } from '@/components/ui/shade'
 
 /**
  * Ward Intelligence - the ward as a single coherent operational picture.
@@ -140,7 +142,11 @@ export function WardIntelligencePage(): React.JSX.Element {
   useEffect(() => {
     if (!resolvedWardId) return
     if (wardParamContext !== contextWardId) setWardParamContext(contextWardId)
-    if (wardParam !== resolvedWardId) setWardParam(resolvedWardId)
+    // Only a chosen ward goes into the address. Writing the fallback there
+    // made it read back, on the next render, as if someone had chosen it - and
+    // it was then published to every page's filter below, narrowing the whole
+    // platform to Ward 1.
+    if (wardWasChosen && wardParam !== resolvedWardId) setWardParam(resolvedWardId)
     // Only a ward somebody asked for is published to the shared selection.
     // The fallback ward this screen opens on is a presentation default, and
     // publishing it would filter every other page in the platform to a ward
@@ -154,7 +160,7 @@ export function WardIntelligencePage(): React.JSX.Element {
     setContextWard(id)
   }
 
-  const breadcrumbs = [{ label: t('City Intelligence') }, { label: t('Ward Intelligence') }]
+  const breadcrumbs = [{ label: t('Wards & Citizens') }, { label: t('Ward Intelligence') }]
   const freshness: DataFreshness = {
     generatedAt: DEMO_NOW.toISOString(),
     sourceObservedAt: DEMO_NOW.toISOString(),
@@ -167,7 +173,7 @@ export function WardIntelligencePage(): React.JSX.Element {
   if (wardsQuery.isLoading) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={breadcrumbs} />
+        <PageHeader eyebrow={t('Wards & Citizens')} breadcrumbs={breadcrumbs} />
         <LoadingState variant="metrics" />
         <LoadingState variant="block" />
       </PageBody>
@@ -176,7 +182,7 @@ export function WardIntelligencePage(): React.JSX.Element {
   if (wardsQuery.error) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={breadcrumbs} />
+        <PageHeader eyebrow={t('Wards & Citizens')} breadcrumbs={breadcrumbs} />
         <ErrorState detail={wardsQuery.error.message} onRetry={() => wardsQuery.refetch()} />
       </PageBody>
     )
@@ -184,10 +190,10 @@ export function WardIntelligencePage(): React.JSX.Element {
   if (wards.length === 0) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={breadcrumbs} />
+        <PageHeader eyebrow={t('Wards & Citizens')} breadcrumbs={breadcrumbs} />
         <EmptyState
           title={t('No authorised wards')}
-          detail="Your assigned role does not currently hold view access to any ward. Contact Access Governance if this is unexpected."
+          detail={t('Your assigned role does not currently hold view access to any ward. Contact Access Governance if this is unexpected.')}
         />
         <DemonstrationNotice />
       </PageBody>
@@ -199,7 +205,7 @@ export function WardIntelligencePage(): React.JSX.Element {
   return (
     <PageBody>
       <PageHeader
-        eyebrow={t('City Intelligence')}
+        eyebrow={t('Wards & Citizens')}
         breadcrumbs={breadcrumbs}
         freshness={freshness}
         controls={
@@ -231,7 +237,7 @@ export function WardIntelligencePage(): React.JSX.Element {
         variant="underline"
         value={tab}
         onChange={(id) => setTab(id as WardTab)}
-        ariaLabel="Ward Intelligence sections"
+        ariaLabel={t('Ward Intelligence sections')}
         items={[
           { id: 'overview', label: t('Ward Overview'), icon: <LayoutGrid className="h-3.5 w-3.5" /> },
           { id: 'index', label: t('Risk & Performance Index'), icon: <Gauge className="h-3.5 w-3.5" /> },
@@ -284,7 +290,7 @@ function WardOverviewTab({
   }
   const profile = profileQuery.data
   if (!profile) {
-    return <EmptyState title={t('No ward profile')} detail="A composite profile could not be assembled for this ward." />
+    return <EmptyState title={t('No ward profile')} detail={t('A composite profile could not be assembled for this ward.')} />
   }
 
   const { ward } = profile
@@ -359,7 +365,7 @@ function WardOverviewTab({
               <ChartFrame
                 title={t('SLA compliance by category')}
                 unit={t('%, higher is better')}
-                timeframe="Current reporting period"
+                timeframe={t('Current reporting period')}
                 height={Math.max(120, profile.services.byCategory.length * 28)}
               >
                 <RankedBarChart
@@ -434,11 +440,11 @@ function WardOverviewTab({
                   ) : null}
                 </>
               ) : (
-                <EmptyState compact title={t('No water zone mapped')} detail="This ward is not currently mapped to a water distribution zone record." />
+                <EmptyState compact title={t('No water zone mapped')} detail={t('This ward is not currently mapped to a water distribution zone record.')} />
               )}
             </div>
 
-            <div className="rounded-lg border border-ink-200 p-3">
+            <div className={cn('rounded-lg border p-3', SHADE.green.tile)}>
               <p className="label-institutional mb-2 flex items-center gap-1.5">
                 <Trash2 className="h-3.5 w-3.5" />{' '}{t('Solid waste')}
               </p>
@@ -454,17 +460,22 @@ function WardOverviewTab({
                   </DefinitionRow>
                 </DefinitionList>
               ) : (
-                <EmptyState compact title={t('No waste performance record')} detail="No solid waste performance record is mapped to this ward." />
+                <EmptyState compact title={t('No waste performance record')} detail={t('No solid waste performance record is mapped to this ward.')} />
               )}
             </div>
 
-            <div className="rounded-lg border border-ink-200 p-3">
-              <p className="label-institutional mb-2">{t('Road network')}</p>
+            <div className={cn('rounded-lg border p-3', SHADE[shadeForTone(toneForScore(profile.roads.conditionIndex))].tile)}>
+              <p className="label-institutional mb-2 flex items-center gap-2">
+                <span className={cn('flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-white', SHADE[shadeForTone(toneForScore(profile.roads.conditionIndex))].chip)}>
+                  {meaningIcon('road', 'blue')}
+                </span>
+                {t('Road network')}
+              </p>
               <div className="flex items-baseline gap-2">
                 <span className={cn('numeric text-2xl font-semibold', SCORE_TONE_TEXT[toneForScore(profile.roads.conditionIndex)])}>
                   {profile.roads.conditionIndex}
                 </span>
-                <span className="text-xs text-ink-500">/100 condition index · {profile.roads.openDefects}{' '}{t('high-priority defects')}</span>
+                <span className="text-xs text-ink-500">{t('/100 condition index · {0} high-priority defects', profile.roads.openDefects)}</span>
               </div>
               {profile.roads.topDefects.length > 0 ? (
                 <ul className="mt-2.5 space-y-1.5">
@@ -482,7 +493,7 @@ function WardOverviewTab({
               )}
             </div>
 
-            <div className="rounded-lg border border-ink-200 p-3">
+            <div className={cn('rounded-lg border p-3', SHADE.teal.tile)}>
               <p className="label-institutional mb-2 flex items-center gap-1.5">
                 <Waves className="h-3.5 w-3.5" />{' '}{t('Drainage & flood readiness')}
               </p>
@@ -548,7 +559,7 @@ function WardOverviewTab({
           </MetricGrid>
           <DefinitionList className="mt-3">
             <DefinitionRow label={t('Revenue target vs collected')}>
-              {formatCrore(profile.finance.revenueCollectedCrore)} of {formatCrore(profile.finance.revenueTargetCrore)}
+              {t('{0} of {1}', formatCrore(profile.finance.revenueCollectedCrore), formatCrore(profile.finance.revenueTargetCrore))}
             </DefinitionRow>
             <DefinitionRow label={t('Arrears')}>{formatCrore(profile.finance.arrearsCrore)}</DefinitionRow>
             <DefinitionRow label={t('Capital budget')}>
@@ -602,7 +613,7 @@ function WardOverviewTab({
             {t('Active intelligence items raised against this ward, across every domain.')}
           </p>
           {profile.openIntelligence.length === 0 ? (
-            <EmptyState compact className="mx-3 mb-3" title={t('No open intelligence')} detail="No open intelligence item is currently recorded for this ward." />
+            <EmptyState compact className="mx-3 mb-3" title={t('No open intelligence')} detail={t('No open intelligence item is currently recorded for this ward.')} />
           ) : (
             <div className="grid grid-cols-1 gap-2 p-3 pt-0 sm:grid-cols-2">
               {profile.openIntelligence.map((item) => (
@@ -634,7 +645,7 @@ function WardOverviewTab({
               {t('Incidents recorded against this ward not yet resolved or reviewed.')}
             </p>
             {profile.incidents.length === 0 ? (
-              <EmptyState compact className="mx-3 mb-3" title={t('No open incidents')} detail="No unresolved incident is currently recorded for this ward." />
+              <EmptyState compact className="mx-3 mb-3" title={t('No open incidents')} detail={t('No unresolved incident is currently recorded for this ward.')} />
             ) : (
               <div className="scrollbar-slim max-h-80 space-y-2 overflow-y-auto p-3 pt-0">
                 {profile.incidents.map((i) => (
@@ -650,7 +661,7 @@ function WardOverviewTab({
             {t('Aggregate outbreak signal strength by disease indicator. No patient-level data of any kind is modelled.')}
           </p>
           {profile.health.topSignals.length === 0 ? (
-            <EmptyState compact className="mt-3" title={t('No elevated signals')} detail="No outbreak signal above the reporting threshold is currently recorded for this ward." />
+            <EmptyState compact className="mt-3" title={t('No elevated signals')} detail={t('No outbreak signal above the reporting threshold is currently recorded for this ward.')} />
           ) : (
             <>
               <div className="mt-3" style={{ height: Math.max(140, Math.min(6, profile.health.topSignals.length) * 34) }}>
@@ -662,9 +673,14 @@ function WardOverviewTab({
               </div>
               <div className="mt-3 space-y-2">
                 {profile.health.topSignals.slice(0, 2).map((sig) => (
-                  <div key={sig.id} className="rounded-lg border border-ink-200 p-3">
+                  <div key={sig.id} className={cn('rounded-lg border p-3', SHADE[shadeForTone(toneForScore(sig.outbreakSignal, false))].tile)}>
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-xs font-semibold text-ink-800">{DISEASE_LABEL[sig.disease]}</span>
+                      <span className="flex items-center gap-2 text-xs font-semibold text-ink-800">
+                        <span className={cn('flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-white', SHADE[shadeForTone(toneForScore(sig.outbreakSignal, false))].chip)}>
+                          {meaningIcon('health', 'blue')}
+                        </span>
+                        {DISEASE_LABEL[sig.disease]}
+                      </span>
                       <ConfidenceBadge confidence={sig.confidence} />
                     </div>
                     <p className={cn('numeric mt-1.5 text-xl font-semibold', SCORE_TONE_TEXT[toneForScore(sig.outbreakSignal, false)])}>
@@ -742,7 +758,7 @@ function RiskIndexTab({ wardId, wardLabel }: { wardId: string; wardLabel: string
   }
   const riskIndex = riskQuery.data
   if (!riskIndex) {
-    return <EmptyState title={t('No risk index available')} detail="A risk index could not be computed for this ward." />
+    return <EmptyState title={t('No risk index available')} detail={t('A risk index could not be computed for this ward.')} />
   }
   const profile = profileQuery.data
 
@@ -761,7 +777,7 @@ function RiskIndexTab({ wardId, wardLabel }: { wardId: string; wardLabel: string
                   direction: riskIndex.trendPct > 0.4 ? 'up' : riskIndex.trendPct < -0.4 ? 'down' : 'flat',
                   changePct: riskIndex.trendPct,
                   polarity: 'positive',
-                  comparisonLabel: 'ward health trend, vs previous period',
+                  comparisonLabel: t('ward health trend, vs previous period'),
                 }}
               />
               <ConfidenceBadge
@@ -831,7 +847,7 @@ function RiskIndexTab({ wardId, wardLabel }: { wardId: string; wardLabel: string
           <DefinitionList>
             {(Object.keys(WARD_INDEX_WEIGHTS) as Array<keyof typeof WARD_INDEX_WEIGHTS>).map((key) => (
               <DefinitionRow key={key} label={WARD_INDEX_LABELS[key]}>
-                {formatPercent(WARD_INDEX_WEIGHTS[key] * 100, 0)} weight
+                {t('{0} weight', formatPercent(WARD_INDEX_WEIGHTS[key] * 100, 0))}
               </DefinitionRow>
             ))}
           </DefinitionList>
@@ -881,7 +897,7 @@ function CompareTab({ wards }: { wards: Ward[] }): React.JSX.Element {
     return (
       <EmptyState
         title={t('Comparison unavailable')}
-        detail="Your authorised scope covers a single ward. Ward comparison requires view access to at least two wards."
+        detail={t('Your authorised scope covers a single ward. Ward comparison requires view access to at least two wards.')}
       />
     )
   }
@@ -910,7 +926,7 @@ function CompareTab({ wards }: { wards: Ward[] }): React.JSX.Element {
     return (
       <div className="space-y-4">
         {selectorPanel}
-        <EmptyState title={t('No comparison data')} detail="No comparison rows were returned for the selected wards." />
+        <EmptyState title={t('No comparison data')} detail={t('No comparison rows were returned for the selected wards.')} />
       </div>
     )
   }
@@ -1019,7 +1035,7 @@ function CompareTab({ wards }: { wards: Ward[] }): React.JSX.Element {
             aria-label={t('Metric to chart')}
           />
           {chartRow ? (
-            <ChartFrame title={chartRow.label} unit={chartRow.unit || 'value'} timeframe="Current reporting period" height={240}>
+            <ChartFrame title={chartRow.label} unit={chartRow.unit || t('value')} timeframe={t('Current reporting period')} height={240}>
               <CategoryBarChart
                 data={selectedWards.map((w) => ({ label: w.code, value: chartRow.values[w.id] ?? 0 }))}
                 series={[{ key: 'value', label: chartRow.label, colour: CHART_COLOURS.primary }]}

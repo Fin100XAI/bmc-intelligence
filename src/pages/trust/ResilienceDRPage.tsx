@@ -1,10 +1,5 @@
 import { useMemo, useState } from 'react'
-import {
-  Loader2,
-  Play,
-  RotateCcw,
-  ShieldAlert,
-} from 'lucide-react'
+import { AlertOctagon, ListChecks, Loader2, Play, PlayCircle, RotateCcw, ShieldAlert, Target } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { Badge, StateBadge } from '@/components/ui/badges'
 import { Button, Card, MetricGrid, Select } from '@/components/ui/primitives'
@@ -27,6 +22,8 @@ import {
 } from '@/data/dr.data'
 import { formatDateTime, formatRelative } from '@/utils/format'
 import { det, isoFromAnchor } from '@/utils/deterministic'
+import { SHADE } from '@/components/ui/shade'
+import { cn } from '@/utils/cn'
 import { t } from '@/i18n'
 
 /**
@@ -165,8 +162,8 @@ export function ResilienceDRPage(): React.JSX.Element {
 
   const backupColumns: Array<Column<BackupPosture>> = [
     { id: 'scope', header: t('Scope'), cell: (b) => <span className="font-medium text-ink-800">{b.scope}</span>, sortValue: (b) => b.scope, width: 'minmax(12rem,1.4fr)' },
-    { id: 'rpo', header: 'RPO', cell: (b) => <span className="numeric">{b.rpo}</span>, sortValue: (b) => b.rpo },
-    { id: 'rto', header: 'RTO', cell: (b) => <span className="numeric">{b.rto}</span>, sortValue: (b) => b.rto },
+    { id: 'rpo', header: t('RPO'), cell: (b) => <span className="numeric">{b.rpo}</span>, sortValue: (b) => b.rpo },
+    { id: 'rto', header: t('RTO'), cell: (b) => <span className="numeric">{b.rto}</span>, sortValue: (b) => b.rto },
     { id: 'method', header: t('Method'), cell: (b) => <span className="text-ink-600">{b.method}</span>, hideBelow: 'lg', width: 'minmax(14rem,1.6fr)' },
     { id: 'maturity', header: t('Maturity'), cell: (b) => <MaturityBadge maturity={b.maturity} />, sortValue: (b) => b.maturity },
     {
@@ -174,7 +171,7 @@ export function ResilienceDRPage(): React.JSX.Element {
       header: t('Operational here'),
       cell: (b) => (
         <Badge tone={b.maturity === 'target-architecture' ? 'critical' : 'positive'} dot>
-          {b.maturity === 'target-architecture' ? 'No' : 'Yes'}
+          {b.maturity === 'target-architecture' ? t('No') : t('Yes')}
         </Badge>
       ),
       sortValue: (b) => (b.maturity === 'target-architecture' ? 0 : 1),
@@ -209,7 +206,7 @@ export function ResilienceDRPage(): React.JSX.Element {
       header: t('Last result'),
       cell: (resilienceTest) => (
         <Badge tone={resilienceTest.lastResult === 'passed' ? 'positive' : resilienceTest.lastResult === 'passed-with-findings' ? 'warn' : 'muted'}>
-          {resilienceTest.lastResult === 'not-run' ? 'Not run' : resilienceTest.lastResult === 'passed-with-findings' ? 'Passed with findings' : 'Passed'}
+          {resilienceTest.lastResult === 'not-run' ? t('Not run') : resilienceTest.lastResult === 'passed-with-findings' ? t('Passed with findings') : t('Passed')}
         </Badge>
       ),
       sortValue: (resilienceTest) => resilienceTest.lastResult,
@@ -283,30 +280,50 @@ export function ResilienceDRPage(): React.JSX.Element {
       </Card>
 
       <MetricGrid columns={4}>
-        <Card>
-          <p className="label-institutional">{t('Recovery objectives declared')}</p>
-          <p className="numeric mt-2 text-metric font-semibold text-ink-900">{posture.backups.length}</p>
-          <p className="mt-0.5 text-[0.6875rem] text-ink-500">{t('Across every declared data scope')}</p>
+        <Card className={cn(SHADE.blue.tile, 'flex items-start gap-3')}>
+          <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE.blue.chip)}>
+            <Target className="h-4 w-4" aria-hidden />
+          </span>
+          <div className="min-w-0">
+            <p className="label-institutional">{t('Recovery objectives declared')}</p>
+            <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE.blue.value)}>{posture.backups.length}</p>
+            <p className="mt-0.5 text-[0.6875rem] text-ink-500">{t('Across every declared data scope')}</p>
+          </div>
         </Card>
-        <Card tone="critical">
-          <p className="label-institutional">{t('Objectives operational here')}</p>
-          <p className="numeric mt-2 text-metric font-semibold text-ink-900">
-            {posture.backups.filter((b) => b.maturity !== 'target-architecture').length}
-            <span className="text-base text-ink-400">/{posture.backups.length}</span>
-          </p>
-          <p className="mt-0.5 text-[0.6875rem] text-ink-500">{t('The rest are design targets only')}</p>
+        <Card className={cn(SHADE.red.tile, 'flex items-start gap-3')}>
+          <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE.red.chip)}>
+            <AlertOctagon className="h-4 w-4" aria-hidden />
+          </span>
+          <div className="min-w-0">
+            <p className="label-institutional">{t('Objectives operational here')}</p>
+            <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE.red.value)}>
+              {posture.backups.filter((b) => b.maturity !== 'target-architecture').length}
+              <span className="text-base text-ink-400">/{posture.backups.length}</span>
+            </p>
+            <p className="mt-0.5 text-[0.6875rem] text-ink-500">{t('The rest are design targets only')}</p>
+          </div>
         </Card>
-        <Card>
-          <p className="label-institutional">{t('Tests that can be drilled')}</p>
-          <p className="numeric mt-2 text-metric font-semibold text-ink-900">{exercisableCount}</p>
-          <p className="mt-0.5 text-[0.6875rem] text-ink-500">
-            {t('{0} describe architecture with nothing to exercise', targetOnly)}
-          </p>
+        <Card className={cn(SHADE.teal.tile, 'flex items-start gap-3')}>
+          <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE.teal.chip)}>
+            <ListChecks className="h-4 w-4" aria-hidden />
+          </span>
+          <div className="min-w-0">
+            <p className="label-institutional">{t('Tests that can be drilled')}</p>
+            <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE.teal.value)}>{exercisableCount}</p>
+            <p className="mt-0.5 text-[0.6875rem] text-ink-500">
+              {t('{0} describe architecture with nothing to exercise', targetOnly)}
+            </p>
+          </div>
         </Card>
-        <Card tone={drillCount > 0 ? 'info' : 'default'}>
-          <p className="label-institutional">{t('Drills run this session')}</p>
-          <p className="numeric mt-2 text-metric font-semibold text-ink-900">{drillCount}</p>
-          <p className="mt-0.5 text-[0.6875rem] text-ink-500">{t('Session only · not an institutional record')}</p>
+        <Card className={cn(SHADE[drillCount > 0 ? 'blue' : 'neutral'].tile, 'flex items-start gap-3')}>
+          <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE[drillCount > 0 ? 'blue' : 'neutral'].chip)}>
+            <PlayCircle className="h-4 w-4" aria-hidden />
+          </span>
+          <div className="min-w-0">
+            <p className="label-institutional">{t('Drills run this session')}</p>
+            <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE[drillCount > 0 ? 'blue' : 'neutral'].value)}>{drillCount}</p>
+            <p className="mt-0.5 text-[0.6875rem] text-ink-500">{t('Session only · not an institutional record')}</p>
+          </div>
         </Card>
       </MetricGrid>
 
@@ -366,8 +383,8 @@ export function ResilienceDRPage(): React.JSX.Element {
                     icon={runningId === resilienceTest.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Play className="h-3 w-3" />}
                     title={
                       canRun
-                        ? 'Run this drill against the demonstration environment. The result can come back with findings.'
-                        : 'This test describes target architecture. There is no replica, second zone or external store in this environment to exercise, so the drill is refused rather than reported as passing.'
+                        ? t('Run this drill against the demonstration environment. The result can come back with findings.')
+                        : t('This test describes target architecture. There is no replica, second zone or external store in this environment to exercise, so the drill is refused rather than reported as passing.')
                     }
                     onClick={() => setDrillTarget(resilienceTest)}
                   >
@@ -388,7 +405,7 @@ export function ResilienceDRPage(): React.JSX.Element {
                   <div className="flex flex-wrap items-center gap-1.5">
                     <span className="text-[0.8125rem] font-medium text-ink-800">{test?.name ?? drill.testId}</span>
                     <Badge tone={drill.outcome === 'passed' ? 'positive' : 'warn'} dot>
-                      {drill.outcome === 'passed' ? 'Passed' : 'Passed with findings'}
+                      {drill.outcome === 'passed' ? t('Passed') : t('Passed with findings')}
                     </Badge>
                     <div className="flex-1" />
                     <span className="text-[0.625rem] text-ink-400">{formatDateTime(drill.at)}</span>

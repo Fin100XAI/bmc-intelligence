@@ -4,8 +4,6 @@ export const MR_PART_35: Record<string, string> = {
     'मालमत्ता कर नागरिक पोर्टल (ptaxportal.mcgm.gov.in) प्रतिबिंबित करते — या प्रात्यक्षिकात हा एक अनुकरणीय फीड आहे.',
   "Mirrors MCGM's birth/death certificate services — a simulated feed in this demonstration.":
     'बृहन्मुंबई महानगरपालिकेच्या जन्म/मृत्यू दाखला सेवा प्रतिबिंबित करते — या प्रात्यक्षिकात हा एक अनुकरणीय फीड आहे.',
-  'Mirrors Shop & Establishment licensing under the Maharashtra Right to Public Services Act — a simulated feed in this demonstration.':
-    'महाराष्ट्र लोकसेवा हक्क अधिनियमांतर्गत दुकाने व आस्थापना परवाना प्रक्रिया प्रतिबिंबित करते — या प्रात्यक्षिकात हा एक अनुकरणीय फीड आहे.',
 
   // Pilot Data Ingestion page
   'Pilot Data Ingestion': 'प्रायोगिक माहिती अंतर्ग्रहण',

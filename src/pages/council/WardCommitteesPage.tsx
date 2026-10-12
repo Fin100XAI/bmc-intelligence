@@ -396,7 +396,7 @@ export function WardCommitteesPage(): React.JSX.Element {
           {t('Constituent matters an elected corporator has taken up directly - no constituent is named, only what moved and where.')}
         </p>
         {filteredCasework.length === 0 ? (
-          <EmptyState title={t('No casework matches the current filters')} detail="Clear a filter to widen the register." />
+          <EmptyState title={t('No casework matches the current filters')} detail={t('Clear a filter to widen the register.')} />
         ) : (
           <DataTable rows={filteredCasework} columns={caseworkColumns} rowKey={(c) => c.id} pageSize={15} />
         )}

@@ -22,7 +22,7 @@ import {
   type RevenueStream,
 } from '@/types/finance'
 import { wardName, wardShortName } from '@/data/reference'
-import { DEMO_NOW, isoFromAnchor } from '@/utils/deterministic'
+import { DEMO_NOW, FY_ELAPSED_FRACTION, FY_ELAPSED_PCT, isoFromAnchor } from '@/utils/deterministic'
 import { formatCrore, formatDelta, formatPercent } from '@/utils/format'
 import { FilterBar } from '@/components/filters/FilterBar'
 import {
@@ -58,7 +58,6 @@ import { registerLayer } from '@/data/runtime'
  * pro-rated, year-to-date target rather than the full annual target.
  */
 
-const FY_ELAPSED_FRACTION = 0.31
 
 const FRESHNESS: DataFreshness = {
   generatedAt: isoFromAnchor(0),
@@ -283,11 +282,9 @@ export function RevenueIntelligencePage(): React.JSX.Element {
     {
       id: 'variance',
       header: t('Vs phased target'),
-      cell: (row) => {
-        const phased = row.targetCrore * FY_ELAPSED_FRACTION
-        const variance = phased > 0 ? ((row.collectedCrore - phased) / phased) * 100 : 0
-        return <DeltaBadge value={Math.round(variance * 10) / 10} />
-      },
+      // The record's own variance, read against the share of the year
+      // elapsed at the clock.
+      cell: (row) => <DeltaBadge value={row.targetVariancePct} />,
       sortValue: (row) => row.targetVariancePct,
       align: 'right',
     },
@@ -449,8 +446,8 @@ export function RevenueIntelligencePage(): React.JSX.Element {
   return (
     <PageBody>
       <PageHeader
-        eyebrow={t('Revenue & Municipal Finance')}
-        breadcrumbs={[{ label: t('Revenue & Municipal Finance') }, { label: t('Revenue Intelligence') }]}
+        eyebrow={t('Revenue & Finance')}
+        breadcrumbs={[{ label: t('Revenue & Finance') }, { label: t('Revenue & Property Tax') }]}
         freshness={FRESHNESS}
         actions={
           <LinkButton to={ROUTES.property} variant="outline" icon={<Building className="h-3.5 w-3.5" />}>
@@ -492,7 +489,7 @@ export function RevenueIntelligencePage(): React.JSX.Element {
               <MetricCard
                 label={t('Variance vs phased target')}
                 value={formatDelta(cityPosition.targetVariancePct)}
-                support={t('Phased target {0} at 31% FY elapsed', formatCrore(cityPosition.phasedTarget))}
+                support={t('Phased target {0} at {1}% FY elapsed', formatCrore(cityPosition.phasedTarget), FY_ELAPSED_PCT)}
                 tone={cityPosition.targetVariancePct < -10 ? 'critical' : cityPosition.targetVariancePct < 0 ? 'warn' : 'positive'}
               />
               <MetricCard
@@ -516,7 +513,7 @@ export function RevenueIntelligencePage(): React.JSX.Element {
                 columns={streamColumns}
                 rowKey={(row) => row.id}
                 pageSize={8}
-                searchPlaceholder="Search revenue streams"
+                searchPlaceholder={t('Search revenue streams')}
               />
             </GovPanel>
 
@@ -531,7 +528,7 @@ export function RevenueIntelligencePage(): React.JSX.Element {
                 pageSize={10}
                 stickyHeader
                 maxHeight="24rem"
-                searchPlaceholder="Search wards"
+                searchPlaceholder={t('Search wards')}
                 onRowClick={(row) => row.wardId && openDrawer({ kind: 'ward', id: row.wardId })}
                 rowAccent={(row) => (
                   <SeverityRail severity={row.targetVariancePct < -25 ? 'high' : row.targetVariancePct < -10 ? 'medium' : 'low'} />
@@ -548,7 +545,7 @@ export function RevenueIntelligencePage(): React.JSX.Element {
                 variant="pill"
                 value={anomalyStatusFilter}
                 onChange={(id) => setAnomalyStatusFilter(id as typeof anomalyStatusFilter)}
-                ariaLabel="Filter anomalies by status"
+                ariaLabel={t('Filter anomalies by status')}
                 items={[
                   { id: 'all', label: t('All'), count: globallyFilteredAnomalies.length },
                   { id: 'open', label: STATUS_LABEL.open, count: statusCounts.open },
@@ -571,7 +568,7 @@ export function RevenueIntelligencePage(): React.JSX.Element {
             {!anomaliesQuery.isLoading && !anomaliesQuery.error && filteredAnomalies.length === 0 ? (
               <EmptyState
                 title={t('No anomalies in this status')}
-                detail="No revenue anomaly records match the selected status filter."
+                detail={t('No revenue anomaly records match the selected status filter.')}
                 className="m-4"
                 compact
               />
@@ -652,8 +649,8 @@ export function RevenueIntelligencePage(): React.JSX.Element {
                         disabled={!mayEditAnomalies}
                         title={
                           mayEditAnomalies
-                            ? `Move to ${STATUS_LABEL[next]}`
-                            : 'Your role does not hold revenue:edit. This control is disabled by the permission engine.'
+                            ? t('Move to {0}', STATUS_LABEL[next])
+                            : t('Your role does not hold revenue:edit. This control is disabled by the permission engine.')
                         }
                         onClick={() => setPendingAction({ anomaly: expandedAnomaly, nextStatus: next })}
                       >
@@ -672,7 +669,7 @@ export function RevenueIntelligencePage(): React.JSX.Element {
               <ChartFrame
                 title={t('Target vs realised - by stream')}
                 unit={t('₹ crore')}
-                timeframe="Phased year-to-date target vs collected"
+                timeframe={t('Phased year-to-date target vs collected')}
                 description={t('Compares the phased (year-to-date) target, not the full annual target, against actual collection for each stream.')}
                 freshness={FRESHNESS}
                 height={280}
@@ -698,7 +695,7 @@ export function RevenueIntelligencePage(): React.JSX.Element {
               <ChartFrame
                 title={t('Ranked collection efficiency - all wards')}
                 unit="%"
-                timeframe="FY 2026–27 to date"
+                timeframe={t('FY 2026–27 to date')}
                 description={t('Wards ranked from lowest to highest property-tax collection efficiency. Lowest performers are flagged for attention.')}
                 freshness={FRESHNESS}
                 height={420}
@@ -743,7 +740,7 @@ export function RevenueIntelligencePage(): React.JSX.Element {
               <ChartFrame
                 title={t('Forecast vs annual target - by stream')}
                 unit={t('₹ crore')}
-                timeframe="FY 2026–27 year-end forecast"
+                timeframe={t('FY 2026–27 year-end forecast')}
                 description={t('Forward-looking: the modelled year-end forecast against the full annual target for each stream.')}
                 freshness={FRESHNESS}
                 height={260}
@@ -773,7 +770,7 @@ export function RevenueIntelligencePage(): React.JSX.Element {
       ) : null}
 
       {!recordsQuery.isLoading && !recordsQuery.error && allRecords.length === 0 ? (
-        <EmptyState title={t('No revenue records available')} detail="The revenue service did not return any records for the current scope." />
+        <EmptyState title={t('No revenue records available')} detail={t('The revenue service did not return any records for the current scope.')} />
       ) : null}
 
       <ConfirmDialog
@@ -784,13 +781,13 @@ export function RevenueIntelligencePage(): React.JSX.Element {
             void updateAnomalyStatus(pendingAction.anomaly.id, pendingAction.nextStatus, reason)
           }
         }}
-        title={pendingAction ? `Move to ${STATUS_LABEL[pendingAction.nextStatus]}` : 'Update anomaly status'}
+        title={pendingAction ? t('Move to {0}', STATUS_LABEL[pendingAction.nextStatus]) : t('Update anomaly status')}
         description={
           pendingAction
-            ? `"${pendingAction.anomaly.title}" will be moved from ${STATUS_LABEL[pendingAction.anomaly.status]} to ${STATUS_LABEL[pendingAction.nextStatus]}. This action and your reason are written to the permanent audit trail.`
+            ? t('"{0}" will be moved from {1} to {2}. This action and your reason are written to the permanent audit trail.', pendingAction.anomaly.title, STATUS_LABEL[pendingAction.anomaly.status], STATUS_LABEL[pendingAction.nextStatus])
             : undefined
         }
-        confirmLabel={pendingAction ? `Move to ${STATUS_LABEL[pendingAction.nextStatus]}` : 'Confirm'}
+        confirmLabel={pendingAction ? t('Move to {0}', STATUS_LABEL[pendingAction.nextStatus]) : 'Confirm'}
         intent={pendingAction?.nextStatus === 'referred' ? 'critical' : 'primary'}
         requireReason
       />

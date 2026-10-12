@@ -21,6 +21,8 @@ import { useFilterStore } from '@/stores/ui.store'
 import type { FilterState } from '@/stores/ui.store'
 import { officerDisplayName } from '@/data/reference'
 import { DEMO_NOW, isoFromAnchor } from '@/utils/deterministic'
+import { DEMO_USERS } from '@/stores/auth.store'
+import { enumLabel } from '@/utils/enum-label'
 import { formatPercent, formatRelative } from '@/utils/format'
 import { DOMAIN_LABEL, type DateRangeKey, type IntelligenceDomain } from '@/types/common'
 import type { AgentWorkflow } from '@/types/ai'
@@ -109,6 +111,14 @@ function matchesGlobalFilters(workflow: AgentWorkflow, filters: FilterState): bo
   return true
 }
 
+
+/** Owners are recorded as officer or demonstration-user ids; show the post, never the raw id. */
+function ownerLabel(id: string): string {
+  const name = officerDisplayName(id)
+  if (name !== id) return name
+  return DEMO_USERS.find((u) => u.id === id)?.designation ?? id
+}
+
 export function AgentWorkflowsPage(): React.JSX.Element {
   // The shell's masthead states the screen's name; the page states the wording.
   usePageMasthead(t('Agent Workflows'))
@@ -158,9 +168,9 @@ export function AgentWorkflowsPage(): React.JSX.Element {
         <div className="flex min-w-0 flex-col gap-3 xl:col-span-8">
           {!workflowsQuery.isLoading && !workflowsQuery.error ? (
             rawWorkflows.length === 0 ? (
-              <EmptyState title={t('No agent workflows configured')} detail="No agent workflow records are visible within your authorised scope." />
+              <EmptyState title={t('No agent workflows configured')} detail={t('No agent workflow records are visible within your authorised scope.')} />
             ) : workflows.length === 0 ? (
-              <EmptyState title={t('No workflows match the current filters')} detail="Widen the date range or clear a filter to see more results." />
+              <EmptyState title={t('No workflows match the current filters')} detail={t('Widen the date range or clear a filter to see more results.')} />
             ) : (
               <>
                 <p className="text-xs text-ink-400">
@@ -181,17 +191,17 @@ export function AgentWorkflowsPage(): React.JSX.Element {
                         <div className="min-w-0 flex-1">
                           <div className="flex flex-wrap items-center gap-1.5">
                             <Badge tone={STATUS_TONE[workflow.status]} dot>
-                              {workflow.status}
+                              {enumLabel(workflow.status)}
                             </Badge>
                             <Badge tone="muted">{DOMAIN_LABEL[workflow.domain]}</Badge>
                             <Badge tone="intel" icon={<UserCheck className="h-3 w-3" />}>
-                              {checkpointCount} checkpoint{checkpointCount === 1 ? '' : 's'}
+                              {t('{0} checkpoint{1}', checkpointCount, checkpointCount === 1 ? '' : 's')}
                             </Badge>
                           </div>
                           <h3 className="mt-1.5 text-[0.9375rem] font-semibold text-ink-900">{workflow.name}</h3>
                           <p className="mt-1 max-w-3xl text-xs leading-relaxed text-ink-500">{workflow.description}</p>
                           <p className="mt-1.5 text-[0.6875rem] text-ink-400">
-                            {t('Trigger: {0} · Owner {1} · Last run {2}', workflow.trigger, officerDisplayName(workflow.ownerId), formatRelative(workflow.lastRunAt))}
+                            {t('Trigger: {0} · Owner {1} · Last run {2}', workflow.trigger, ownerLabel(workflow.ownerId), formatRelative(workflow.lastRunAt))}
                           </p>
                         </div>
                         <div className="flex shrink-0 flex-col items-end gap-1">
@@ -218,18 +228,18 @@ export function AgentWorkflowsPage(): React.JSX.Element {
                                     className={
                                       step.requiresHuman
                                         ? 'flex w-44 shrink-0 flex-col rounded-lg border-2 border-intel-300 bg-intel-50/50 p-2.5 text-left shadow-xs'
-                                        : 'flex w-40 shrink-0 flex-col rounded-lg border border-ink-100 bg-surface-sunken p-2.5 text-left'
+                                        : 'flex w-40 shrink-0 flex-col rounded-lg border border-google-blue-200 bg-google-blue-50 p-2.5 text-left'
                                     }
                                   >
                                     <div className="flex items-center gap-1.5">
-                                      <Icon className={step.requiresHuman ? 'h-3.5 w-3.5 shrink-0 text-intel-700' : 'h-3.5 w-3.5 shrink-0 text-ink-400'} />
+                                      <Icon className={step.requiresHuman ? 'h-3.5 w-3.5 shrink-0 text-intel-700' : 'h-3.5 w-3.5 shrink-0 text-google-blue-700'} />
                                       <span className={step.requiresHuman ? 'text-xs font-semibold text-intel-800' : 'text-xs font-semibold text-ink-800'}>
                                         {STEP_LABEL[step.kind]}
                                       </span>
                                     </div>
                                     <p className="mt-1 text-[0.6875rem] leading-snug text-ink-700">{step.name}</p>
                                     {step.requiresHuman ? (
-                                      <span className="mt-1.5 inline-flex w-fit items-center gap-1 rounded bg-intel-100 px-1.5 py-0.5 text-[0.5625rem] font-semibold tracking-wide text-intel-800 uppercase">
+                                      <span className="mt-1.5 inline-flex w-fit items-center gap-1 rounded bg-intel-100 px-1.5 py-0.5 text-[0.625rem] font-semibold tracking-wide text-intel-800 uppercase">
                                         <ShieldCheck className="h-2.5 w-2.5" />{' '}{t('Cannot be bypassed')}
                                       </span>
                                     ) : null}

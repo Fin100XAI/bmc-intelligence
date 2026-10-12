@@ -81,7 +81,7 @@ export function CitizenRegistrationPage(): React.JSX.Element {
   if (centresQuery.isLoading || trendQuery.isLoading) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Births & Deaths Registration') }]} />
+        <PageHeader eyebrow={t('City Services')} breadcrumbs={[{ label: t('City Services') }, { label: t('Civic Records & Markets') }]} />
         <LoadingState variant="metrics" />
         <LoadingState variant="table" rows={8} />
       </PageBody>
@@ -90,7 +90,7 @@ export function CitizenRegistrationPage(): React.JSX.Element {
   if (centresQuery.error || trendQuery.error) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Births & Deaths Registration') }]} />
+        <PageHeader eyebrow={t('City Services')} breadcrumbs={[{ label: t('City Services') }, { label: t('Civic Records & Markets') }]} />
         <ErrorState
           detail={(centresQuery.error ?? trendQuery.error)?.message}
           onRetry={() => { void centresQuery.refetch(); void trendQuery.refetch() }}
@@ -183,14 +183,14 @@ export function CitizenRegistrationPage(): React.JSX.Element {
   return (
     <PageBody>
       <PageHeader
-        eyebrow={t('City Intelligence')}
-        breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Births & Deaths Registration') }]}
+        eyebrow={t('City Services')}
+        breadcrumbs={[{ label: t('City Services') }, { label: t('Civic Records & Markets') }]}
         freshness={freshness}
       />
 
       <DemonstrationNotice />
 
-      <FilterBar show={['ward', 'search']} searchPlaceholder="Search registration centres" />
+      <FilterBar show={['ward', 'search']} searchPlaceholder={t('Search registration centres')} />
 
       <MetricGrid columns={4}>
         <MetricCard
@@ -220,7 +220,7 @@ export function CitizenRegistrationPage(): React.JSX.Element {
         <MetricCard
           label={t('Mean certificate issue')}
           value={meanIssue}
-          unit=" days"
+          unit={t(' days')}
           support={t('{0} certificates issued in 30 days', formatNumber(certificates))}
           tone={meanIssue > 7 ? 'critical' : meanIssue > 4 ? 'warn' : 'positive'}
           icon={<Clock3 className="h-4 w-4" />}
@@ -245,7 +245,7 @@ export function CitizenRegistrationPage(): React.JSX.Element {
               {t('Hospital registration units and ward offices within your authorised ward scope.')}
             </p>
             {filtered.length === 0 ? (
-              <EmptyState className="mx-3 mb-3" title={t('No registration centres match the current filters')} detail="Clear a filter to widen the register." />
+              <EmptyState className="mx-3 mb-3" title={t('No registration centres match the current filters')} detail={t('Clear a filter to widen the register.')} />
             ) : (
               <DataTable rows={filtered} columns={columns} rowKey={(r) => r.id} pageSize={12} />
             )}

@@ -80,7 +80,10 @@ const KIND_TONE: Record<MemoryKind, string> = {
 
 export function InstitutionalMemoryPage(): React.JSX.Element {
   // The shell's masthead states the screen's name; the page states the wording.
-  usePageMasthead(t('Municipal Institutional Memory'))
+  usePageMasthead(
+    t('Municipal Institutional Memory'),
+    t('What the corporation has decided, faced and learned, kept as a durable record. When a situation recurs, an officer can read what was done last time and what it taught — continuity of institutional knowledge, not its rediscovery.'),
+  )
 
   const [kind, setKind] = useState<string>('')
   const [searchInput, setSearchInput] = useState('')
@@ -192,7 +195,7 @@ export function InstitutionalMemoryPage(): React.JSX.Element {
           <GovPanel dense tone="amber" title={t('The record')}>
             <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">{t('Ranked by significance, most significant first.')}</p>
             {records.length === 0 ? (
-              <EmptyState title={t('No records match')} detail="Relax the filter or search to widen the set." />
+              <EmptyState title={t('No records match')} detail={t('Relax the filter or search to widen the set.')} />
             ) : (
               <ul className="divide-y divide-ink-50">
                 {records.map((r) => (

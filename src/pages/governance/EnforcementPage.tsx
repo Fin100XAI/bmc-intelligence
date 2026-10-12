@@ -124,7 +124,7 @@ export function EnforcementPage(): React.JSX.Element {
   if (loading) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('Planning & Development Control')} breadcrumbs={[{ label: t('Planning & Development Control') }, { label: t('Encroachment & Enforcement') }]} />
+        <PageHeader eyebrow={t('Planning & Buildings')} breadcrumbs={[{ label: t('Planning & Buildings') }, { label: t('Buildings & Enforcement') }, { label: t('Unauthorised construction') }]} />
         <LoadingState variant="metrics" />
         <LoadingState variant="table" rows={8} />
       </PageBody>
@@ -133,7 +133,7 @@ export function EnforcementPage(): React.JSX.Element {
   if (anyError) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('Planning & Development Control')} breadcrumbs={[{ label: t('Planning & Development Control') }, { label: t('Encroachment & Enforcement') }]} />
+        <PageHeader eyebrow={t('Planning & Buildings')} breadcrumbs={[{ label: t('Planning & Buildings') }, { label: t('Buildings & Enforcement') }, { label: t('Unauthorised construction') }]} />
         <ErrorState
           detail={anyError.message}
           onRetry={() => {
@@ -214,8 +214,8 @@ export function EnforcementPage(): React.JSX.Element {
   return (
     <PageBody>
       <PageHeader
-        eyebrow={t('Planning & Development Control')}
-        breadcrumbs={[{ label: t('Planning & Development Control') }, { label: t('Encroachment & Enforcement') }]}
+        eyebrow={t('Planning & Buildings')}
+        breadcrumbs={[{ label: t('Planning & Buildings') }, { label: t('Buildings & Enforcement') }, { label: t('Unauthorised construction') }]}
         hideProvenance
         controls={
           <FilterBar
@@ -305,7 +305,7 @@ export function EnforcementPage(): React.JSX.Element {
               {t('Every notice issued under the MMC Act or the MRTP Act, and what became of it.')}
             </p>
             {filtered.length === 0 ? (
-              <EmptyState title={t('No matters match the current filters')} detail="Clear a filter to widen the register." />
+              <EmptyState title={t('No matters match the current filters')} detail={t('Clear a filter to widen the register.')} />
             ) : (
               <DataTable rows={filtered} columns={columns} rowKey={(c) => c.id} pageSize={14} searchable={false} />
             )}

@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import {
+  Bell,
+  BellOff,
   BellRing,
   CalendarDays,
   Clock,
@@ -21,6 +23,10 @@ import {
   Timer,
   ToggleLeft,
   Zap,
+  Filter,
+  Landmark,
+  MapPinned,
+  Server,
 } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { Badge } from '@/components/ui/badges'
@@ -90,6 +96,8 @@ import {
 } from '@/utils/format'
 import { isoFromAnchor } from '@/utils/deterministic'
 import { cn } from '@/utils/cn'
+import { SHADE } from '@/components/ui/shade'
+import { meaningIcon } from '@/components/ui/meaning-icon'
 import { LOCALES, LOCALE_INFO, t, type Locale } from '@/i18n'
 import { registerLayer } from '@/data/runtime'
 
@@ -364,7 +372,7 @@ function GroupReset({ group, label }: { group: PreferenceGroup; label: string })
       size="xs"
       icon={<RotateCcw className="h-3 w-3" />}
       disabled={atDefault}
-      title={atDefault ? 'Already at the shipped default' : `Restore ${label} to the shipped default`}
+      title={atDefault ? t('Already at the shipped default') : t('Restore {0} to the shipped default', label)}
       onClick={() => state.resetGroup(group)}
     >
       {t('Reset')}
@@ -380,6 +388,37 @@ function SampleRow({ label, value }: { label: string; value: string }): React.JS
       <span className="numeric text-[0.8125rem] font-semibold text-ink-900">{value}</span>
     </div>
   )
+}
+
+type HierarchyLevel = (typeof PLATFORM_HIERARCHY)[number]
+
+/**
+ * Display text for a PLATFORM_HIERARCHY tier. The configuration keeps its
+ * English values - the tier styling below compares `scope` against them - and
+ * is evaluated at module scope, so the reading happens here, per render.
+ */
+function hierarchyLabel(id: HierarchyLevel['id']): string {
+  const labels: Record<HierarchyLevel['id'], string> = {
+    national: t('National Governance Intelligence'),
+    state: t('Maha State Intelligence'),
+    'urban-core': t('Urban Intelligence Infrastructure'),
+    municipal: t('BMC Intelligence'),
+    department: t('Department Intelligence'),
+    ward: t('Ward Intelligence'),
+    zone: t('Zone Intelligence'),
+    asset: t('Asset / Project / Service Intelligence'),
+  }
+  return labels[id]
+}
+
+function hierarchyScope(scope: HierarchyLevel['scope']): string {
+  const scopes: Record<HierarchyLevel['scope'], string> = {
+    Conceptual: t('Conceptual'),
+    'Platform Core': t('Platform Core'),
+    'This Deployment': t('This Deployment'),
+    Active: t('Active'),
+  }
+  return scopes[scope]
 }
 
 function build$ALTERNATE_COLUMNS(): Array<Column<MunicipalityProfile>> {
@@ -417,7 +456,7 @@ function build$ALTERNATE_COLUMNS(): Array<Column<MunicipalityProfile>> {
     header: t('Status'),
     cell: (p) => (
       <Badge tone={p.status === 'active' ? 'positive' : 'neutral'} dot>
-        {p.status === 'active' ? 'Active - this deployment' : 'Available'}
+        {p.status === 'active' ? t('Active - this deployment') : t('Available')}
       </Badge>
     ),
     sortValue: (p) => p.status,
@@ -538,7 +577,7 @@ export function SettingsPage(): React.JSX.Element {
           one with the content, so a sticky rail cannot come to rest over a
           card at any width. `items-start` is what lets it stick: a stretched
           grid item is as tall as its row and has nowhere to travel. */}
-      <div className="grid min-w-0 gap-4 lg:grid-cols-[13.5rem_minmax(0,1fr)] lg:items-start">
+      <div className="grid grid-cols-1 min-w-0 gap-4 lg:grid-cols-[13.5rem_minmax(0,1fr)] lg:items-start">
         <SectionNav active={activeSection} mutedTypes={prefs.mutedNotificationTypes.length} />
 
         <div className="min-w-0 space-y-6">
@@ -573,24 +612,24 @@ export function SettingsPage(): React.JSX.Element {
                 <PrefRow
                   icon={<Gauge className="h-4 w-4" />}
                   title={t('Display density')}
-                  help="Scales the whole interface. Compact fits more on screen; spacious is easier to read from a distance or on a projected display."
+                  help={t('Scales the whole interface. Compact fits more on screen; spacious is easier to read from a distance or on a projected display.')}
                 >
                   <SegmentedControl<InterfaceDensity>
                     value={prefs.density}
                     onChange={prefs.setDensity}
-                    ariaLabel="Display density"
+                    ariaLabel={t('Display density')}
                     options={DENSITY_OPTIONS.map((d) => ({ value: d, label: DENSITY_LABEL[d] }))}
                   />
                 </PrefRow>
                 <PrefRow
                   icon={<Contrast className="h-4 w-4" />}
                   title={t('Contrast')}
-                  help="High contrast deepens secondary text and turns hairline rules into visible lines. Semantic colours keep their meaning — only their weight changes."
+                  help={t('High contrast deepens secondary text and turns hairline rules into visible lines. Semantic colours keep their meaning — only their weight changes.')}
                 >
                   <SegmentedControl<ContrastPreference>
                     value={prefs.contrast}
                     onChange={prefs.setContrast}
-                    ariaLabel="Contrast preference"
+                    ariaLabel={t('Contrast preference')}
                     options={[
                       { value: 'standard', label: t('Standard') },
                       { value: 'high', label: t('High') },
@@ -600,12 +639,12 @@ export function SettingsPage(): React.JSX.Element {
                 <PrefRow
                   icon={<Zap className="h-4 w-4" />}
                   title={t('Motion')}
-                  help="Reduce animations and transitions across the platform. Also honoured automatically if your system requests reduced motion."
+                  help={t('Reduce animations and transitions across the platform. Also honoured automatically if your system requests reduced motion.')}
                 >
                   <SegmentedControl<MotionPreference>
                     value={prefs.motion}
                     onChange={prefs.setMotion}
-                    ariaLabel="Motion preference"
+                    ariaLabel={t('Motion preference')}
                     options={[
                       { value: 'full', label: t('Full') },
                       { value: 'reduced', label: t('Reduced') },
@@ -615,12 +654,12 @@ export function SettingsPage(): React.JSX.Element {
                 <PrefRow
                   icon={<PanelLeft className="h-4 w-4" />}
                   title={t('Navigation rail')}
-                  help="Whether the command rail starts expanded or collapsed to icons. Applied to this window straight away."
+                  help={t('Whether the command rail starts expanded or collapsed to icons. Applied to this window straight away.')}
                 >
                   <SegmentedControl<SidebarPreference>
                     value={prefs.sidebar}
                     onChange={applySidebar}
-                    ariaLabel="Navigation rail preference"
+                    ariaLabel={t('Navigation rail preference')}
                     options={[
                       { value: 'expanded', label: t('Expanded') },
                       { value: 'collapsed', label: t('Collapsed') },
@@ -630,7 +669,7 @@ export function SettingsPage(): React.JSX.Element {
                 <PrefRow
                   icon={<MapPin className="h-4 w-4" />}
                   title={t('Default landing page')}
-                  help="Where you arrive after signing in. Only pages your role can reach are offered; sign out and back in to see it take effect."
+                  help={t('Where you arrive after signing in. Only pages your role can reach are offered; sign out and back in to see it take effect.')}
                 >
                   <Select
                     aria-label={t('Default landing page')}
@@ -666,7 +705,7 @@ export function SettingsPage(): React.JSX.Element {
                 column of its own, that is 2xl and not before — a preference row
                 squeezed until its explanation is one word per line explains
                 nothing. */}
-            <div className="grid gap-4 2xl:grid-cols-[minmax(0,1fr)_20rem]">
+            <div className="grid grid-cols-1 gap-4 2xl:grid-cols-[minmax(0,1fr)_20rem]">
               <GovPanel
                 title={t('Numbering, dates and tables')}
                 tone="amber"
@@ -679,7 +718,7 @@ export function SettingsPage(): React.JSX.Element {
                   <PrefRow
                     icon={<Hash className="h-4 w-4" />}
                     title={t('Number format')}
-                    help="Digit grouping and the compact scale. Indian gives 3.1L and 1.2Cr; international gives 310K and 12M."
+                    help={t('Digit grouping and the compact scale. Indian gives 3.1L and 1.2Cr; international gives 310K and 12M.')}
                   >
                     <Select
                       aria-label={t('Number format')}
@@ -692,7 +731,7 @@ export function SettingsPage(): React.JSX.Element {
                   <PrefRow
                     icon={<CalendarDays className="h-4 w-4" />}
                     title={t('Date format')}
-                    help="Applied to every date the platform renders, including exports taken from any register."
+                    help={t('Applied to every date the platform renders, including exports taken from any register.')}
                   >
                     <Select
                       aria-label={t('Date format')}
@@ -705,7 +744,7 @@ export function SettingsPage(): React.JSX.Element {
                   <PrefRow
                     icon={<Clock className="h-4 w-4" />}
                     title={t('Time format')}
-                    help="All times are Indian Standard Time; this governs only whether the clock is read on 24 or 12 hours."
+                    help={t('All times are Indian Standard Time; this governs only whether the clock is read on 24 or 12 hours.')}
                   >
                     <Select
                       aria-label={t('Time format')}
@@ -718,7 +757,7 @@ export function SettingsPage(): React.JSX.Element {
                   <PrefRow
                     icon={<Timer className="h-4 w-4" />}
                     title={t('Relative timestamps')}
-                    help='Show ages as "3 h ago". Turn this off to read the instant itself — easier to reconcile a record against a source system months later.'
+                    help={t('Show ages as "3 h ago". Turn this off to read the instant itself — easier to reconcile a record against a source system months later.')}
                   >
                     <Switch
                       checked={prefs.relativeTimestamps}
@@ -729,12 +768,12 @@ export function SettingsPage(): React.JSX.Element {
                   <PrefRow
                     icon={<Rows3 className="h-4 w-4" />}
                     title={t('Rows per table')}
-                    help="Applies to every paginated register in the platform, from the intelligence feed to the audit trail."
+                    help={t('Applies to every paginated register in the platform, from the intelligence feed to the audit trail.')}
                   >
                     <SegmentedControl<string>
                       value={String(prefs.tablePageSize)}
                       onChange={(v) => prefs.setTablePageSize(Number(v) as TablePageSize)}
-                      ariaLabel="Rows per table"
+                      ariaLabel={t('Rows per table')}
                       options={TABLE_PAGE_SIZES.map((n) => ({ value: String(n), label: String(n) }))}
                     />
                   </PrefRow>
@@ -743,13 +782,13 @@ export function SettingsPage(): React.JSX.Element {
 
               <GovPanel title={t('Live sample')} tone="red">
                 <p className="mb-3 text-xs leading-relaxed text-ink-500">
-                  {t('The same underlying values, rendered with the choices above.')}
+                  {t('Illustrative values, not platform figures, rendered with the choices above.')}
                 </p>
                 <div className="mt-3">
-                  <SampleRow label={t('Property assessments')} value={formatNumber(1_84_23_940)} />
+                  <SampleRow label={t('Sample count')} value={formatNumber(1_84_23_940)} />
                   <SampleRow label={t('Compact form')} value={formatCompact(1_84_23_940)} />
-                  <SampleRow label={t('Records ingested')} value={formatCompact(942_130)} />
-                  <SampleRow label={t('Revised budget')} value={formatCrore(35_959.4)} />
+                  <SampleRow label={t('Smaller sample count')} value={formatCompact(942_130)} />
+                  <SampleRow label={t('Sample amount')} value={formatCrore(35_959.4)} />
                   <SampleRow label={t('Date')} value={formatDate(SAMPLE_INSTANT)} />
                   <SampleRow label={t('Date and time')} value={formatDateTime(SAMPLE_INSTANT)} />
                   <SampleRow label={t('Age of that record')} value={formatRelative(SAMPLE_INSTANT)} />
@@ -775,25 +814,40 @@ export function SettingsPage(): React.JSX.Element {
             description={t('A personal view filter over items already routed to your role. It never changes routing, escalation or accountability.')}
           >
             <MetricGrid columns={3}>
-              <Card>
-                <p className="label-institutional">{t('Addressed to your role')}</p>
-                <p className="numeric mt-2 text-metric font-semibold text-ink-900">{notificationEffect.addressed}</p>
-                <p className="mt-0.5 text-[0.6875rem] text-ink-500">{t('Routed by institutional accountability')}</p>
+              <Card className={cn(SHADE.blue.tile, 'flex items-start gap-3')}>
+                <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE.blue.chip)}>
+                  <Bell className="h-4 w-4" aria-hidden />
+                </span>
+                <div className="min-w-0">
+                  <p className="label-institutional">{t('Addressed to your role')}</p>
+                  <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE.blue.value)}>{notificationEffect.addressed}</p>
+                  <p className="mt-0.5 text-[0.6875rem] text-ink-500">{t('Routed by institutional accountability')}</p>
+                </div>
               </Card>
-              <Card tone={notificationEffect.shown < notificationEffect.addressed ? 'warn' : 'default'}>
-                <p className="label-institutional">{t('Shown after your filter')}</p>
-                <p className="numeric mt-2 text-metric font-semibold text-ink-900">{notificationEffect.shown}</p>
-                <p className="mt-0.5 text-[0.6875rem] text-ink-500">
-                  {t('{0} withheld by this preference', notificationEffect.addressed - notificationEffect.shown)}
-                </p>
+              <Card className={cn(SHADE[notificationEffect.shown < notificationEffect.addressed ? 'amber' : 'green'].tile, 'flex items-start gap-3')}>
+                <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE[notificationEffect.shown < notificationEffect.addressed ? 'amber' : 'green'].chip)}>
+                  <Filter className="h-4 w-4" aria-hidden />
+                </span>
+                <div className="min-w-0">
+                  <p className="label-institutional">{t('Shown after your filter')}</p>
+                  <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE[notificationEffect.shown < notificationEffect.addressed ? 'amber' : 'green'].value)}>{notificationEffect.shown}</p>
+                  <p className="mt-0.5 text-[0.6875rem] text-ink-500">
+                    {t('{0} withheld by this preference', notificationEffect.addressed - notificationEffect.shown)}
+                  </p>
+                </div>
               </Card>
-              <Card tone="info">
-                <p className="label-institutional">{t('Muted types')}</p>
-                <p className="numeric mt-2 text-metric font-semibold text-ink-900">
-                  {prefs.mutedNotificationTypes.length}
-                  <span className="text-base text-ink-400">/{NOTIFICATION_TYPES.length}</span>
-                </p>
-                <p className="mt-0.5 text-[0.6875rem] text-ink-500">{t('Reversible at any time')}</p>
+              <Card className={cn(SHADE.teal.tile, 'flex items-start gap-3')}>
+                <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE.teal.chip)}>
+                  <BellOff className="h-4 w-4" aria-hidden />
+                </span>
+                <div className="min-w-0">
+                  <p className="label-institutional">{t('Muted types')}</p>
+                  <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE.teal.value)}>
+                    {prefs.mutedNotificationTypes.length}
+                    <span className="text-base text-ink-400">/{NOTIFICATION_TYPES.length}</span>
+                  </p>
+                  <p className="mt-0.5 text-[0.6875rem] text-ink-500">{t('Reversible at any time')}</p>
+                </div>
               </Card>
             </MetricGrid>
 
@@ -809,7 +863,7 @@ export function SettingsPage(): React.JSX.Element {
                 <PrefRow
                   icon={<BellRing className="h-4 w-4" />}
                   title={t('Severity floor')}
-                  help="The lowest severity surfaced in the notification centre. Anything below it is counted and named in the drawer, never silently dropped."
+                  help={t('The lowest severity surfaced in the notification centre. Anything below it is counted and named in the drawer, never silently dropped.')}
                 >
                   <Select
                     aria-label={t('Notification severity floor')}
@@ -826,7 +880,7 @@ export function SettingsPage(): React.JSX.Element {
                 <p className="mt-0.5 text-[0.6875rem] leading-relaxed text-ink-500">
                   {t('Untick a type to stop it appearing in your notification centre. The item still exists, is still routed to your role and still appears in its own module — this only governs the drawer.')}
                 </p>
-                <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
                   {NOTIFICATION_TYPES.map((type) => (
                     <div key={type} className="rounded-md border border-ink-100 bg-surface-sunken px-3 py-2">
                       <Checkbox
@@ -861,29 +915,49 @@ export function SettingsPage(): React.JSX.Element {
                 the metric face needs roughly 14rem of card to sit on one line,
                 and four columns of this content column do not give it. */}
             <MetricGrid columns={2} className="2xl:grid-cols-4">
-              <Card>
-                <p className="label-institutional">{t('Urban local body')}</p>
-                <p className="numeric mt-2 text-metric font-semibold text-ink-900">{municipality.shortName}</p>
-                <p className="mt-0.5 text-[0.6875rem] text-ink-500">{municipality.municipalityName}</p>
+              <Card className={cn(SHADE.blue.tile, 'flex items-start gap-3')}>
+                <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE.blue.chip)}>
+                  <Landmark className="h-4 w-4" aria-hidden />
+                </span>
+                <div className="min-w-0">
+                  <p className="label-institutional">{t('Urban local body')}</p>
+                  <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE.blue.value)}>{municipality.shortName}</p>
+                  <p className="mt-0.5 text-[0.6875rem] text-ink-500">{municipality.municipalityName}</p>
+                </div>
               </Card>
-              <Card>
-                <p className="label-institutional">{t('State')}</p>
-                <p className="numeric mt-2 text-metric font-semibold text-ink-900">{municipality.state}</p>
-                <p className="mt-0.5 text-[0.6875rem] text-ink-500">{municipality.country}</p>
+              <Card className={cn(SHADE.teal.tile, 'flex items-start gap-3')}>
+                <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE.teal.chip)}>
+                  <MapPinned className="h-4 w-4" aria-hidden />
+                </span>
+                <div className="min-w-0">
+                  <p className="label-institutional">{t('State')}</p>
+                  <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE.teal.value)}>{municipality.state}</p>
+                  <p className="mt-0.5 text-[0.6875rem] text-ink-500">{municipality.country}</p>
+                </div>
               </Card>
-              <Card>
-                <p className="label-institutional">{t('Financial year')}</p>
-                <p className="numeric mt-2 text-metric font-semibold text-ink-900">{municipality.financialYear}</p>
-                <p className="mt-0.5 text-[0.6875rem] text-ink-500">{t('Currency unit: {0}', municipality.currencyUnitLabel)}</p>
+              <Card className={cn(SHADE.amber.tile, 'flex items-start gap-3')}>
+                <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE.amber.chip)}>
+                  <CalendarDays className="h-4 w-4" aria-hidden />
+                </span>
+                <div className="min-w-0">
+                  <p className="label-institutional">{t('Financial year')}</p>
+                  <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE.amber.value)}>{municipality.financialYear}</p>
+                  <p className="mt-0.5 text-[0.6875rem] text-ink-500">{t('Currency unit: {0}', municipality.currencyUnitLabel)}</p>
+                </div>
               </Card>
-              <Card tone="info">
-                <p className="label-institutional">{t('Environment')}</p>
-                <p className="mt-2 text-sm font-semibold text-govt-800">{municipality.environmentLabel}</p>
-                <p className="mt-0.5 text-[0.6875rem] text-ink-500">{t('Not connected to any live {0} system.', municipality.shortName)}</p>
+              <Card className={cn(SHADE.teal.tile, 'flex items-start gap-3')}>
+                <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE.teal.chip)}>
+                  <Server className="h-4 w-4" aria-hidden />
+                </span>
+                <div className="min-w-0">
+                  <p className="label-institutional">{t('Environment')}</p>
+                  <p className="mt-2 text-sm font-semibold text-govt-800">{municipality.environmentLabel}</p>
+                  <p className="mt-0.5 text-[0.6875rem] text-ink-500">{t('Not connected to any live {0} system.', municipality.shortName)}</p>
+                </div>
               </Card>
             </MetricGrid>
 
-            <div className="grid gap-4 xl:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
               <GovPanel title={t('Municipality profile')} tone="amber">
                 <p className="mb-3 text-xs leading-relaxed text-ink-500">
                   {t('Identity and branding configuration for this deployment.')}
@@ -924,17 +998,27 @@ export function SettingsPage(): React.JSX.Element {
                   <DefinitionRow label={t('Field officer title')}>{municipality.terminology.fieldOfficerTitle}</DefinitionRow>
                 </DefinitionList>
                 <div className="mt-3 grid grid-cols-2 gap-3 border-t border-ink-100 pt-3">
-                  <div>
-                    <p className="label-institutional">{municipality.terminology.secondaryUnitPlural}</p>
-                    <p className="numeric mt-1 text-lg font-semibold text-ink-900">
-                      {municipality.administrativeUnits.zones}
-                    </p>
+                  <div className={cn('flex items-start gap-2.5 rounded-lg border p-2.5', SHADE.teal.tile)}>
+                    <span className={cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white', SHADE.teal.chip)}>
+                      {meaningIcon('ward', 'teal')}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="label-institutional">{municipality.terminology.secondaryUnitPlural}</p>
+                      <p className={cn('numeric mt-1 text-lg font-semibold', SHADE.teal.value)}>
+                        {municipality.administrativeUnits.zones}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="label-institutional">{municipality.terminology.primaryUnitPlural}</p>
-                    <p className="numeric mt-1 text-lg font-semibold text-ink-900">
-                      {municipality.administrativeUnits.wards}
-                    </p>
+                  <div className={cn('flex items-start gap-2.5 rounded-lg border p-2.5', SHADE.blue.tile)}>
+                    <span className={cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white', SHADE.blue.chip)}>
+                      {meaningIcon('ward', 'blue')}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="label-institutional">{municipality.terminology.primaryUnitPlural}</p>
+                      <p className={cn('numeric mt-1 text-lg font-semibold', SHADE.blue.value)}>
+                        {municipality.administrativeUnits.wards}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </GovPanel>
@@ -981,7 +1065,7 @@ export function SettingsPage(): React.JSX.Element {
                       <span className="absolute top-5 bottom-0 left-[9px] w-px bg-ink-100" aria-hidden />
                     ) : null}
                     <span
-                      className={`z-10 mt-0.5 flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full border-2 bg-surface text-[0.5625rem] font-semibold ${
+                      className={`z-10 mt-0.5 flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full border-2 bg-surface text-[0.625rem] font-semibold ${
                         level.scope === 'This Deployment'
                           ? 'border-govt-600 text-govt-700'
                           : level.scope === 'Active'
@@ -992,12 +1076,12 @@ export function SettingsPage(): React.JSX.Element {
                       {i + 1}
                     </span>
                     <div className="min-w-0 flex-1">
-                      <p className="text-[0.8125rem] font-medium text-ink-800">{level.label}</p>
+                      <p className="text-[0.8125rem] font-medium text-ink-800">{hierarchyLabel(level.id)}</p>
                     </div>
                     <Badge
                       tone={level.scope === 'This Deployment' ? 'info' : level.scope === 'Active' ? 'intel' : 'muted'}
                     >
-                      {level.scope}
+                      {hierarchyScope(level.scope)}
                     </Badge>
                   </li>
                 ))}
@@ -1071,7 +1155,7 @@ export function SettingsPage(): React.JSX.Element {
                         disabled={flag.stage === 'planned'}
                         label={
                           flag.stage === 'planned'
-                            ? `${flag.label} - planned, not available in this build`
+                            ? t('{0} - planned, not available in this build', flag.label)
                             : `${flag.enabled ? 'Disable' : 'Enable'} ${flag.label}`
                         }
                         className="mt-0.5"
@@ -1113,7 +1197,7 @@ export function SettingsPage(): React.JSX.Element {
                 columns={ALTERNATE_COLUMNS}
                 rowKey={(p) => p.tenantId}
                 searchable
-                searchPlaceholder="Search urban local bodies"
+                searchPlaceholder={t('Search urban local bodies')}
                 initialSort={{ columnId: 'status', direction: 'desc' }}
                 pageSize={15}
                 emptyTitle={t('No profiles configured')}

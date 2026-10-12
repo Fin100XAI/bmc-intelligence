@@ -33,6 +33,8 @@ import type { DataFreshness } from '@/types/common'
 import { DEMO_NOW } from '@/utils/deterministic'
 import { formatDate, formatNumber } from '@/utils/format'
 import { t } from '@/i18n'
+import { cn } from '@/utils/cn'
+import { SHADE } from '@/components/ui/shade'
 
 /**
  * src/pages/city/EducationIntelligencePage.tsx
@@ -89,7 +91,7 @@ export function EducationIntelligencePage(): React.JSX.Element {
   if (schoolsQuery.isLoading || wardQuery.isLoading) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Education Intelligence') }]} />
+        <PageHeader eyebrow={t('Wards & Citizens')} breadcrumbs={[{ label: t('Wards & Citizens') }, { label: t('Housing & Livelihoods') }, { label: t('Municipal schools') }]} />
         <LoadingState variant="metrics" />
         <LoadingState variant="table" rows={8} />
       </PageBody>
@@ -98,7 +100,7 @@ export function EducationIntelligencePage(): React.JSX.Element {
   if (schoolsQuery.error || wardQuery.error) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Education Intelligence') }]} />
+        <PageHeader eyebrow={t('Wards & Citizens')} breadcrumbs={[{ label: t('Wards & Citizens') }, { label: t('Housing & Livelihoods') }, { label: t('Municipal schools') }]} />
         <ErrorState
           detail={(schoolsQuery.error ?? wardQuery.error)?.message}
           onRetry={() => { void schoolsQuery.refetch(); void wardQuery.refetch() }}
@@ -181,14 +183,14 @@ export function EducationIntelligencePage(): React.JSX.Element {
   return (
     <PageBody>
       <PageHeader
-        eyebrow={t('City Intelligence')}
-        breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Education Intelligence') }]}
+        eyebrow={t('Wards & Citizens')}
+        breadcrumbs={[{ label: t('Wards & Citizens') }, { label: t('Housing & Livelihoods') }, { label: t('Municipal schools') }]}
         freshness={freshness}
       />
 
       <DemonstrationNotice />
 
-      <FilterBar show={['ward', 'search']} searchPlaceholder="Search schools" />
+      <FilterBar show={['ward', 'search']} searchPlaceholder={t('Search schools')} />
 
       <MetricGrid columns={4}>
         <MetricCard
@@ -237,7 +239,7 @@ export function EducationIntelligencePage(): React.JSX.Element {
               {t('Every municipal school within your authorised ward scope.')}
             </p>
             {filtered.length === 0 ? (
-              <EmptyState title={t('No schools match the current filters')} detail="Clear a filter to widen the register." />
+              <EmptyState title={t('No schools match the current filters')} detail={t('Clear a filter to widen the register.')} />
             ) : (
               <DataTable rows={filtered} columns={columns} rowKey={(r) => r.id} pageSize={15} />
             )}
@@ -267,10 +269,15 @@ export function EducationIntelligencePage(): React.JSX.Element {
             </div>
           </Card>
 
-          <Card className="flex flex-col">
-            <p className="label-institutional mb-2">{t('Pupil-teacher ratio')}</p>
+          <Card className={cn('flex flex-col', SHADE.blue.tile)}>
+            <p className="label-institutional mb-2 flex items-center gap-2">
+              <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE.blue.chip)} aria-hidden>
+                <GraduationCap className="h-4 w-4" />
+              </span>
+              {t('Pupil-teacher ratio')}
+            </p>
             <div className="flex flex-1 flex-col items-center justify-center">
-              <p className="numeric text-metric font-semibold text-ink-900">{pupilTeacher}</p>
+              <p className={cn('numeric text-metric font-semibold', SHADE.blue.value)}>{pupilTeacher}</p>
               <p className="mt-1 text-[0.6875rem] text-ink-500">{t('children per teacher in post')}</p>
               <p className="mt-3 max-w-[15rem] text-center text-[0.6875rem] leading-relaxed text-ink-500">
                 {t('Calculated against teachers actually in position, not against sanctioned strength - the ratio a classroom experiences rather than the one the establishment register shows.')}
@@ -284,7 +291,7 @@ export function EducationIntelligencePage(): React.JSX.Element {
               <DonutChart
                 data={byMedium.map((m) => ({ label: SCHOOL_MEDIUM_LABEL[m.medium], value: m.count, colour: MEDIUM_COLOUR[m.medium] }))}
                 centreValue={String(filtered.length)}
-                centreLabel="schools"
+                centreLabel={t('schools')}
               />
             </div>
           </Card>

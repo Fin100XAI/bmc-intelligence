@@ -45,8 +45,6 @@ export const MR_PART_14: Record<string, string> = {
   'Revenue target vs collected': 'महसूल लक्ष्य विरुद्ध वसुली',
   'Reversible at any time': 'कधीही पूर्ववत करता येण्याजोगे',
   'Reviewed and closed': 'पुनरावलोकन करून बंद',
-  'Revised allocation, booked expenditure and commitment position against the phased plan. Variance is measured against the phased (31% elapsed) plan, not the full annual allocation - positive means behind plan, negative means ahead of plan.':
-    'टप्प्याटप्प्याच्या आराखड्याच्या तुलनेत सुधारित तरतूद, नोंदवलेला खर्च आणि बांधिलकीची स्थिती. फरक हा टप्प्याटप्प्याच्या (31% कालावधी उलटलेल्या) आराखड्याच्या तुलनेत मोजला जातो, संपूर्ण वार्षिक तरतुदीच्या नव्हे — धन म्हणजे आराखड्यामागे, ऋण म्हणजे आराखड्यापुढे.',
   'Revised demand': 'सुधारित मागणी',
   'Rising complaints': 'वाढत्या तक्रारी',
   'Risk category': 'जोखीम श्रेणी',
@@ -463,8 +461,6 @@ export const MR_PART_14: Record<string, string> = {
   'The executive brief could not be generated': 'कार्यकारी टिपण तयार करता आले नाही',
   'The fields this adapter ingests, exactly as declared. Fields marked':
     'हा अडॅप्टर ग्रहण करत असलेली क्षेत्रे, जशी घोषित केली आहेत तशीच. अशी खूण असलेली क्षेत्रे',
-  "The finding on this page is not any single ward's score. It is the distance between the best ward and the worst. A city where the best ward scores 82 and the worst 41 is not one city being served - it is two, and no city-wide average will show that. Every figure here is the figure Ward Intelligence reports for the same ward: this page orders and compares them, and computes nothing of its own beyond the median and the spread.":
-    'या पृष्ठावरील निष्कर्ष हा कोणत्याही एका प्रभागाचा गुण नाही. तो सर्वोत्तम प्रभाग आणि सर्वात वाईट प्रभाग यांच्यातील अंतर आहे. ज्या शहरात सर्वोत्तम प्रभागाला 82 आणि सर्वात वाईट प्रभागाला 41 गुण मिळतात, तेथे एका शहराला सेवा मिळत नाही — तेथे दोन शहरे आहेत, आणि शहरस्तरीय सरासरी ते कधीच दाखवणार नाही. येथील प्रत्येक आकडा हा त्याच प्रभागासाठी प्रभाग बुद्धिमत्ता जो आकडा नोंदवते तोच आहे: हे पृष्ठ त्यांची क्रमवारी लावते व त्यांची तुलना करते, आणि मध्यक व फरक यापलीकडे स्वतःचे काहीही मोजत नाही.',
   'The fit is deliberately the plainest one available: an officer being measured against a line is entitled to reconstruct it with a spreadsheet. A ward is read as sitting on its line while its residual stays within {0} points, which is half a typical residual.{1}':
     'ही जुळणी मुद्दामच उपलब्ध असलेल्यांपैकी सर्वात साधी आहे: ज्या अधिकाऱ्याचे मोजमाप एका रेषेच्या तुलनेत होते त्याला ती रेषा स्प्रेडशीटने पुन्हा उभी करण्याचा अधिकार आहे. प्रभागाचा अवशेष {0} गुणांच्या आत राहतो तोपर्यंत तो प्रभाग आपल्या रेषेवर आहे असे वाचले जाते; ही मर्यादा नेहमीच्या अवशेषाच्या निम्मी आहे.{1}',
   'The five wards carrying the highest composite risk index.':

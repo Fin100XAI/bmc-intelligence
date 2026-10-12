@@ -72,7 +72,8 @@ export function PeerComparisonStrip({
 
     return {
       own,
-      rank: rank > 0 ? rank : null,
+      // A modelled metric, or one only this corporation reports, has no honest rank.
+      rank: rank > 0 && metric.basis === 'published' && ordered.length > 1 ? rank : null,
       of: ordered.length,
       median: mid,
       best: ordered[0]!,

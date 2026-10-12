@@ -326,8 +326,8 @@ export function PropertyIntelligencePage(): React.JSX.Element {
   return (
     <PageBody>
       <PageHeader
-        eyebrow={t('Revenue & Municipal Finance')}
-        breadcrumbs={[{ label: t('Revenue & Municipal Finance') }, { label: t('Property Intelligence') }]}
+        eyebrow={t('Revenue & Finance')}
+        breadcrumbs={[{ label: t('Revenue & Finance') }, { label: t('Revenue & Property Tax') }, { label: t('Property assessments') }]}
         freshness={FRESHNESS}
         actions={
           <LinkButton to={ROUTES.revenue} variant="outline" icon={<Banknote className="h-3.5 w-3.5" />}>
@@ -342,7 +342,7 @@ export function PropertyIntelligencePage(): React.JSX.Element {
               <SegmentedControl
                 value={segmentFilter}
                 onChange={setSegmentFilter}
-                ariaLabel="Filter by property segment"
+                ariaLabel={t('Filter by property segment')}
                 options={[{ value: 'all', label: t('All segments') }, ...SEGMENT_META.map((s) => ({ value: s.value, label: s.label }))]}
               />
             </div>
@@ -363,7 +363,7 @@ export function PropertyIntelligencePage(): React.JSX.Element {
       {!segmentsQuery.isLoading && !segmentsQuery.error && allSegments.length === 0 ? (
         <EmptyState
           title={t('No assessment records available')}
-          detail="The property assessment base did not return any records for the current scope."
+          detail={t('The property assessment base did not return any records for the current scope.')}
         />
       ) : null}
 
@@ -371,7 +371,7 @@ export function PropertyIntelligencePage(): React.JSX.Element {
         <>
           <GovPanel
             title={t('City assessment position')}
-            subtitle={`${municipalityFinancialYearLabel()} · ${segmentFilter === 'all' ? 'All segments' : SEGMENT_META.find((s) => s.value === segmentFilter)?.label} · ${selectedWardId ? wardName(selectedWardId) : 'All wards'}`}
+            subtitle={`${municipalityFinancialYearLabel()} · ${segmentFilter === 'all' ? t('All segments') : SEGMENT_META.find((s) => s.value === segmentFilter)?.label} · ${selectedWardId ? wardName(selectedWardId) : t('All wards')}`}
             tone="primary"
             actions={
               <LinkButton to={ROUTES.pilotIngestion} variant="ghost" size="xs" icon={<ExternalLink className="h-3 w-3" />}>
@@ -431,7 +431,7 @@ export function PropertyIntelligencePage(): React.JSX.Element {
                 maxHeight="26rem"
                 onRowClick={(row) => focusWard(row.wardId)}
                 activeRowKey={selectedWardId ?? undefined}
-                searchPlaceholder="Search wards"
+                searchPlaceholder={t('Search wards')}
                 rowActions={(row) => (
                   <IconButton
                     label={t('Open ward profile for {0}', wardName(row.wardId))}
@@ -441,7 +441,7 @@ export function PropertyIntelligencePage(): React.JSX.Element {
                   </IconButton>
                 )}
                 emptyTitle={t('No wards match the current focus')}
-                emptyDetail="Clear the ward focus above to see the full register."
+                emptyDetail={t('Clear the ward focus above to see the full register.')}
               />
             </GovPanel>
 
@@ -472,10 +472,10 @@ export function PropertyIntelligencePage(): React.JSX.Element {
             <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
             <GovPanel title={t('Segment composition')} tone="green">
               <p className="mb-3 text-xs leading-relaxed text-ink-500">
-                {selectedWardId ? `Assessed value mix for ${wardName(selectedWardId)}` : 'City-wide assessed value mix by use-class segment'}
+                {selectedWardId ? t('Assessed value mix for {0}', wardName(selectedWardId)) : t('City-wide assessed value mix by use-class segment')}
               </p>
               <div className="h-56">
-                <DonutChart data={compositionData} unit={t('₹ Cr')} centreValue={formatCrore(compositionTotal, 0)} centreLabel="Assessed value" />
+                <DonutChart data={compositionData} unit={t('₹ Cr')} centreValue={formatCrore(compositionTotal, 0)} centreLabel={t('Assessed value')} />
               </div>
               <ul className="mt-3 space-y-1.5">
                 {compositionData.map((d) => (
@@ -515,7 +515,7 @@ export function PropertyIntelligencePage(): React.JSX.Element {
                 freshness={FRESHNESS}
                 height={240}
               >
-                <RankedBarChart data={backlogData} unit="due" higherIsWorse />
+                <RankedBarChart data={backlogData} unit={t('due')} higherIsWorse />
               </ChartFrame>
             </Card>
 
@@ -538,7 +538,7 @@ export function PropertyIntelligencePage(): React.JSX.Element {
 }
 
 function municipalityFinancialYearLabel(): string {
-  return 'FY 2026–27 to date'
+  return t('FY 2026–27 to date')
 }
 
 export default PropertyIntelligencePage

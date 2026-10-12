@@ -216,7 +216,7 @@ export function RecoveryWorklistPage(): React.JSX.Element {
         <div className="min-w-0">
           <p className="truncate text-xs font-medium text-ink-800">{r.addressLine}</p>
           <p className="mt-0.5 truncate text-[0.625rem] text-ink-500">
-            {wardName(r.wardId)} · {r.parcelAssessmentNumber ?? 'No assessment record matched'}
+            {wardName(r.wardId)} · {r.parcelAssessmentNumber ?? t('No assessment record matched')}
           </p>
         </div>
       ),
@@ -293,8 +293,8 @@ export function RecoveryWorklistPage(): React.JSX.Element {
   return (
     <PageBody>
       <PageHeader
-        eyebrow={t('Revenue & Municipal Finance')}
-        breadcrumbs={[{ label: t('Revenue & Municipal Finance') }, { label: t('Recovery Worklist') }]}
+        eyebrow={t('Revenue & Finance')}
+        breadcrumbs={[{ label: t('Revenue & Finance') }, { label: t('Property Tax Recovery') }, { label: t('Recovery worklist') }]}
         freshness={FRESHNESS}
         actions={
           <LinkButton to={ROUTES.reconciliation} variant="outline" icon={<Scale className="h-3.5 w-3.5" />}>
@@ -342,7 +342,7 @@ export function RecoveryWorklistPage(): React.JSX.Element {
                 label={t('Indicative annual value')}
                 value={formatRupees(summary.indicativeValue)}
                 support={t('Modelled estimate across every candidate raised')}
-                explanation="An estimate used to prioritise the queue. It is not an amount owed by anybody, and no demand is raised from it without verification by a named officer."
+                explanation={t('An estimate used to prioritise the queue. It is not an amount owed by anybody, and no demand is raised from it without verification by a named officer.')}
               />
               <MetricCard
                 label={t('Annual demand revised')}
@@ -352,9 +352,9 @@ export function RecoveryWorklistPage(): React.JSX.Element {
               <MetricCard label={t('Collected against revision')} value={formatRupees(summary.recoveredValue)} />
               <MetricCard
                 label={t('Conversion rate')}
-                value={summary.conversionPct === null ? 'No data yet' : formatPercent(summary.conversionPct)}
+                value={summary.conversionPct === null ? t('No data yet') : formatPercent(summary.conversionPct)}
                 support={t('of {0} candidates decided either way', formatNumber(summary.terminal))}
-                explanation="Candidates that produced a revised demand, as a share of every candidate an officer has decided. Candidates closed for a lawful reason are counted in the denominator - this is a conversion rate, not a measure of whether the rule was right."
+                explanation={t('Candidates that produced a revised demand, as a share of every candidate an officer has decided. Candidates closed for a lawful reason are counted in the denominator - this is a conversion rate, not a measure of whether the rule was right.')}
               />
             </MetricGrid>
           </GovPanel>
@@ -365,7 +365,7 @@ export function RecoveryWorklistPage(): React.JSX.Element {
             </p>
             <div className="px-3">
               <Tabs
-                ariaLabel="Worklist sections"
+                ariaLabel={t('Worklist sections')}
                 value={tab}
                 onChange={(id) => setTab(id as WorklistTab)}
                 items={[
@@ -404,11 +404,11 @@ export function RecoveryWorklistPage(): React.JSX.Element {
               emptyTitle={t('No candidates in this section')}
               emptyDetail={
                 tab === 'match-queue'
-                  ? 'Every record in scope matched a parcel above the confidence floor.'
-                  : 'No assessment review candidates are open within your authorised scope.'
+                  ? t('Every record in scope matched a parcel above the confidence floor.')
+                  : t('No assessment review candidates are open within your authorised scope.')
               }
               initialSort={{ columnId: 'value', direction: 'desc' }}
-              ariaLabel="Assessment review candidates"
+              ariaLabel={t('Assessment review candidates')}
             />
           </GovPanel>
         </>
@@ -417,7 +417,7 @@ export function RecoveryWorklistPage(): React.JSX.Element {
       {!isLoading && !error && summary && summary.raised === 0 ? (
         <EmptyState
           title={t('No assessment review candidates')}
-          detail="No cross-register disagreements were raised within your authorised ward scope."
+          detail={t('No cross-register disagreements were raised within your authorised ward scope.')}
         />
       ) : null}
 
@@ -527,7 +527,7 @@ function CandidateDetail({ id, onClose }: { id: string | null; onClose: () => vo
       open
       onClose={handleClose}
       width="lg"
-      title={exception ? `${exception.reference} · ${data?.rule.title ?? ''}` : 'Assessment review candidate'}
+      title={exception ? `${exception.reference} · ${data?.rule.title ?? ''}` : t('Assessment review candidate')}
       description={exception ? `${exception.addressLine} · ${wardName(exception.wardId)}` : undefined}
       footer={
         <>
@@ -587,7 +587,7 @@ function CandidateDetail({ id, onClose }: { id: string | null; onClose: () => vo
               <GovPanel title={REGISTRY_LABEL[data.counterpart.source]} tone="green">
                 <DefinitionList className="mt-2">
                   <DefinitionRow label={t('Reference')} mono>{data.counterpart.reference}</DefinitionRow>
-                  <DefinitionRow label={t('Survey no.')} mono>{data.counterpart.surveyNumber ?? 'Not carried on this register'}</DefinitionRow>
+                  <DefinitionRow label={t('Survey no.')} mono>{data.counterpart.surveyNumber ?? t('Not carried on this register')}</DefinitionRow>
                   <DefinitionRow label={t('Address')}>{data.counterpart.addressLine}</DefinitionRow>
                   <DefinitionRow label={t('Owner')}>{data.counterpart.ownerLabel}</DefinitionRow>
                   <DefinitionRow label={t('Issued')}>{formatDate(data.counterpart.issuedAt)}</DefinitionRow>
@@ -653,11 +653,11 @@ function CandidateDetail({ id, onClose }: { id: string | null; onClose: () => vo
             <Figure label={t('Condition persisted')} value={`${exception.persistedYears} year${exception.persistedYears === 1 ? '' : 's'}`} />
             <Figure
               label={t('Revised demand')}
-              value={exception.revisedAnnualValue ? formatRupees(exception.revisedAnnualValue) : 'Not revised'}
+              value={exception.revisedAnnualValue ? formatRupees(exception.revisedAnnualValue) : t('Not revised')}
             />
             <Figure
               label={t('Collected')}
-              value={exception.recoveredValue ? formatRupees(exception.recoveredValue) : 'Nothing recorded'}
+              value={exception.recoveredValue ? formatRupees(exception.recoveredValue) : t('Nothing recorded')}
             />
           </section>
 
@@ -930,13 +930,13 @@ function ActionFields(props: ActionPanelProps): React.JSX.Element {
             required
             hint={
               pending === 'revise'
-                ? `indicative estimate ${formatRupees(exception.indicativeAnnualValue)}`
+                ? t('indicative estimate {0}', formatRupees(exception.indicativeAnnualValue))
                 : exception.revisedAnnualValue
-                  ? `revised demand ${formatRupees(exception.revisedAnnualValue)}`
+                  ? t('revised demand {0}', formatRupees(exception.revisedAnnualValue))
                   : undefined
             }
           >
-            {pending === 'revise' ? 'Revised annual demand (₹)' : 'Amount collected (₹)'}
+            {pending === 'revise' ? t('Revised annual demand (₹)') : t('Amount collected (₹)')}
           </Label>
           <Input
             id="recon-amount"

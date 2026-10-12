@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { RotateCcw, Target } from 'lucide-react'
+import { RotateCcw, Target, BadgeCheck, CheckCircle2, ClipboardList, FlaskConical } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { Badge } from '@/components/ui/badges'
 import {
@@ -17,6 +17,7 @@ import { useServiceQuery } from '@/hooks'
 import { platformService } from '@/services'
 import { usePageMasthead } from '@/stores/masthead.store'
 import { cn } from '@/utils/cn'
+import { SHADE } from '@/components/ui/shade'
 import { t } from '@/i18n'
 import { registerLayer } from '@/data/runtime'
 
@@ -236,7 +237,7 @@ export function PlatformReadinessPage(): React.JSX.Element {
             <SegmentedControl<'both' | 'implemented' | 'required'>
               value={side}
               onChange={setSide}
-              ariaLabel="Which side to show"
+              ariaLabel={t('Which side to show')}
               options={[
                 { value: 'both', label: t('Both') },
                 { value: 'implemented', label: t('Implemented') },
@@ -291,29 +292,49 @@ export function PlatformReadinessPage(): React.JSX.Element {
       />
 
       <MetricGrid columns={4}>
-        <Card>
-          <p className="label-institutional">{t('Implemented in this demonstration')}</p>
-          <p className="numeric mt-2 text-metric font-semibold text-ink-900">{IMPLEMENTED.length}</p>
-          <p className="mt-0.5 text-[0.6875rem] text-ink-500">{t('capabilities, exercised by every page in this build')}</p>
+        <Card className={cn(SHADE.green.tile, 'flex items-start gap-3')}>
+          <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE.green.chip)}>
+            <CheckCircle2 className="h-4 w-4" aria-hidden />
+          </span>
+          <div className="min-w-0">
+            <p className="label-institutional">{t('Implemented in this demonstration')}</p>
+            <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE.green.value)}>{IMPLEMENTED.length}</p>
+            <p className="mt-0.5 text-[0.6875rem] text-ink-500">{t('capabilities, exercised by every page in this build')}</p>
+          </div>
         </Card>
-        <Card tone="warn">
-          <p className="label-institutional">{t('Required for production')}</p>
-          <p className="numeric mt-2 text-metric font-semibold text-ink-900">{PRODUCTION_REQUIREMENTS.length}</p>
-          <p className="mt-0.5 text-[0.6875rem] text-ink-500">
-            {t('workstreams · only {0} are engineering', engineeringHeld)}
-          </p>
+        <Card className={cn(SHADE.amber.tile, 'flex items-start gap-3')}>
+          <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE.amber.chip)}>
+            <ClipboardList className="h-4 w-4" aria-hidden />
+          </span>
+          <div className="min-w-0">
+            <p className="label-institutional">{t('Required for production')}</p>
+            <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE.amber.value)}>{PRODUCTION_REQUIREMENTS.length}</p>
+            <p className="mt-0.5 text-[0.6875rem] text-ink-500">
+              {t('workstreams · only {0} are engineering', engineeringHeld)}
+            </p>
+          </div>
         </Card>
         {summary ? (
-          <Card>
-            <p className="label-institutional">{t('Simulated platform services today')}</p>
-            <p className="numeric mt-2 text-metric font-semibold text-ink-900">{summary.simulatedServices}</p>
-            <p className="mt-0.5 text-[0.6875rem] text-ink-500">{t('of the platform services register')}</p>
+          <Card className={cn(SHADE.teal.tile, 'flex items-start gap-3')}>
+            <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE.teal.chip)}>
+              <FlaskConical className="h-4 w-4" aria-hidden />
+            </span>
+            <div className="min-w-0">
+              <p className="label-institutional">{t('Simulated platform services today')}</p>
+              <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE.teal.value)}>{summary.simulatedServices}</p>
+              <p className="mt-0.5 text-[0.6875rem] text-ink-500">{t('of the platform services register')}</p>
+            </div>
           </Card>
         ) : null}
-        <Card tone="info">
-          <p className="label-institutional">{t('Certification claimed')}</p>
-          <p className="mt-2 text-sm font-semibold text-govt-800">{t('None')}</p>
-          <p className="mt-0.5 text-[0.6875rem] text-ink-500">{t('by design, in every environment')}</p>
+        <Card className={cn(SHADE.neutral.tile, 'flex items-start gap-3')}>
+          <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE.neutral.chip)}>
+            <BadgeCheck className="h-4 w-4" aria-hidden />
+          </span>
+          <div className="min-w-0">
+            <p className="label-institutional">{t('Certification claimed')}</p>
+            <p className="mt-2 text-sm font-semibold text-govt-800">{t('None')}</p>
+            <p className="mt-0.5 text-[0.6875rem] text-ink-500">{t('by design, in every environment')}</p>
+          </div>
         </Card>
       </MetricGrid>
 

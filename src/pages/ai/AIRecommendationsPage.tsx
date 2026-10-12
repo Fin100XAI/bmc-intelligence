@@ -21,7 +21,8 @@ import {
   type AIRequestRecord,
   type HumanOversightRecord,
 } from '@/types/ai'
-import { DOMAIN_LABEL, type DateRangeKey, type IntelligenceDomain } from '@/types/common'
+import { DOMAIN_LABEL, SEVERITY_LABEL, type DateRangeKey, type IntelligenceDomain } from '@/types/common'
+import { enumLabel } from '@/utils/enum-label'
 import {
   Card,
   ConfirmDialog,
@@ -118,12 +119,12 @@ function toRecommendationBlock(record: HumanOversightRecord, request: AIRequestR
   return {
     id: record.id,
     title: record.recommendationTitle,
-    why: `Raised from a ${AI_USE_CASE_LABEL[record.useCase]} request in ${DOMAIN_LABEL[record.domain]}, submitted ${formatRelative(record.submittedAt)}.${request ? ` The originating request drew on ${request.citationCount} evidence citation${request.citationCount === 1 ? '' : 's'} with ${request.confidence} confidence.` : ''}`,
+    why: t('Raised from a {0} request in {1}, submitted {2}.{3}', AI_USE_CASE_LABEL[record.useCase], DOMAIN_LABEL[record.domain], formatRelative(record.submittedAt), request ? t(' The originating request drew on {0} evidence citation{1} with {2} confidence.', request.citationCount, request.citationCount === 1 ? '' : 's', enumLabel(request.confidence)) : ''),
     evidenceRefs: recommendationEvidenceRefs(record, request),
-    expectedImpact: t('Addresses a {0} severity condition identified in {1}. Confirming, modifying or declining this recommendation is what determines whether it has any operational effect.', record.severity, DOMAIN_LABEL[record.domain]),
+    expectedImpact: t('Addresses a {0} severity condition identified in {1}. Confirming, modifying or declining this recommendation is what determines whether it has any operational effect.', SEVERITY_LABEL[record.severity], DOMAIN_LABEL[record.domain]),
     confidence: request?.confidence ?? 'medium',
     dependencies: [],
-    risks: request?.policyStatus === 'flagged' ? [request.policyNote ?? 'This request was flagged by AI governance policy.'] : [],
+    risks: request?.policyStatus === 'flagged' ? [request.policyNote ?? t('This request was flagged by AI governance policy.')] : [],
     humanOwnerRole: t('Accountable reviewing officer'),
     departmentId: DOMAIN_DEPARTMENT[record.domain] ?? 'dept-commissioner',
     requiresHumanApproval: true,
@@ -272,7 +273,7 @@ export function AIRecommendationsPage(): React.JSX.Element {
                 <EmptyState
                   className="m-4"
                   title={t('No {0} recommendations', tab)}
-                  detail="No recommendation currently sits in this review state within your authorised scope."
+                  detail={t('No recommendation currently sits in this review state within your authorised scope.')}
                 />
               ) : (
                 <div className="grid grid-cols-1 gap-3 p-4 lg:grid-cols-2">
@@ -344,15 +345,15 @@ export function AIRecommendationsPage(): React.JSX.Element {
         open={dialog !== null}
         onClose={() => setDialog(null)}
         onConfirm={(reason) => void handleConfirm(reason)}
-        title={dialog?.title ?? 'Review recommendation'}
+        title={dialog?.title ?? t('Review recommendation')}
         description={
           dialog?.outcome === 'accepted'
-            ? 'Recorded as your decision against this recommendation.'
+            ? t('Recorded as your decision against this recommendation.')
             : dialog?.outcome === 'modified'
-              ? 'State how the recommendation was modified before being actioned.'
-              : 'State the institutional basis for declining this recommendation.'
+              ? t('State how the recommendation was modified before being actioned.')
+              : t('State the institutional basis for declining this recommendation.')
         }
-        confirmLabel={dialog?.outcome === 'accepted' ? 'Approve' : dialog?.outcome === 'modified' ? 'Record modification' : 'Reject'}
+        confirmLabel={dialog?.outcome === 'accepted' ? t('Approve') : dialog?.outcome === 'modified' ? t('Record modification') : t('Reject')}
         intent={dialog?.outcome === 'accepted' ? 'positive' : dialog?.outcome === 'rejected' ? 'critical' : 'primary'}
         requireReason={dialog?.outcome === 'modified' || dialog?.outcome === 'rejected'}
       />

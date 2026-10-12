@@ -197,8 +197,8 @@ export function BuildingIntelligencePage(): React.JSX.Element {
   return (
     <PageBody>
       <PageHeader
-        eyebrow={t('Planning & Development Control')}
-        breadcrumbs={[{ label: t('Planning & Development Control') }, { label: t('Building Intelligence') }]}
+        eyebrow={t('Planning & Buildings')}
+        breadcrumbs={[{ label: t('Planning & Buildings') }, { label: t('Buildings & Enforcement') }]}
         freshness={FRESHNESS}
         actions={
           <LinkButton to={ROUTES.assets} variant="outline" icon={<Boxes className="h-3.5 w-3.5" />}>
@@ -225,7 +225,7 @@ export function BuildingIntelligencePage(): React.JSX.Element {
       ) : null}
 
       {!buildingsQuery.isLoading && !proposalsQuery.isLoading && !buildingsQuery.error && !proposalsQuery.error && buildings.length === 0 ? (
-        <EmptyState title={t('No building records available')} detail="No structures are recorded within your authorised scope." />
+        <EmptyState title={t('No building records available')} detail={t('No structures are recorded within your authorised scope.')} />
       ) : null}
 
       {!buildingsQuery.isLoading && !proposalsQuery.isLoading && !buildingsQuery.error && !proposalsQuery.error && buildings.length > 0 ? (
@@ -301,7 +301,7 @@ export function BuildingIntelligencePage(): React.JSX.Element {
               pageSize={10}
               stickyHeader
               maxHeight="28rem"
-              searchPlaceholder="Search structures"
+              searchPlaceholder={t('Search structures')}
               onRowClick={(r) => openDrawer({ kind: 'ward', id: r.wardId })}
               rowAccent={(r) => <SeverityRailFor severity={r.severity} />}
             />
@@ -311,7 +311,7 @@ export function BuildingIntelligencePage(): React.JSX.Element {
             <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
               {t('Development-control proposals with SLA age and breach status.')}
             </p>
-            <DataTable rows={filteredProposals} columns={proposalColumns} rowKey={(r) => r.id} pageSize={10} stickyHeader maxHeight="26rem" searchPlaceholder="Search proposals" />
+            <DataTable rows={filteredProposals} columns={proposalColumns} rowKey={(r) => r.id} pageSize={10} stickyHeader maxHeight="26rem" searchPlaceholder={t('Search proposals')} />
           </GovPanel>
           </div>
 
@@ -321,7 +321,7 @@ export function BuildingIntelligencePage(): React.JSX.Element {
               <CompositionBar segments={auditComposition} />
             </GovPanel>
             <Card>
-              <ChartFrame title={t('Proposal ageing')} unit="proposals" timeframe="Current scope" description={t('Age distribution of open and closed proposals against their SLA band.')} freshness={FRESHNESS} height={220}>
+              <ChartFrame title={t('Proposal ageing')} unit={t('proposals')} timeframe={t('Current scope')} description={t('Age distribution of open and closed proposals against their SLA band.')} freshness={FRESHNESS} height={220}>
                 <CategoryBarChart data={ageingData} categoryKey="label" series={[{ key: 'proposals', label: t('Proposals'), colour: '#2f6feb' }]} />
               </ChartFrame>
             </Card>

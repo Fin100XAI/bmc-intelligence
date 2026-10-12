@@ -14,6 +14,7 @@ import { formatDate, formatNumber } from '@/utils/format'
 import { usePageMasthead } from '@/stores/masthead.store'
 import { cn } from '@/utils/cn'
 import { t } from '@/i18n'
+import { SHADE } from '@/components/ui/shade'
 
 /**
  * src/pages/decision/CapabilityRoadmapPage.tsx
@@ -79,11 +80,11 @@ export function CapabilityRoadmapPage(): React.JSX.Element {
 
       <GovPanel title={t('Where {0} stands today', name)} subtitle={t('Counted from the platform itself, not typed in: the capability map, the evidence registry and the area briefs.')} tone="primary">
         <div className="grid grid-cols-2 gap-2 lg:grid-cols-5">
-          <Stat icon={<Target className="h-3.5 w-3.5" aria-hidden />} value={t('{0} of {1}', count('live'), rows.length)} label={t('Capability areas live')} note={t('{0} partly live, {1} modelled until corporation data', count('partial'), count('modelled'))} tone="border-ok-200 bg-ok-50" />
-          <Stat icon={<Compass className="h-3.5 w-3.5" aria-hidden />} value={formatNumber(decisions.length)} label={t('Evidence-backed decisions')} note={t('Drawn from the area briefs, each citing its records')} tone="border-warn-200 bg-warn-50" />
-          <Stat icon={<Server className="h-3.5 w-3.5" aria-hidden />} value={formatNumber(systems.length)} label={t('Existing systems mapped')} note={t('The platform reads them; it does not replace them')} tone="border-govt-200 bg-govt-50" />
-          <Stat icon={<BadgeCheck className="h-3.5 w-3.5" aria-hidden />} value={formatNumber(verified)} label={t('Official figures verified')} note={t('Each with its source, quote and date read, from {0} public feeds', feeds.length)} tone="border-ink-200 bg-surface" />
-          <Stat icon={<Globe className="h-3.5 w-3.5" aria-hidden />} value={t('{0} of {1}', readable, site.length)} label={t('Website sections readable')} note={t('{0}; the rest need login, are empty or link elsewhere', activeCorporation.website ?? '')} tone="border-ink-200 bg-surface" />
+          <Stat icon={<Target className="h-3.5 w-3.5" aria-hidden />} value={t('{0} of {1}', count('live'), rows.length)} label={t('Capability areas live')} note={t('{0} partly live, {1} modelled until corporation data', count('partial'), count('modelled'))} tone={SHADE.green.tile} />
+          <Stat icon={<Compass className="h-3.5 w-3.5" aria-hidden />} value={formatNumber(decisions.length)} label={t('Evidence-backed decisions')} note={t('Drawn from the area briefs, each citing its records')} tone={SHADE.amber.tile} />
+          <Stat icon={<Server className="h-3.5 w-3.5" aria-hidden />} value={formatNumber(systems.length)} label={t('Existing systems mapped')} note={t('The platform reads them; it does not replace them')} tone={SHADE.blue.tile} />
+          <Stat icon={<BadgeCheck className="h-3.5 w-3.5" aria-hidden />} value={formatNumber(verified)} label={t('Official figures verified')} note={t('Each with its source, quote and date read, from {0} public feeds', feeds.length)} tone={SHADE.teal.tile} />
+          <Stat icon={<Globe className="h-3.5 w-3.5" aria-hidden />} value={t('{0} of {1}', readable, site.length)} label={t('Website sections readable')} note={t('{0}; the rest need login, are empty or link elsewhere', activeCorporation.website ?? '')} tone={SHADE.auto.tile} />
         </div>
         <div className="mt-3">
           <p className="mb-1.5 text-[0.6875rem] font-semibold text-ink-600">{t('The {0} capability areas. Open any one for its brief.', rows.length)}</p>
@@ -109,7 +110,7 @@ export function CapabilityRoadmapPage(): React.JSX.Element {
           <ol className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3">
             {decisions.slice(0, 6).map((d, i) => (
               <li key={`${d.area}-${i}`}>
-                <Link to={capabilityAreaHref(d.area)} className="flex h-full flex-col rounded-xl border border-ink-200 bg-surface p-3 hover:border-warn-300 hover:bg-warn-50">
+                <Link to={capabilityAreaHref(d.area)} className={cn('flex h-full flex-col rounded-xl border p-3 transition-shadow hover:shadow-sm', SHADE.amber.tile)}>
                   <span className="flex items-center justify-between gap-2">
                     <span className="numeric text-[0.6875rem] font-bold text-ink-500">{t('No. {0}', i + 1)}</span>
                     <Badge tone="warn" size="sm">
@@ -128,8 +129,13 @@ export function CapabilityRoadmapPage(): React.JSX.Element {
       <GovPanel title={t('From public evidence to institutional intelligence')} subtitle={t('The deployment path. Each level adds data without rebuilding the platform.')} tone="primary">
         <ol className="grid grid-cols-1 gap-2 md:grid-cols-3 xl:grid-cols-6">
           {LEVELS.map((l) => (
-            <li key={l.n} className={cn('rounded-xl border p-3', l.state === 'live' ? 'border-ok-300 bg-ok-50' : l.state === 'pilot' ? 'border-govt-200 bg-govt-50' : 'border-ink-200 bg-surface')}>
-              <p className="numeric text-[1.5rem] leading-none font-extrabold text-ink-900">{t('L{0}', String(l.n))}</p>
+            <li key={l.n} className={cn('rounded-xl border p-3', SHADE[l.state === 'live' ? 'green' : l.state === 'pilot' ? 'blue' : 'neutral'].tile)}>
+              <p className="flex items-center gap-2">
+                <span className={cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white', SHADE[l.state === 'live' ? 'green' : l.state === 'pilot' ? 'blue' : 'neutral'].chip)} aria-hidden>
+                  <Layers className="h-4 w-4" />
+                </span>
+                <span className={cn('numeric text-[1.5rem] leading-none font-extrabold', SHADE[l.state === 'live' ? 'green' : l.state === 'pilot' ? 'blue' : 'neutral'].value)}>{t('L{0}', String(l.n))}</span>
+              </p>
               <p className="mt-1 text-[0.8125rem] font-bold text-ink-900">{l.name}</p>
               <p className="mt-1 text-[0.6875rem] leading-snug text-ink-600">{l.runsOn}</p>
               <Badge tone={l.state === 'live' ? 'positive' : l.state === 'pilot' ? 'info' : 'muted'} size="sm" className="mt-2">
@@ -148,7 +154,7 @@ export function CapabilityRoadmapPage(): React.JSX.Element {
           <ul className="space-y-1.5">
             {NOW.map((x) => (
               <li key={x.label}>
-                <Link to={x.to} className="flex items-center justify-between gap-2 rounded-lg border border-ink-200 bg-surface px-3 py-2 text-[0.8125rem] text-ink-800 hover:border-ok-300 hover:bg-ok-50">
+                <Link to={x.to} className={cn('flex items-center justify-between gap-2 rounded-lg border px-3 py-2 text-[0.8125rem] text-ink-800 transition-shadow hover:shadow-sm', SHADE.green.tile)}>
                   <span className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-ok-600" aria-hidden />
                     {x.label}
@@ -164,7 +170,7 @@ export function CapabilityRoadmapPage(): React.JSX.Element {
           <ul className="space-y-1.5">
             {unlock.map((r) => (
               <li key={r.n}>
-                <Link to={capabilityAreaHref(r.n)} className="block rounded-lg border border-ink-200 bg-surface px-3 py-2 hover:border-warn-300 hover:bg-warn-50">
+                <Link to={capabilityAreaHref(r.n)} className={cn('block rounded-lg border px-3 py-2 transition-shadow hover:shadow-sm', SHADE.amber.tile)}>
                   <span className="flex flex-wrap items-center gap-2">
                     <Lock className="h-3.5 w-3.5 shrink-0 text-warn-600" aria-hidden />
                     <span className="text-[0.8125rem] font-bold text-ink-900">
@@ -232,7 +238,7 @@ export function CapabilityRoadmapPage(): React.JSX.Element {
           <ol className="space-y-2">
             {bmcRoadmapUpdates().map((u) => (
               <li key={u.title}>
-                <Link to={u.to} className="block rounded-lg border border-ink-200 bg-surface px-3 py-2 hover:border-govt-300 hover:bg-govt-50">
+                <Link to={u.to} className={cn('block rounded-lg border px-3 py-2 transition-shadow hover:shadow-sm', SHADE.blue.tile)}>
                   <p className="flex items-center gap-1.5 text-[0.625rem] font-semibold tracking-wide text-ink-500 uppercase">
                     <History className="h-3 w-3" aria-hidden />
                     {formatDate(u.date)}
@@ -299,7 +305,7 @@ export function CapabilityRoadmapPage(): React.JSX.Element {
       <GovPanel title={t('Above and across, not instead of')} subtitle={t('The systems {0} already runs. The platform reads them; it does not rebuild them or compete with them.', name)}>
         <ul className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3">
           {systems.map((x) => (
-            <li key={x.name} className="flex items-start gap-2 rounded-lg border border-ink-200 bg-surface-sunken p-2.5 text-[0.75rem] text-ink-700">
+            <li key={x.name} className={cn('flex items-start gap-2 rounded-lg border p-2.5 text-[0.75rem] text-ink-700', SHADE.auto.tile)}>
               <Server className="mt-0.5 h-4 w-4 shrink-0 text-navy-700" aria-hidden />
               <span>
                 <span className="font-semibold text-ink-900">{x.name}</span> - {x.purpose}

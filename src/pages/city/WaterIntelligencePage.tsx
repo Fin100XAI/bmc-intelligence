@@ -37,6 +37,7 @@ import { formatDate, formatNumber, formatPercent } from '@/utils/format'
 import { DEMO_NOW } from '@/utils/deterministic'
 import { t } from '@/i18n'
 import { registerLayer } from '@/data/runtime'
+import { SHADE, shadeForTone } from '@/components/ui/shade'
 
 /** Every zone-driven section below filters its own copy of the zone list
  *  against the same predicate, so the city position, the zone register and
@@ -179,7 +180,7 @@ export function WaterIntelligencePage(): React.JSX.Element {
         eyebrow={t('City Intelligence')}
         breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Water Intelligence') }]}
         freshness={freshness}
-        controls={<FilterBar show={['ward', 'status', 'search']} statusOptions={zoneStatusOptions} searchPlaceholder="Search zones or wards" />}
+        controls={<FilterBar show={['ward', 'status', 'search']} statusOptions={zoneStatusOptions} searchPlaceholder={t('Search zones or wards')} />}
       />
 
       <CityPositionSection />
@@ -232,7 +233,7 @@ function CityPositionSection(): React.JSX.Element {
   if (zones.length === 0) {
     return (
       <Card>
-        <EmptyState title={t('No water zones')} detail="No water distribution zone record is currently available." />
+        <EmptyState title={t('No water zones')} detail={t('No water distribution zone record is currently available.')} />
       </Card>
     )
   }
@@ -256,7 +257,7 @@ function CityPositionSection(): React.JSX.Element {
       </p>
       <MetricGrid columns={5}>
         <MetricCard
-          label={t('Supply')}
+          label={t('Supply (modelled)')}
           value={formatNumber(totalSupply)}
           unit="MLD"
           icon={<Droplets className="h-4 w-4" />}
@@ -271,12 +272,12 @@ function CityPositionSection(): React.JSX.Element {
         <MetricCard label={t('Demand')} value={formatNumber(totalDemand)} unit="MLD" />
         <MetricCard label={t('Deficit')} value={formatNumber(totalDeficit)} unit="MLD" tone={totalDeficit > 0 ? 'warn' : 'default'} />
         <MetricCard label={t('Average pressure')} value={formatNumber(avgPressure, 1)} unit="m" icon={<Gauge className="h-4 w-4" />} />
-        <MetricCard label={t('Average supply hours')} value={formatNumber(avgSupplyHours, 1)} unit={'h/day'} />
+        <MetricCard label={t('Average supply hours')} value={formatNumber(avgSupplyHours, 1)} unit={t('h/day')} />
       </MetricGrid>
       <MetricGrid columns={4} className="mt-3">
         <MetricCard size="sm" label={t('Non-revenue water')} value={formatPercent(avgNrw)} tone={avgNrw > 25 ? 'warn' : 'default'} />
         <MetricCard size="sm" label={t('Quality compliance')} value={formatPercent(avgQuality)} tone={avgQuality < 95 ? 'warn' : 'default'} />
-        <MetricCard size="sm" label={t('Tanker dependency')} value={totalTankers} unit={'trips/day'} icon={<Truck className="h-4 w-4" />} />
+        <MetricCard size="sm" label={t('Tanker dependency')} value={totalTankers} unit={t('trips/day')} icon={<Truck className="h-4 w-4" />} />
         <MetricCard size="sm" label={t('Interruptions / complaints (30d)')} value={`${totalInterruptions} / ${totalComplaints}`} />
       </MetricGrid>
     </GovPanel>
@@ -307,7 +308,7 @@ function ReservoirSection(): React.JSX.Element {
   if (reservoirs.length === 0) {
     return (
       <Card>
-        <EmptyState title={t('No reservoir data')} detail="No reservoir record is currently available." />
+        <EmptyState title={t('No reservoir data')} detail={t('No reservoir record is currently available.')} />
       </Card>
     )
   }
@@ -325,18 +326,18 @@ function ReservoirSection(): React.JSX.Element {
       <MetricGrid columns={2}>
         <MetricCard label={t('Combined fill')} value={formatPercent(overallFillPct)} tone={overallFillPct < 40 ? 'critical' : overallFillPct < 60 ? 'warn' : 'default'} />
         <MetricCard label={t('Useful storage')} value={formatNumber(totalCurrent)} unit={t('of {0} ML', formatNumber(totalUseful))} />
-        <MetricCard label={t('Days of supply (avg)')} value={formatNumber(avgDaysOfSupply, 0)} unit="days" />
+        <MetricCard label={t('Days of supply (avg)')} value={formatNumber(avgDaysOfSupply, 0)} unit={t('days')} />
       </MetricGrid>
       <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-2">
         {reservoirs.map((r) => (
-          <div key={r.id} className="flex items-center gap-3 rounded-lg border border-ink-100 p-3">
+          <div key={r.id} className={cn('flex items-center gap-3 rounded-lg border p-3', SHADE[shadeForTone(toneForScore(r.fillPct))].tile)}>
             <ReservoirTank fillPct={r.fillPct} />
             <div className="min-w-0">
               <p className="truncate text-xs font-semibold text-ink-900">{r.name}</p>
               <p className={cn('numeric text-lg font-semibold', SCORE_TONE_TEXT[toneForScore(r.fillPct)])}>{r.fillPct}%</p>
               <p className="text-[0.6875rem] text-ink-500">{t('{0} days supply', r.daysOfSupply)}</p>
               <div className="mt-1">
-                <DeltaBadge value={r.fillPct - r.lastYearFillPct} unit=" pp" comparisonLabel="vs same period last year" />
+                <DeltaBadge value={r.fillPct - r.lastYearFillPct} unit=" pp" comparisonLabel={t('vs same period last year')} />
               </div>
               <div className="mt-1">
                 <StateBadge state={r.state} />
@@ -382,7 +383,7 @@ function ZoneSection({
   if (zones.length === 0) {
     return (
       <Card>
-        <EmptyState title={t('No water zones')} detail="No water distribution zone record is currently available." />
+        <EmptyState title={t('No water zones')} detail={t('No water distribution zone record is currently available.')} />
       </Card>
     )
   }
@@ -395,7 +396,7 @@ function ZoneSection({
   const columns: Array<Column<WaterZone>> = [
     { id: 'name', header: t('Zone'), cell: (r) => <span className="font-medium text-ink-900">{r.name}</span>, sortValue: (r) => r.name, searchValue: (r) => r.name },
     { id: 'wards', header: t('Wards'), cell: (r) => r.wardIds.map((w) => wardName(w)).join(', '), searchValue: (r) => r.wardIds.map((w) => wardName(w)).join(' '), hideBelow: 'lg' },
-    { id: 'supply', header: t('Supply'), cell: (r) => `${r.supplyMld} MLD`, sortValue: (r) => r.supplyMld, align: 'right' },
+    { id: 'supply', header: t('Supply (modelled)'), cell: (r) => `${r.supplyMld} MLD`, sortValue: (r) => r.supplyMld, align: 'right' },
     { id: 'demand', header: t('Demand'), cell: (r) => `${r.demandMld} MLD`, sortValue: (r) => r.demandMld, align: 'right', hideBelow: 'md' },
     {
       id: 'deficit',
@@ -442,9 +443,9 @@ function ZoneSection({
         onRowClick={(r) => onSelectZone(r.id)}
         activeRowKey={activeZoneId ?? undefined}
         pageSize={10}
-        searchPlaceholder="Search zones or wards"
+        searchPlaceholder={t('Search zones or wards')}
         initialSort={{ columnId: 'deficit', direction: 'desc' }}
-        ariaLabel="Water distribution zone register"
+        ariaLabel={t('Water distribution zone register')}
       />
     </GovPanel>
   )
@@ -478,14 +479,14 @@ function AnomalySection(): React.JSX.Element {
         {t('Zones with a data pattern flagged for review. An anomaly is a statistical departure from the expected pattern - it is not evidence of fraud, and no individual\'s or contractor\'s conduct is characterised by this indicator.')}
       </p>
       {anomalies.length === 0 ? (
-        <EmptyState compact title={t('No anomalies flagged')} detail="No water zone currently carries a flagged anomaly." />
+        <EmptyState compact title={t('No anomalies flagged')} detail={t('No water zone currently carries a flagged anomaly.')} />
       ) : (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {anomalies.map((a) => (
             <div key={a.zoneId} className="rounded-lg border border-warn-200 bg-warn-50/50 p-3">
               <div className="flex items-center justify-between gap-2">
                 <p className="text-xs font-semibold text-ink-900">{a.zoneName}</p>
-                <Badge tone="warn">{a.issues.length} flagged</Badge>
+                <Badge tone="warn">{t('{0} flagged', a.issues.length)}</Badge>
               </div>
               <p className="mt-0.5 text-[0.6875rem] text-ink-500">{a.wardIds.map((w) => wardName(w)).join(', ')}</p>
               <ul className="mt-2 space-y-1">
@@ -535,7 +536,7 @@ function DrilldownSection({
 
   let content: React.ReactNode
   if (!wardId && !zoneId) {
-    content = <EmptyState compact className="mx-3 mb-3" title={t('Nothing selected')} detail="Select a ward on the map, or a zone in the table above, to begin drilling down." />
+    content = <EmptyState compact className="mx-3 mb-3" title={t('Nothing selected')} detail={t('Select a ward on the map, or a zone in the table above, to begin drilling down.')} />
   } else if (q.isLoading) {
     content = (
       <div className="px-3 pb-3">
@@ -563,7 +564,7 @@ function DrilldownSection({
           </MetricGrid>
         ) : null}
         {result.assets.length === 0 ? (
-          <EmptyState compact title={t('No assets recorded')} detail="No water asset record is mapped to this selection." />
+          <EmptyState compact title={t('No assets recorded')} detail={t('No water asset record is mapped to this selection.')} />
         ) : (
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {result.assets.map((a) => (
@@ -654,7 +655,7 @@ function WaterChartsSection(): React.JSX.Element {
   if (zones.length === 0) {
     return (
       <Card>
-        <EmptyState title={t('No zone data')} detail="No water distribution zone record is currently available." />
+        <EmptyState title={t('No zone data')} detail={t('No water distribution zone record is currently available.')} />
       </Card>
     )
   }
@@ -668,7 +669,7 @@ function WaterChartsSection(): React.JSX.Element {
         <ChartFrame
           title={t('Supply vs demand by zone')}
           unit="MLD"
-          timeframe="Current reporting period, by zone"
+          timeframe={t('Current reporting period, by zone')}
           description={t('A cross-sectional comparison across zones for the current period - not a time series.')}
         >
           <CategoryBarChart
@@ -684,19 +685,19 @@ function WaterChartsSection(): React.JSX.Element {
         </ChartFrame>
       </Card>
       <Card>
-        <ChartFrame title={t('Non-revenue water by zone')} unit="%" timeframe="Current position, ranked" footnote={t('Citywide average: {0}.', formatPercent(avgNrw))}>
+        <ChartFrame title={t('Non-revenue water by zone')} unit="%" timeframe={t('Current position, ranked')} footnote={t('Citywide average: {0}.', formatPercent(avgNrw))}>
           <RankedBarChart data={[...zones].sort((a, b) => b.nrwPct - a.nrwPct).map((z) => ({ label: z.name.length > 16 ? `${z.name.slice(0, 14)}…` : z.name, value: z.nrwPct }))} unit="%" />
         </ChartFrame>
       </Card>
       <Card>
-        <ChartFrame title={t('Pressure profile by zone')} unit="m" timeframe="Current position" footnote={t('Dashed line marks the citywide average of {0} m.', formatNumber(avgPressure, 1))}>
+        <ChartFrame title={t('Pressure profile by zone')} unit="m" timeframe={t('Current position')} footnote={t('Dashed line marks the citywide average of {0} m.', formatNumber(avgPressure, 1))}>
           <CategoryBarChart
             data={zones.map((z) => ({ label: z.name.length > 10 ? `${z.name.slice(0, 9)}…` : z.name, pressure: z.pressureM }))}
             series={[{ key: 'pressure', label: t('Pressure'), colour: CHART_COLOURS.intel }]}
             layout="horizontal"
             unit="m"
             referenceValue={avgPressure}
-            referenceLabel="City average"
+            referenceLabel={t('City average')}
           />
         </ChartFrame>
       </Card>

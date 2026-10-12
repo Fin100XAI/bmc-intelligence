@@ -81,7 +81,7 @@ export function NotificationCentre(): React.JSX.Element {
           ]}
           value={tab}
           onChange={(id) => setTab(id as 'unread' | 'all')}
-          ariaLabel="Notification filter"
+          ariaLabel={t('Notification filter')}
         />
       }
       footer={
@@ -122,8 +122,8 @@ export function NotificationCentre(): React.JSX.Element {
 
       {shown.length === 0 ? (
         <EmptyState
-          title={tab === 'unread' ? 'No unread notifications' : 'No notifications'}
-          detail="Notifications appear here when an item requires your attention, decision or acknowledgement."
+          title={tab === 'unread' ? t('No unread notifications') : t('No notifications')}
+          detail={t('Notifications appear here when an item requires your attention, decision or acknowledgement.')}
           icon={<BellOff className="h-4 w-4" />}
           compact
         />
@@ -164,7 +164,7 @@ export function NotificationCentre(): React.JSX.Element {
                     onClick={() => markRead(n.id)}
                     className="text-[0.6875rem] text-ink-400 transition-colors hover:text-ink-700"
                   >
-                    {n.read ? 'Mark unread' : 'Mark read'}
+                    {n.read ? t('Mark unread') : t('Mark read')}
                   </button>
                 </div>
               </div>

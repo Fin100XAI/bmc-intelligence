@@ -94,7 +94,7 @@ export function HousingIntelligencePage(): React.JSX.Element {
   if (settlementsQuery.isLoading || schemesQuery.isLoading) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Slum & Housing Intelligence') }]} />
+        <PageHeader eyebrow={t('Wards & Citizens')} breadcrumbs={[{ label: t('Wards & Citizens') }, { label: t('Housing & Livelihoods') }]} />
         <LoadingState variant="metrics" />
         <LoadingState variant="table" rows={8} />
       </PageBody>
@@ -103,7 +103,7 @@ export function HousingIntelligencePage(): React.JSX.Element {
   if (settlementsQuery.error || schemesQuery.error) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Slum & Housing Intelligence') }]} />
+        <PageHeader eyebrow={t('Wards & Citizens')} breadcrumbs={[{ label: t('Wards & Citizens') }, { label: t('Housing & Livelihoods') }]} />
         <ErrorState
           detail={(settlementsQuery.error ?? schemesQuery.error)?.message}
           onRetry={() => { void settlementsQuery.refetch(); void schemesQuery.refetch() }}
@@ -217,7 +217,7 @@ export function HousingIntelligencePage(): React.JSX.Element {
     {
       id: 'delay',
       header: t('Delay'),
-      cell: (r) => (r.delayDays > 0 ? <span className={r.delayDays > 365 ? 'font-semibold text-crit-600' : 'text-warn-700'}>{r.delayDays} days</span> : <span className="text-ok-600">{t('On schedule')}</span>),
+      cell: (r) => (r.delayDays > 0 ? <span className={r.delayDays > 365 ? 'font-semibold text-crit-600' : 'text-warn-700'}>{t('{0} days', r.delayDays)}</span> : <span className="text-ok-600">{t('On schedule')}</span>),
       sortValue: (r) => r.delayDays,
       align: 'right',
     },
@@ -227,14 +227,14 @@ export function HousingIntelligencePage(): React.JSX.Element {
   return (
     <PageBody>
       <PageHeader
-        eyebrow={t('City Intelligence')}
-        breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Slum & Housing Intelligence') }]}
+        eyebrow={t('Wards & Citizens')}
+        breadcrumbs={[{ label: t('Wards & Citizens') }, { label: t('Housing & Livelihoods') }]}
         freshness={freshness}
       />
 
       <DemonstrationNotice />
 
-      <FilterBar show={['ward', 'search']} searchPlaceholder="Search settlements" />
+      <FilterBar show={['ward', 'search']} searchPlaceholder={t('Search settlements')} />
 
       <MetricGrid columns={4}>
         <MetricCard
@@ -287,7 +287,7 @@ export function HousingIntelligencePage(): React.JSX.Element {
               {t('Service coverage by settlement, within your authorised ward scope.')}
             </p>
             {filtered.length === 0 ? (
-              <EmptyState title={t('No settlements match the current filters')} detail="Clear a filter to widen the register." />
+              <EmptyState title={t('No settlements match the current filters')} detail={t('Clear a filter to widen the register.')} />
             ) : (
               <DataTable rows={filtered} columns={settlementColumns} rowKey={(r) => r.id} pageSize={12} />
             )}
@@ -298,7 +298,7 @@ export function HousingIntelligencePage(): React.JSX.Element {
             <MetricCard
               label={t('Tenements delivered')}
               value={formatNumber(tenementsDelivered)}
-              support={tenementsSanctioned > 0 ? `${Math.round((tenementsDelivered / tenementsSanctioned) * 100)}% of sanctioned` : undefined}
+              support={tenementsSanctioned > 0 ? t('{0}% of sanctioned', Math.round((tenementsDelivered / tenementsSanctioned) * 100)) : undefined}
               progress={{ value: tenementsDelivered, max: Math.max(1, tenementsSanctioned) }}
             />
             <MetricCard
@@ -354,7 +354,7 @@ export function HousingIntelligencePage(): React.JSX.Element {
                   colour: RECOGNITION_COLOUR[r.kind],
                 }))}
                 centreValue={String(filtered.length)}
-                centreLabel="settlements"
+                centreLabel={t('settlements')}
               />
             </div>
             <p className="mt-2 text-[0.6875rem] leading-relaxed text-ink-500">

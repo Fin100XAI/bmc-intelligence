@@ -232,8 +232,9 @@ export function EnvironmentIntelligencePage(): React.JSX.Element {
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1fr_20rem]">
         <MetricGrid columns={4}>
           <MetricCard
-            label={t('City average AQI')}
+            label={t('Station average AQI')}
             value={avgAqi}
+            support={t('Modelled readings')}
             icon={<Wind className="h-4 w-4" />}
             origin="demonstration"
             background="red"
@@ -245,12 +246,12 @@ export function EnvironmentIntelligencePage(): React.JSX.Element {
               ) : undefined
             }
           />
-          <MetricCard label={t('Best reading')} value={best?.aqi ?? '-'} support={best ? wardName(best.wardId) : undefined} tone="positive" background="amber" />
-          <MetricCard label={t('Worst reading')} value={worst?.aqi ?? '-'} support={worst ? wardName(worst.wardId) : undefined} tone={worst && worst.category !== 'good' && worst.category !== 'satisfactory' ? 'warn' : 'default'} background="green" />
+          <MetricCard label={t('Best reading')} value={best?.aqi ?? '-'} support={best ? best.name : undefined} tone="positive" background="amber" />
+          <MetricCard label={t('Worst reading')} value={worst?.aqi ?? '-'} support={worst ? worst.name : undefined} tone={worst && worst.category !== 'good' && worst.category !== 'satisfactory' ? 'warn' : 'default'} background="green" />
           <MetricCard
             label={t('Stations, moderate or worse')}
             value={moderateOrWorse}
-            support={t('of {0} stations', stations.length)}
+            support={t('of {0} monitoring stations', stations.length)}
             tone={moderateOrWorse > 0 ? 'warn' : 'default'}
             footer={
               isBmc && activeCorporation.caaqmsStationsCount ? (
@@ -267,7 +268,7 @@ export function EnvironmentIntelligencePage(): React.JSX.Element {
             <DonutChart
               data={categoryCounts.map((c) => ({ label: AQI_CATEGORY_LABEL[c.category], value: c.count, colour: AQI_CATEGORY_COLOUR[c.category] }))}
               centreValue={String(stations.length)}
-              centreLabel="stations"
+              centreLabel={t('stations')}
             />
           </div>
           <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
@@ -290,21 +291,21 @@ export function EnvironmentIntelligencePage(): React.JSX.Element {
           <GovPanel title={t('Monitoring station register')} tone="amber" dense>
             <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">{t('Sortable; filter by ward using the controls below.')}</p>
             <div className="px-3 pb-3">
-              <FilterBar show={['ward', 'search']} searchPlaceholder="Search station or ward" compact />
+              <FilterBar show={['ward', 'search']} searchPlaceholder={t('Search station or ward')} compact />
             </div>
             {filteredStations.length === 0 ? (
-              <EmptyState className="m-3" title={t('No stations match the current filters')} detail="Adjust the ward or search term above." />
+              <EmptyState className="m-3" title={t('No stations match the current filters')} detail={t('Adjust the ward or search term above.')} />
             ) : (
-              <DataTable rows={filteredStations} columns={aqiColumns} rowKey={(r) => r.id} pageSize={12} searchable={false} initialSort={{ columnId: 'aqi', direction: 'desc' }} ariaLabel="Air quality monitoring stations" />
+              <DataTable rows={filteredStations} columns={aqiColumns} rowKey={(r) => r.id} pageSize={12} searchable={false} initialSort={{ columnId: 'aqi', direction: 'desc' }} ariaLabel={t('Air quality monitoring stations')} />
             )}
           </GovPanel>
 
           <GovPanel title={t('Noise readings by zone type')} tone="red" dense>
             <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
-              {t('Measured against day and night limits for silence, residential, commercial and industrial zones.')}
+              {t('Measured against day and night limits for silence, residential, commercial and industrial zones.')} {t('Noise readings are modelled; no noise-monitoring network is connected.')}
             </p>
             <div className="flex flex-wrap items-center gap-2 px-3 pb-3">
-              <FilterBar show={['ward', 'search']} searchPlaceholder="Search location or ward" compact />
+              <FilterBar show={['ward', 'search']} searchPlaceholder={t('Search location or ward')} compact />
               <div className="flex items-center gap-1.5">
                 <Label className="mb-0 whitespace-nowrap">{t('Zone type')}</Label>
                 <Select
@@ -322,9 +323,9 @@ export function EnvironmentIntelligencePage(): React.JSX.Element {
               ))}
             </MetricGrid>
             {filteredNoise.length === 0 ? (
-              <EmptyState className="m-3" title={t('No readings match the current filters')} detail="Adjust the zone type, ward or search term above." />
+              <EmptyState className="m-3" title={t('No readings match the current filters')} detail={t('Adjust the zone type, ward or search term above.')} />
             ) : (
-              <DataTable rows={filteredNoise} columns={noiseColumns} rowKey={(r) => r.id} pageSize={12} searchable={false} initialSort={{ columnId: 'exceedance', direction: 'desc' }} ariaLabel="Noise readings" />
+              <DataTable rows={filteredNoise} columns={noiseColumns} rowKey={(r) => r.id} pageSize={12} searchable={false} initialSort={{ columnId: 'exceedance', direction: 'desc' }} ariaLabel={t('Noise readings')} />
             )}
           </GovPanel>
         </div>
@@ -353,7 +354,7 @@ export function EnvironmentIntelligencePage(): React.JSX.Element {
                     return Math.min(100, Math.round((s.aqi / 200) * 100))
                   },
                   higherIsWorse: true,
-                  unit: ' AQI (scaled; 200 = 100)',
+                  unit: t(' AQI (scaled; 200 = 100)'),
                   description: t('Reporting station AQI for the ward, scaled 0–100 against the moderate-category upper bound for visual contrast.'),
                 },
               ]}
@@ -362,7 +363,7 @@ export function EnvironmentIntelligencePage(): React.JSX.Element {
           </GovPanel>
 
           <Card>
-            <ChartFrame title={t('AQI distribution')} unit={t('Number of stations')} timeframe="Current reporting period" description={t('Stations grouped by air-quality category.')}>
+            <ChartFrame title={t('AQI distribution')} unit={t('Number of stations')} timeframe={t('Current reporting period')} description={t('Stations grouped by air-quality category.')}>
               <CategoryBarChart
                 data={categoryCounts.map((c) => ({ label: AQI_CATEGORY_LABEL[c.category], count: c.count }))}
                 series={[{ key: 'count', label: t('Stations'), colour: CHART_COLOURS.primary }]}
@@ -372,7 +373,7 @@ export function EnvironmentIntelligencePage(): React.JSX.Element {
           </Card>
 
           <Card>
-            <ChartFrame title={t('Noise exceedance by zone type')} unit={t('Number of readings')} timeframe="Current reporting period" footnote={t('{0} of {1} readings city-wide currently exceed their day or night limit.', totalExceeding, noise.length)}>
+            <ChartFrame title={t('Noise exceedance by zone type')} unit={t('Number of readings')} timeframe={t('Current reporting period')} footnote={t('{0} of {1} readings city-wide currently exceed their day or night limit.', totalExceeding, noise.length)}>
               <CategoryBarChart
                 data={noiseByZone}
                 series={[

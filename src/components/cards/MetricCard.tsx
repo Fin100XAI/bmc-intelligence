@@ -202,10 +202,10 @@ export function MetricCard({
 
       {progress ? (
         <div className="mt-2">
-          {/* The rail is deliberately over-wide and clipped by the card's own
-              `overflow-hidden`: `MiniBar` sets its width inline, so a class
-              cannot stretch it. */}
-          <MiniBar value={progress.value} max={progress.max ?? 100} width={999} className="w-full" />
+          {/* Card-width rail. It used to be a 999 px bar clipped by the card,
+              which both overflowed the card's scroll width and filled the
+              visible part wrongly (a 40% value looked full on a phone). */}
+          <MiniBar value={progress.value} max={progress.max ?? 100} width="full" />
         </div>
       ) : null}
 

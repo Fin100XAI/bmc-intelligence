@@ -87,7 +87,10 @@ export function FireEmergencyPage(): React.JSX.Element {
   /** The fire service's own name for this corporation - see `dept-fire`. */
   const fireBrigadeName = t('{0} Fire Brigade', cityName(corporation))
 
-  usePageMasthead(t('Fire & Emergency'))
+  usePageMasthead(
+    t('Fire & Emergency'),
+    t('Station readiness, response-time performance against the modelled urban service standard, coverage and current fire-related incidents across the {0} and disaster control network.', fireBrigadeName),
+  )
 
   const stationsQuery = useServiceQuery(queryKeys.health('emergency-stations'), (u) => healthService.emergencyStations(u))
   const incidentsQuery = useServiceQuery(queryKeys.incidents(), (u) => incidentService.list(u, { pageSize: 500 }))
@@ -115,7 +118,7 @@ export function FireEmergencyPage(): React.JSX.Element {
     return (
       <PageBody>
         <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Fire & Emergency') }]} />
-        <EmptyState title={t('No stations available')} detail="No emergency station records were returned for the current scope." />
+        <EmptyState title={t('No stations available')} detail={t('No emergency station records were returned for the current scope.')} />
         <DemonstrationNotice />
       </PageBody>
     )
@@ -284,7 +287,7 @@ export function FireEmergencyPage(): React.JSX.Element {
       <GovPanel title={t('Station register')} tone="amber" dense>
         <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">{t('Sortable and filterable by type and ward.')}</p>
         <div className="flex flex-wrap items-center gap-2 px-3 pb-3">
-          <FilterBar show={['ward', 'search']} searchPlaceholder="Search station or ward" compact />
+          <FilterBar show={['ward', 'search']} searchPlaceholder={t('Search station or ward')} compact />
           <div className="flex items-center gap-1.5">
             <Label className="mb-0 whitespace-nowrap">{t('Type')}</Label>
             <Select
@@ -311,7 +314,7 @@ export function FireEmergencyPage(): React.JSX.Element {
               detail={t('The nearest covering station is {0} in {1}, about {2} km away, with a {3} min average response. Fire cover for this {4} is provided from there.', nearestCover.station.name, wardName(nearestCover.station.wardId), nearestCover.km.toFixed(1), nearestCover.station.avgResponseMinutes, corporation.wardTerminology.toLowerCase())}
             />
           ) : (
-            <EmptyState className="m-3" title={t('No stations match the current filters')} detail="Adjust the type, ward or search term above." />
+            <EmptyState className="m-3" title={t('No stations match the current filters')} detail={t('Adjust the type, ward or search term above.')} />
           )
         ) : (
           <DataTable
@@ -321,7 +324,7 @@ export function FireEmergencyPage(): React.JSX.Element {
             pageSize={12}
             searchable={false}
             initialSort={{ columnId: 'response', direction: 'desc' }}
-            ariaLabel="Emergency station register"
+            ariaLabel={t('Emergency station register')}
           />
         )}
       </GovPanel>
@@ -335,7 +338,7 @@ export function FireEmergencyPage(): React.JSX.Element {
             ) : incidentsQuery.error ? (
               <ErrorState className="m-3" detail={incidentsQuery.error.message} onRetry={() => incidentsQuery.refetch()} />
             ) : activeFireIncidents.length === 0 ? (
-              <EmptyState compact className="mx-3 mb-3" title={t('No active fire or emergency incidents')} detail="No open incident is currently attributed to the fire and emergency network." />
+              <EmptyState compact className="mx-3 mb-3" title={t('No active fire or emergency incidents')} detail={t('No open incident is currently attributed to the fire and emergency network.')} />
             ) : (
               <div className="grid grid-cols-1 gap-3 p-3 sm:grid-cols-2 2xl:grid-cols-3">
                 {activeFireIncidents.map((incident) => (
@@ -362,7 +365,7 @@ export function FireEmergencyPage(): React.JSX.Element {
                     return Math.min(100, Math.round((minutes / 15) * 100))
                   },
                   higherIsWorse: true,
-                  unit: ' min (scaled; 15 min = 100)',
+                  unit: t(' min (scaled; 15 min = 100)'),
                   description: t('Average response time of the nearest station located in the ward, scaled 0–100. Wards with no local station show no data.'),
                 },
               ]}
@@ -399,7 +402,7 @@ export function FireEmergencyPage(): React.JSX.Element {
             <ChartFrame
               title={t('Stations by response-time band')}
               unit={t('Number of stations')}
-              timeframe="Trailing 30 days"
+              timeframe={t('Trailing 30 days')}
               footnote={t('The platform\'s modelled urban response-time standard is {0} minutes. Bands at or above this threshold are named in "Catchments above standard" below.', RESPONSE_STANDARD_MINUTES)}
             >
               <CategoryBarChart data={distribution} series={[{ key: 'count', label: t('Stations'), colour: CHART_COLOURS.primary }]} categoryKey="label" />

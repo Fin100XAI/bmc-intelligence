@@ -236,10 +236,10 @@ export function ConfirmDialog({
   onConfirm,
   title,
   description,
-  confirmLabel = 'Confirm',
+  confirmLabel = t('Confirm'),
   intent = 'primary',
   requireReason,
-  reasonLabel = 'Reason (recorded in the audit trail)',
+  reasonLabel = t('Reason (recorded in the audit trail)'),
   extra,
 }: {
   open: boolean
@@ -505,13 +505,18 @@ export function Tooltip({
 export function InfoHint({ children, className }: { children: ReactNode; className?: string }): React.JSX.Element {
   return (
     <Tooltip content={children} className={className}>
-      <button
-        type="button"
+      {/* A span, not a <button>: the hint often sits inside a sortable column
+          header, which is itself a button, and buttons may not nest. A tap on
+          it explains rather than re-sorting the column. */}
+      <span
+        role="button"
+        tabIndex={0}
+        onClick={(event) => event.stopPropagation()}
         aria-label={t('Explanation')}
-        className="info-hint flex h-3.5 w-3.5 items-center justify-center rounded-full border border-ink-300 text-[0.5625rem] font-semibold text-ink-400 transition-colors hover:border-govt-400 hover:text-govt-600"
+        className="info-hint relative flex h-3.5 w-3.5 items-center before:absolute before:-inset-[0.4375rem] before:content-[''] justify-center rounded-full border border-ink-300 text-[0.5625rem] font-semibold text-ink-400 transition-colors hover:border-govt-400 hover:text-govt-600"
       >
         i
-      </button>
+      </span>
     </Tooltip>
   )
 }

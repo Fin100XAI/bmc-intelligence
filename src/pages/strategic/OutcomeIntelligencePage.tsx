@@ -6,7 +6,7 @@ import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { healthService, monsoonService, projectService, revenueService, roadsService, wasteService, waterService } from '@/services'
 import { useFilterStore } from '@/stores/ui.store'
-import { isoFromAnchor } from '@/utils/deterministic'
+import { FY_ELAPSED_FRACTION, isoFromAnchor } from '@/utils/deterministic'
 import { formatCrore, formatPercent } from '@/utils/format'
 import { DOMAIN_LABEL, type ConfidenceLevel, type IntelligenceDomain, type OperationalState, type SeriesPoint } from '@/types/common'
 import {
@@ -37,7 +37,7 @@ import { t } from '@/i18n'
  * where an intervention has not been effective.
  *
  * "Baseline" throughout is the phased-plan expectation at this point in the
- * financial year (31% elapsed) - the same convention Budget Intelligence and
+ * financial year (about 53% elapsed at 11 Oct) - the same convention Budget Intelligence and
  * Revenue Intelligence use - not a fabricated prior observation.
  */
 
@@ -50,7 +50,7 @@ const FRESHNESS = {
   stale: false,
 }
 
-const YEAR_ELAPSED = 0.31
+const YEAR_ELAPSED = FY_ELAPSED_FRACTION
 
 interface OutcomePipeline {
   id: string
@@ -126,12 +126,12 @@ export function OutcomeIntelligencePage(): React.JSX.Element {
         domain: 'Capital Works',
         domainKey: 'projects',
         input: { label: t('Sanctioned exposure, active works'), value: formatCrore(active.reduce((s, p) => s + p.sanctionedCostCrore, 0)) },
-        activity: { label: t('Capital works in execution'), value: `${active.length} active works` },
+        activity: { label: t('Capital works in execution'), value: t('{0} active works', active.length) },
         output: {
           label: t('Mean physical progress vs phased plan'),
           value: `${Math.round(mean(active.map((p) => p.completionPct)))}% vs ${Math.round(mean(active.map((p) => p.plannedCompletionPct)))}%`,
         },
-        outcomeLabel: 'Active works delivering within acceptable risk (composite risk score below 55)',
+        outcomeLabel: t('Active works delivering within acceptable risk (composite risk score below 55)'),
         achievedPct,
         targetPct: target,
         baselinePct: target * YEAR_ELAPSED,
@@ -154,7 +154,7 @@ export function OutcomeIntelligencePage(): React.JSX.Element {
         input: { label: t('Network under management'), value: `${Math.round(segments.reduce((s, r) => s + r.lengthKm, 0))} km, ${segments.length} segments` },
         activity: { label: t('Emergency / hospital-access segments'), value: `${critical.length} segments` },
         output: { label: t('Mean network condition index'), value: `${Math.round(mean(segments.map((s) => s.conditionIndex)))}/100` },
-        outcomeLabel: 'Emergency and hospital-access corridors meeting the 65-point condition standard',
+        outcomeLabel: t('Emergency and hospital-access corridors meeting the 65-point condition standard'),
         achievedPct,
         targetPct: target,
         baselinePct: target * YEAR_ELAPSED,
@@ -176,7 +176,7 @@ export function OutcomeIntelligencePage(): React.JSX.Element {
         input: { label: t('Waste generated citywide'), value: `${Math.round(rows.reduce((s, r) => s + r.generationTpd, 0))} TPD` },
         activity: { label: t('Collection vehicles deployed'), value: `${rows.reduce((s, r) => s + r.vehiclesDeployed, 0)} vehicles` },
         output: { label: t('Mean collection coverage'), value: formatPercent(mean(rows.map((r) => r.coveragePct))) },
-        outcomeLabel: 'Wards meeting the 60% segregation-at-source target',
+        outcomeLabel: t('Wards meeting the 60% segregation-at-source target'),
         achievedPct,
         targetPct: target,
         baselinePct: target * YEAR_ELAPSED,
@@ -198,7 +198,7 @@ export function OutcomeIntelligencePage(): React.JSX.Element {
         input: { label: t('Assessed demand, all zones'), value: `${Math.round(zones.reduce((s, z) => s + z.demandMld, 0))} MLD, ${zones.length} zones` },
         activity: { label: t('Bulk supply delivered'), value: `${Math.round(zones.reduce((s, z) => s + z.supplyMld, 0))} MLD` },
         output: { label: t('Mean water quality compliance'), value: formatPercent(mean(zones.map((z) => z.qualityCompliancePct))) },
-        outcomeLabel: 'Zones supplied within 5% of assessed demand',
+        outcomeLabel: t('Zones supplied within 5% of assessed demand'),
         achievedPct,
         targetPct: target,
         baselinePct: target * YEAR_ELAPSED,
@@ -221,7 +221,7 @@ export function OutcomeIntelligencePage(): React.JSX.Element {
         input: { label: t('Pumps and response teams allocated'), value: `${rows.reduce((s, r) => s + r.dewateringPumps, 0)} pumps, ${rows.reduce((s, r) => s + r.teamsAllocated, 0)} teams` },
         activity: { label: t('Mean pre-monsoon desilting completion'), value: formatPercent(mean(rows.map((r) => r.desiltingPct))) },
         output: { label: t('Mean ward readiness score'), value: `${Math.round(mean(rows.map((r) => r.readinessScore)))}/100` },
-        outcomeLabel: 'Chronic waterlogging locations mitigated ahead of the season',
+        outcomeLabel: t('Chronic waterlogging locations mitigated ahead of the season'),
         achievedPct,
         targetPct: target,
         baselinePct: target * YEAR_ELAPSED,
@@ -243,7 +243,7 @@ export function OutcomeIntelligencePage(): React.JSX.Element {
         input: { label: t('Ward-disease indicators monitored'), value: `${rows.length} indicators` },
         activity: { label: t('Highest current outbreak signal'), value: `${Math.max(0, ...rows.map((r) => r.outbreakSignal))}/100` },
         output: { label: t('Mean outbreak signal across all indicators'), value: `${Math.round(mean(rows.map((r) => r.outbreakSignal)))}/100` },
-        outcomeLabel: 'Aggregate signals held below the 55-point elevated threshold',
+        outcomeLabel: t('Aggregate signals held below the 55-point elevated threshold'),
         achievedPct,
         targetPct: target,
         baselinePct: target * YEAR_ELAPSED,
@@ -263,7 +263,7 @@ export function OutcomeIntelligencePage(): React.JSX.Element {
         input: { label: t('Annual revenue target'), value: formatCrore(totals.target) },
         activity: { label: t('Collected to date'), value: formatCrore(totals.collected) },
         output: { label: t('Collection efficiency, year to date'), value: formatPercent(totals.efficiencyPct) },
-        outcomeLabel: 'Collection efficiency against the year-to-date institutional benchmark',
+        outcomeLabel: t('Collection efficiency against the year-to-date institutional benchmark'),
         achievedPct: totals.efficiencyPct,
         targetPct: target,
         baselinePct: target * YEAR_ELAPSED,
@@ -396,8 +396,8 @@ export function OutcomeIntelligencePage(): React.JSX.Element {
                     </p>
                   </div>
                   <div className="h-28">
-                    <ChartFrame title={t('Baseline vs current')} unit="%" timeframe="This financial year" height={90}>
-                      <TrendChart points={trendPointsFor(p)} unit="%" variant="line" referenceValue={p.targetPct} referenceLabel="Target" />
+                    <ChartFrame title={t('Baseline vs current')} unit="%" timeframe={t('This financial year')} height={90}>
+                      <TrendChart points={trendPointsFor(p)} unit="%" variant="line" referenceValue={p.targetPct} referenceLabel={t('Target')} />
                     </ChartFrame>
                   </div>
                 </div>
@@ -420,7 +420,7 @@ export function OutcomeIntelligencePage(): React.JSX.Element {
         <div className="flex min-w-0 flex-col gap-3 xl:col-span-4">
           {!anyLoading && !anyError ? (
             <Card>
-              <ChartFrame title={t('Ranked gap to target')} unit={t('percentage points short')} timeframe="Current reporting position" height={Math.max(180, filteredPipelines.length * 26)}>
+              <ChartFrame title={t('Ranked gap to target')} unit={t('percentage points short')} timeframe={t('Current reporting position')} height={Math.max(180, filteredPipelines.length * 26)}>
                 <RankedBarChart data={rankedGaps} higherIsWorse unit=" pp" />
               </ChartFrame>
             </Card>

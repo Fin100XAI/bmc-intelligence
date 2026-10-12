@@ -2,10 +2,8 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from '@/app/App'
 import { setNarrator } from '@/ai/narrator'
-import { narrate } from '@/services/copilot.service'
 import { USER_BY_ID } from '@/auth/demo-users'
 import { useAuthStore } from '@/stores/auth.store'
-import { hydrateStore } from '@/services/store'
 import '@/styles/index.css'
 
 /**
@@ -19,8 +17,12 @@ import '@/styles/index.css'
  * `narrate` is itself a no-op when no API base URL is configured, so this call
  * is safe in every deployment — including the pure demonstration one, where it
  * changes nothing.
+ *
+ * The service is imported on first use rather than here: it reaches the
+ * service layer's error types, and through them the audit store and the
+ * seeded data layers, none of which the sign-in page needs to paint.
  */
-setNarrator(narrate)
+setNarrator((question) => import('@/services/copilot.service').then(({ narrate }) => narrate(question)))
 
 const container = document.getElementById('root')
 if (!container) {
@@ -42,6 +44,10 @@ async function hydrateBeforeFirstRender(): Promise<void> {
   const { userId } = useAuthStore.getState()
   const user = userId ? USER_BY_ID.get(userId) : null
   if (!user) return
+  // Imported here rather than at the top: the store module evaluates the
+  // seeded data layers, which a signed-out visitor on the portal or sign-in
+  // page has no use for. A returning session needs them anyway.
+  const { hydrateStore } = await import('@/services/store')
   await Promise.race([hydrateStore(user.tenantId), new Promise<void>((resolve) => setTimeout(resolve, 800))])
 }
 

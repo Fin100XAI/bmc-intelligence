@@ -86,7 +86,7 @@ export function LicensingIntelligencePage(): React.JSX.Element {
   if (registersQuery.isLoading) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('Governance & Finance')} breadcrumbs={[{ label: t('Governance & Finance') }, { label: t('Licences & Trade') }]} />
+        <PageHeader eyebrow={t('Revenue & Finance')} breadcrumbs={[{ label: t('Revenue & Finance') }, { label: t('Revenue & Property Tax') }, { label: t('Trade licences') }]} />
         <LoadingState variant="metrics" />
         <LoadingState variant="table" rows={8} />
       </PageBody>
@@ -95,7 +95,7 @@ export function LicensingIntelligencePage(): React.JSX.Element {
   if (registersQuery.error) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('Governance & Finance')} breadcrumbs={[{ label: t('Governance & Finance') }, { label: t('Licences & Trade') }]} />
+        <PageHeader eyebrow={t('Revenue & Finance')} breadcrumbs={[{ label: t('Revenue & Finance') }, { label: t('Revenue & Property Tax') }, { label: t('Trade licences') }]} />
         <ErrorState detail={registersQuery.error.message} onRetry={() => registersQuery.refetch()} />
       </PageBody>
     )
@@ -205,8 +205,8 @@ export function LicensingIntelligencePage(): React.JSX.Element {
   return (
     <PageBody>
       <PageHeader
-        eyebrow={t('Governance & Finance')}
-        breadcrumbs={[{ label: t('Governance & Finance') }, { label: t('Licences & Trade') }]}
+        eyebrow={t('Revenue & Finance')}
+        breadcrumbs={[{ label: t('Revenue & Finance') }, { label: t('Revenue & Property Tax') }, { label: t('Trade licences') }]}
         freshness={freshness}
       />
 
@@ -222,7 +222,7 @@ export function LicensingIntelligencePage(): React.JSX.Element {
         </div>
       </Card>
 
-      <FilterBar show={['ward', 'search']} searchPlaceholder="Search by ward or licence category" />
+      <FilterBar show={['ward', 'search']} searchPlaceholder={t('Search by ward or licence category')} />
 
       <MetricGrid columns={4}>
         <MetricCard
@@ -250,7 +250,7 @@ export function LicensingIntelligencePage(): React.JSX.Element {
           support={t('Mean decision in {0} working days', meanDecision)}
           tone={charterCompliance < CHARTER_THRESHOLD ? 'warn' : 'positive'}
           background="green"
-          footer={<span className="text-[0.625rem] leading-snug text-ink-400">{t('Mirrors Shop & Establishment licensing under the Maharashtra Right to Public Services Act — a simulated feed in this demonstration.')}</span>}
+          footer={<span className="text-[0.625rem] leading-snug text-ink-400">{t('Mirrors municipal trade licensing, delivered through ward offices and the online services portal against timelines notified under the Maharashtra Right to Public Services Act, 2015 — a simulated feed in this demonstration.')}</span>}
         />
         <MetricCard
           label={t('Unlicensed premises found')}
@@ -269,7 +269,7 @@ export function LicensingIntelligencePage(): React.JSX.Element {
           <GovPanel title={t('Licence register by ward and category')} tone="amber" dense>
             <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">{t('Within your authorised ward scope.')}</p>
             {filtered.length === 0 ? (
-              <EmptyState title={t('No licence registers match the current filters')} detail="Clear a filter to widen the register." />
+              <EmptyState title={t('No licence registers match the current filters')} detail={t('Clear a filter to widen the register.')} />
             ) : (
               <DataTable rows={filtered} columns={columns} rowKey={(r) => r.id} pageSize={15} />
             )}
@@ -287,7 +287,7 @@ export function LicensingIntelligencePage(): React.JSX.Element {
                 colour: CATEGORY_COLOUR[c.category],
               }))}
               centreValue={formatNumber(active)}
-              centreLabel="current"
+              centreLabel={t('current')}
             />
           </div>
         </Card>

@@ -140,8 +140,8 @@ export function FinancialIntelligencePage(): React.JSX.Element {
   return (
     <PageBody>
       <PageHeader
-        eyebrow={t('Revenue & Municipal Finance')}
-        breadcrumbs={[{ label: t('Revenue & Municipal Finance') }, { label: t('Financial Intelligence') }]}
+        eyebrow={t('Revenue & Finance')}
+        breadcrumbs={[{ label: t('Revenue & Finance') }, { label: t('Budget & Financial Health') }, { label: t('Financial health') }]}
         freshness={FRESHNESS}
         controls={<FilterBar show={['department', 'status', 'search']} statusOptions={stateOptions} />}
       />
@@ -152,7 +152,7 @@ export function FinancialIntelligencePage(): React.JSX.Element {
         <PartialDataWarning
           available={components.length - result.unavailableComponents.length}
           expected={components.length}
-          detail={`${result.unavailableComponents.join(', ')} could not be computed at your access level. Those components are shown at zero rather than assumed healthy, so the index you are reading is lower than the corporation's true position.`}
+          detail={t('{0} could not be computed at your access level. Those components are shown at zero rather than assumed healthy, so the index you are reading is lower than the corporation\'s true position.', result.unavailableComponents.join(', '))}
         />
       ) : null}
 

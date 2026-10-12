@@ -312,7 +312,7 @@ export function CommandPalette(): React.JSX.Element | null {
         id: `role-${demoUser.id}`,
         label: t('Act as {0}', demoUser.name),
         hint: demoUser.designation,
-        group: 'Change role',
+        group: t('Change role'),
         icon: <UserCog className="h-3.5 w-3.5" />,
         keywords: `role switch change ${demoUser.name} ${demoUser.designation}`,
         run: () => {
@@ -477,10 +477,10 @@ export function CommandPalette(): React.JSX.Element | null {
         <div className="flex shrink-0 items-center gap-3 border-t border-ink-100 bg-surface-sunken px-4 py-2 text-[0.625rem] text-ink-400">
           <span className="inline-flex items-center gap-1">
             <kbd className="rounded border border-ink-200 bg-surface px-1 font-mono">↑</kbd>
-            <kbd className="rounded border border-ink-200 bg-surface px-1 font-mono">↓</kbd> navigate
+            <kbd className="rounded border border-ink-200 bg-surface px-1 font-mono">↓</kbd> {t('navigate')}
           </span>
           <span className="inline-flex items-center gap-1">
-            <kbd className="rounded border border-ink-200 bg-surface px-1 font-mono">↵</kbd> select
+            <kbd className="rounded border border-ink-200 bg-surface px-1 font-mono">↵</kbd> {t('select')}
           </span>
           <div className="flex-1" />
           <Badge tone="muted">{t('Results filtered by your access scope')}</Badge>

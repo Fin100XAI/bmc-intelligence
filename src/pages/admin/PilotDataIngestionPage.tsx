@@ -27,6 +27,9 @@ import { t } from '@/i18n'
  * and the rows below are exactly what that file contained - not a generated
  * figure standing in for one.
  *
+ * The page header and its framing note stay in place while the dataset
+ * loads or fails, rather than giving way to a full-page state.
+ *
  * It stays a single narrow pilot on purpose. Proving the ingestion path is
  * real does not require standing up production infrastructure for every
  * connector in the register at once.
@@ -68,11 +71,6 @@ export function PilotDataIngestionPage(): React.JSX.Element {
     }
   }
 
-  if (datasetQuery.isLoading) return <LoadingState variant="table" />
-  if (datasetQuery.error) {
-    return <ErrorState detail={datasetQuery.error.message} onRetry={() => datasetQuery.refetch()} />
-  }
-
   const dataset: PilotDataset | null = datasetQuery.data ?? null
 
   const columns: Array<Column<Record<string, string>>> = (dataset?.columns ?? []).map((col) => ({
@@ -94,84 +92,93 @@ export function PilotDataIngestionPage(): React.JSX.Element {
         {t('Every other page in this platform reads deterministic demonstration data. This one page is the exception: upload a CSV export of the kind an officer could pull from the real Property Tax Citizen Portal, and the register below shows exactly what that file contained.')}
       </div>
 
-      {dataset ? (
-        <MetricGrid columns={3}>
-          <MetricCard
-            label={t('Rows ingested')}
-            value={formatNumber(dataset.rows.length)}
-            icon={<CheckCircle2 className="h-4 w-4" />}
-            background="green"
-          />
-          <MetricCard label={t('Columns detected')} value={formatNumber(dataset.columns.length)} background="amber" />
-          <MetricCard label={t('Uploaded')} value={formatDateTime(dataset.uploadedAt)} support={dataset.sourceFilename} background="red" />
-        </MetricGrid>
-      ) : null}
-
-      <GovPanel title={t('Upload a real export')} tone="amber">
-        <div className="flex flex-col gap-3 px-4 pb-4">
-          <p className="text-xs leading-relaxed text-ink-600">
-            {t('Accepts a plain CSV with a header row. Anything already ingested is replaced, not merged.')}
-          </p>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".csv,text/csv"
-            className="hidden"
-            onChange={(e) => {
-              const file = e.target.files?.[0]
-              if (file) void handleFileChosen(file)
-            }}
-          />
-          <div className="flex flex-wrap items-center gap-2">
-            <Button
-              variant="primary"
-              icon={<UploadCloud className="h-3.5 w-3.5" />}
-              disabled={uploading}
-              onClick={() => fileInputRef.current?.click()}
-            >
-              {uploading ? t('Ingesting…') : t('Choose CSV file')}
-            </Button>
-            {dataset ? (
-              <Button
-                variant="outline"
-                icon={<Trash2 className="h-3.5 w-3.5" />}
-                onClick={() => void doClear()}
-              >
-                {t('Clear pilot data')}
-              </Button>
-            ) : null}
-            {pendingFile ? (
-              <span className="text-xs text-ink-500">
-                {pendingFile.name} · {fileSizeLabel(pendingFile.size)}
-              </span>
-            ) : null}
-          </div>
-          {uploadError ? (
-            <p className="text-xs font-medium text-crit-700">{uploadError}</p>
-          ) : null}
-        </div>
-      </GovPanel>
-
-      {dataset ? (
-        <GovPanel title={t('Ingested rows')} tone="green" dense>
-          <div className="px-4 pb-4">
-            <DataTable
-              rows={dataset.rows}
-              columns={columns}
-              rowKey={(row) => Object.values(row).join('|')}
-              searchable
-              pageSize={25}
-            />
-          </div>
-        </GovPanel>
+      {datasetQuery.isLoading ? (
+        <LoadingState variant="table" />
+      ) : datasetQuery.error ? (
+        <ErrorState detail={datasetQuery.error.message} onRetry={() => datasetQuery.refetch()} />
       ) : (
-        <Card>
-          <EmptyState
-            title={t('No pilot data ingested yet')}
-            detail={t('Upload a CSV above to see real, uploaded figures rendered here instead of demonstration data.')}
-            compact
-          />
-        </Card>
+        <>
+          {dataset ? (
+            <MetricGrid columns={3}>
+              <MetricCard
+                label={t('Rows ingested')}
+                value={formatNumber(dataset.rows.length)}
+                icon={<CheckCircle2 className="h-4 w-4" />}
+                background="green"
+              />
+              <MetricCard label={t('Columns detected')} value={formatNumber(dataset.columns.length)} background="amber" />
+              <MetricCard label={t('Uploaded')} value={formatDateTime(dataset.uploadedAt)} support={dataset.sourceFilename} background="red" />
+            </MetricGrid>
+          ) : null}
+
+          <GovPanel title={t('Upload a real export')} tone="amber">
+            <div className="flex flex-col gap-3 px-4 pb-4">
+              <p className="text-xs leading-relaxed text-ink-600">
+                {t('Accepts a plain CSV with a header row. Anything already ingested is replaced, not merged.')}
+              </p>
+              <input
+                ref={fileInputRef}
+                id="pilot-file"
+                type="file"
+                accept=".csv,text/csv"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (file) void handleFileChosen(file)
+                }}
+              />
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  variant="primary"
+                  icon={<UploadCloud className="h-3.5 w-3.5" />}
+                  disabled={uploading}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  {uploading ? t('Ingesting…') : t('Choose CSV file')}
+                </Button>
+                {dataset ? (
+                  <Button
+                    variant="outline"
+                    icon={<Trash2 className="h-3.5 w-3.5" />}
+                    onClick={() => void doClear()}
+                  >
+                    {t('Clear pilot data')}
+                  </Button>
+                ) : null}
+                {pendingFile ? (
+                  <span className="text-xs text-ink-500">
+                    {pendingFile.name} · {fileSizeLabel(pendingFile.size)}
+                  </span>
+                ) : null}
+              </div>
+              {uploadError ? (
+                <p className="text-xs font-medium text-crit-700">{uploadError}</p>
+              ) : null}
+            </div>
+          </GovPanel>
+
+          {dataset ? (
+            <GovPanel title={t('Ingested rows')} tone="green" dense>
+              <div className="px-4 pb-4">
+                <DataTable
+                  rows={dataset.rows}
+                  columns={columns}
+                  rowKey={(row) => Object.values(row).join('|')}
+                  searchable
+                  pageSize={25}
+                />
+              </div>
+            </GovPanel>
+          ) : (
+            <Card>
+              <EmptyState
+                title={t('No pilot data ingested yet')}
+                detail={t('Upload a CSV above to see real, uploaded figures rendered here instead of demonstration data.')}
+                compact
+              />
+            </Card>
+          )}
+        </>
       )}
 
       <DemonstrationNotice />

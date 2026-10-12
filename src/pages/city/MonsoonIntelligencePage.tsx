@@ -45,6 +45,38 @@ import { usePageMasthead } from '@/stores/masthead.store'
 import { useContextStore, useDrawerStore, useFilterStore } from '@/stores/ui.store'
 import { allowed } from '@/security'
 import { wardName } from '@/data/reference'
+
+/* Display labels, resolved at render time so they follow the interface
+   language (never evaluated at module scope). */
+function drainTypeLabel(type: string): string {
+  switch (type) {
+    case 'major-nallah': return t('Major drain')
+    case 'minor-nallah': return t('Minor drain')
+    case 'closed-drain': return t('Closed drain')
+    case 'culvert': return t('Culvert')
+    default: return titleCase(type)
+  }
+}
+function mitigationLabel(status: string): string {
+  switch (status) {
+    case 'completed': return t('Completed')
+    case 'in-progress': return t('In progress')
+    case 'planned': return t('Planned')
+    case 'not-started': return t('Not started')
+    default: return titleCase(status)
+  }
+}
+function intensityLabel(intensity: string): string {
+  switch (intensity) {
+    case 'nil': return t('Nil')
+    case 'light': return t('Light')
+    case 'moderate': return t('Moderate')
+    case 'heavy': return t('Heavy')
+    case 'very-heavy': return t('Very heavy')
+    case 'extremely-heavy': return t('Extremely heavy')
+    default: return titleCase(intensity)
+  }
+}
 import type {
   MonsoonScenarioInput,
   MonsoonScenarioResult,
@@ -60,6 +92,7 @@ import { formatCompact, formatDateTime, formatNumber, formatPercent, formatRelat
 import { DEMO_NOW } from '@/utils/deterministic'
 import { t } from '@/i18n'
 import { registerLayer } from '@/data/runtime'
+import { SHADE } from '@/components/ui/shade'
 
 /**
  * The IMD colour scale, in the platform's own tone vocabulary.
@@ -341,7 +374,7 @@ function MonsoonPositionSection({
   const alert = alertQuery.data ?? null
 
   if (readiness.length === 0) {
-    return <EmptyState title={t('No monsoon position data')} detail="No monsoon readiness record is currently available." />
+    return <EmptyState title={t('No monsoon position data')} detail={t('No monsoon readiness record is currently available.')} />
   }
 
   const avgReadiness = avgBy(readiness, (r) => r.readinessScore)
@@ -374,7 +407,7 @@ function MonsoonPositionSection({
         x: p.x,
         y: p.y,
         label: s.name,
-        detail: t('Waterlogging spot · chronic index {0} · current risk {1}/100{2}', s.chronicIndex, s.currentRisk, s.criticalRoute ? ' · critical route' : ''),
+        detail: t('Waterlogging spot · chronic index {0} · current risk {1}/100{2}', s.chronicIndex, s.currentRisk, s.criticalRoute ? t(' · critical route') : ''),
         severity: s.currentRisk >= 70 ? ('critical' as const) : s.currentRisk >= 50 ? ('high' as const) : undefined,
         kind: 'hotspot' as const,
         onClick: () => onSelectWard(s.wardId),
@@ -472,7 +505,7 @@ function MonsoonPositionSection({
               label={t('Rainfall (24h)')}
               value={formatNumber(avgRainfall24h)}
               unit={t('mm avg')}
-              support={peakStation ? `Peak ${peakStation.last24hMm} mm at ${peakStation.stationName}` : undefined}
+              support={peakStation ? t('Peak {0} mm at {1}', peakStation.last24hMm, peakStation.stationName) : undefined}
               icon={<CloudRain className="h-4 w-4" />}
               footer={
                 <span className="text-[0.625rem] leading-snug text-ink-400">
@@ -483,7 +516,7 @@ function MonsoonPositionSection({
             <MetricCard
               label={t('Next high tide')}
               value={nextHighTide ? `${nextHighTide.heightM} m` : '-'}
-              support={nextHighTide ? `${formatTime(nextHighTide.at)}${nextHighTide.blocksDischarge ? ' · blocks discharge' : ''}` : 'No tide window recorded'}
+              support={nextHighTide ? `${formatTime(nextHighTide.at)}${nextHighTide.blocksDischarge ? t(' · blocks discharge') : ''}` : t('No tide window recorded')}
               tone={nextHighTide?.blocksDischarge ? 'warn' : 'default'}
               icon={<Waves className="h-4 w-4" />}
             />
@@ -507,7 +540,7 @@ function MonsoonPositionSection({
                 </span>
               }
               value={hasScenarioAccess ? (scenarioResult ? formatCompact(scenarioResult.estimatedPopulationExposed) : '-') : '-'}
-              support={hasScenarioAccess ? 'Modelled - see Scenario Centre below' : 'Requires Situation Room scenario access'}
+              support={hasScenarioAccess ? t('Modelled - see Scenario Centre below') : t('Requires Situation Room scenario access')}
             />
           </MetricGrid>
         </div>
@@ -594,9 +627,9 @@ function PumpingStationSection({ focusWardId, search }: { focusWardId: string | 
       </p>
       {focusWardId ? <p className="px-3 pb-2 text-[0.6875rem] text-ink-400">{t('Filtered to {0}.', wardName(focusWardId))}</p> : null}
       {rows.length === 0 ? (
-        <EmptyState compact className="mx-3 mb-3" title={t('No pumping stations')} detail="No pumping station record matches the current filter." />
+        <EmptyState compact className="mx-3 mb-3" title={t('No pumping stations')} detail={t('No pumping station record matches the current filter.')} />
       ) : (
-        <DataTable rows={rows} columns={columns} rowKey={(r) => r.id} pageSize={8} searchPlaceholder="Search stations" initialSort={{ columnId: 'readiness', direction: 'asc' }} ariaLabel="Pumping station register" />
+        <DataTable rows={rows} columns={columns} rowKey={(r) => r.id} pageSize={8} searchPlaceholder={t('Search stations')} initialSort={{ columnId: 'readiness', direction: 'asc' }} ariaLabel={t('Pumping station register')} />
       )}
     </GovPanel>
   )
@@ -634,7 +667,7 @@ function DrainRiskSection({ focusWardId, search }: { focusWardId: string | null;
   const columns: Array<Column<StormWaterDrain>> = [
     { id: 'name', header: t('Drain'), cell: (r) => <span className="font-medium text-ink-900">{r.name}</span>, sortValue: (r) => r.name, searchValue: (r) => r.name },
     { id: 'ward', header: t('Ward'), cell: (r) => wardName(r.wardId), sortValue: (r) => wardName(r.wardId), hideBelow: 'sm' },
-    { id: 'type', header: t('Type'), cell: (r) => <Badge tone="neutral">{titleCase(r.type)}</Badge>, sortValue: (r) => r.type, hideBelow: 'md' },
+    { id: 'type', header: t('Type'), cell: (r) => <Badge tone="neutral">{drainTypeLabel(r.type)}</Badge>, sortValue: (r) => r.type, hideBelow: 'md' },
     { id: 'length', header: t('Length'), cell: (r) => `${r.lengthKm} km`, sortValue: (r) => r.lengthKm, align: 'right', hideBelow: 'lg' },
     {
       id: 'desilting',
@@ -659,7 +692,7 @@ function DrainRiskSection({ focusWardId, search }: { focusWardId: string | null;
       </p>
       {focusWardId ? <p className="px-3 pb-2 text-[0.6875rem] text-ink-400">{t('Filtered to {0}.', wardName(focusWardId))}</p> : null}
       {rows.length === 0 ? (
-        <EmptyState compact className="mx-3 mb-3" title={t('No drains recorded')} detail="No storm water drain record matches the current filter." />
+        <EmptyState compact className="mx-3 mb-3" title={t('No drains recorded')} detail={t('No storm water drain record matches the current filter.')} />
       ) : (
         <DataTable
           rows={rows}
@@ -668,9 +701,9 @@ function DrainRiskSection({ focusWardId, search }: { focusWardId: string | null;
           onRowClick={(r) => setSelectedId(r.id)}
           activeRowKey={selected?.id}
           pageSize={8}
-          searchPlaceholder="Search drains"
+          searchPlaceholder={t('Search drains')}
           initialSort={{ columnId: 'risk', direction: 'desc' }}
-          ariaLabel="Storm water drain register"
+          ariaLabel={t('Storm water drain register')}
         />
       )}
       {selected ? (
@@ -722,7 +755,7 @@ function HighTideSection(): React.JSX.Element {
   if (tides.length === 0) {
     return (
       <Card>
-        <EmptyState title={t('No tide data')} detail="No tide window record is currently available." />
+        <EmptyState title={t('No tide data')} detail={t('No tide window record is currently available.')} />
       </Card>
     )
   }
@@ -740,7 +773,7 @@ function HighTideSection(): React.JSX.Element {
           <p className="text-xs leading-relaxed text-crit-700">
             <span className="font-semibold">{t('Coincidence:')}</span>
             {heavyStations.length}{' '}{t('station(s) currently reporting heavy or greater rainfall intensity coincide with a')}{' '}{coincidence.heightM}{' '}{t('m high tide at')}{' '}
-            {formatTime(coincidence.at)} on {formatShortDate(coincidence.at)}{t(', which blocks gravity discharge. Pumped discharge is the only mechanism available at affected outfalls during this window.')}
+            {t('{0} on {1}', formatTime(coincidence.at), formatShortDate(coincidence.at))}{t(', which blocks gravity discharge. Pumped discharge is the only mechanism available at affected outfalls during this window.')}
           </p>
         </div>
       ) : (
@@ -751,12 +784,15 @@ function HighTideSection(): React.JSX.Element {
       )}
       <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {tides.map((tideWindow) => (
-          <div key={tideWindow.id} className={cn('rounded-lg border p-3', tideWindow.type === 'high' && tideWindow.blocksDischarge ? 'border-warn-200 bg-warn-50/50' : 'border-ink-100')}>
+          <div key={tideWindow.id} className={cn('rounded-lg border p-3', SHADE[tideWindow.type === 'high' && tideWindow.blocksDischarge ? 'amber' : 'auto'].tile)}>
             <div className="flex items-center justify-between gap-2">
-              <Badge tone={tideWindow.type === 'high' ? 'info' : 'muted'}>{titleCase(tideWindow.type)} tide</Badge>
+              <span className={cn('flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-white', SHADE[tideWindow.type === 'high' && tideWindow.blocksDischarge ? 'amber' : 'auto'].chip)}>
+                <Waves className="h-4 w-4" aria-hidden />
+              </span>
+              <Badge tone={tideWindow.type === 'high' ? 'info' : 'muted'}>{tideWindow.type === 'high' ? t('High tide') : t('Low tide')}</Badge>
               {tideWindow.blocksDischarge ? <Badge tone="warn">{t('Blocks discharge')}</Badge> : null}
             </div>
-            <p className="numeric mt-1.5 text-lg font-semibold text-ink-900">{tideWindow.heightM} m</p>
+            <p className={cn('numeric mt-1.5 text-lg font-semibold', SHADE[tideWindow.type === 'high' && tideWindow.blocksDischarge ? 'amber' : 'auto'].value)}>{tideWindow.heightM} m</p>
             <p className="text-[0.6875rem] text-ink-500">{formatDateTime(tideWindow.at)}</p>
           </div>
         ))}
@@ -809,7 +845,7 @@ function RainfallSection({ focusWardId, search }: { focusWardId: string | null; 
       sortValue: (r) => (r.seasonNormalMm > 0 ? r.seasonTotalMm / r.seasonNormalMm : 0),
       hideBelow: 'lg',
     },
-    { id: 'intensity', header: t('Intensity'), cell: (r) => <Badge tone={intensityTone[r.intensity]}>{titleCase(r.intensity)}</Badge>, sortValue: (r) => r.intensity },
+    { id: 'intensity', header: t('Intensity'), cell: (r) => <Badge tone={intensityTone[r.intensity]}>{intensityLabel(r.intensity)}</Badge>, sortValue: (r) => r.intensity },
     { id: 'observed', header: t('Observed'), cell: (r) => formatRelative(r.observedAt), sortValue: (r) => r.observedAt, hideBelow: 'md' },
   ]
 
@@ -820,9 +856,9 @@ function RainfallSection({ focusWardId, search }: { focusWardId: string | null; 
       </p>
       {focusWardId ? <p className="px-3 pb-2 text-[0.6875rem] text-ink-400">{t('Filtered to {0}.', wardName(focusWardId))}</p> : null}
       {rows.length === 0 ? (
-        <EmptyState compact className="mx-3 mb-3" title={t('No rainfall observations')} detail="No rainfall observation matches the current filter." />
+        <EmptyState compact className="mx-3 mb-3" title={t('No rainfall observations')} detail={t('No rainfall observation matches the current filter.')} />
       ) : (
-        <DataTable rows={rows} columns={columns} rowKey={(r) => r.id} pageSize={8} searchPlaceholder="Search stations" initialSort={{ columnId: 'last24h', direction: 'desc' }} ariaLabel="Rainfall observation register" />
+        <DataTable rows={rows} columns={columns} rowKey={(r) => r.id} pageSize={8} searchPlaceholder={t('Search stations')} initialSort={{ columnId: 'last24h', direction: 'desc' }} ariaLabel={t('Rainfall observation register')} />
       )}
     </GovPanel>
   )
@@ -853,7 +889,7 @@ function CriticalRouteSection(): React.JSX.Element {
   if (spots.length === 0) {
     return (
       <Card>
-        <EmptyState title={t('No critical routes at risk')} detail="No chronic waterlogging location currently recorded is flagged as sitting on a critical route." />
+        <EmptyState title={t('No critical routes at risk')} detail={t('No chronic waterlogging location currently recorded is flagged as sitting on a critical route.')} />
       </Card>
     )
   }
@@ -865,7 +901,7 @@ function CriticalRouteSection(): React.JSX.Element {
         {t('Chronic waterlogging locations sitting on a designated critical route - arterial roads whose closure materially affects city mobility or emergency access.')}
       </p>
       <div>
-        <ChartFrame title={t('Current risk, critical-route locations')} unit="/100 · higher is worse" timeframe="Current position" height={Math.max(140, ranked.length * 26)}>
+        <ChartFrame title={t('Current risk, critical-route locations')} unit={t('/100 · higher is worse')} timeframe={t('Current position')} height={Math.max(140, ranked.length * 26)}>
           <RankedBarChart data={ranked.map((s) => ({ label: s.name.length > 22 ? `${s.name.slice(0, 20)}…` : s.name, value: s.currentRisk }))} unit="/100" />
         </ChartFrame>
       </div>
@@ -877,7 +913,7 @@ function CriticalRouteSection(): React.JSX.Element {
             </span>
             <span className="flex min-w-0 flex-wrap items-center gap-1.5">
               <Badge tone="muted">{t('Chronic {0}', s.chronicIndex)}</Badge>
-              <Badge tone={s.mitigationStatus === 'completed' ? 'positive' : s.mitigationStatus === 'in-progress' ? 'warn' : 'neutral'}>{titleCase(s.mitigationStatus)}</Badge>
+              <Badge tone={s.mitigationStatus === 'completed' ? 'positive' : s.mitigationStatus === 'in-progress' ? 'warn' : 'neutral'}>{mitigationLabel(s.mitigationStatus)}</Badge>
               <span className="numeric text-ink-500">{t('{0} km to nearest hospital', s.nearestHospitalKm)}</span>
             </span>
           </li>
@@ -912,7 +948,7 @@ function HospitalAccessSection(): React.JSX.Element {
   if (hospitals.length === 0) {
     return (
       <Card>
-        <EmptyState title={t('No hospital records')} detail="No hospital accessibility record is currently available." />
+        <EmptyState title={t('No hospital records')} detail={t('No hospital accessibility record is currently available.')} />
       </Card>
     )
   }
@@ -924,7 +960,7 @@ function HospitalAccessSection(): React.JSX.Element {
         {t('Facilities with the lowest current road accessibility index - the most exposed to approach disruption during flooding.')}
       </p>
       <div>
-        <ChartFrame title={t('Lowest accessibility index')} unit="/100 · lower is worse" timeframe="Current position" height={Math.max(140, ranked.length * 26)}>
+        <ChartFrame title={t('Lowest accessibility index')} unit={t('/100 · lower is worse')} timeframe={t('Current position')} height={Math.max(140, ranked.length * 26)}>
           <RankedBarChart data={ranked.map((h) => ({ label: h.name.length > 22 ? `${h.name.slice(0, 20)}…` : h.name, value: h.accessibilityIndex }))} higherIsWorse={false} unit="/100" />
         </ChartFrame>
       </div>
@@ -963,7 +999,7 @@ function WardPreparednessSection({ focusWardId, search }: { focusWardId: string 
   if (all.length === 0) {
     return (
       <Card>
-        <EmptyState title={t('No readiness data')} detail="No ward monsoon readiness record is currently available." />
+        <EmptyState title={t('No readiness data')} detail={t('No ward monsoon readiness record is currently available.')} />
       </Card>
     )
   }
@@ -999,9 +1035,9 @@ function WardPreparednessSection({ focusWardId, search }: { focusWardId: string 
       <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">{t('Declared monsoon readiness posture for every ward.')}</p>
       {focusWardId ? <p className="px-3 pb-2 text-[0.6875rem] text-ink-400">{t('Filtered to {0}.', wardName(focusWardId))}</p> : null}
       {rows.length === 0 ? (
-        <EmptyState compact className="mx-3 mb-3" title={t('No ward matches')} detail="No ward matches the current filter." />
+        <EmptyState compact className="mx-3 mb-3" title={t('No ward matches')} detail={t('No ward matches the current filter.')} />
       ) : (
-        <DataTable rows={rows} columns={columns} rowKey={(r) => r.wardId} pageSize={12} searchPlaceholder="Search wards" initialSort={{ columnId: 'readiness', direction: 'asc' }} ariaLabel="Ward monsoon preparedness register" />
+        <DataTable rows={rows} columns={columns} rowKey={(r) => r.wardId} pageSize={12} searchPlaceholder={t('Search wards')} initialSort={{ columnId: 'readiness', direction: 'asc' }} ariaLabel={t('Ward monsoon preparedness register')} />
       )}
     </GovPanel>
   )
@@ -1049,7 +1085,7 @@ function MonsoonScenarioCentre({
     onRunScenario(draftInputs)
     activityLog.record(
       'Scenario run',
-      `Rainfall ${draftInputs.rainfallMm24h}mm/24h, tide ${draftInputs.tideHeightM}m, pump availability ${draftInputs.pumpAvailabilityPct}%, desilting ${draftInputs.desiltingCompletionPct}%, duration ${draftInputs.durationHours}h.`,
+      t('Rainfall {0}mm/24h, tide height {1}m, pump availability {2}%, desilting {3}%, duration {4}h.', draftInputs.rainfallMm24h, draftInputs.tideHeightM, draftInputs.pumpAvailabilityPct, draftInputs.desiltingCompletionPct, draftInputs.durationHours),
     )
   }
 
@@ -1066,11 +1102,11 @@ function MonsoonScenarioCentre({
     const severity: Severity = scenarioResult.cityRisk >= 78 ? 'critical' : scenarioResult.cityRisk >= 60 ? 'high' : scenarioResult.cityRisk >= 40 ? 'medium' : 'low'
     const created = await createIncidentAction({
       title: t('Simulated monsoon response - city risk {0}/100', scenarioResult.cityRisk),
-      description: t('Raised from the Monsoon Intelligence Centre scenario tool. Inputs: rainfall {0}mm/24h, tide {1}m, pump availability {2}%, desilting {3}%, duration {4}h. {5}', committedInputs.rainfallMm24h, committedInputs.tideHeightM, committedInputs.pumpAvailabilityPct, committedInputs.desiltingCompletionPct, committedInputs.durationHours, SIMULATION_STATEMENT),
+      description: t('Raised from the Monsoon Intelligence Centre scenario tool. Inputs: rainfall {0}mm/24h, tide height {1}m, pump availability {2}%, desilting {3}%, duration {4}h. {5}', committedInputs.rainfallMm24h, committedInputs.tideHeightM, committedInputs.pumpAvailabilityPct, committedInputs.desiltingCompletionPct, committedInputs.durationHours, SIMULATION_STATEMENT),
       type: 'flood',
       severity,
       wardId: topWard.wardId,
-      locationName: `${wardName(topWard.wardId)} and adjoining wards under this scenario`,
+      locationName: t('{0} and adjoining wards under this scenario', wardName(topWard.wardId)),
       departmentId: 'dept-disaster',
       confidence: scenarioResult.confidence,
       classification: 'confidential',
@@ -1128,7 +1164,7 @@ function MonsoonScenarioCentre({
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <Button variant="primary" size="sm" onClick={handleRunScenario} disabled={!hasScenarioAccess || scenarioLoading}>
-          {scenarioLoading ? 'Recalculating…' : 'Run Scenario'}
+          {scenarioLoading ? t('Recalculating…') : t('Run Scenario')}
         </Button>
         {!hasScenarioAccess ? (
           <span className="text-[0.6875rem] text-ink-400">
@@ -1209,7 +1245,7 @@ function MonsoonScenarioCentre({
                       <span className="flex items-center gap-1.5 text-xs">
                         <span className="numeric text-ink-400">{wr.baselineRisk} →</span>
                         <span className={cn('numeric font-semibold', SCORE_TONE_TEXT[toneForScore(wr.scenarioRisk, false)])}>{wr.scenarioRisk}</span>
-                        <DeltaBadge value={wr.delta} unit=" pts" higherIsBetter={false} />
+                        <DeltaBadge value={wr.delta} unit={t(' pts')} higherIsBetter={false} />
                       </span>
                     </div>
                     <p className="mt-0.5 text-[0.6875rem] leading-relaxed text-ink-500">{wr.driverSummary}</p>
@@ -1238,7 +1274,7 @@ function MonsoonScenarioCentre({
                   icon={<PlusCircle className="h-3.5 w-3.5" />}
                   onClick={() => void handleCreateIncident()}
                   disabled={!canCreateIncident || !scenarioResult}
-                  title={!canCreateIncident ? 'Your role does not hold incident:create.' : undefined}
+                  title={!canCreateIncident ? t('Your role does not hold incident:create.') : undefined}
                 >
                   {t('Create incident from this scenario')}
                 </Button>
@@ -1248,16 +1284,16 @@ function MonsoonScenarioCentre({
                   icon={<Send className="h-3.5 w-3.5" />}
                   onClick={() => void handleDeployResources()}
                   disabled={!scenarioIncidentId || deploying || scenarioResult.recommendedDeployments.length === 0}
-                  title={!scenarioIncidentId ? 'Create an incident from this scenario first.' : undefined}
+                  title={!scenarioIncidentId ? t('Create an incident from this scenario first.') : undefined}
                 >
-                  {deploying ? 'Deploying…' : 'Deploy simulated resources'}
+                  {deploying ? t('Deploying…') : t('Deploy simulated resources')}
                 </Button>
               </div>
             </div>
             {scenarioResult.recommendedDeployments.length > 0 ? (
               <ul className="mt-2 space-y-1.5">
                 {scenarioResult.recommendedDeployments.map((d, i) => (
-                  <li key={i} className="rounded-md border border-ink-100 p-2.5 text-xs">
+                  <li key={i} className={cn('rounded-md border p-2.5 text-xs', SHADE.amber.tile)}>
                     <span className="font-medium text-ink-800">
                       {d.quantity} × {d.resource} - {wardName(d.wardId)}
                     </span>
@@ -1332,7 +1368,7 @@ function ActiveResponseSection(): React.JSX.Element {
         {t('Flood incidents currently detected, validated or active - including any raised from the scenario tool above.')}
       </p>
       {floodIncidents.length === 0 ? (
-        <EmptyState compact className="mx-3 mb-3" title={t('No active flood response')} detail="No flood incident is currently detected, validated or active." />
+        <EmptyState compact className="mx-3 mb-3" title={t('No active flood response')} detail={t('No flood incident is currently detected, validated or active.')} />
       ) : (
         <div className="grid grid-cols-1 gap-2 p-3 pt-0 sm:grid-cols-2">
           {floodIncidents.map((i) => (

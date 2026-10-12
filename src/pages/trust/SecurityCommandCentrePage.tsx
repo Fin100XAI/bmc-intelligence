@@ -1,8 +1,5 @@
 import { useMemo, useState } from 'react'
-import {
-  AlertTriangle,
-  ShieldCheck,
-} from 'lucide-react'
+import { Activity, AlertTriangle, CalendarCheck, FileWarning, Fingerprint, KeyRound, Link2, MonitorSmartphone, ShieldAlert, ShieldCheck } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { Badge, ClassificationBadge, StateBadge } from '@/components/ui/badges'
 import {
@@ -36,6 +33,8 @@ import { SECURITY_EVENT_LABEL, type SecurityEvent } from '@/types/governance'
 import { SEVERITY_LABEL, type Severity } from '@/types/common'
 import type { Session, User } from '@/types/organisation'
 import { cn } from '@/utils/cn'
+import { SHADE } from '@/components/ui/shade'
+import { enumLabel } from '@/utils/enum-label'
 import { t } from '@/i18n'
 
 /**
@@ -183,7 +182,7 @@ export function SecurityCommandCentrePage(): React.JSX.Element {
     {
       id: 'source',
       header: t('Source address'),
-      cell: () => <span className="font-mono text-[0.625rem] text-ink-300">{'•••• (not recorded)'}</span>,
+      cell: () => <span className="font-mono text-[0.625rem] text-ink-300">{t('•••• (not recorded)')}</span>,
       sortable: false,
       hideBelow: 'xl',
     },
@@ -192,7 +191,7 @@ export function SecurityCommandCentrePage(): React.JSX.Element {
       header: t('Status'),
       cell: (e) => (
         <Badge tone={STATUS_TONE[e.status]} dot>
-          {e.status.replace('-', ' ')}
+          {enumLabel(e.status)}
         </Badge>
       ),
       sortValue: (e) => e.status,
@@ -225,74 +224,112 @@ export function SecurityCommandCentrePage(): React.JSX.Element {
             show={tab === 'events' ? ['severity', 'status', 'search'] : ['ward', 'department', 'status', 'search']}
             statusOptions={
               tab === 'events'
-                ? STATUS_OPTIONS.map((s) => ({ value: s, label: s.replace(/-/g, ' ') }))
-                : USER_STATUS_OPTIONS.map((s) => ({ value: s, label: s.replace(/-/g, ' ') }))
+                ? STATUS_OPTIONS.map((s) => ({ value: s, label: enumLabel(s) }))
+                : USER_STATUS_OPTIONS.map((s) => ({ value: s, label: enumLabel(s) }))
             }
           />
         }
       />
 
       {/* ---------------------------------------------------------------- Posture */}
-      <div className="grid gap-4 lg:grid-cols-[13rem_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[13rem_minmax(0,1fr)]">
         <Card className="flex flex-col items-center justify-center text-center">
           <ScoreDial score={posture.authenticationHealth} label="/ 100" caption={t('Authentication health')} size={104} />
         </Card>
         <MetricGrid columns={4}>
-          <Card background="red">
-            <p className="label-institutional">{t('MFA coverage')}</p>
-            <p className="numeric mt-2 text-metric font-semibold text-ink-900">{formatPercent(posture.mfaCoveragePct, 1)}</p>
-            <ProgressBar value={posture.mfaCoveragePct} size="xs" className="mt-2" />
+          <Card className={cn(SHADE.blue.tile, 'flex items-start gap-3')}>
+            <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE.blue.chip)}>
+              <Fingerprint className="h-4 w-4" aria-hidden />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="label-institutional">{t('MFA coverage')}</p>
+              <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE.blue.value)}>{formatPercent(posture.mfaCoveragePct, 1)}</p>
+              <ProgressBar value={posture.mfaCoveragePct} size="xs" className="mt-2" />
+            </div>
           </Card>
-          <Card background="amber">
-            <p className="label-institutional">{t('Privileged accounts')}</p>
-            <p className="numeric mt-2 text-metric font-semibold text-ink-900">{posture.privilegedAccounts}</p>
+          <Card className={cn(SHADE.orange.tile, 'flex items-start gap-3')}>
+            <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE.orange.chip)}>
+              <KeyRound className="h-4 w-4" aria-hidden />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="label-institutional">{t('Privileged accounts')}</p>
+              <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE.orange.value)}>{posture.privilegedAccounts}</p>
+            </div>
           </Card>
-          <Card tone={posture.privilegedWithoutMfa > 0 ? 'critical' : 'default'} background="green">
-            <p className="label-institutional">{t('Privileged without MFA')}</p>
-            <p className={cn('numeric mt-2 text-metric font-semibold', posture.privilegedWithoutMfa > 0 ? 'text-crit-700' : 'text-ink-900')}>
-              {posture.privilegedWithoutMfa}
-            </p>
-            {posture.privilegedWithoutMfa > 0 ? (
-              <p className="mt-1 flex items-center gap-1 text-[0.625rem] font-medium text-crit-700">
-                <AlertTriangle className="h-3 w-3" />{' '}{t('Requires attention')}
-              </p>
-            ) : null}
+          <Card className={cn(SHADE[posture.privilegedWithoutMfa > 0 ? 'red' : 'green'].tile, 'flex items-start gap-3')}>
+            <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE[posture.privilegedWithoutMfa > 0 ? 'red' : 'green'].chip)}>
+              <ShieldAlert className="h-4 w-4" aria-hidden />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="label-institutional">{t('Privileged without MFA')}</p>
+              <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE[posture.privilegedWithoutMfa > 0 ? 'red' : 'green'].value)}>{posture.privilegedWithoutMfa}</p>
+              {posture.privilegedWithoutMfa > 0 ? (
+                <p className="mt-1 flex items-center gap-1 text-[0.625rem] font-medium text-crit-700">
+                  <AlertTriangle className="h-3 w-3" />{' '}{t('Requires attention')}
+                </p>
+              ) : null}
+            </div>
           </Card>
-          <Card>
-            <p className="label-institutional">{t('Suspicious sessions')}</p>
-            <p className="numeric mt-2 text-metric font-semibold text-ink-900">{posture.suspiciousSessions}</p>
+          <Card className={cn(SHADE[posture.suspiciousSessions > 0 ? 'amber' : 'green'].tile, 'flex items-start gap-3')}>
+            <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE[posture.suspiciousSessions > 0 ? 'amber' : 'green'].chip)}>
+              <MonitorSmartphone className="h-4 w-4" aria-hidden />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="label-institutional">{t('Suspicious sessions')}</p>
+              <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE[posture.suspiciousSessions > 0 ? 'amber' : 'green'].value)}>{posture.suspiciousSessions}</p>
+            </div>
           </Card>
         </MetricGrid>
       </div>
 
       <MetricGrid columns={4}>
-        <Card background="amber">
-          <p className="label-institutional">{t('Policy violations (30d)')}</p>
-          <p className="numeric mt-2 text-metric font-semibold text-ink-900">{posture.policyViolations30d}</p>
+        <Card className={cn(SHADE.amber.tile, 'flex items-start gap-3')}>
+          <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE.amber.chip)}>
+            <FileWarning className="h-4 w-4" aria-hidden />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="label-institutional">{t('Policy violations (30d)')}</p>
+            <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE.amber.value)}>{posture.policyViolations30d}</p>
+          </div>
         </Card>
-        <Card background="green">
-          <p className="label-institutional">{t('Security events (30d)')}</p>
-          <p className="numeric mt-2 text-metric font-semibold text-ink-900">{posture.securityEvents30d}</p>
+        <Card className={cn(SHADE.blue.tile, 'flex items-start gap-3')}>
+          <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE.blue.chip)}>
+            <Activity className="h-4 w-4" aria-hidden />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="label-institutional">{t('Security events (30d)')}</p>
+            <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE.blue.value)}>{posture.securityEvents30d}</p>
+          </div>
         </Card>
-        <Card background="red">
-          <p className="label-institutional">{t('Integrations requiring review')}</p>
-          <p className="numeric mt-2 text-metric font-semibold text-ink-900">{posture.integrationsRequiringReview}</p>
+        <Card className={cn(SHADE.teal.tile, 'flex items-start gap-3')}>
+          <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE.teal.chip)}>
+            <Link2 className="h-4 w-4" aria-hidden />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="label-institutional">{t('Integrations requiring review')}</p>
+            <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE.teal.value)}>{posture.integrationsRequiringReview}</p>
+          </div>
         </Card>
-        <Card>
-          <p className="label-institutional">{t('Last assessment')}</p>
-          <p className="mt-2 text-sm font-semibold text-ink-900">{formatDate(posture.lastAssessmentAt)}</p>
+        <Card className={cn(SHADE.neutral.tile, 'flex items-start gap-3')}>
+          <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE.neutral.chip)}>
+            <CalendarCheck className="h-4 w-4" aria-hidden />
+          </span>
+          <div className="min-w-0">
+            <p className="label-institutional">{t('Last assessment')}</p>
+            <p className="mt-2 text-sm font-semibold text-ink-900">{formatDate(posture.lastAssessmentAt)}</p>
+          </div>
         </Card>
       </MetricGrid>
 
       {/* Vulnerabilities, encryption and the certification note read as one
           posture band rather than three stacked rows. */}
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <GovPanel title={t('Open vulnerabilities by severity')} tone="amber">
           <div className="grid grid-cols-4 gap-2">
             {(['critical', 'high', 'medium', 'low'] as const).map((sev) => (
               <div key={sev} className="rounded-md bg-surface-sunken px-2 py-2 text-center">
                 <p className="numeric text-lg font-semibold text-ink-900">{posture.openVulnerabilities[sev]}</p>
-                <p className="mt-0.5 text-[0.625rem] text-ink-500 capitalize">{sev}</p>
+                <p className="mt-0.5 text-[0.625rem] text-ink-500">{SEVERITY_LABEL[sev]}</p>
               </div>
             ))}
           </div>
@@ -323,7 +360,7 @@ export function SecurityCommandCentrePage(): React.JSX.Element {
         ]}
         value={tab}
         onChange={(id) => setTab(id as 'events' | 'identity')}
-        ariaLabel="Security Command Centre sections"
+        ariaLabel={t('Security Command Centre sections')}
       />
 
       {tab === 'events' ? (
@@ -348,7 +385,7 @@ export function SecurityCommandCentrePage(): React.JSX.Element {
                 <Select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value as SecurityEvent['status'] | '')}
-                  options={[{ value: '', label: t('All statuses') }, ...STATUS_OPTIONS.map((s) => ({ value: s, label: s.replace('-', ' ') }))]}
+                  options={[{ value: '', label: t('All statuses') }, ...STATUS_OPTIONS.map((s) => ({ value: s, label: enumLabel(s) }))]}
                 />
               </div>
             }
@@ -361,7 +398,7 @@ export function SecurityCommandCentrePage(): React.JSX.Element {
                 rowKey={(e) => e.id}
                 onRowClick={(e) => openDrawer({ kind: 'security-event', id: e.id })}
                 searchable
-                searchPlaceholder="Search events by subject or description"
+                searchPlaceholder={t('Search events by subject or description')}
                 pageSize={10}
                 initialSort={{ columnId: 'detected', direction: 'desc' }}
                 rowAccent={(e) => (
@@ -372,7 +409,7 @@ export function SecurityCommandCentrePage(): React.JSX.Element {
                     size="xs"
                     variant="outline"
                     disabled={!canEditEvents}
-                    title={canEditEvents ? 'Update the status of this security event' : 'Your role does not hold security:edit. This control is disabled by the permission engine.'}
+                    title={canEditEvents ? t('Update the status of this security event') : t('Your role does not hold security:edit. This control is disabled by the permission engine.')}
                     onClick={(ev) => {
                       ev.stopPropagation()
                       setNextStatus(STATUS_OPTIONS.find((s) => s !== e.status) ?? 'investigating')
@@ -389,13 +426,13 @@ export function SecurityCommandCentrePage(): React.JSX.Element {
 
           <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
             <Card>
-              <ChartFrame title={t('Events by type')} unit="events" timeframe="All recorded events" height={Math.max(200, typeChartData.length * 26)}>
+              <ChartFrame title={t('Events by type')} unit={t('events')} timeframe={t('All recorded events')} height={Math.max(200, typeChartData.length * 26)}>
                 <RankedBarChart data={typeChartData} unit="" higherIsWorse />
               </ChartFrame>
             </Card>
             <Card>
-              <ChartFrame title={t('Severity distribution')} unit="events" timeframe="All recorded events" height={220}>
-                <DonutChart data={severityChartData} centreValue={String(events.length)} centreLabel="events" />
+              <ChartFrame title={t('Severity distribution')} unit={t('events')} timeframe={t('All recorded events')} height={220}>
+                <DonutChart data={severityChartData} centreValue={String(events.length)} centreLabel={t('events')} />
               </ChartFrame>
             </Card>
           </div>
@@ -416,7 +453,7 @@ export function SecurityCommandCentrePage(): React.JSX.Element {
                   rows={(usersQuery.data ?? []).filter((u) => matchesPrincipalGlobalFilters(u, globalFilters))}
                   rowKey={(u: User) => u.id}
                   searchable
-                  searchPlaceholder="Search principals"
+                  searchPlaceholder={t('Search principals')}
                   pageSize={10}
                   columns={[
                     {
@@ -440,7 +477,7 @@ export function SecurityCommandCentrePage(): React.JSX.Element {
                       id: 'scope',
                       header: t('Scope'),
                       cell: (u: User) =>
-                        u.scope.wardIds === '*' ? 'City-wide' : `${u.scope.wardIds.length} ward(s)`,
+                        u.scope.wardIds === '*' ? t('City-wide') : t('{0} ward(s)', u.scope.wardIds.length),
                       sortValue: (u: User) => (u.scope.wardIds === '*' ? 999 : u.scope.wardIds.length),
                       hideBelow: 'lg',
                     },
@@ -456,7 +493,7 @@ export function SecurityCommandCentrePage(): React.JSX.Element {
                       header: t('MFA posture'),
                       cell: (u: User) => (
                         <Badge tone={u.mfaEnrolled ? 'positive' : 'critical'} dot>
-                          {u.mfaEnrolled ? 'Enrolled' : 'Not enrolled'}
+                          {u.mfaEnrolled ? t('Enrolled') : t('Not enrolled')}
                         </Badge>
                       ),
                       sortValue: (u: User) => (u.mfaEnrolled ? 1 : 0),
@@ -472,7 +509,7 @@ export function SecurityCommandCentrePage(): React.JSX.Element {
                       header: t('Status'),
                       cell: (u: User) => (
                         <Badge tone={u.status === 'active' ? 'positive' : u.status === 'suspended' ? 'critical' : 'warn'} dot>
-                          {u.status.replace('-', ' ')}
+                          {enumLabel(u.status)}
                         </Badge>
                       ),
                       sortValue: (u: User) => u.status,
@@ -495,7 +532,7 @@ export function SecurityCommandCentrePage(): React.JSX.Element {
               <EmptyState
                 compact
                 title={t('No tracked sessions in this browser session')}
-                detail="The demonstration role switcher changes the acting principal without establishing a new tracked session. Signing out and back in through the login screen creates one."
+                detail={t('The demonstration role switcher changes the acting principal without establishing a new tracked session. Signing out and back in through the login screen creates one.')}
               />
             ) : (
               <div className="space-y-2">
@@ -507,7 +544,7 @@ export function SecurityCommandCentrePage(): React.JSX.Element {
                     </div>
                     <div className="flex items-center gap-2 text-[0.6875rem] text-ink-500">
                       <span>{t('Started {0}', formatDateTime(s.startedAt))}</span>
-                      <Badge tone={s.mfaSatisfied ? 'positive' : 'critical'}>{s.mfaSatisfied ? 'MFA satisfied' : 'MFA not satisfied'}</Badge>
+                      <Badge tone={s.mfaSatisfied ? 'positive' : 'critical'}>{s.mfaSatisfied ? t('MFA satisfied') : t('MFA not satisfied')}</Badge>
                     </div>
                   </div>
                 ))}
@@ -525,7 +562,7 @@ export function SecurityCommandCentrePage(): React.JSX.Element {
           if (!statusEditEvent) return
           void updateStatus(statusEditEvent.id, nextStatus, reason)
         }}
-        title={statusEditEvent ? `Update status - ${statusEditEvent.reference}` : 'Update status'}
+        title={statusEditEvent ? t('Update status - {0}', statusEditEvent.reference) : t('Update status')}
         description={t('This status change is written permanently to the audit trail against your name.')}
         confirmLabel={t('Update status')}
         intent="primary"
@@ -537,7 +574,7 @@ export function SecurityCommandCentrePage(): React.JSX.Element {
               id="next-status"
               value={nextStatus}
               onChange={(e) => setNextStatus(e.target.value as SecurityEvent['status'])}
-              options={STATUS_OPTIONS.map((s) => ({ value: s, label: s.replace('-', ' ') }))}
+              options={STATUS_OPTIONS.map((s) => ({ value: s, label: enumLabel(s) }))}
             />
           </div>
         }

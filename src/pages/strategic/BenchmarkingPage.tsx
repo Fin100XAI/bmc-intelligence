@@ -42,7 +42,13 @@ import { registerLayer } from '@/data/runtime'
 /**
  * src/pages/strategic/BenchmarkingPage.tsx
  *
- * Where this corporation stands among the twenty-nine.
+ * Where Brihanmumbai stands among its Maharashtra peers - Thane,
+ * Kalyan-Dombivli, Mira-Bhayandar, Vasai-Virar, Panvel, Ulhasnagar,
+ * Bhiwandi-Nizampur, Pune, Pimpri-Chinchwad and the rest of the state roster.
+ * The roster comes from the data layer; a peer constituted after 2011 (Panvel,
+ * 2016) carries no Census 2011 figure on its current limits and is compared
+ * only where a common-basis figure exists. Modelled indicators are shown for this
+ * corporation only and are never ranked against named peers.
  *
  * Every other page in this platform reports one corporation to itself. That is
  * necessary and it is also insufficient, because a figure without a comparison
@@ -80,14 +86,14 @@ registerLayer(() => {
 })
 
 function formatValue(value: number | null, metric: BenchmarkMetric): string {
-  if (value === null) return 'Not published'
+  if (value === null) return t('Not published')
   const prefix = metric.unit === '₹' ? '₹' : ''
   const suffix = metric.unit === '₹' ? '' : metric.unit
   return `${prefix}${formatNumber(value, metric.decimals)}${suffix}`
 }
 
 export function BenchmarkingPage(): React.JSX.Element {
-  const [metricId, setMetricId] = useState('collection-efficiency')
+  const [metricId, setMetricId] = useState('residents-per-corporator')
   const [band, setBand] = useState<PopulationBand | 'all'>('all')
   const filters = useFilterStore((s) => s.filters)
 
@@ -124,10 +130,15 @@ export function BenchmarkingPage(): React.JSX.Element {
     [rows, band],
   )
 
-  /** Ranked within the chosen cohort - the stored rank is against all 29 and
-   *  would be wrong the moment the operator narrows the peer group. */
+  /** A modelled indicator is never compared or ranked: it exists for this
+   *  corporation only, and no peer publishes it on a common basis. */
+  const isModelled = metric?.basis === 'modelled'
+  const ownRow = useMemo(() => (allQuery.data ?? []).find((r) => r.corporationId === activeCorporation.id), [allQuery.data])
+
+  /** Ranked within the chosen cohort - the stored rank is against every
+   *  corporation and would be wrong the moment the operator narrows the peer group. */
   const ranked = useMemo(() => {
-    if (!metric) return []
+    if (!metric || metric.basis === 'modelled') return []
     return [...cohort]
       .filter((c) => typeof c.values[metric.id]?.value === 'number')
       .sort((a, b) => {
@@ -230,7 +241,7 @@ export function BenchmarkingPage(): React.JSX.Element {
     },
     {
       id: 'value',
-      header: metric ? metric.shortLabel : 'Value',
+      header: metric ? metric.shortLabel : t('Value'),
       cell: (r) => (
         <span className="numeric font-semibold text-ink-900">
           {metric ? formatValue(r.values[metric.id]?.value ?? null, metric) : '-'}
@@ -320,7 +331,7 @@ export function BenchmarkingPage(): React.JSX.Element {
             <SegmentedControl<PopulationBand | 'all'>
               value={band}
               onChange={setBand}
-              ariaLabel="Peer group by population band"
+              ariaLabel={t('Peer group by population band')}
               options={BANDS.map((b) => ({ value: b.value, label: b.label }))}
             />
           </div>
@@ -336,11 +347,32 @@ export function BenchmarkingPage(): React.JSX.Element {
       <div className="grid grid-cols-1 gap-3 xl:grid-cols-12">
         <div className="flex min-w-0 flex-col gap-3 xl:col-span-8">
           {!metric ? (
-            <EmptyState title={t('No indicator selected')} detail="Choose an indicator to compare." />
+            <EmptyState title={t('No indicator selected')} detail={t('Choose an indicator to compare.')} />
+          ) : isModelled ? (
+            <Card tone="default" className="flex items-start gap-3">
+              <div className="min-w-0">
+                <p className="text-[0.8125rem] font-semibold text-ink-900">
+                  {metric.label}{' '}
+                  <Badge tone="info" size="sm">
+                    {BENCHMARK_BASIS_LABEL[metric.basis]}
+                  </Badge>
+                </p>
+                <p className="mt-1 text-xs leading-relaxed text-ink-600">{metric.description}</p>
+                <p className="mt-2 text-[0.8125rem] text-ink-900">
+                  <span className="label-institutional">{t('{0} (modelled)', activeCorporation.shortName)}</span>{' '}
+                  <span className="numeric font-semibold">
+                    {ownRow ? formatValue(ownRow.values[metric.id]?.value ?? null, metric) : '-'}
+                  </span>
+                </p>
+                <p className="mt-1.5 text-[0.6875rem] leading-relaxed text-ink-500">
+                  {t('Peers: Modelled - not published. No Maharashtra corporation publishes this indicator on a common basis, so no peer value, rank or league position is shown. The figure above is a demonstration value for {0} only.', activeCorporation.shortName)}
+                </p>
+              </div>
+            </Card>
           ) : ranked.length === 0 ? (
             <EmptyState
               title={t('No corporation in this peer group publishes this indicator')}
-              detail="Widen the peer group, or choose a different indicator."
+              detail={t('Widen the peer group, or choose a different indicator.')}
             />
           ) : (
             <>
@@ -364,8 +396,8 @@ export function BenchmarkingPage(): React.JSX.Element {
               <GovPanel dense tone="amber" title={t('Leaders · {0}', metric.shortLabel)}>
                 <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
                   {metric.higherIsBetter
-                    ? 'Highest performers in the selected peer group.'
-                    : 'Lowest - and therefore best - performers in the selected peer group.'}
+                    ? t('Highest performers in the selected peer group.')
+                    : t('Lowest - and therefore best - performers in the selected peer group.')}
                 </p>
                 <div className="px-3 pb-3" style={{ height: Math.max(200, Math.min(ranked.length, 12) * 26) }}>
                   <RankedBarChart
@@ -391,7 +423,7 @@ export function BenchmarkingPage(): React.JSX.Element {
                   columns={columns}
                   rowKey={(r) => r.corporationId}
                   searchable
-                  searchPlaceholder="Search corporation, city or district"
+                  searchPlaceholder={t('Search corporation, city or district')}
                   activeRowKey={activeCorporation.id}
                   pageSize={15}
                 />
@@ -401,12 +433,12 @@ export function BenchmarkingPage(): React.JSX.Element {
         </div>
 
         <div className="flex min-w-0 flex-col gap-3 xl:col-span-4">
-          {metric && ranked.length > 0 ? (
+          {metric && !isModelled && ranked.length > 0 ? (
             <MetricGrid columns={2}>
               <MetricCard
-                label={`${activeCorporation.shortName} position`}
+                label={t('{0} position', activeCorporation.shortName)}
                 value={subject && subjectIndex >= 0 ? `${subjectIndex + 1}` : '-'}
-                support={subject ? `of ${ranked.length} in this peer group` : 'Not ranked in this peer group'}
+                support={subject ? t('of {0} in this peer group', ranked.length) : t('Not ranked in this peer group')}
                 tone={
                   subjectIndex < 0
                     ? 'default'
@@ -420,7 +452,7 @@ export function BenchmarkingPage(): React.JSX.Element {
                 origin="demonstration"
               />
               <MetricCard
-                label={`${activeCorporation.shortName} value`}
+                label={t('{0} value', activeCorporation.shortName)}
                 value={formatValue(subjectValue, metric)}
                 support={metric.label}
                 icon={<TrendingUp className="h-4 w-4" />}
@@ -445,7 +477,7 @@ export function BenchmarkingPage(): React.JSX.Element {
             <div className="min-w-0">
               <p className="text-[0.8125rem] font-semibold text-govt-800">{t('Two kinds of figure appear here')}</p>
               <p className="mt-1 text-xs leading-relaxed text-ink-600">
-                <strong>{t('Published')}</strong>{' '}{t('indicators (')}{publishedCount} of {metrics.length}{t(') are arithmetic on figures the corporations themselves publish - budget outlay, census population, sanctioned water supply, notified area. They are as reliable as their sources.')}{' '}<strong>{t('Modelled')}</strong>{' '}{t('indicators are generated for this demonstration, because no comparable state-wide operational return exists in the public domain. Every metric carries its basis, and the two are never combined into a single composite score - a ranking that mixed them would look authoritative and mean nothing.')}
+                <strong>{t('Published')}</strong>{' '}{t('indicators (')}{t('{0} of {1}', publishedCount, metrics.length)}{t(') are arithmetic on figures the corporations themselves publish - budget outlay, census population, sanctioned water supply, notified area. They are as reliable as their sources.')}{' '}<strong>{t('Modelled')}</strong>{' '}{t('indicators are generated for this demonstration, because no comparable state-wide operational return exists in the public domain. Every metric carries its basis, and the two are never combined into a single composite score - a ranking that mixed them would look authoritative and mean nothing.')}
               </p>
             </div>
           </Card>

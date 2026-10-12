@@ -55,6 +55,13 @@ export const CATEGORICAL_SERIES = [
   CHART_COLOURS.risk,
 ] as const
 
+/**
+ * The size a chart assumes before its container has been measured. Without
+ * it Recharts renders once at 0 x 0 and warns ("width(0) and height(0) of
+ * chart should be greater than 0") on every chart on every page load.
+ */
+const INITIAL_DIMENSION = { width: 320, height: 200 }
+
 const AXIS_PROPS = {
   stroke: CHART_COLOURS.axis,
   fontSize: 10,
@@ -112,7 +119,7 @@ function TooltipShell({
 export function TrendChart({
   points,
   unit,
-  seriesLabel = 'Value',
+  seriesLabel = t('Value'),
   comparisonLabel,
   variant = 'area',
   colour = CHART_COLOURS.primary,
@@ -136,7 +143,7 @@ export function TrendChart({
 
   if (variant === 'line') {
     return (
-      <ResponsiveContainer width="100%" height="100%">
+      <ResponsiveContainer width="100%" height="100%" initialDimension={INITIAL_DIMENSION}>
         <LineChart data={points} margin={{ top: 4, right: 6, left: -18, bottom: 0 }}>
           <CartesianGrid stroke={CHART_COLOURS.grid} strokeDasharray="3 3" vertical={false} />
           <XAxis dataKey="label" {...AXIS_PROPS} interval="preserveStartEnd" minTickGap={16} />
@@ -177,7 +184,7 @@ export function TrendChart({
 
   const gradientId = `grad-${seriesLabel.replace(/\W/g, '')}`
   return (
-    <ResponsiveContainer width="100%" height="100%">
+    <ResponsiveContainer width="100%" height="100%" initialDimension={INITIAL_DIMENSION}>
       <AreaChart data={points} margin={{ top: 4, right: 6, left: -18, bottom: 0 }}>
         <defs>
           <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
@@ -258,7 +265,7 @@ export function CategoryBarChart({
 }): React.JSX.Element {
   const horizontal = layout === 'horizontal'
   return (
-    <ResponsiveContainer width="100%" height="100%">
+    <ResponsiveContainer width="100%" height="100%" initialDimension={INITIAL_DIMENSION}>
       <BarChart
         data={data}
         layout={horizontal ? 'vertical' : 'horizontal'}
@@ -321,7 +328,7 @@ export function RankedBarChart({
     return CHART_COLOURS.primary
   }
   return (
-    <ResponsiveContainer width="100%" height="100%">
+    <ResponsiveContainer width="100%" height="100%" initialDimension={INITIAL_DIMENSION}>
       <BarChart data={data} layout="vertical" margin={{ top: 2, right: 14, left: 4, bottom: 2 }} barCategoryGap="20%">
         <CartesianGrid stroke={CHART_COLOURS.grid} strokeDasharray="3 3" horizontal={false} />
         <XAxis type="number" {...AXIS_PROPS} />
@@ -355,7 +362,7 @@ export function DonutChart({
   const total = data.reduce((s, d) => s + d.value, 0)
   return (
     <div className="relative h-full w-full">
-      <ResponsiveContainer width="100%" height="100%">
+      <ResponsiveContainer width="100%" height="100%" initialDimension={INITIAL_DIMENSION}>
         <PieChart>
           <Pie
             data={data}
@@ -406,7 +413,7 @@ export function RadarChart({
   colour?: string
 }): React.JSX.Element {
   return (
-    <ResponsiveContainer width="100%" height="100%">
+    <ResponsiveContainer width="100%" height="100%" initialDimension={INITIAL_DIMENSION}>
       <RechartsRadarChart data={data} margin={{ top: 8, right: 28, bottom: 8, left: 28 }}>
         <PolarGrid stroke={CHART_COLOURS.grid} />
         <PolarAngleAxis dataKey="label" tick={{ fontSize: 10, fill: CHART_COLOURS.axis }} />
@@ -469,8 +476,8 @@ export function HeatmapMatrix({
   higherIsBetter = false,
   onCellClick,
   formatValue,
-  legendLow = 'Low',
-  legendHigh = 'High',
+  legendLow = t('Low'),
+  legendHigh = t('High'),
 }: {
   rows: Array<{ id: string; label: string }>
   columns: Array<{ id: string; label: string }>
@@ -494,7 +501,8 @@ export function HeatmapMatrix({
 
   return (
     <div className="flex h-full flex-col">
-      <div className="scrollbar-slim min-h-0 flex-1 overflow-auto">
+      {/* contain:paint - the sticky cells otherwise widen the page on a phone. */}
+      <div className="scrollbar-slim min-h-0 flex-1 overflow-auto [contain:paint]">
         <table className="w-full border-separate border-spacing-0.5 text-left">
           <thead>
             <tr>
@@ -602,7 +610,7 @@ export function ContributionBars({
                   <span className="mx-1 text-ink-300">·</span>
                   w {item.weight.toFixed(2)}
                   <span className="mx-1 text-ink-300">·</span>
-                  raw {item.rawScore}
+                  {t('raw {0}', item.rawScore)}
                 </span>
               </div>
               <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-ink-100">
@@ -631,7 +639,8 @@ export function MiniBar({
   value: number
   max?: number
   tone?: 'positive' | 'neutral' | 'warn' | 'risk' | 'critical'
-  width?: number
+  /** Pixels, or `'full'` to fill the container (the card-width rail). */
+  width?: number | 'full'
   className?: string
   /**
    * Inverts the colour semantics for indicators where a higher value is a
@@ -662,8 +671,8 @@ export function MiniBar({
   }
   return (
     <span
-      className={cn('mini-bar inline-flex h-1.5 overflow-hidden rounded-full bg-ink-100 align-middle', className)}
-      style={{ width }}
+      className={cn('mini-bar inline-flex h-1.5 overflow-hidden rounded-full bg-ink-100 align-middle', width === 'full' && 'flex w-full', className)}
+      style={width === 'full' ? undefined : { width }}
       aria-hidden
     >
       <span className={cn('h-full rounded-full', colours[resolved])} style={{ width: `${pct}%` }} />

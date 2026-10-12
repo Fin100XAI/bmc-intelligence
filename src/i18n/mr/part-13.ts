@@ -40,7 +40,6 @@ export const MR_PART_13: Record<string, string> = {
   'Open faults': 'प्रलंबित बिघाड',
   'Open full record': 'संपूर्ण नोंद उघडा',
   'Open full record →': 'संपूर्ण नोंद उघडा →',
-  'Open Hospital Intelligence': 'रुग्णालय बुद्धिमत्ता उघडा',
   'Open Incident Load': 'प्रलंबित घटना भार',
   'Open incidents only': 'केवळ प्रलंबित घटना',
   'Open Monsoon Intelligence': 'पावसाळी बुद्धिमत्ता उघडा',
@@ -57,7 +56,6 @@ export const MR_PART_13: Record<string, string> = {
   'Open spaces': 'मोकळ्या जागा',
   'Open task {0}: {1}': 'काम {0} उघडा: {1}',
   'Open this role in the role register': 'भूमिका नोंदवहीत ही भूमिका उघडा',
-  'Open vulnerabilities': 'प्रलंबित सुरक्षा त्रुटी',
   'Open vulnerabilities by severity': 'तीव्रतेनुसार प्रलंबित सुरक्षा त्रुटी',
   'Open ward profile for {0}': '{0} ची प्रभाग माहिती उघडा',
   'open, average resolution': 'प्रलंबित, सरासरी निराकरण',
@@ -184,8 +182,6 @@ export const MR_PART_13: Record<string, string> = {
   'Pre-filled from the source intelligence item. Review and adjust before submitting - the case enters the board in Draft.':
     'स्रोत बुद्धिमत्ता नोंदीवरून आधीच भरलेले. सादर करण्यापूर्वी पुनरावलोकन करून आवश्यक ते बदल करा — प्रकरण मंडळात मसुदा स्थितीत दाखल होते.',
   'Pre-monsoon readiness implication': 'पावसाळापूर्व सज्जतेवरील परिणाम',
-  'Pre-monsoon readiness: desilting completed, pump availability and preparation measured against the waterlogging locations recorded in the ward.':
-    'पावसाळापूर्व सज्जता: प्रभागात नोंदवलेल्या पाणी साचण्याच्या ठिकाणांच्या तुलनेत पूर्ण झालेली गाळ काढणी, पंप उपलब्धता आणि पूर्वतयारी.',
   'Preparedness by hazard': 'धोक्यानुसार सज्जता',
   'Preparedness posture, observed rainfall and tide conditions, and pumping and desilting position across every ward.':
     'सज्जतेची स्थिती, निरीक्षित पर्जन्यमान व भरतीची स्थिती, आणि प्रत्येक प्रभागातील उपसा व गाळ काढणीची स्थिती.',
@@ -306,8 +302,6 @@ export const MR_PART_13: Record<string, string> = {
     'हंगामी सरासरीच्या तुलनेत केंद्रनिहाय पर्जन्यमान, तीव्रता वर्गीकरणासह.',
   'Rainfall duration': 'पावसाचा कालावधी',
   'Rainfall Observations': 'पर्जन्यमान निरीक्षणे',
-  'Raised from the Monsoon Intelligence Centre scenario tool. Inputs: rainfall {0}mm/24h, tide {1}m, pump availability {2}%, desilting {3}%, duration {4}h. {5}':
-    'पावसाळी बुद्धिमत्ता केंद्राच्या परिस्थिती साधनातून उपस्थित. निविष्टे: पर्जन्यमान {0}मिमी/24 तास, भरती {1}मी., पंप उपलब्धता {2}%, गाळ काढणी {3}%, कालावधी {4} तास. {5}',
   'Raised from this session': 'या सत्रातून उपस्थित',
   'Raised under {0}{1}. It appears on {2} under “Assigned to me”.':
     '{0}{1} अंतर्गत उपस्थित. ते {2} वर “मला नेमून दिलेले” अंतर्गत दिसते.',

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { AlertTriangle, Ban, Cpu } from 'lucide-react'
+import { AlertTriangle, Ban, Cpu, UserCheck } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { FilterBar } from '@/components/filters/FilterBar'
 import { useServiceQuery } from '@/hooks'
@@ -32,6 +32,9 @@ import { GovPanel } from '@/components/gov/GovPanel'
 import { CategoryBarChart, ChartFrame, DonutChart } from '@/components/charts'
 import { t } from '@/i18n'
 import { registerLayer } from '@/data/runtime'
+import { enumLabel } from '@/utils/enum-label'
+import { HUMAN_REVIEW_REQUIRED, PROHIBITED_INTENTS } from '@/ai/provider'
+import { QUERY_INTENTS } from '@/ai/nlu'
 
 /**
  * AI Intelligence Centre.
@@ -40,6 +43,11 @@ import { registerLayer } from '@/data/runtime'
  * confidence, latency, grounding, citation volume, human review posture and
  * policy outcome - the operational instrument for governing AI use across
  * the platform, not a marketing dashboard of "AI activity".
+ *
+ * Beneath the log, the configuration every request is governed by, read from
+ * code: the question routes the Municipal Copilot answers (`src/ai/nlu.ts`),
+ * the use cases that need a recorded human review and the acts the gateway
+ * blocks (`src/ai/provider.ts`).
  */
 
 const FRESHNESS = {
@@ -68,11 +76,11 @@ const POLICY_TONE: Record<AIRequestRecord['policyStatus'], 'positive' | 'warn' |
 
 function build$LATENCY_BANDS() {
   return [
-  { id: 'fast', label: t('< 300ms'), max: 300 },
-  { id: 'moderate', label: t('300–600ms'), max: 600 },
-  { id: 'slow', label: t('600–900ms'), max: 900 },
-  { id: 'very-slow', label: t('≥ 900ms'), max: Infinity },
-]
+    { id: 'fast', label: t('< 300ms'), max: 300 },
+    { id: 'moderate', label: t('300–600ms'), max: 600 },
+    { id: 'slow', label: t('600–900ms'), max: 900 },
+    { id: 'very-slow', label: t('≥ 900ms'), max: Infinity },
+  ]
 }
 let LATENCY_BANDS: ReturnType<typeof build$LATENCY_BANDS> = build$LATENCY_BANDS()
 registerLayer(() => {
@@ -122,6 +130,9 @@ export function AIIntelligenceCentrePage(): React.JSX.Element {
     [allRequests],
   )
   const requests = useMemo(() => allRequests.filter((r) => matchesGlobalFilters(r, filters)), [allRequests, filters])
+
+  const useCases = Object.keys(AI_USE_CASE_LABEL) as AIUseCase[]
+  const reviewRequired = new Set<AIUseCase>(HUMAN_REVIEW_REQUIRED)
 
   const userNameById = useMemo(() => new Map(DEMO_USERS.map((u) => [u.id, u])), [])
   const models = useMemo(() => Array.from(new Set(allRequests.map((r) => r.modelId))).sort(), [allRequests])
@@ -190,7 +201,7 @@ export function AIIntelligenceCentrePage(): React.JSX.Element {
     {
       id: 'latency',
       header: t('Latency'),
-      cell: (row) => <span className="numeric">{row.latencyMs} ms</span>,
+      cell: (row) => <span className="numeric">{t('{0} ms', row.latencyMs)}</span>,
       sortValue: (row) => row.latencyMs,
       align: 'right',
       hideBelow: 'md',
@@ -215,7 +226,7 @@ export function AIIntelligenceCentrePage(): React.JSX.Element {
     {
       id: 'review',
       header: t('Human review'),
-      cell: (row) => <Badge tone={REVIEW_TONE[row.reviewStatus]} dot>{row.reviewStatus.replace(/-/g, ' ')}</Badge>,
+      cell: (row) => <Badge tone={REVIEW_TONE[row.reviewStatus]} dot>{enumLabel(row.reviewStatus)}</Badge>,
       sortValue: (row) => row.reviewStatus,
     },
     {
@@ -223,7 +234,7 @@ export function AIIntelligenceCentrePage(): React.JSX.Element {
       header: t('Policy status'),
       cell: (row) => (
         <Badge tone={POLICY_TONE[row.policyStatus]} title={row.policyNote}>
-          {row.policyStatus}
+          {enumLabel(row.policyStatus)}
         </Badge>
       ),
       sortValue: (row) => row.policyStatus,
@@ -277,12 +288,12 @@ export function AIIntelligenceCentrePage(): React.JSX.Element {
 
       {!requestsQuery.isLoading && !requestsQuery.error ? (
         allRequests.length === 0 ? (
-          <EmptyState title={t('No AI requests recorded')} detail="No AI request records are visible within your authorised scope." />
+          <EmptyState title={t('No AI requests recorded')} detail={t('No AI request records are visible within your authorised scope.')} />
         ) : (
           <>
             <MetricGrid columns={6}>
               <MetricCard label={t('Total requests')} value={requests.length} icon={<Cpu className="h-4 w-4" />} background="red" />
-              <MetricCard label={t('Average latency')} value={`${Math.round(avgLatency)} ms`} background="amber" />
+              <MetricCard label={t('Average latency')} value={t('{0} ms', Math.round(avgLatency))} background="amber" />
               <MetricCard label={t('Evidence-backed share')} value={formatPercent(evidenceBackedShare)} tone="positive" background="green" />
               <MetricCard label={t('Flagged')} value={requests.filter((r) => r.policyStatus === 'flagged').length} tone="warn" />
               <MetricCard label={t('Blocked')} value={requests.filter((r) => r.policyStatus === 'blocked').length} tone={requests.some((r) => r.policyStatus === 'blocked') ? 'critical' : 'default'} />
@@ -369,27 +380,27 @@ export function AIIntelligenceCentrePage(): React.JSX.Element {
                       stickyHeader
                       maxHeight="30rem"
                       searchable={false}
-                      searchPlaceholder="Search prompts"
+                      searchPlaceholder={t('Search prompts')}
                       initialSort={{ columnId: 'latency', direction: 'desc' }}
                       emptyTitle={t('No requests match these filters')}
-                      emptyDetail="Adjust the filters above to widen the result set."
+                      emptyDetail={t('Adjust the filters above to widen the result set.')}
                     />
                   </GovPanel>
               </div>
 
               <div className="flex min-w-0 flex-col gap-3 xl:col-span-4">
                 <Card>
-                  <ChartFrame title={t('Requests by use case')} unit="requests" timeframe="All recorded requests" height={220}>
+                  <ChartFrame title={t('Requests by use case')} unit={t('requests')} timeframe={t('All recorded requests')} height={220}>
                     <CategoryBarChart data={byUseCase} series={[{ key: 'value', label: t('Requests'), colour: '#2f6feb' }]} layout="horizontal" />
                   </ChartFrame>
                 </Card>
                 <Card>
-                  <ChartFrame title={t('Confidence distribution')} unit="requests" timeframe="All recorded requests" height={220}>
-                    <DonutChart data={byConfidence} centreValue={String(requests.length)} centreLabel="Requests" />
+                  <ChartFrame title={t('Confidence distribution')} unit={t('requests')} timeframe={t('All recorded requests')} height={220}>
+                    <DonutChart data={byConfidence} centreValue={String(requests.length)} centreLabel={t('Requests')} />
                   </ChartFrame>
                 </Card>
                 <Card>
-                  <ChartFrame title={t('Latency distribution')} unit="requests" timeframe="All recorded requests" height={220}>
+                  <ChartFrame title={t('Latency distribution')} unit={t('requests')} timeframe={t('All recorded requests')} height={220}>
                     <CategoryBarChart data={byLatency} series={[{ key: 'value', label: t('Requests'), colour: '#0ea5b7' }]} layout="vertical" />
                   </ChartFrame>
                 </Card>
@@ -409,16 +420,75 @@ export function AIIntelligenceCentrePage(): React.JSX.Element {
                           )}
                           <div className="min-w-0">
                             <p className="font-medium text-ink-800">
-                              <Badge tone={POLICY_TONE[r.policyStatus]} className="mr-1.5">{r.policyStatus}</Badge>
+                              <Badge tone={POLICY_TONE[r.policyStatus]} className="mr-1.5">{enumLabel(r.policyStatus)}</Badge>
                               {AI_USE_CASE_LABEL[r.useCase]} · {r.modelId}
                             </p>
-                            <p className="mt-0.5 leading-relaxed text-ink-600">{r.policyNote ?? 'No policy note recorded.'}</p>
+                            <p className="mt-0.5 leading-relaxed text-ink-600">{r.policyNote ?? t('No policy note recorded.')}</p>
                           </div>
                         </li>
                       ))}
                     </ul>
                   </GovPanel>
                 ) : null}
+              </div>
+            </div>
+
+            {/* ── How the AI layer is configured ───────────────────────
+                The rules every request in the log was governed by, read from
+                code: the routes the Copilot answers, the use cases that need a
+                named officer's recorded review, and the acts the gateway
+                refuses outright. */}
+            <div className="grid grid-cols-1 gap-3 xl:grid-cols-12">
+              <div className="flex min-w-0 flex-col gap-3 xl:col-span-8">
+                <GovPanel title={t('Question routes the Municipal Copilot answers')} tone="amber">
+                  <p className="mb-3 text-xs leading-relaxed text-ink-500">
+                    {t('Each route is a rule set that recognises a kind of question and composes its answer from the platform\'s registers. A question that matches no route is declined, not guessed.')}
+                  </p>
+                  <ul className="grid grid-cols-1 gap-x-4 gap-y-1.5 sm:grid-cols-2">
+                    {QUERY_INTENTS.map((intent) => (
+                      <li key={intent.id} className="min-w-0 text-xs leading-relaxed text-ink-700">
+                        <span className="font-medium text-ink-900">{intent.label}</span>
+                        {intent.domains.length > 0 ? (
+                          <span className="text-ink-400"> · {intent.domains.map((d) => DOMAIN_LABEL[d]).join(', ')}</span>
+                        ) : null}
+                      </li>
+                    ))}
+                  </ul>
+                </GovPanel>
+              </div>
+
+              <div className="flex min-w-0 flex-col gap-3 xl:col-span-4">
+                <GovPanel title={t('Use cases')} tone="red">
+                  <p className="mb-3 text-xs leading-relaxed text-ink-500">
+                    {t('Use cases marked for human review always need a named officer\'s recorded decision before anything is acted on.')}
+                  </p>
+                  <ul className="space-y-1.5">
+                    {useCases.map((u) => (
+                      <li key={u} className="flex items-center justify-between gap-2 text-xs text-ink-700">
+                        <span>{AI_USE_CASE_LABEL[u]}</span>
+                        {reviewRequired.has(u) ? (
+                          <Badge tone="intel" size="sm" icon={<UserCheck className="h-3 w-3" />}>
+                            {t('Human review')}
+                          </Badge>
+                        ) : null}
+                      </li>
+                    ))}
+                  </ul>
+                </GovPanel>
+
+                <GovPanel title={t('Acts the gateway blocks')} tone="critical">
+                  <p className="mb-3 text-xs leading-relaxed text-ink-500">
+                    {t('A request expressing any of these is refused before an answer is composed. These acts stay with a named officer.')}
+                  </p>
+                  <ul className="space-y-1.5">
+                    {PROHIBITED_INTENTS.map((intent) => (
+                      <li key={intent.label} className="flex items-start gap-2 rounded-lg border border-crit-100 bg-crit-50/40 px-2.5 py-1.5">
+                        <Ban className="mt-0.5 h-3 w-3 shrink-0 text-crit-500" aria-hidden />
+                        <span className="text-[0.6875rem] leading-relaxed text-ink-700">{intent.label}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </GovPanel>
               </div>
             </div>
           </>

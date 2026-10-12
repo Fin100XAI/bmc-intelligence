@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Info, ListChecks, RotateCcw } from 'lucide-react'
+import { Info, ListChecks, RotateCcw, FileSignature, FlaskConical, Plug, PlugZap } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { Badge, ClassificationBadge, StateBadge } from '@/components/ui/badges'
 import {
@@ -24,12 +24,15 @@ import { connectorService } from '@/services'
 import { useFilterStore, type FilterState } from '@/stores/ui.store'
 import { usePageMasthead } from '@/stores/masthead.store'
 import { departmentName, officerDisplayName } from '@/data/reference'
+import { CLASSIFICATION_LABEL, DOMAIN_LABEL } from '@/types/common'
+import { enumLabel } from '@/utils/enum-label'
 import { formatRelative } from '@/utils/format'
-import { DOMAIN_LABEL } from '@/types/common'
 import { CONNECTOR_TYPE_LABEL, type Connector } from '@/types/governance'
 import type { DataClassification, OperationalState } from '@/types/common'
 import { t } from '@/i18n'
 import { registerLayer } from '@/data/runtime'
+import { SHADE } from '@/components/ui/shade'
+import { cn } from '@/utils/cn'
 
 /** Every connector carries a genuine domain, owner department and health state. */
 function matchesConnectorGlobalFilters(c: Connector, filters: FilterState): boolean {
@@ -68,15 +71,17 @@ function matchesConnectorGlobalFilters(c: Connector, filters: FilterState): bool
 
 type ConnectorHealth = Connector['health']
 
-const STATE_EXPLANATION: Record<ConnectorHealth, string> = {
+function stateExplanation(): Record<ConnectorHealth, string> {
+  return {
   simulation:
-    'The adapter contract is implemented and the connector produces deterministic demonstration data shaped exactly like the target system\'s real feed. No departmental endpoint is contacted.',
+    t('The adapter contract is implemented and the connector produces deterministic demonstration data shaped exactly like the target system\'s real feed. No departmental endpoint is contacted.'),
   'adapter-ready':
-    'The adapter has been built and tested against the target system\'s published schema, but no live endpoint has been provisioned. A departmental data-sharing agreement and endpoint credentials are required before this can move further.',
+    t('The adapter has been built and tested against the target system\'s published schema, but no live endpoint has been provisioned. A departmental data-sharing agreement and endpoint credentials are required before this can move further.'),
   'not-connected':
-    'No adapter has been provisioned for this source. An integration design review and a departmental data-sharing agreement are required before development begins.',
+    t('No adapter has been provisioned for this source. An integration design review and a departmental data-sharing agreement are required before development begins.'),
   'review-required':
-    'The source is sensitive enough - or the proposed integration path unusual enough - that a privacy and security review must be completed before any provisioning step, including adapter development, may proceed.',
+    t('The source is sensitive enough - or the proposed integration path unusual enough - that a privacy and security review must be completed before any provisioning step, including adapter development, may proceed.'),
+  }
 }
 
 /**
@@ -84,15 +89,17 @@ const STATE_EXPLANATION: Record<ConnectorHealth, string> = {
  * people-and-paperwork steps, not engineering tasks, which is why none of them
  * is actionable from this screen.
  */
-const NEXT_STEP: Record<ConnectorHealth, string> = {
+function nextStep(): Record<ConnectorHealth, string> {
+  return {
   simulation:
-    'No step outstanding for demonstration use. Moving beyond simulation requires a departmental data-sharing agreement and issued endpoint credentials.',
+    t('No step outstanding for demonstration use. Moving beyond simulation requires a departmental data-sharing agreement and issued endpoint credentials.'),
   'adapter-ready':
-    'Departmental data-sharing agreement, then endpoint credentials issued to the platform. The engineering work is complete; the institutional work is not.',
+    t('Departmental data-sharing agreement, then endpoint credentials issued to the platform. The engineering work is complete; the institutional work is not.'),
   'not-connected':
-    'Integration design review, then a departmental data-sharing agreement, before adapter development may begin.',
+    t('Integration design review, then a departmental data-sharing agreement, before adapter development may begin.'),
   'review-required':
-    'Privacy and security review completed and recorded. No provisioning step, including adapter development, may proceed until it is.',
+    t('Privacy and security review completed and recorded. No provisioning step, including adapter development, may proceed until it is.'),
+  }
 }
 
 /**
@@ -187,7 +194,7 @@ export function IntegrationHealthPage(): React.JSX.Element {
 
   const health = healthQuery.data
   if (connectors.length === 0 || !health) {
-    return <EmptyState title={t('No connectors registered')} detail="The connector registry returned no entries." />
+    return <EmptyState title={t('No connectors registered')} detail={t('The connector registry returned no entries.')} />
   }
 
   const needsAgreementOrReview = connectors.filter(
@@ -267,7 +274,7 @@ export function IntegrationHealthPage(): React.JSX.Element {
     {
       id: 'environment',
       header: t('Environment'),
-      cell: (c) => <Badge tone="intel">{c.environment}</Badge>,
+      cell: (c) => <Badge tone="intel">{enumLabel(c.environment)}</Badge>,
       sortValue: (c) => c.environment,
       hideBelow: 'xl',
     },
@@ -334,24 +341,44 @@ export function IntegrationHealthPage(): React.JSX.Element {
       </Card>
 
       <MetricGrid columns={4}>
-        <Card>
-          <p className="label-institutional">{t('Connectors registered')}</p>
-          <p className="numeric mt-2 text-metric font-semibold text-ink-900">{health.total}</p>
+        <Card className={cn(SHADE.blue.tile, 'flex items-start gap-3')}>
+          <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE.blue.chip)}>
+            <Plug className="h-4 w-4" aria-hidden />
+          </span>
+          <div className="min-w-0">
+            <p className="label-institutional">{t('Connectors registered')}</p>
+            <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE.blue.value)}>{health.total}</p>
+          </div>
         </Card>
-        <Card>
-          <p className="label-institutional">{t('Simulation')}</p>
-          <p className="numeric mt-2 text-metric font-semibold text-ink-900">{health.byHealth.simulation}</p>
-          <p className="mt-0.5 text-[0.6875rem] text-ink-500">{t('Adapter implemented, no endpoint contacted')}</p>
+        <Card className={cn(SHADE.amber.tile, 'flex items-start gap-3')}>
+          <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE.amber.chip)}>
+            <FlaskConical className="h-4 w-4" aria-hidden />
+          </span>
+          <div className="min-w-0">
+            <p className="label-institutional">{t('Simulation')}</p>
+            <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE.amber.value)}>{health.byHealth.simulation}</p>
+            <p className="mt-0.5 text-[0.6875rem] text-ink-500">{t('Adapter implemented, no endpoint contacted')}</p>
+          </div>
         </Card>
-        <Card>
-          <p className="label-institutional">{t('Adapter ready')}</p>
-          <p className="numeric mt-2 text-metric font-semibold text-ink-900">{health.byHealth['adapter-ready']}</p>
-          <p className="mt-0.5 text-[0.6875rem] text-ink-500">{t('Engineering done, agreement outstanding')}</p>
+        <Card className={cn(SHADE.green.tile, 'flex items-start gap-3')}>
+          <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE.green.chip)}>
+            <PlugZap className="h-4 w-4" aria-hidden />
+          </span>
+          <div className="min-w-0">
+            <p className="label-institutional">{t('Adapter ready')}</p>
+            <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE.green.value)}>{health.byHealth['adapter-ready']}</p>
+            <p className="mt-0.5 text-[0.6875rem] text-ink-500">{t('Engineering done, agreement outstanding')}</p>
+          </div>
         </Card>
-        <Card tone={health.requiringReview > 0 ? 'warn' : 'default'}>
-          <p className="label-institutional">{t('Requiring review or agreement')}</p>
-          <p className="numeric mt-2 text-metric font-semibold text-ink-900">{health.requiringReview}</p>
-          <p className="mt-0.5 text-[0.6875rem] text-ink-500">{t('Blocked on an institutional step')}</p>
+        <Card className={cn(SHADE[health.requiringReview > 0 ? 'amber' : 'green'].tile, 'flex items-start gap-3')}>
+          <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE[health.requiringReview > 0 ? 'amber' : 'green'].chip)}>
+            <FileSignature className="h-4 w-4" aria-hidden />
+          </span>
+          <div className="min-w-0">
+            <p className="label-institutional">{t('Requiring review or agreement')}</p>
+            <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE[health.requiringReview > 0 ? 'amber' : 'green'].value)}>{health.requiringReview}</p>
+            <p className="mt-0.5 text-[0.6875rem] text-ink-500">{t('Blocked on an institutional step')}</p>
+          </div>
         </Card>
       </MetricGrid>
 
@@ -402,7 +429,7 @@ export function IntegrationHealthPage(): React.JSX.Element {
                 { value: '', label: t('All classifications') },
                 ...(['public', 'internal', 'confidential', 'restricted'] as DataClassification[]).map((c) => ({
                   value: c,
-                  label: c,
+                  label: CLASSIFICATION_LABEL[c],
                 })),
               ]}
             />
@@ -422,7 +449,7 @@ export function IntegrationHealthPage(): React.JSX.Element {
               columns={columns}
               rowKey={(c) => c.id}
               searchable
-              searchPlaceholder="Search connectors"
+              searchPlaceholder={t('Search connectors')}
               pageSize={10}
               selectable
               selectedKeys={selectedIds}
@@ -450,7 +477,7 @@ export function IntegrationHealthPage(): React.JSX.Element {
                     <p className="mt-0.5 text-[0.6875rem] text-ink-500">
                       {departmentName(c.ownerDepartmentId)} · {c.targetSystem}
                     </p>
-                    <p className="mt-1 text-[0.6875rem] leading-relaxed text-ink-600">{NEXT_STEP[c.health]}</p>
+                    <p className="mt-1 text-[0.6875rem] leading-relaxed text-ink-600">{nextStep()[c.health]}</p>
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
                     <StateBadge state={c.health as OperationalState} />
@@ -467,8 +494,8 @@ export function IntegrationHealthPage(): React.JSX.Element {
 
         <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
         <Card>
-          <ChartFrame title={t('Connectors by state')} unit="connectors" timeframe="Current" height={200}>
-            <DonutChart data={donutData} centreValue={String(health.total)} centreLabel="total" />
+          <ChartFrame title={t('Connectors by state')} unit={t('connectors')} timeframe={t('Current')} height={200}>
+            <DonutChart data={donutData} centreValue={String(health.total)} centreLabel={t('total')} />
           </ChartFrame>
           <div className="mt-3 space-y-1.5 border-t border-ink-100 pt-3">
             {(Object.keys(HEALTH_LABEL) as ConnectorHealth[]).map((k) => (
@@ -494,9 +521,9 @@ export function IntegrationHealthPage(): React.JSX.Element {
         <GovPanel title={t('What each state means')} tone="amber">
           <p className="mb-3 text-xs leading-relaxed text-ink-500">{t('The precise, exhaustive definition of every connector state this platform ever reports.')}</p>
           <DefinitionList>
-            {(Object.keys(STATE_EXPLANATION) as ConnectorHealth[]).map((k) => (
+            {(Object.keys(stateExplanation()) as ConnectorHealth[]).map((k) => (
               <DefinitionRow key={k} label={HEALTH_LABEL[k]}>
-                {STATE_EXPLANATION[k]}
+                {stateExplanation()[k]}
               </DefinitionRow>
             ))}
           </DefinitionList>
@@ -518,7 +545,7 @@ export function IntegrationHealthPage(): React.JSX.Element {
               <StateBadge state={detail.health as OperationalState} />
               <ClassificationBadge classification={detail.classification} />
               <Badge tone="muted">{DOMAIN_LABEL[detail.domain]}</Badge>
-              <Badge tone="intel">{detail.environment}</Badge>
+              <Badge tone="intel">{enumLabel(detail.environment)}</Badge>
             </>
           ) : null
         }
@@ -536,7 +563,7 @@ export function IntegrationHealthPage(): React.JSX.Element {
                 }
                 disabled={selectedIds.includes(detail.id)}
               >
-                {selectedIds.includes(detail.id) ? 'In provisioning pack' : 'Add to provisioning pack'}
+                {selectedIds.includes(detail.id) ? t('In provisioning pack') : t('Add to provisioning pack')}
               </Button>
             </>
           ) : null
@@ -564,23 +591,23 @@ export function IntegrationHealthPage(): React.JSX.Element {
               <DefinitionRow label={t('Accountable officer')}>{officerDisplayName(detail.ownerOfficerId)}</DefinitionRow>
               <DefinitionRow label={t('Authentication')}>{AUTH_LABEL[detail.authenticationMode]}</DefinitionRow>
               <DefinitionRow label={t('Last simulated sync')}>
-                {detail.lastSyncAt ? formatRelative(detail.lastSyncAt) : 'Never'}
+                {detail.lastSyncAt ? formatRelative(detail.lastSyncAt) : t('Never')}
               </DefinitionRow>
               <DefinitionRow label={t('Observed latency')}>
-                {typeof detail.latencyMs === 'number' ? <span className="numeric">{detail.latencyMs} ms</span> : 'Not measured'}
+                {typeof detail.latencyMs === 'number' ? <span className="numeric">{detail.latencyMs} ms</span> : t('Not measured')}
               </DefinitionRow>
               <DefinitionRow label={t('Quality score')}>
-                {typeof detail.qualityScore === 'number' ? <span className="numeric">{detail.qualityScore}/100</span> : 'Not assessed'}
+                {typeof detail.qualityScore === 'number' ? <span className="numeric">{detail.qualityScore}/100</span> : t('Not assessed')}
               </DefinitionRow>
             </DefinitionList>
 
             <GovPanel title={t('What "{0}" means', HEALTH_LABEL[detail.health])} tone="amber">
-              <p className="text-[0.8125rem] leading-relaxed text-ink-700">{STATE_EXPLANATION[detail.health]}</p>
+              <p className="text-[0.8125rem] leading-relaxed text-ink-700">{stateExplanation()[detail.health]}</p>
             </GovPanel>
 
             <GovPanel title={t('Next institutional step')} tone="red">
               <p className="mb-2 text-xs leading-relaxed text-ink-500">{t('Held by a department or a review body — not by this platform.')}</p>
-              <p className="text-[0.8125rem] leading-relaxed text-ink-700">{NEXT_STEP[detail.health]}</p>
+              <p className="text-[0.8125rem] leading-relaxed text-ink-700">{nextStep()[detail.health]}</p>
               <p className="mt-2 text-[0.6875rem] leading-relaxed text-ink-500">
                 {t('Nothing on this screen can complete that step, and no control here pretends to. Add the connector to a provisioning pack to export the request in a form the accountable department can act on.')}
               </p>

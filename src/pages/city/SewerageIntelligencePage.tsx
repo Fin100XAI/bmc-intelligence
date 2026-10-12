@@ -106,7 +106,7 @@ export function SewerageIntelligencePage(): React.JSX.Element {
     return (
       <PageBody>
         <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={breadcrumbs} />
-        <EmptyState title={t('No sewerage network data available')} detail="No treatment facility or trunk-sewer records were returned for the current scope." />
+        <EmptyState title={t('No sewerage network data available')} detail={t('No treatment facility or trunk-sewer records were returned for the current scope.')} />
         <DemonstrationNotice />
       </PageBody>
     )
@@ -262,7 +262,7 @@ export function SewerageIntelligencePage(): React.JSX.Element {
         eyebrow={t('City Intelligence')}
         breadcrumbs={breadcrumbs}
         freshness={FRESHNESS}
-        controls={<FilterBar show={['ward', 'search']} searchPlaceholder="Search facility, reach or ward" />}
+        controls={<FilterBar show={['ward', 'search']} searchPlaceholder={t('Search facility, reach or ward')} />}
       />
 
       <MetricGrid columns={4}>
@@ -284,7 +284,7 @@ export function SewerageIntelligencePage(): React.JSX.Element {
           label={t('Current load')}
           value={formatNumber(summary.currentLoadMld, 0)}
           unit="MLD"
-          support={summary.designCapacityMld > 0 ? `${formatPercent((summary.currentLoadMld / summary.designCapacityMld) * 100, 0)} of design capacity` : undefined}
+          support={summary.designCapacityMld > 0 ? t('{0} of design capacity', formatPercent((summary.currentLoadMld / summary.designCapacityMld) * 100, 0)) : undefined}
           background="amber"
         />
         <MetricCard label={t('Mean utilisation')} value={formatPercent(summary.meanUtilisationPct, 0)} tone={summary.meanUtilisationPct > 100 ? 'critical' : summary.meanUtilisationPct > 90 ? 'warn' : 'default'} background="green" />
@@ -317,7 +317,7 @@ export function SewerageIntelligencePage(): React.JSX.Element {
             {t('Facilities over capacity and compliance below the discharge norm are flagged directly.')}
           </p>
           {filteredFacilities.length === 0 ? (
-            <EmptyState className="m-3" title={t('No facilities match the current filters')} detail="Adjust the ward or search term above." />
+            <EmptyState className="m-3" title={t('No facilities match the current filters')} detail={t('Adjust the ward or search term above.')} />
           ) : (
             <DataTable
               rows={filteredFacilities}
@@ -326,7 +326,7 @@ export function SewerageIntelligencePage(): React.JSX.Element {
               pageSize={10}
               searchable={false}
               initialSort={{ columnId: 'utilisation', direction: 'desc' }}
-              ariaLabel="Treatment facility register"
+              ariaLabel={t('Treatment facility register')}
             />
           )}
         </GovPanel>
@@ -336,7 +336,7 @@ export function SewerageIntelligencePage(): React.JSX.Element {
             {t('Trunk-sewer reach condition, loading and blockage/overflow volume - one reach per ward.')}
           </p>
           {filteredTrunk.length === 0 ? (
-            <EmptyState className="m-3" title={t('No trunk reaches match the current filters')} detail="Adjust the ward or search term above." />
+            <EmptyState className="m-3" title={t('No trunk reaches match the current filters')} detail={t('Adjust the ward or search term above.')} />
           ) : (
             <DataTable
               rows={filteredTrunk}
@@ -345,7 +345,7 @@ export function SewerageIntelligencePage(): React.JSX.Element {
               pageSize={10}
               searchable={false}
               initialSort={{ columnId: 'overflow', direction: 'desc' }}
-              ariaLabel="Ward trunk-network position"
+              ariaLabel={t('Ward trunk-network position')}
             />
           )}
         </GovPanel>
@@ -380,7 +380,7 @@ export function SewerageIntelligencePage(): React.JSX.Element {
           <Card tone="critical" className="flex items-start gap-3">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-crit-600" aria-hidden />
             <p className="text-xs leading-relaxed text-ink-700">
-              <span className="font-semibold">{t('Compliance shortfall.')}</span> {facilitiesBelowNorm.length} of {facilities.length}{' '}{t('treatment facilit')}{facilitiesBelowNorm.length === 1 ? 'y' : 'ies'}{' '}{t('currently read below the')}{' '}{TREATMENT_COMPLIANCE_NORM}{t('% discharge-compliance norm:')}{' '}{facilitiesBelowNorm.map((f) => shortNodeLabel(f)).join(', ')}{t('. This is a compliance shortfall against the departmental norm, not a data anomaly, and is stated here without qualification.')}
+              <span className="font-semibold">{t('Compliance shortfall.')}</span> {t('{0} of {1}', facilitiesBelowNorm.length, facilities.length)}{' '}{t('treatment facilit')}{facilitiesBelowNorm.length === 1 ? 'y' : 'ies'}{' '}{t('currently read below the')}{' '}{TREATMENT_COMPLIANCE_NORM}{t('% discharge-compliance norm:')}{' '}{facilitiesBelowNorm.map((f) => shortNodeLabel(f)).join(', ')}{t('. This is a compliance shortfall against the departmental norm, not a data anomaly, and is stated here without qualification.')}
             </p>
           </Card>
         ) : null}
@@ -390,7 +390,7 @@ export function SewerageIntelligencePage(): React.JSX.Element {
             {t('Wards ranked by overflow events in the last 30 days. A structural pattern - repeat events across fixed nodes - is distinguished from volume handled by routine maintenance.')}
           </p>
           {filteredClusters.length === 0 ? (
-            <EmptyState compact className="m-3" title={t('No overflow events in scope')} detail="No ward in the current filter reports an overflow event in the last 30 days." />
+            <EmptyState compact className="m-3" title={t('No overflow events in scope')} detail={t('No ward in the current filter reports an overflow event in the last 30 days.')} />
           ) : (
             <ul className="divide-y divide-ink-50">
               {filteredClusters.map((c) => (
@@ -398,7 +398,7 @@ export function SewerageIntelligencePage(): React.JSX.Element {
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <span className="text-xs font-semibold text-ink-800">{wardName(c.wardId)}</span>
                     <span className="flex flex-wrap items-center gap-1.5">
-                      <Badge tone={c.structuralPattern ? 'critical' : 'neutral'}>{c.structuralPattern ? 'Structural pattern' : 'Routine maintenance volume'}</Badge>
+                      <Badge tone={c.structuralPattern ? 'critical' : 'neutral'}>{c.structuralPattern ? t('Structural pattern') : t('Routine maintenance volume')}</Badge>
                       <Badge tone="muted">{t('{0} overflow event(s)', c.overflowEvents30d)}</Badge>
                       <Badge tone="muted">{t('{0} blockage(s)', c.blockages30d)}</Badge>
                       <Badge tone="muted">{t('Condition {0}', c.meanConditionIndex)}</Badge>
@@ -415,7 +415,7 @@ export function SewerageIntelligencePage(): React.JSX.Element {
             <ChartFrame
               title={t('Utilisation distribution')}
               unit={t('% of design capacity')}
-              timeframe="Current reporting position"
+              timeframe={t('Current reporting position')}
               description={t('Every treatment facility and trunk-sewer reach ranked by utilisation. Nodes above the 100% reference line are running above design capacity.')}
               height={Math.max(320, utilisationChartData.length * 11)}
             >
@@ -425,7 +425,7 @@ export function SewerageIntelligencePage(): React.JSX.Element {
                 layout="horizontal"
                 series={[{ key: 'value', label: t('Utilisation %'), colour: CHART_COLOURS.primary }]}
                 referenceValue={100}
-                referenceLabel="Design capacity"
+                referenceLabel={t('Design capacity')}
               />
             </ChartFrame>
           </Card>
@@ -433,13 +433,13 @@ export function SewerageIntelligencePage(): React.JSX.Element {
             <ChartFrame
               title={t('Treatment compliance against the discharge norm')}
               unit={t('% compliant')}
-              timeframe="Current reporting position"
+              timeframe={t('Current reporting position')}
               description={t('Treatment facilities only - trunk reaches carry no compliance figure. Ranked from lowest to highest against the departmental norm.')}
               height={260}
               footnote={
                 facilitiesBelowNorm.length > 0
-                  ? `${facilitiesBelowNorm.length} of ${facilities.length} facilit${facilitiesBelowNorm.length === 1 ? 'y' : 'ies'} read below the ${TREATMENT_COMPLIANCE_NORM}% norm: ${facilitiesBelowNorm.map((f) => shortNodeLabel(f)).join(', ')}.`
-                  : `All ${facilities.length} treatment facilities meet or exceed the ${TREATMENT_COMPLIANCE_NORM}% norm.`
+                  ? t('{0} of {1} facilit{2} read below the {3}% norm: {4}.', facilitiesBelowNorm.length, facilities.length, facilitiesBelowNorm.length === 1 ? 'y' : 'ies', TREATMENT_COMPLIANCE_NORM, facilitiesBelowNorm.map((f) => shortNodeLabel(f)).join(', '))
+                  : t('All {0} treatment facilities meet or exceed the {1}% norm.', facilities.length, TREATMENT_COMPLIANCE_NORM)
               }
             >
               <CategoryBarChart
@@ -448,7 +448,7 @@ export function SewerageIntelligencePage(): React.JSX.Element {
                 layout="horizontal"
                 series={[{ key: 'value', label: t('Compliance %'), colour: CHART_COLOURS.intel }]}
                 referenceValue={TREATMENT_COMPLIANCE_NORM}
-                referenceLabel={`${TREATMENT_COMPLIANCE_NORM}% norm`}
+                referenceLabel={t('{0}% norm', TREATMENT_COMPLIANCE_NORM)}
               />
             </ChartFrame>
           </Card>

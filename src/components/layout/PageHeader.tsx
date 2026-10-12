@@ -96,7 +96,9 @@ export function PageHeader({
       {hasBar ? (
         <div
           className={cn(
-            'flex flex-wrap items-center justify-end gap-x-3 gap-y-1.5 rounded-lg border border-ink-200 bg-surface-sunken px-3 py-1.5',
+            // Sized to its contents: the bar holds a badge or two and the page's
+            // actions, and stretched across the page it read as an empty box.
+            'ml-auto flex w-fit max-w-full flex-wrap items-center justify-end gap-x-3 gap-y-1.5 rounded-lg border border-ink-200 bg-surface-sunken px-3 py-1.5',
             controls && 'mt-1.5',
           )}
         >

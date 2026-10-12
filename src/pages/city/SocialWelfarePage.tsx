@@ -83,16 +83,16 @@ function pct(part: number, whole: number): number {
 /** The five recorded harmonised-guideline checks, as a compact row. */
 function ComplianceChecks({ audit }: { audit: AccessibilityAudit }): React.JSX.Element {
   const checks: Array<[string, string, boolean]> = [
-    ['Ramp', 'Ramp at the principal entrance, within gradient', audit.rampCompliant],
-    ['Lift', 'Lift serving every floor where a service is delivered', audit.liftAvailable],
-    ['Toilet', 'Accessible toilet available during public hours', audit.accessibleToilet],
-    ['Tactile', 'Tactile guiding path from entrance to counter', audit.tactilePaving],
-    ['Signage', 'Large-print and Braille signage at decision points', audit.signageCompliant],
+    ['Ramp', t('Ramp at the principal entrance, within gradient'), audit.rampCompliant],
+    ['Lift', t('Lift serving every floor where a service is delivered'), audit.liftAvailable],
+    ['Toilet', t('Accessible toilet available during public hours'), audit.accessibleToilet],
+    ['Tactile', t('Tactile guiding path from entrance to counter'), audit.tactilePaving],
+    ['Signage', t('Large-print and Braille signage at decision points'), audit.signageCompliant],
   ]
   return (
     <span className="flex flex-wrap gap-1">
       {checks.map(([label, description, met]) => (
-        <Badge key={label} tone={met ? 'positive' : 'critical'} size="xs" title={`${description}: ${met ? 'compliant' : 'not compliant'}`} dot>
+        <Badge key={label} tone={met ? 'positive' : 'critical'} size="xs" title={t('{0}: {1}', description, met ? t('compliant') : t('not compliant'))} dot>
           {label}
         </Badge>
       ))}
@@ -142,8 +142,8 @@ export function SocialWelfarePage(): React.JSX.Element {
     return (
       <PageBody>
         <PageHeader
-          eyebrow={t('City Intelligence')}
-          breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Social Welfare & Accessibility') }]}
+          eyebrow={t('Wards & Citizens')}
+          breadcrumbs={[{ label: t('Wards & Citizens') }, { label: t('Ward Offices & Welfare') }, { label: t('Welfare delivery') }]}
         />
         <LoadingState variant="metrics" />
         <LoadingState variant="table" rows={8} />
@@ -155,8 +155,8 @@ export function SocialWelfarePage(): React.JSX.Element {
     return (
       <PageBody>
         <PageHeader
-          eyebrow={t('City Intelligence')}
-          breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Social Welfare & Accessibility') }]}
+          eyebrow={t('Wards & Citizens')}
+          breadcrumbs={[{ label: t('Wards & Citizens') }, { label: t('Ward Offices & Welfare') }, { label: t('Welfare delivery') }]}
         />
         <ErrorState
           detail={(schemesQuery.error ?? auditsQuery.error ?? trendQuery.error)?.message}
@@ -394,14 +394,14 @@ export function SocialWelfarePage(): React.JSX.Element {
   return (
     <PageBody>
       <PageHeader
-        eyebrow={t('City Intelligence')}
-        breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Social Welfare & Accessibility') }]}
+        eyebrow={t('Wards & Citizens')}
+        breadcrumbs={[{ label: t('Wards & Citizens') }, { label: t('Ward Offices & Welfare') }, { label: t('Welfare delivery') }]}
         freshness={freshness}
       />
 
       <DemonstrationNotice />
 
-      <FilterBar show={['ward', 'search']} searchPlaceholder="Search schemes and facilities" />
+      <FilterBar show={['ward', 'search']} searchPlaceholder={t('Search schemes and facilities')} />
 
       <MetricGrid columns={4}>
         <MetricCard
@@ -411,17 +411,17 @@ export function SocialWelfarePage(): React.JSX.Element {
           tone={coveragePct < COVERAGE_EXPECTATION_PCT ? 'critical' : 'positive'}
           icon={<Users className="h-4 w-4" />}
           progress={{ value: coveragePct, max: 100 }}
-          explanation="Eligible residents who are not enrolled on any scheme they qualify for. This is the number that describes who the corporation is failing; enrolment on its own describes only who it has already found."
+          explanation={t('Eligible residents who are not enrolled on any scheme they qualify for. This is the number that describes who the corporation is failing; enrolment on its own describes only who it has already found.')}
           background="red"
         />
         <MetricCard
           label={t('Mean disbursement delay')}
           value={meanDelay}
-          unit=" days"
+          unit={t(' days')}
           support={t('{0} enrolled residents not paid this month', formatNumber(unpaidEnrolled))}
           tone={meanDelay > DELAY_TOLERANCE_DAYS ? 'critical' : meanDelay > 8 ? 'warn' : 'positive'}
           icon={<Clock3 className="h-4 w-4" />}
-          explanation="Days from the entitlement falling due to the money reaching the beneficiary's account. Beyond a fortnight the payment has missed the month it was owed for."
+          explanation={t('Days from the entitlement falling due to the money reaching the beneficiary\'s account. Beyond a fortnight the payment has missed the month it was owed for.')}
           background="amber"
         />
         <MetricCard
@@ -439,7 +439,7 @@ export function SocialWelfarePage(): React.JSX.Element {
           support={t('{0} of {1} facilities meet every recorded check', formatNumber(fullyCompliant), formatNumber(filteredAudits.length))}
           tone={meanCompliance < 50 ? 'critical' : meanCompliance < 75 ? 'warn' : 'positive'}
           icon={<Accessibility className="h-4 w-4" />}
-          explanation="Mean compliance of audited municipal facilities against the harmonised guidelines notified under the Rights of Persons with Disabilities Act, 2016. This is a statutory duty, not a courtesy."
+          explanation={t('Mean compliance of audited municipal facilities against the harmonised guidelines notified under the Rights of Persons with Disabilities Act, 2016. This is a statutory duty, not a courtesy.')}
         />
       </MetricGrid>
 
@@ -469,7 +469,7 @@ export function SocialWelfarePage(): React.JSX.Element {
             <EmptyState
               className="mx-3 mb-3"
               title={t('No welfare schemes match the current search')}
-              detail="Clear the search term to restore the full register of schemes."
+              detail={t('Clear the search term to restore the full register of schemes.')}
             />
           ) : (
             <DataTable rows={filteredSchemes} columns={schemeColumns} rowKey={(s) => s.id} pageSize={12} />
@@ -495,7 +495,7 @@ export function SocialWelfarePage(): React.JSX.Element {
             <EmptyState
               className="mx-3 mb-3"
               title={t('No audited facilities match the current filters')}
-              detail="Clear a filter to widen the register. A facility with no audit against it is not a facility that is compliant - it is one nobody has looked at."
+              detail={t('Clear a filter to widen the register. A facility with no audit against it is not a facility that is compliant - it is one nobody has looked at.')}
             />
           ) : (
             <DataTable rows={filteredAudits} columns={auditColumns} rowKey={(a) => a.id} pageSize={12} />
@@ -541,7 +541,7 @@ export function SocialWelfarePage(): React.JSX.Element {
             </p>
             <div className="px-4 pb-4" style={{ height: Math.max(210, slowest.length * 26) }}>
               {slowest.length === 0 ? (
-                <EmptyState title={t('No schemes match the current search')} detail="Clear the search to restore the register." compact />
+                <EmptyState title={t('No schemes match the current search')} detail={t('Clear the search to restore the register.')} compact />
               ) : (
                 <RankedBarChart
                   data={slowest.map((s) => ({ label: s.name.slice(0, 24), value: s.meanDisbursementDelayDays }))}

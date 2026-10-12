@@ -52,8 +52,6 @@ export const MR_PART_11: Record<string, string> = {
     'प्रत्येक आकडा हा प्रभाग-व-श्रेणी एकत्रित आकडा आहे. या पानामागे कोठेही व्यापारी, जागा किंवा परवाना क्रमांक दिसत नाही. परवानाधारकाचे नाव दिल्यास ही वेगळ्या कायदेशीर आधारावर चालणारी कारवाई नोंदवही ठरेल; व्यवस्थापन मंचाने ही व्यवस्था किती चांगल्या प्रकारे चालवली जाते हेच नोंदवायचे असते.',
   'Every figure is generated from a fixed seed, so the same principal sees the same city on every visit - no figure moves without cause.':
     'प्रत्येक आकडा ठराविक बीजावरून तयार होतो, त्यामुळे तोच वापरकर्ता प्रत्येक भेटीत तेच शहर पाहतो - कोणताही आकडा विनाकारण बदलत नाही.',
-  'Every figure the platform presents can be traced through these nine stages, end to end.':
-    'मंच सादर करत असलेल्या प्रत्येक आकड्याचा माग या नऊ टप्प्यांतून, आरंभापासून अखेरपर्यंत काढता येतो.',
   'Every garden, playground and recreation ground within your authorised ward scope.':
     'तुमच्या प्राधिकृत प्रभाग व्याप्तीतील प्रत्येक उद्यान, क्रीडांगण आणि मनोरंजन मैदान.',
   'Every incident in this register is expected to move through these stages. Counts below reflect incidents currently at that stage; connective stages have no discrete status of their own.':
@@ -301,12 +299,10 @@ export const MR_PART_11: Record<string, string> = {
   'High risk-class models': 'उच्च जोखीम वर्गातील प्रारूपे',
   'High Tide Intelligence': 'मोठी भरती बुद्धिमत्ता',
   'High tide windows blocking discharge': 'विसर्ग अडवणाऱ्या मोठ्या भरतीच्या वेळा',
-  'high-priority defects': 'उच्च प्राधान्य दोष',
   'High-priority issues': 'उच्च प्राधान्य बाबी',
   'High-risk wards': 'उच्च जोखमीचे प्रभाग',
   'Highest current outbreak signal': 'सध्याचा सर्वाधिक उद्रेक संकेत',
   'Highest operational risks': 'सर्वाधिक कामकाज जोखमी',
-  'Highest outbreak signal {0}/100 across {1} ward(s)': '{1} प्रभागांमधील सर्वाधिक उद्रेक संकेत {0}/100',
   'Highest-priority open defects by published score, {0}. Excludes repaired and verified-closed defects.':
     'प्रकाशित गुणांनुसार सर्वोच्च प्राधान्याचे प्रलंबित दोष, {0}. दुरुस्त व पडताळून बंद केलेले दोष वगळले आहेत.',
   'Highest-risk works': 'सर्वाधिक जोखमीची कामे',
@@ -321,7 +317,6 @@ export const MR_PART_11: Record<string, string> = {
   'Hospital Accessibility Risk': 'रुग्णालय सुलभता जोखीम',
   'Hospital registration units and ward offices within your authorised ward scope.':
     'तुमच्या प्राधिकृत प्रभाग व्याप्तीतील रुग्णालय नोंदणी कक्ष व प्रभाग कार्यालये.',
-  'Hospital utilisation summary': 'रुग्णालय वापर सारांश',
   'Hospitals and fire / disaster / ambulance emergency stations.':
     'रुग्णालये आणि अग्निशमन / आपत्ती / रुग्णवाहिका आपत्कालीन केंद्रे.',
   'Hotspots': 'समस्याक्षेत्रे',

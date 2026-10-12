@@ -167,7 +167,7 @@ export function HeritageTourismPage(): React.JSX.Element {
         eyebrow={t('Environment & Public Realm')}
         breadcrumbs={[{ label: t('Environment & Public Realm') }, { label: t('Heritage & Tourism') }]}
         hideProvenance
-        controls={<FilterBar show={['ward', 'search']} searchPlaceholder="Search heritage sites" />}
+        controls={<FilterBar show={['ward', 'search']} searchPlaceholder={t('Search heritage sites')} />}
       />
       <DemonstrationNotice />
 
@@ -198,7 +198,7 @@ export function HeritageTourismPage(): React.JSX.Element {
         <MetricCard label={t('Revenue collected')} value={position ? `₹${formatCompact(position.revenueCollectedLakhTotal * 100000)}` : '-'} icon={<Banknote className="h-4 w-4" />} />
         <MetricCard
           label={t('Graded heritage structures (citywide)')}
-          value={position?.heritageStructuresCitywide != null ? formatNumber(position.heritageStructuresCitywide) : '-'}
+          value={position?.heritageStructuresCitywide != null ? formatNumber(position.heritageStructuresCitywide) : t('Not published')}
           support={t('BMC-wide inventory, not the register above')}
           icon={<Landmark className="h-4 w-4" />}
           footer={
@@ -209,7 +209,7 @@ export function HeritageTourismPage(): React.JSX.Element {
         />
         <MetricCard
           label={t('Heritage precincts (citywide)')}
-          value={position?.heritagePrecinctsCitywide != null ? formatNumber(position.heritagePrecinctsCitywide) : '-'}
+          value={position?.heritagePrecinctsCitywide != null ? formatNumber(position.heritagePrecinctsCitywide) : t('Not published')}
           icon={<Landmark className="h-4 w-4" />}
           footer={
             <span className="text-[0.625rem] leading-snug text-ink-400">
@@ -250,7 +250,7 @@ export function HeritageTourismPage(): React.JSX.Element {
           {t('Every listed structure, precinct, museum and tourism site the Corporation is responsible for or manages.')}
         </p>
         {filtered.length === 0 ? (
-          <EmptyState title={t('No sites match the current filters')} detail="Clear a filter to widen the register." />
+          <EmptyState title={t('No sites match the current filters')} detail={t('Clear a filter to widen the register.')} />
         ) : (
           <DataTable rows={filtered} columns={columns} rowKey={(s) => s.id} pageSize={12} />
         )}

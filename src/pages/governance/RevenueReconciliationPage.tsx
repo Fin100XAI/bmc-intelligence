@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { ListChecks, ScrollText } from 'lucide-react'
+import { IndianRupee, ListChecks, ScrollText } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { useServiceQuery } from '@/hooks'
 import { usePageMasthead } from '@/stores/masthead.store'
@@ -28,6 +28,8 @@ import { CompositionBar } from '@/components/charts'
 import { FilterBar } from '@/components/filters/FilterBar'
 import { useFilterStore } from '@/stores/ui.store'
 import { t } from '@/i18n'
+import { cn } from '@/utils/cn'
+import { SHADE } from '@/components/ui/shade'
 
 /**
  * src/pages/governance/RevenueReconciliationPage.tsx
@@ -189,8 +191,8 @@ export function RevenueReconciliationPage(): React.JSX.Element {
   return (
     <PageBody>
       <PageHeader
-        eyebrow={t('Revenue & Municipal Finance')}
-        breadcrumbs={[{ label: t('Revenue & Municipal Finance') }, { label: t('Registry Reconciliation') }]}
+        eyebrow={t('Revenue & Finance')}
+        breadcrumbs={[{ label: t('Revenue & Finance') }, { label: t('Property Tax Recovery') }]}
         freshness={FRESHNESS}
         actions={
           <>
@@ -225,7 +227,11 @@ export function RevenueReconciliationPage(): React.JSX.Element {
               {t('An extrapolation from the reconciled sample to the full assessment register. It is an indicative estimate for deciding whether this work is worth commissioning - not an amount owed by anybody, and not a figure any demand is raised from.')}
             </p>
             <div className="flex flex-wrap items-end gap-x-10 gap-y-4">
-              <div>
+              <div className={cn('flex items-start gap-2.5 rounded-lg border p-3', SHADE.red.tile)}>
+                <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE.red.chip)} aria-hidden>
+                  <IndianRupee className="h-4 w-4" />
+                </span>
+                <div className="min-w-0">
                 <p className="text-[0.625rem] tracking-wide text-ink-500 uppercase">
                   {t('Extrapolated annual value, full register')}
                 </p>
@@ -235,15 +241,21 @@ export function RevenueReconciliationPage(): React.JSX.Element {
                 <p className="mt-1 text-[0.6875rem] text-ink-500">
                   {t('{0} parcels on the register', formatNumber(summary.registerParcels))}
                 </p>
+                </div>
               </div>
-              <div>
+              <div className={cn('flex items-start gap-2.5 rounded-lg border p-3', SHADE.gold.tile)}>
+                <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE.gold.chip)} aria-hidden>
+                  <IndianRupee className="h-4 w-4" />
+                </span>
+                <div className="min-w-0">
                 <p className="text-[0.625rem] tracking-wide text-ink-500 uppercase">{t('Demonstrated in the sample')}</p>
-                <p className="numeric mt-1 text-metric font-semibold text-ink-800">
+                <p className={cn('numeric mt-1 text-metric font-semibold', SHADE.gold.value)}>
                   {formatRupees(summary.indicativeValue)}
                 </p>
                 <p className="mt-1 text-[0.6875rem] text-ink-500">
                   {t('across {0} parcels actually reconciled', formatNumber(summary.sampledParcels))}
                 </p>
+                </div>
               </div>
               <div>
                 <p className="text-[0.625rem] tracking-wide text-ink-500 uppercase">{t('Method')}</p>
@@ -268,18 +280,18 @@ export function RevenueReconciliationPage(): React.JSX.Element {
                 label={t('Tier 1 candidates')}
                 value={formatNumber(summary.tierOneRaised)}
                 support={`${formatRupees(summary.tierOneIndicativeValue)} indicative`}
-                explanation="Tier 1 rules reconcile two records the corporation issued itself. They convert at a materially higher rate than any other tier, which is why a pilot should be scoped on them alone."
+                explanation={t('Tier 1 rules reconcile two records the corporation issued itself. They convert at a materially higher rate than any other tier, which is why a pilot should be scoped on them alone.')}
               />
               <MetricCard
                 label={t('Awaiting a match decision')}
                 value={formatNumber(summary.inMatchQueue)}
                 support={t('Below the confidence floor')}
-                explanation="Records the engine could not match to a parcel confidently enough to raise a candidate on its own. An officer decides, and the decision is recorded against their name."
+                explanation={t('Records the engine could not match to a parcel confidently enough to raise a candidate on its own. An officer decides, and the decision is recorded against their name.')}
               />
               <MetricCard label={t('Open on the worklist')} value={formatNumber(summary.onWorklist)} />
               <MetricCard
                 label={t('Conversion rate')}
-                value={summary.conversionPct === null ? 'No data yet' : formatPercent(summary.conversionPct)}
+                value={summary.conversionPct === null ? t('No data yet') : formatPercent(summary.conversionPct)}
                 support={t('of {0} decided', formatNumber(summary.terminal))}
               />
             </MetricGrid>
@@ -307,7 +319,7 @@ export function RevenueReconciliationPage(): React.JSX.Element {
               searchable={false}
               emptyTitle={t('No rules have produced a decided candidate yet')}
               initialSort={{ columnId: 'raised', direction: 'desc' }}
-              ariaLabel="Observed rule precision"
+              ariaLabel={t('Observed rule precision')}
             />
           </GovPanel>
 

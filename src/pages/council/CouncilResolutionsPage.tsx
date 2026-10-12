@@ -35,6 +35,7 @@ import {
   type ResolutionStatus,
 } from '@/types/civic-services'
 import { formatCrore, formatDate, formatRelative } from '@/utils/format'
+import { municipality } from '@/config/municipality.config'
 import { t } from '@/i18n'
 
 /**
@@ -240,7 +241,7 @@ export function CouncilResolutionsPage(): React.JSX.Element {
           <span className="text-ink-400">{t('Not put')}</span>
         ) : (
           <span className="numeric text-ink-700">
-            {r.votesFor} <span className="text-ink-400">for</span> · {r.votesAgainst} <span className="text-ink-400">against</span>
+            {r.votesFor} <span className="text-ink-400">{t('for')}</span> · {r.votesAgainst} <span className="text-ink-400">{t('against')}</span>
           </span>
         ),
       sortValue: (r) => r.votesFor ?? -1,
@@ -282,6 +283,9 @@ export function CouncilResolutionsPage(): React.JSX.Element {
               <p className="mt-1 text-xs leading-relaxed text-ink-600">
                 {t("Every other screen here reports on the executive wing. A decision case in the Decision Centre ends with an officer - but a great many municipal matters cannot take effect until the Corporation has resolved on them, and expenditure above a committee's sanction limit rises to the house above it. Without this record the platform would overstate what an officer alone can commit.")}
               </p>
+              <p className="mt-1.5 text-xs leading-relaxed text-ink-600">
+                {t('In {0} the elected General Body has {1} corporators, with a Mayor and Deputy Mayor. Administration runs through {2} administrative wards. The Municipal Commissioner heads the executive wing.', municipality.shortName, position?.corporatorSeats ?? 0, municipality.administrativeUnits.wards)}
+              </p>
             </div>
           </Card>
 
@@ -291,7 +295,7 @@ export function CouncilResolutionsPage(): React.JSX.Element {
             </p>
 
             {committees.length === 0 ? (
-              <EmptyState title={t('No committees on record')} detail="The committee register is empty for this corporation." />
+              <EmptyState title={t('No committees on record')} detail={t('The committee register is empty for this corporation.')} />
             ) : (
               <ul className="divide-y divide-ink-100">
                 {committees.map((c) => (
@@ -369,14 +373,14 @@ export function CouncilResolutionsPage(): React.JSX.Element {
             <MetricCard
               label={t('Awaiting implementation')}
               value={awaiting.length}
-              support={financialAwaiting > 0 ? `${formatCrore(financialAwaiting)} resolved but not yet acted on` : 'Nothing outstanding'}
+              support={financialAwaiting > 0 ? t('{0} resolved but not yet acted on', formatCrore(financialAwaiting)) : t('Nothing outstanding')}
               tone={awaiting.length > 0 ? 'warn' : 'positive'}
               icon={<Gavel className="h-4 w-4" />}
             />
             <MetricCard
               label={t('Tabled to decision')}
               value={position?.meanDaysTabledToDecision ?? 0}
-              unit=" days"
+              unit={t(' days')}
               support={t('Mean time a matter waits before the house')}
               trend={position?.attendanceTrend}
               icon={<CalendarDays className="h-4 w-4" />}
@@ -396,7 +400,7 @@ export function CouncilResolutionsPage(): React.JSX.Element {
                   colour: STATUS_COLOUR[s.status],
                 }))}
                 centreValue={String(resolutions.length)}
-                centreLabel="matters"
+                centreLabel={t('matters')}
               />
             </div>
 
@@ -461,7 +465,7 @@ export function CouncilResolutionsPage(): React.JSX.Element {
           {t('Matters tabled before the Corporation and its committees, most recent first.')}
         </p>
         {filtered.length === 0 ? (
-          <EmptyState title={t('No matters match the current filters')} detail="Clear a filter to widen the register." />
+          <EmptyState title={t('No matters match the current filters')} detail={t('Clear a filter to widen the register.')} />
         ) : (
           <DataTable rows={filtered} columns={columns} rowKey={(r) => r.id} pageSize={15} />
         )}

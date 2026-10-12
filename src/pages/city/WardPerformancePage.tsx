@@ -36,6 +36,7 @@ import { DEMO_NOW } from '@/utils/deterministic'
 import { formatNumber } from '@/utils/format'
 import { t } from '@/i18n'
 import { registerLayer } from '@/data/runtime'
+import { SHADE, type Shade } from '@/components/ui/shade'
 
 /** The difficulty cohort is already covered by this page's own segmented
  *  control; the global bar adds ward, the verdict against the line (as
@@ -167,8 +168,8 @@ export function WardPerformancePage(): React.JSX.Element {
 
   const header = (
     <PageHeader
-      eyebrow={t('Wards & Localities')}
-      breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Like-for-Like Ward Performance') }]}
+      eyebrow={t('Wards & Citizens')}
+      breadcrumbs={[{ label: t('Wards & Citizens') }, { label: t('Ward Intelligence') }, { label: t('Like-for-like') }]}
       freshness={{
         generatedAt: DEMO_NOW.toISOString(),
         sourceObservedAt: DEMO_NOW.toISOString(),
@@ -177,7 +178,7 @@ export function WardPerformancePage(): React.JSX.Element {
         sourceState: 'operational',
         stale: false,
       } satisfies DataFreshness}
-      controls={<FilterBar show={['ward', 'status', 'search']} statusOptions={verdictStatusOptions} searchPlaceholder="Search ward, code or region" />}
+      controls={<FilterBar show={['ward', 'status', 'search']} statusOptions={verdictStatusOptions} searchPlaceholder={t('Search ward, code or region')} />}
     />
   )
 
@@ -199,7 +200,7 @@ export function WardPerformancePage(): React.JSX.Element {
         <ErrorState
           detail={
             error?.message ??
-            'The like-for-like assessment could not be assembled for the wards in your authorised scope.'
+            t('The like-for-like assessment could not be assembled for the wards in your authorised scope.')
           }
           onRetry={() => {
             void assessmentQuery.refetch()
@@ -319,7 +320,7 @@ export function WardPerformancePage(): React.JSX.Element {
       {rows.length === 0 ? (
         <EmptyState
           title={t('No ward falls within your authorised scope')}
-          detail="A like-for-like comparison needs at least one ward you are entitled to see."
+          detail={t('A like-for-like comparison needs at least one ward you are entitled to see.')}
         />
       ) : (
         <>
@@ -331,7 +332,7 @@ export function WardPerformancePage(): React.JSX.Element {
               tone="positive"
               icon={<Award className="h-4 w-4" />}
               origin="demonstration"
-              explanation={`A ward counts as above expectation when its residual exceeds the tolerance band of ${fit.toleranceBand.toFixed(1)} points, which is half a typical residual.`}
+              explanation={t('A ward counts as above expectation when its residual exceeds the tolerance band of {0} points, which is half a typical residual.', fit.toleranceBand.toFixed(1))}
               background="red"
             />
             <MetricCard
@@ -345,11 +346,11 @@ export function WardPerformancePage(): React.JSX.Element {
             <MetricCard
               label={t('Furthest above its line')}
               value={bestPractice ? signed(bestPractice.residual) : '-'}
-              unit=" pts"
+              unit={t(' pts')}
               support={
                 bestPractice
-                  ? `${bestPractice.wardLabel} · difficulty ${bestPractice.difficulty.toFixed(0)} · go and see what it is doing`
-                  : 'No ward in scope sits above its line'
+                  ? t('{0} · difficulty {1} · go and see what it is doing', bestPractice.wardLabel, bestPractice.difficulty.toFixed(0))
+                  : t('No ward in scope sits above its line')
               }
               tone="positive"
               icon={<Sigma className="h-4 w-4" />}
@@ -358,11 +359,11 @@ export function WardPerformancePage(): React.JSX.Element {
             <MetricCard
               label={t('Furthest below its line')}
               value={needsSupport ? signed(needsSupport.residual) : '-'}
-              unit=" pts"
+              unit={t(' pts')}
               support={
                 needsSupport
-                  ? `${needsSupport.wardLabel} · difficulty ${needsSupport.difficulty.toFixed(0)} · ask what is in the way`
-                  : 'No ward in scope sits below its line'
+                  ? t('{0} · difficulty {1} · ask what is in the way', needsSupport.wardLabel, needsSupport.difficulty.toFixed(0))
+                  : t('No ward in scope sits below its line')
               }
               tone="warn"
             />
@@ -380,7 +381,7 @@ export function WardPerformancePage(): React.JSX.Element {
               </p>
               <div className="grid gap-3 px-4 py-4 sm:grid-cols-2 lg:grid-cols-4">
                 {cohorts.map((c) => (
-                  <div key={c.quartile} className="rounded-lg border border-ink-100 bg-surface-sunken p-3">
+                  <div key={c.quartile} className={`rounded-lg border p-3 ${SHADE[(({ operational: 'green', degraded: 'amber', 'at-risk': 'orange', critical: 'red' } as Record<string, Shade>)[c.pressureState ?? ''] ?? 'neutral')].tile}`}>
                     <div className="flex items-start justify-between gap-2">
                       <p className="text-[0.8125rem] font-semibold text-ink-900">{c.shortLabel}</p>
                       <StateBadge state={c.pressureState} />
@@ -406,7 +407,7 @@ export function WardPerformancePage(): React.JSX.Element {
                 ))}
               </div>
               <p className="border-t border-ink-100 px-4 py-3 text-[0.6875rem] leading-relaxed text-ink-500">
-                {t('The state chip on each band describes the')}{' '}<strong>conditions</strong>{' '}{t('in that quartile, not the administration of it. A band marked critical is the hardest ground in the corporation to run, which is a statement about the ward and never about the people running it.')}
+                {t('The state chip on each band describes the')}{' '}<strong>{t('conditions')}</strong>{' '}{t('in that quartile, not the administration of it. A band marked critical is the hardest ground in the corporation to run, which is a statement about the ward and never about the people running it.')}
               </p>
             </GovPanel>
 
@@ -417,7 +418,7 @@ export function WardPerformancePage(): React.JSX.Element {
                   <SegmentedControl<CohortFilter>
                     value={cohort}
                     onChange={setCohort}
-                    ariaLabel="Filter wards by difficulty quartile"
+                    ariaLabel={t('Filter wards by difficulty quartile')}
                     options={COHORT_OPTIONS}
                   />
                 </div>
@@ -430,7 +431,7 @@ export function WardPerformancePage(): React.JSX.Element {
             {filtered.length === 0 ? (
               <EmptyState
                 title={t('No ward in this difficulty cohort')}
-                detail="Widen the cohort filter to see the wards in your authorised scope."
+                detail={t('Widen the cohort filter to see the wards in your authorised scope.')}
               />
             ) : (
               <>
@@ -441,12 +442,12 @@ export function WardPerformancePage(): React.JSX.Element {
                   <div className="px-4 py-4" style={{ height: Math.max(220, chartRows.length * 26) }}>
                     <RankedBarChart
                       data={chartRows.map((r) => ({ label: r.wardCode, value: r.residual }))}
-                      unit=" pts"
+                      unit={t(' pts')}
                     />
                   </div>
                   <p className="border-t border-ink-100 px-4 py-3 text-[0.6875rem] leading-relaxed text-ink-500">
                     {t('Every bar carries the same hue deliberately: the residuals are small numbers on a scale built for severity, and colouring them by magnitude would imply a seriousness the arithmetic does not support. Direction is the whole reading.{0}', filtered.length > chartRows.length
-                      ? ` The ${filtered.length - chartRows.length} wards nearest the line are omitted from this chart - where the residual is small there is nothing to learn - and all ${filtered.length} appear in the register below.`
+                      ? t(' The {0} wards nearest the line are omitted from this chart - where the residual is small there is nothing to learn - and all {1} appear in the register below.', filtered.length - chartRows.length, filtered.length)
                       : '')}
                   </p>
                 </GovPanel>
@@ -460,7 +461,7 @@ export function WardPerformancePage(): React.JSX.Element {
                     columns={columns}
                     rowKey={(r) => r.wardId}
                     searchable
-                    searchPlaceholder="Search ward, code or region"
+                    searchPlaceholder={t('Search ward, code or region')}
                     pageSize={15}
                   />
                 </GovPanel>
@@ -516,7 +517,7 @@ export function WardPerformancePage(): React.JSX.Element {
                       { term: 'Slope', value: fit.slope.toFixed(3), note: t('per difficulty point') },
                       { term: 'Intercept', value: fit.intercept.toFixed(1), note: t('at zero difficulty') },
                       { term: 'R²', value: fit.rSquared.toFixed(2), note: t('variation explained') },
-                      { term: 'Typical residual', value: fit.residualSd.toFixed(1), note: t('standard error') },
+                      { term: t('Typical residual'), value: fit.residualSd.toFixed(1), note: t('standard error') },
                     ].map((item) => (
                       <div key={item.term}>
                         <dt className="label-institutional">{item.term}</dt>
@@ -540,7 +541,7 @@ export function WardPerformancePage(): React.JSX.Element {
                 <p className="text-[0.8125rem] font-semibold text-warn-700">{t('The difficulty model is illustrative')}</p>
                 <p className="mt-1 text-xs leading-relaxed text-ink-600">
                   {t("The four weights above are a reasonable prior, not a finding. They were chosen so that a reader can reconstruct every figure on this page by hand, which matters more at this stage than being precisely right. A real deployment would fit both the difficulty weighting and the expectation line on the corporation's own historic record - several years of ward returns - and would revise them each year as the ground itself changes. Until that is done, treat the residuals as a way of choosing where to send the next visit, and not as a settled judgement on any ward office.{0}", assessment.outOfScopeCount > 0
-                    ? ` The line was fitted on ${fit.fittedOn} wards, of which ${assessment.outOfScopeCount} fall outside your authorised scope and are not listed here.`
+                    ? t(' The line was fitted on {0} wards, of which {1} fall outside your authorised scope and are not listed here.', fit.fittedOn, assessment.outOfScopeCount)
                     : '')}
                 </p>
               </div>

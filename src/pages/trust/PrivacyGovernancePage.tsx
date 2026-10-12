@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { AlertTriangle, Eye, EyeOff } from 'lucide-react'
+import { AlertTriangle, Eye, EyeOff, Database, Hourglass, Lock, UserRound, ShieldCheck } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { PageBody, PageHeader, SplitLayout } from '@/components/layout/PageHeader'
 import { Badge, ClassificationBadge } from '@/components/ui/badges'
@@ -8,7 +8,7 @@ import { DataTable, type Column } from '@/components/ui/DataTable'
 import { DemonstrationNotice, EmptyState, ErrorState, LoadingState } from '@/components/ui/states'
 import { GovPanel } from '@/components/gov/GovPanel'
 import { FilterBar } from '@/components/filters/FilterBar'
-import { governanceService, securityService, type DatasetFilters } from '@/services'
+import { governanceService, securityService } from '@/services'
 import { useServiceQuery } from '@/hooks'
 import { useFilterStore, type FilterState } from '@/stores/ui.store'
 import { usePageMasthead } from '@/stores/masthead.store'
@@ -19,7 +19,10 @@ import { CLASSIFICATION_LABEL, DOMAIN_LABEL, type DataClassification, type Intel
 import type { Dataset } from '@/types/governance'
 import { ROUTES } from '@/config/navigation'
 import { t } from '@/i18n'
+import { enumLabel } from '@/utils/enum-label'
 import { registerLayer } from '@/data/runtime'
+import { SHADE } from '@/components/ui/shade'
+import { cn } from '@/utils/cn'
 
 /** The dataset register carries a genuine domain, owner department and free text. */
 function matchesDatasetGlobalFilters(d: Dataset, filters: FilterState): boolean {
@@ -53,8 +56,8 @@ const SENSITIVITY_TONE: Record<Dataset['sensitivity'], 'neutral' | 'info' | 'war
 function build$SHARING_LABEL(): Record<Dataset['sharingStatus'], string> {
   return {
   'internal-only': t('Internal only'),
-  'inter-departmental': 'Inter-departmental',
-  'state-shared': 'State-shared',
+  'inter-departmental': t('Inter-departmental'),
+  'state-shared': t('State-shared'),
   restricted: t('Restricted'),
 }
 }
@@ -81,19 +84,24 @@ export function PrivacyGovernancePage(): React.JSX.Element {
   const [search, setSearch] = useState('')
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
-  const filters: DatasetFilters = useMemo(() => {
-    const f: DatasetFilters = {}
-    if (domainFilter) f.domain = domainFilter
-    if (classificationFilter) f.classification = classificationFilter
-    if (personalDataFilter) f.containsPersonalData = personalDataFilter === 'yes'
-    if (search.trim()) f.search = search.trim()
-    return f
-  }, [domainFilter, classificationFilter, personalDataFilter, search])
-
-  const datasetsQuery = useServiceQuery(
-    ['trust-privacy-governance', 'datasets', JSON.stringify(filters)],
-    (user) => governanceService.datasets(user, filters),
-  )
+  // The register is read once and narrowed here. Keying the query on the
+  // filters re-entered the loading state on every change, which blanked the
+  // whole page - controls included - while the next result loaded.
+  const datasetsQuery = useServiceQuery(['trust-privacy-governance', 'datasets'], (user) => governanceService.datasets(user))
+  const filteredDatasets = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    return (datasetsQuery.data ?? []).filter(
+      (d) =>
+        (!domainFilter || d.domain === domainFilter) &&
+        (!classificationFilter || d.classification === classificationFilter) &&
+        (!personalDataFilter || d.containsPersonalData === (personalDataFilter === 'yes')) &&
+        (!q ||
+          d.name.toLowerCase().includes(q) ||
+          d.description.toLowerCase().includes(q) ||
+          d.purpose.toLowerCase().includes(q) ||
+          d.sourceSystem.toLowerCase().includes(q)),
+    )
+  }, [datasetsQuery.data, domainFilter, classificationFilter, personalDataFilter, search])
   const summaryQuery = useServiceQuery(['trust-privacy-governance', 'summary'], (user) => governanceService.summary(user))
   const personalDataQuery = useServiceQuery(['trust-privacy-governance', 'personal-data'], (user) => governanceService.personalData(user))
   const policiesQuery = useServiceQuery(['trust-privacy-governance', 'policies'], (user) => securityService.policies(user))
@@ -102,7 +110,7 @@ export function PrivacyGovernancePage(): React.JSX.Element {
   if (datasetsQuery.error) return <ErrorState detail={datasetsQuery.error.message} onRetry={() => datasetsQuery.refetch()} />
   if (summaryQuery.error) return <ErrorState detail={summaryQuery.error.message} onRetry={() => summaryQuery.refetch()} />
 
-  const datasets = (datasetsQuery.data ?? []).filter((d) => matchesDatasetGlobalFilters(d, globalFilters))
+  const datasets = filteredDatasets.filter((d) => matchesDatasetGlobalFilters(d, globalFilters))
   const summary = summaryQuery.data
   const personalData = personalDataQuery.data ?? []
   const selected = datasets.find((d) => d.id === selectedId) ?? datasets[0]
@@ -207,29 +215,59 @@ export function PrivacyGovernancePage(): React.JSX.Element {
 
       {summary ? (
         <MetricGrid columns={6}>
-          <Card>
-            <p className="label-institutional">{t('Datasets in register')}</p>
-            <p className="numeric mt-2 text-metric font-semibold text-ink-900">{summary.total}</p>
+          <Card className={cn(SHADE.blue.tile, 'flex items-start gap-3')}>
+            <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE.blue.chip)}>
+              <Database className="h-4 w-4" aria-hidden />
+            </span>
+            <div className="min-w-0">
+              <p className="label-institutional">{t('Datasets in register')}</p>
+              <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE.blue.value)}>{summary.total}</p>
+            </div>
           </Card>
-          <Card tone={summary.withPersonalData > 0 ? 'warn' : 'default'}>
-            <p className="label-institutional">{t('Contain personal data')}</p>
-            <p className="numeric mt-2 text-metric font-semibold text-ink-900">{summary.withPersonalData}</p>
+          <Card className={cn(SHADE[summary.withPersonalData > 0 ? 'amber' : 'green'].tile, 'flex items-start gap-3')}>
+            <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE[summary.withPersonalData > 0 ? 'amber' : 'green'].chip)}>
+              <UserRound className="h-4 w-4" aria-hidden />
+            </span>
+            <div className="min-w-0">
+              <p className="label-institutional">{t('Contain personal data')}</p>
+              <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE[summary.withPersonalData > 0 ? 'amber' : 'green'].value)}>{summary.withPersonalData}</p>
+            </div>
           </Card>
-          <Card>
-            <p className="label-institutional">{t('Restricted classification')}</p>
-            <p className="numeric mt-2 text-metric font-semibold text-ink-900">{summary.restricted}</p>
+          <Card className={cn(SHADE.teal.tile, 'flex items-start gap-3')}>
+            <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE.teal.chip)}>
+              <Lock className="h-4 w-4" aria-hidden />
+            </span>
+            <div className="min-w-0">
+              <p className="label-institutional">{t('Restricted classification')}</p>
+              <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE.teal.value)}>{summary.restricted}</p>
+            </div>
           </Card>
-          <Card>
-            <p className="label-institutional">{t('Average quality')}</p>
-            <p className="numeric mt-2 text-metric font-semibold text-ink-900">{summary.averageQuality}/100</p>
+          <Card className={cn(SHADE.blue.tile, 'flex items-start gap-3')}>
+            <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE.blue.chip)}>
+              <ShieldCheck className="h-4 w-4" aria-hidden />
+            </span>
+            <div className="min-w-0">
+              <p className="label-institutional">{t('Average quality')}</p>
+              <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE.blue.value)}>{summary.averageQuality}/100</p>
+            </div>
           </Card>
-          <Card>
-            <p className="label-institutional">{t('Shortest retention')}</p>
-            <p className="numeric mt-2 text-metric font-semibold text-ink-900">{summary.shortestRetentionMonths}mo</p>
+          <Card className={cn(SHADE.amber.tile, 'flex items-start gap-3')}>
+            <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE.amber.chip)}>
+              <Hourglass className="h-4 w-4" aria-hidden />
+            </span>
+            <div className="min-w-0">
+              <p className="label-institutional">{t('Shortest retention')}</p>
+              <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE.amber.value)}>{t('{0} months', summary.shortestRetentionMonths)}</p>
+            </div>
           </Card>
-          <Card tone={summary.withheldFromPrincipal > 0 ? 'critical' : 'default'}>
-            <p className="label-institutional">{t('Withheld from you')}</p>
-            <p className="numeric mt-2 text-metric font-semibold text-ink-900">{summary.withheldFromPrincipal}</p>
+          <Card className={cn(SHADE[summary.withheldFromPrincipal > 0 ? 'red' : 'green'].tile, 'flex items-start gap-3')}>
+            <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE[summary.withheldFromPrincipal > 0 ? 'red' : 'green'].chip)}>
+              <EyeOff className="h-4 w-4" aria-hidden />
+            </span>
+            <div className="min-w-0">
+              <p className="label-institutional">{t('Withheld from you')}</p>
+              <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE[summary.withheldFromPrincipal > 0 ? 'red' : 'green'].value)}>{summary.withheldFromPrincipal}</p>
+            </div>
           </Card>
         </MetricGrid>
       ) : null}
@@ -294,7 +332,7 @@ export function PrivacyGovernancePage(): React.JSX.Element {
         </div>
 
         {datasets.length === 0 ? (
-          <EmptyState className="mx-3 mb-3" title={t('No datasets match the current filters')} detail="Widen the filters above, or this may reflect datasets withheld from your principal - see the summary above." />
+          <EmptyState className="mx-3 mb-3" title={t('No datasets match the current filters')} detail={t('Widen the filters above, or this may reflect datasets withheld from your principal - see the summary above.')} />
         ) : (
           <SplitLayout
             className="px-3 pb-3"
@@ -307,7 +345,7 @@ export function PrivacyGovernancePage(): React.JSX.Element {
                 onRowClick={(d) => setSelectedId(d.id)}
                 activeRowKey={selected?.id}
                 searchable
-                searchPlaceholder="Refine within results"
+                searchPlaceholder={t('Refine within results')}
                 initialSort={{ columnId: 'personalData', direction: 'desc' }}
               />
             }
@@ -316,7 +354,7 @@ export function PrivacyGovernancePage(): React.JSX.Element {
                 <Card tone="sunken">
                   <div className="flex flex-wrap items-center gap-1.5">
                     <ClassificationBadge classification={selected.classification} />
-                    <Badge tone={SENSITIVITY_TONE[selected.sensitivity]}>{selected.sensitivity} sensitivity</Badge>
+                    <Badge tone={SENSITIVITY_TONE[selected.sensitivity]}>{t('{0} sensitivity', enumLabel(selected.sensitivity))}</Badge>
                     {selected.containsPersonalData ? <Badge tone="warn">{t('Contains personal data')}</Badge> : null}
                   </div>
                   <p className="mt-2 text-[0.8125rem] font-semibold text-ink-900">{selected.name}</p>
@@ -327,7 +365,7 @@ export function PrivacyGovernancePage(): React.JSX.Element {
                     <DefinitionRow label={t('Owner department')}>{departmentName(selected.ownerDepartmentId)}</DefinitionRow>
                     <DefinitionRow label={t('Owner officer')}>{officerDisplayName(selected.ownerOfficerId)}</DefinitionRow>
                     <DefinitionRow label={t('Domain')}>{DOMAIN_LABEL[selected.domain]}</DefinitionRow>
-                    <DefinitionRow label={t('Retention')}>{selected.retentionMonths} months</DefinitionRow>
+                    <DefinitionRow label={t('Retention')}>{t('{0} months', selected.retentionMonths)}</DefinitionRow>
                     <DefinitionRow label={t('Source system')}>{selected.sourceSystem}</DefinitionRow>
                     <DefinitionRow label={t('Sharing status')}>
                       <Badge tone={SHARING_TONE[selected.sharingStatus]}>{SHARING_LABEL[selected.sharingStatus]}</Badge>
@@ -355,8 +393,8 @@ export function PrivacyGovernancePage(): React.JSX.Element {
                   {selected.minimisationApplied.length === 0 ? (
                     <p className="text-[0.6875rem] leading-relaxed text-ink-400">
                       {selected.containsPersonalData
-                        ? 'None recorded - this dataset contains personal data with no declared minimisation measure.'
-                        : 'None recorded. This dataset does not contain personal data.'}
+                        ? t('None recorded - this dataset contains personal data with no declared minimisation measure.')
+                        : t('None recorded. This dataset does not contain personal data.')}
                     </p>
                   ) : (
                     <ul className="space-y-1">
@@ -394,7 +432,7 @@ export function PrivacyGovernancePage(): React.JSX.Element {
         ) : personalData.length === 0 ? (
           <EmptyState compact title={t('No dataset reachable by your principal carries personal data')} />
         ) : (
-          <div className="grid gap-2.5 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
             {personalData.map(({ dataset, minimisation, hasMinimisation }) => (
               <div
                 key={dataset.id}
@@ -403,7 +441,7 @@ export function PrivacyGovernancePage(): React.JSX.Element {
                 <div className="flex flex-wrap items-center gap-1.5">
                   <ClassificationBadge classification={dataset.classification} showIcon={false} />
                   <Badge tone={hasMinimisation ? 'positive' : 'critical'} dot>
-                    {hasMinimisation ? 'Minimisation recorded' : 'No minimisation recorded'}
+                    {hasMinimisation ? t('Minimisation recorded') : t('No minimisation recorded')}
                   </Badge>
                 </div>
                 <p className="mt-1.5 text-[0.8125rem] font-medium text-ink-800">{dataset.name}</p>
@@ -431,7 +469,7 @@ export function PrivacyGovernancePage(): React.JSX.Element {
         </div>
 
         <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-1">
         <GovPanel title={t('Purpose limitation')} tone="amber">
           <p className="text-[0.8125rem] leading-relaxed text-ink-700">
             {t('Every dataset in the register above is provisioned against a single declared purpose - the institutional reason the corporation is entitled to hold and process it')}
@@ -440,7 +478,7 @@ export function PrivacyGovernancePage(): React.JSX.Element {
         </GovPanel>
         <GovPanel title={t('Minimisation')} tone="red">
           <p className="text-[0.8125rem] leading-relaxed text-ink-700">
-            {t('Minimisation is applied at the connector boundary, before a record ever reaches the intelligence layer - not as a downstream redaction step. {0} in this register contain personal data; the explicit measure recorded against each - identity fields dropped at ingestion, records aggregated below individual level, or pseudonymisation before analysis - is shown per dataset above, and any gap is flagged rather than assumed.', summary ? `${summary.withPersonalData} dataset(s)` : 'Datasets')}
+            {t('Minimisation is applied at the connector boundary, before a record ever reaches the intelligence layer - not as a downstream redaction step. {0} in this register contain personal data; the explicit measure recorded against each - identity fields dropped at ingestion, records aggregated below individual level, or pseudonymisation before analysis - is shown per dataset above, and any gap is flagged rather than assumed.', summary ? t('{0} dataset(s)', summary.withPersonalData) : t('Datasets'))}
           </p>
         </GovPanel>
         <GovPanel title={t('Retention')} tone="amber">

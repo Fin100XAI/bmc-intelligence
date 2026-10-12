@@ -39,6 +39,7 @@ import { GovPanel } from '@/components/gov/GovPanel'
 import { ContributionBars } from '@/components/charts'
 import { usePageMasthead } from '@/stores/masthead.store'
 import { t } from '@/i18n'
+import { CONFIDENCE_LABEL } from '@/types/common'
 
 /**
  * Scenario Intelligence - the studio for all three deterministic scenario
@@ -212,17 +213,17 @@ export function ScenarioIntelligencePage(): React.JSX.Element {
                       <Button
                         variant="primary"
                         disabled={!canRunMonsoon || monsoonPending}
-                        title={canRunMonsoon ? undefined : 'Your role does not hold situation-room:edit.'}
+                        title={canRunMonsoon ? undefined : t('Your role does not hold situation-room:edit.')}
                         onClick={() => {
                           setMonsoonPending(true)
                           setMonsoonError(null)
                           runMonsoon(monsoonInputs)
                             .then(setMonsoonResult)
-                            .catch((e: unknown) => setMonsoonError(e instanceof Error ? e.message : 'The scenario could not be run.'))
+                            .catch((e: unknown) => setMonsoonError(e instanceof Error ? e.message : t('The scenario could not be run.')))
                             .finally(() => setMonsoonPending(false))
                         }}
                       >
-                        {monsoonPending ? 'Running…' : 'Run scenario'}
+                        {monsoonPending ? 'Running…' : t('Run scenario')}
                       </Button>
                       <Button variant="ghost" icon={<RotateCcw className="h-3 w-3" />} onClick={() => setMonsoonResult(null)}>
                         {t('Reset')}
@@ -248,9 +249,9 @@ export function ScenarioIntelligencePage(): React.JSX.Element {
                         <div className="mb-3 flex flex-wrap items-center gap-1.5">
                           <SimulationBadge />
                           <Badge tone="warn">{t('Simulation - not forecast')}</Badge>
-                          <Badge tone={monsoonResult.confidence === 'high' ? 'positive' : monsoonResult.confidence === 'medium' ? 'warn' : 'risk'}>{monsoonResult.confidence} confidence</Badge>
+                          <Badge tone={monsoonResult.confidence === 'high' ? 'positive' : monsoonResult.confidence === 'medium' ? 'warn' : 'risk'}>{t('{0} confidence', CONFIDENCE_LABEL[monsoonResult.confidence])}</Badge>
                           <div className="flex-1" />
-                          <Button size="xs" variant="outline" icon={<Bookmark className="h-3 w-3" />} onClick={() => saveScenario('Monsoon scenario', `City risk ${monsoonResult.cityRisk}/100 · readiness ${monsoonResult.readinessScore}/100 · ${monsoonResult.spotsAtRisk} spots at risk`)}>
+                          <Button size="xs" variant="outline" icon={<Bookmark className="h-3 w-3" />} onClick={() => saveScenario(t('Monsoon scenario'), t('City risk {0}/100 · readiness {1}/100 · {2} spots at risk', monsoonResult.cityRisk, monsoonResult.readinessScore, monsoonResult.spotsAtRisk))}>
                             {t('Save scenario')}
                           </Button>
                         </div>
@@ -293,7 +294,7 @@ export function ScenarioIntelligencePage(): React.JSX.Element {
                         ) : null}
                       </>
                     ) : (
-                      <EmptyState title={t('No scenario run yet')} detail="Adjust the inputs and select Run scenario to see the modelled city and ward-level result." />
+                      <EmptyState title={t('No scenario run yet')} detail={t('Adjust the inputs and select Run scenario to see the modelled city and ward-level result.')} />
                     )}
                   </div>
                 </div>
@@ -322,17 +323,17 @@ export function ScenarioIntelligencePage(): React.JSX.Element {
                       <Button
                         variant="primary"
                         disabled={!canRunBudget || budgetPending}
-                        title={canRunBudget ? undefined : 'Your role does not hold budget:edit.'}
+                        title={canRunBudget ? undefined : t('Your role does not hold budget:edit.')}
                         onClick={() => {
                           setBudgetPending(true)
                           setBudgetError(null)
                           runBudget(budgetInputs)
                             .then(setBudgetResult)
-                            .catch((e: unknown) => setBudgetError(e instanceof Error ? e.message : 'The scenario could not be run.'))
+                            .catch((e: unknown) => setBudgetError(e instanceof Error ? e.message : t('The scenario could not be run.')))
                             .finally(() => setBudgetPending(false))
                         }}
                       >
-                        {budgetPending ? 'Running…' : 'Run scenario'}
+                        {budgetPending ? 'Running…' : t('Run scenario')}
                       </Button>
                       <Button variant="ghost" icon={<RotateCcw className="h-3 w-3" />} onClick={() => setBudgetResult(null)}>
                         {t('Reset')}
@@ -357,9 +358,9 @@ export function ScenarioIntelligencePage(): React.JSX.Element {
                         <div className="mb-3 flex flex-wrap items-center gap-1.5">
                           <SimulationBadge />
                           <Badge tone="warn">{t('Simulation - not forecast')}</Badge>
-                          <Badge tone={budgetResult.confidence === 'high' ? 'positive' : budgetResult.confidence === 'medium' ? 'warn' : 'risk'}>{budgetResult.confidence} confidence</Badge>
+                          <Badge tone={budgetResult.confidence === 'high' ? 'positive' : budgetResult.confidence === 'medium' ? 'warn' : 'risk'}>{t('{0} confidence', CONFIDENCE_LABEL[budgetResult.confidence])}</Badge>
                           <div className="flex-1" />
-                          <Button size="xs" variant="outline" icon={<Bookmark className="h-3 w-3" />} onClick={() => saveScenario('Budget scenario', `Utilisation ${formatPercent(budgetResult.scenario.utilisationPct)} · Δ ${formatCrore(budgetResult.deltaCrore)}`)}>
+                          <Button size="xs" variant="outline" icon={<Bookmark className="h-3 w-3" />} onClick={() => saveScenario(t('Budget scenario'), `Utilisation ${formatPercent(budgetResult.scenario.utilisationPct)} · Δ ${formatCrore(budgetResult.deltaCrore)}`)}>
                             {t('Save scenario')}
                           </Button>
                         </div>
@@ -403,7 +404,7 @@ export function ScenarioIntelligencePage(): React.JSX.Element {
                         </MetricGrid>
                       </>
                     ) : (
-                      <EmptyState title={t('No scenario run yet')} detail="Adjust the inputs and select Run scenario to see the modelled city budget position." />
+                      <EmptyState title={t('No scenario run yet')} detail={t('Adjust the inputs and select Run scenario to see the modelled city budget position.')} />
                     )}
                   </div>
                 </div>
@@ -448,7 +449,7 @@ export function ScenarioIntelligencePage(): React.JSX.Element {
                           <SimulationBadge />
                           <Badge tone="warn">{t('Simulation - not forecast')}</Badge>
                           <div className="flex-1" />
-                          <Button size="xs" variant="outline" icon={<Bookmark className="h-3 w-3" />} onClick={() => saveScenario('Planning scenario', `Adequacy ${planningResult.city.scenarioAdequacy}/100 (Δ ${formatDelta(planningResult.city.delta)}) · ${planningResult.city.newGapCount} new gaps`)}>
+                          <Button size="xs" variant="outline" icon={<Bookmark className="h-3 w-3" />} onClick={() => saveScenario(t('Planning scenario'), t('Adequacy {0}/100 (Δ {1}) · {2} new gaps', planningResult.city.scenarioAdequacy, formatDelta(planningResult.city.delta), planningResult.city.newGapCount))}>
                             {t('Save scenario')}
                           </Button>
                         </div>
@@ -483,7 +484,7 @@ export function ScenarioIntelligencePage(): React.JSX.Element {
                         <p className="mt-3 text-[0.6875rem] leading-relaxed text-ink-400">{PLANNING_SIMULATION_STATEMENT}</p>
                       </>
                     ) : (
-                      <EmptyState title={t('No scenario run yet')} detail="Adjust the inputs and select Run scenario to see the modelled per-ward and city-wide adequacy position." />
+                      <EmptyState title={t('No scenario run yet')} detail={t('Adjust the inputs and select Run scenario to see the modelled per-ward and city-wide adequacy position.')} />
                     )}
                   </div>
                 </div>
@@ -496,7 +497,7 @@ export function ScenarioIntelligencePage(): React.JSX.Element {
           <GovPanel title={t('Saved scenarios')} tone="amber" dense>
             <p className="px-4 pt-4 pb-3 text-xs leading-relaxed text-ink-500">{t('Held in this session only, across all three engines.')}</p>
             {saved.length === 0 ? (
-              <EmptyState className="m-4" compact title={t('No scenarios saved yet')} detail="Run a scenario above and select Save scenario to keep a reference here." />
+              <EmptyState className="m-4" compact title={t('No scenarios saved yet')} detail={t('Run a scenario above and select Save scenario to keep a reference here.')} />
             ) : (
               <ul className="divide-y divide-ink-50 px-4 pb-4">
                 {saved.map((s) => (

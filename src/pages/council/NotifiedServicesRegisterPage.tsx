@@ -230,7 +230,7 @@ export function NotifiedServicesRegisterPage(): React.JSX.Element {
         </div>
       </Card>
 
-      <FilterBar show={['department', 'search']} searchPlaceholder="Search by service or department" />
+      <FilterBar show={['department', 'search']} searchPlaceholder={t('Search by service or department')} />
 
       <MetricGrid columns={4}>
         <MetricCard
@@ -272,7 +272,7 @@ export function NotifiedServicesRegisterPage(): React.JSX.Element {
           {t('One row per notified service, aggregated across every ward and counter that issues it.')}
         </p>
         {filtered.length === 0 ? (
-          <EmptyState className="mx-3 mb-3" title={t('No notified services match the current filters')} detail="Clear a filter to widen the register." />
+          <EmptyState className="mx-3 mb-3" title={t('No notified services match the current filters')} detail={t('Clear a filter to widen the register.')} />
         ) : (
           <DataTable
             rows={filtered}

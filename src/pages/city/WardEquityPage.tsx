@@ -30,6 +30,7 @@ import { DEMO_NOW } from '@/utils/deterministic'
 import { formatCrore, formatDelta, formatNumber, formatPercent, formatRupees } from '@/utils/format'
 import { t } from '@/i18n'
 import { registerLayer } from '@/data/runtime'
+import { SHADE } from '@/components/ui/shade'
 
 /** No ward or quadrant filter exists on this page today, so the global bar
  *  carries all three real dimensions this record has: ward, quadrant (as
@@ -77,6 +78,9 @@ function matchesGlobalFilters(r: WardEquityRow, filters: FilterState): boolean {
  * ward, which is the only basis on which either can be relied upon.
  */
 
+/** Each quadrant's card shade, by what it means (`@/components/ui/shade`). */
+const QUADRANT_SHADE = { underserved: 'red', prioritised: 'green', 'over-provisioned': 'amber', steady: 'blue' } as const
+
 const QUADRANT_TONE: Record<EquityQuadrant, BadgeTone> = {
   underserved: 'critical',
   prioritised: 'positive',
@@ -85,21 +89,23 @@ const QUADRANT_TONE: Record<EquityQuadrant, BadgeTone> = {
 }
 
 /** Reading order of the quadrant grid: need rises upward, provision rightward. */
-const QUADRANT_GRID: Array<{ id: EquityQuadrant; axis: string }> = [
-  { id: 'underserved', axis: 'High need · low provision' },
-  { id: 'prioritised', axis: 'High need · high provision' },
-  { id: 'steady', axis: 'Low need · low provision' },
-  { id: 'over-provisioned', axis: 'Low need · high provision' },
-]
+function quadrantGrid(): Array<{ id: EquityQuadrant; axis: string }> {
+  return [
+    { id: 'underserved', axis: t('High need · low provision') },
+    { id: 'prioritised', axis: t('High need · high provision') },
+    { id: 'steady', axis: t('Low need · low provision') },
+    { id: 'over-provisioned', axis: t('Low need · high provision') },
+  ]
+}
 
 function build$BREADCRUMBS() {
-  return [{ label: t('Wards & Localities') }, { label: t('Ward Equity & Allocation') }]
+  return [{ label: t('Wards & Citizens') }, { label: t('Ward Intelligence') }, { label: t('Equity & allocation') }]
 }
 let BREADCRUMBS: ReturnType<typeof build$BREADCRUMBS> = build$BREADCRUMBS()
 registerLayer(() => {
   BREADCRUMBS = build$BREADCRUMBS()
 })
-const EYEBROW = 'Wards & Localities'
+const EYEBROW = 'Wards & Citizens'
 const TITLE = 'Ward Equity & Allocation'
 
 export function WardEquityPage(): React.JSX.Element {
@@ -176,7 +182,7 @@ export function WardEquityPage(): React.JSX.Element {
         <EmptyState
           icon={<Scale className="h-4 w-4" aria-hidden />}
           title={t('No ward falls within your authorised scope')}
-          detail="Equity is a comparison between wards. With no ward in scope there is nothing to compare, and no partial figure is shown in its place."
+          detail={t('Equity is a comparison between wards. With no ward in scope there is nothing to compare, and no partial figure is shown in its place.')}
         />
       </PageBody>
     )
@@ -290,7 +296,7 @@ export function WardEquityPage(): React.JSX.Element {
         eyebrow={EYEBROW}
         breadcrumbs={BREADCRUMBS}
         freshness={freshness}
-        controls={<FilterBar show={['ward', 'status', 'search']} statusOptions={quadrantStatusOptions} searchPlaceholder="Search wards" />}
+        controls={<FilterBar show={['ward', 'status', 'search']} statusOptions={quadrantStatusOptions} searchPlaceholder={t('Search wards')} />}
       />
 
       <DemonstrationNotice />
@@ -317,16 +323,16 @@ export function WardEquityPage(): React.JSX.Element {
           tone={quadrantCounts.underserved > 0 ? 'critical' : 'positive'}
           icon={<Scale className="h-4 w-4" />}
           origin="demonstration"
-          explanation="Wards whose need score sits at or above the cohort median while their capital allocation per resident sits below it. Both splits are cohort medians, not fixed thresholds."
+          explanation={t('Wards whose need score sits at or above the cohort median while their capital allocation per resident sits below it. Both splits are cohort medians, not fixed thresholds.')}
           background="red"
         />
         <MetricCard
           label={t('Widest allocation gap')}
           value={widestGap ? formatDelta(widestGap.equityGap, ' pp') : '-'}
-          support={widestGap ? widestGap.label : 'No ward is provisioned below its need percentile'}
+          support={widestGap ? widestGap.label : t('No ward is provisioned below its need percentile')}
           tone={widestGap && widestGap.equityGap <= -15 ? 'critical' : 'warn'}
           icon={<ArrowDownRight className="h-4 w-4" />}
-          explanation="The signed difference between a ward's provision percentile and its need percentile, in percentile points. Negative means the ward is served below what its own recorded condition indicates."
+          explanation={t('The signed difference between a ward\'s provision percentile and its need percentile, in percentile points. Negative means the ward is served below what its own recorded condition indicates.')}
           background="amber"
         />
         <MetricCard
@@ -335,7 +341,7 @@ export function WardEquityPage(): React.JSX.Element {
           support={t('Against {0} in the least-needy quarter · {1} {2} per resident', formatRupees(quartileSpend.lowestNeedPerResident), formatRupees(Math.abs(quartileSpend.differencePerResident)), quartileSpend.differencePerResident < 0 ? 'less' : 'more')}
           tone={quartileSpend.differencePerResident < 0 ? 'critical' : 'positive'}
           icon={<Users className="h-4 w-4" />}
-          explanation={`Mean capital spend per resident across the ${quartileSpend.quartileSize} highest-need wards set against the ${quartileSpend.quartileSize} lowest-need wards. This is the headline inequity figure: if the neediest quarter receives less per head than the least needy, allocation is running against condition.`}
+          explanation={t('Mean capital spend per resident across the {0} highest-need wards set against the {1} lowest-need wards. This is the headline inequity figure: if the neediest quarter receives less per head than the least needy, allocation is running against condition.', quartileSpend.quartileSize, quartileSpend.quartileSize)}
           background="green"
         />
         <MetricCard
@@ -363,16 +369,12 @@ export function WardEquityPage(): React.JSX.Element {
                 <span>{t('Capital per resident rises rightward')}</span>
               </div>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                {QUADRANT_GRID.map(({ id, axis }) => {
+                {quadrantGrid().map(({ id, axis }) => {
                   const members = byQuadrant[id]
                   return (
                     <div
                       key={id}
-                      className={
-                        id === 'underserved'
-                          ? 'rounded-lg border border-crit-200 bg-crit-50/60 p-3'
-                          : 'rounded-lg border border-ink-100 bg-surface-sunken p-3'
-                      }
+                      className={`rounded-lg border p-3 ${SHADE[QUADRANT_SHADE[id]].tile}`}
                     >
                       <div className="flex items-center justify-between gap-2">
                         <Badge tone={QUADRANT_TONE[id]} size="sm">
@@ -407,7 +409,7 @@ export function WardEquityPage(): React.JSX.Element {
                 })}
               </div>
               <p className="mt-3 text-[0.6875rem] leading-relaxed text-ink-500">
-                {t('Provision is measured on capital')}{' '}<span className="font-semibold">allocated</span>{' '}{t('per resident rather than capital spent. Allocation is the decision the corporation makes and the thing a budget can correct; under-spend against an allocation is a delivery failure, which the utilisation column answers separately.')}
+                {t('Provision is measured on capital')}{' '}<span className="font-semibold">{t('allocated')}</span>{' '}{t('per resident rather than capital spent. Allocation is the decision the corporation makes and the thing a budget can correct; under-spend against an allocation is a delivery failure, which the utilisation column answers separately.')}
               </p>
             </div>
           </GovPanel>
@@ -422,11 +424,11 @@ export function WardEquityPage(): React.JSX.Element {
             rowKey={(r) => r.wardId}
             pageSize={14}
             exportName="ward-equity-and-allocation"
-            ariaLabel="Ward equity and allocation register"
-            searchPlaceholder="Search wards"
+            ariaLabel={t('Ward equity and allocation register')}
+            searchPlaceholder={t('Search wards')}
             initialSort={{ columnId: 'gap', direction: 'asc' }}
             emptyTitle={t('No ward matches the current search')}
-            emptyDetail="Clear the search to restore the full cohort."
+            emptyDetail={t('Clear the search to restore the full cohort.')}
           />
         </GovPanel>
         </div>
@@ -451,7 +453,7 @@ export function WardEquityPage(): React.JSX.Element {
                 <EmptyState
                   compact
                   title={t('No ward is provisioned below its need')}
-                  detail="Across this cohort, every ward's allocation percentile sits at or above its need percentile."
+                  detail={t('Across this cohort, every ward\'s allocation percentile sits at or above its need percentile.')}
                 />
               </div>
             ) : (

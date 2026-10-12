@@ -51,11 +51,11 @@ const FRESHNESS = {
 const STAGES: AIAgentStage[] = ['draft', 'ai-analysis', 'human-review', 'approved-action']
 function build$STAGE_LABEL(): Record<AIAgentStage, string> {
   return {
-  draft: t('Draft'),
-  'ai-analysis': t('AI Analysis'),
-  'human-review': t('Human Review'),
-  'approved-action': t('Approved Action'),
-}
+    draft: t('Draft'),
+    'ai-analysis': t('AI Analysis'),
+    'human-review': t('Human Review'),
+    'approved-action': t('Approved Action'),
+  }
 }
 let STAGE_LABEL: Record<AIAgentStage, string> = build$STAGE_LABEL()
 registerLayer(() => {
@@ -201,11 +201,14 @@ export function AIAgentsPage(): React.JSX.Element {
                       key={s}
                       className={cn(
                         'rounded-lg border p-2',
-                        s === 'approved-action' ? 'border-ok-200 bg-ok-50/50' : 'border-ink-100 bg-surface',
+                        s === 'approved-action' || s === 'human-review' ? 'border-ok-200 bg-ok-50/50' : 'border-ink-100 bg-surface',
                       )}
                     >
                       <p className="text-[0.625rem] font-semibold text-ink-400">{t('Stage {0}', i + 1)}</p>
-                      <p className="text-[0.8125rem] font-semibold text-ink-800">{STAGE_LABEL[s]}</p>
+                      <p className="flex items-center gap-1 text-[0.8125rem] font-semibold text-ink-800">
+                        {s === 'approved-action' || s === 'human-review' ? <UserCheck className="h-3 w-3 text-ok-700" aria-hidden /> : null}
+                        {STAGE_LABEL[s]}
+                      </p>
                       <p className="mt-0.5 text-[0.625rem] leading-relaxed text-ink-500">{STAGE_DESCRIPTION[s]}</p>
                     </div>
                   ))}
@@ -215,7 +218,7 @@ export function AIAgentsPage(): React.JSX.Element {
           </Card>
 
           <MetricGrid columns={3}>
-            <MetricCard label={t('Agents registered')} value={filteredAgents.length} support={`${active} active`} icon={<Bot className="h-4 w-4" />} background="red" />
+            <MetricCard label={t('Agents registered')} value={filteredAgents.length} support={t('{0} active', active)} icon={<Bot className="h-4 w-4" />} background="red" />
             <MetricCard
               label={t('Awaiting human review')}
               value={atHumanReview}
@@ -238,7 +241,7 @@ export function AIAgentsPage(): React.JSX.Element {
               {t('Each agent, its current lifecycle stage and 30-day activity.')}
             </p>
             {filteredAgents.length === 0 ? (
-              <EmptyState className="m-3" title={t('No agents match the current filters')} detail="Widen the date range or clear a filter to see more results." />
+              <EmptyState className="m-3" title={t('No agents match the current filters')} detail={t('Widen the date range or clear a filter to see more results.')} />
             ) : (
             <ul className="divide-y divide-ink-50">
               {filteredAgents.map((agent) => (
@@ -280,7 +283,13 @@ export function AIAgentsPage(): React.JSX.Element {
             in flow, so a panel below a pinned one would slide up underneath it. */}
         <div className="xl:col-span-4">
           <div className="scrollbar-rail flex flex-col gap-3 xl:sticky xl:top-[3.75rem] xl:max-h-[calc(100vh-4.5rem)] xl:overflow-y-auto">
-            {selected ? <AgentDetail agent={selected} /> : <Card><EmptyState title={t('No agent selected')} detail="Select an agent to read its detail." /></Card>}
+            {selected ? (
+              <AgentDetail agent={selected} />
+            ) : (
+              <Card>
+                <EmptyState title={t('No agent selected')} detail={t('Select an agent to read its detail.')} />
+              </Card>
+            )}
 
             <DemonstrationNotice />
           </div>
@@ -305,6 +314,7 @@ function AgentDetail({ agent }: { agent: AIAgent }): React.JSX.Element {
           <DefinitionRow label={t('Domain')}>{DOMAIN_LABEL[agent.domain]}</DefinitionRow>
           <DefinitionRow label={t('Model')}>{model?.name ?? agent.modelId}</DefinitionRow>
           <DefinitionRow label={t('Accountable officer')}>{OFFICER_BY_ID.get(agent.ownerId)?.designation ?? agent.ownerId}</DefinitionRow>
+          <DefinitionRow label={t('Autonomy')}>{t('Advisory only - a named officer approves')}</DefinitionRow>
           <DefinitionRow label={t('Runs (30 days)')}>{agent.runsLast30d}</DefinitionRow>
           <DefinitionRow label={t('Human approval rate')}>{formatPercent(agent.humanApprovalRate)}</DefinitionRow>
           <DefinitionRow label={t('Last run')}>{formatRelative(agent.lastRunAt)}</DefinitionRow>

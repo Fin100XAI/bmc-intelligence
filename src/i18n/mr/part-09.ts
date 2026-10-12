@@ -198,7 +198,6 @@ export const MR_PART_09: Record<string, string> = {
   'All defect types': 'सर्व दोष प्रकार',
   'All evaluation states': 'सर्व मूल्यमापन अवस्था',
   'All incidents': 'सर्व घटना',
-  'All kinds': 'सर्व प्रकार',
   'All maturities': 'सर्व परिपक्वता स्तर',
   'All models': 'सर्व प्रारूपे',
   'All outcomes': 'सर्व निष्कर्ष',

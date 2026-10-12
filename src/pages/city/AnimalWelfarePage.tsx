@@ -116,8 +116,8 @@ export function AnimalWelfarePage(): React.JSX.Element {
     return (
       <PageBody>
         <PageHeader
-          eyebrow={t('City Intelligence')}
-          breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Animal Welfare') }]}
+          eyebrow={t('City Services')}
+          breadcrumbs={[{ label: t('City Services') }, { label: t('Public Health') }, { label: t('Rabies & animal birth control') }]}
         />
         <LoadingState variant="metrics" />
         <LoadingState variant="table" rows={8} />
@@ -128,8 +128,8 @@ export function AnimalWelfarePage(): React.JSX.Element {
     return (
       <PageBody>
         <PageHeader
-          eyebrow={t('City Intelligence')}
-          breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Animal Welfare') }]}
+          eyebrow={t('City Services')}
+          breadcrumbs={[{ label: t('City Services') }, { label: t('Public Health') }, { label: t('Rabies & animal birth control') }]}
         />
         <ErrorState
           detail={error.message}
@@ -344,14 +344,14 @@ export function AnimalWelfarePage(): React.JSX.Element {
   return (
     <PageBody>
       <PageHeader
-        eyebrow={t('City Intelligence')}
-        breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Animal Welfare') }]}
+        eyebrow={t('City Services')}
+        breadcrumbs={[{ label: t('City Services') }, { label: t('Public Health') }, { label: t('Rabies & animal birth control') }]}
         freshness={freshness}
       />
 
       <DemonstrationNotice />
 
-      <FilterBar show={['ward', 'search']} searchPlaceholder="Search units and wards" />
+      <FilterBar show={['ward', 'search']} searchPlaceholder={t('Search units and wards')} />
 
       <MetricGrid columns={4}>
         <MetricCard
@@ -369,7 +369,7 @@ export function AnimalWelfarePage(): React.JSX.Element {
           }
           progress={{ value: sterilisedCoveragePct, max: 100 }}
           icon={<ClipboardCheck className="h-4 w-4" />}
-          explanation="Weighted by the stray population each ward carries rather than averaged across wards, so a small ward with high coverage cannot offset a dense ward with low coverage. Seventy per cent sustained is the threshold below which a population does not fall."
+          explanation={t('Weighted by the stray population each ward carries rather than averaged across wards, so a small ward with high coverage cannot offset a dense ward with low coverage. Seventy per cent sustained is the threshold below which a population does not fall.')}
           background="red"
         />
         <MetricCard
@@ -380,7 +380,7 @@ export function AnimalWelfarePage(): React.JSX.Element {
           deltaPct={biteMovementPct}
           deltaHigherIsBetter={false}
           icon={<ShieldAlert className="h-4 w-4" />}
-          explanation="The outcome residents actually experience. Cases are counted at municipal facilities and never described - no complainant, patient or address sits behind this figure."
+          explanation={t('The outcome residents actually experience. Cases are counted at municipal facilities and never described - no complainant, patient or address sits behind this figure.')}
           background="amber"
         />
         <MetricCard
@@ -416,7 +416,7 @@ export function AnimalWelfarePage(): React.JSX.Element {
               <EmptyState
                 className="mx-3 mb-3"
                 title={t('No ward outcome matches the current filters')}
-                detail="Clear a filter to widen the register."
+                detail={t('Clear a filter to widen the register.')}
               />
             ) : (
               <DataTable rows={filteredSignals} columns={signalColumns} rowKey={(w) => w.wardId} pageSize={12} />
@@ -431,7 +431,7 @@ export function AnimalWelfarePage(): React.JSX.Element {
               <EmptyState
                 className="mx-3 mb-3"
                 title={t('No animal welfare units match the current filters')}
-                detail="Clear a filter to widen the register."
+                detail={t('Clear a filter to widen the register.')}
               />
             ) : (
               <DataTable rows={filteredUnits} columns={unitColumns} rowKey={(u) => u.id} pageSize={12} />
@@ -477,7 +477,7 @@ export function AnimalWelfarePage(): React.JSX.Element {
             </p>
             <div className="px-4 pb-4" style={{ height: Math.max(210, worstWards.length * 26) }}>
               {worstWards.length === 0 ? (
-                <EmptyState title={t('No ward outcome recorded')} detail="Clear a filter to widen the comparison." compact />
+                <EmptyState title={t('No ward outcome recorded')} detail={t('Clear a filter to widen the comparison.')} compact />
               ) : (
                 <RankedBarChart
                   data={worstWards.map((w) => ({ label: wardShortName(w.wardId), value: w.bitesPer10kPopulation }))}

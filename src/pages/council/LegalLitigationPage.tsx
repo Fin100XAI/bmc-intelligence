@@ -411,7 +411,7 @@ export function LegalLitigationPage(): React.JSX.Element {
               </div>
             </div>
             {filtered.length === 0 ? (
-              <EmptyState title={t('No matters match the current filters')} detail="Clear a filter to widen the register." />
+              <EmptyState title={t('No matters match the current filters')} detail={t('Clear a filter to widen the register.')} />
             ) : (
               <DataTable rows={filtered} columns={caseColumns} rowKey={(c) => c.id} pageSize={12} />
             )}
@@ -443,7 +443,7 @@ export function LegalLitigationPage(): React.JSX.Element {
                   colour: CASE_STATUS_COLOUR[s.status],
                 }))}
                 centreValue={String(cases.length)}
-                centreLabel="matters"
+                centreLabel={t('matters')}
               />
             </div>
           </GovPanel>

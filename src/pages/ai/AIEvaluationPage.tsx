@@ -50,10 +50,10 @@ const VERDICT_TONE: Record<AIEvaluation['verdict'], 'positive' | 'critical' | 'w
 }
 function build$VERDICT_LABEL(): Record<AIEvaluation['verdict'], string> {
   return {
-  passed: t('Passed'),
-  failed: t('Failed'),
-  're-evaluation-due': t('Re-evaluation due'),
-}
+    passed: t('Passed'),
+    failed: t('Failed'),
+    're-evaluation-due': t('Re-evaluation due'),
+  }
 }
 let VERDICT_LABEL: Record<AIEvaluation['verdict'], string> = build$VERDICT_LABEL()
 registerLayer(() => {
@@ -145,7 +145,7 @@ export function AIEvaluationPage(): React.JSX.Element {
       <div className="grid grid-cols-1 gap-3 xl:grid-cols-12">
         <div className="flex min-w-0 flex-col gap-3 xl:col-span-8">
           <MetricGrid columns={3}>
-            <MetricCard label={t('Models evaluated')} value={evaluations.length} support={`${passed} passing`} icon={<FlaskConical className="h-4 w-4" />} background="amber" />
+            <MetricCard label={t('Models evaluated')} value={evaluations.length} support={t('{0} passing', passed)} icon={<FlaskConical className="h-4 w-4" />} background="amber" />
             <MetricCard
               label={t('Failing evaluation')}
               value={failed}
@@ -174,9 +174,9 @@ export function AIEvaluationPage(): React.JSX.Element {
               {t('One run per model. Select a run to open its dimension scores.')}
             </p>
             {evaluations.length === 0 ? (
-              <EmptyState title={t('No evaluations')} detail="No model evaluation runs are on record." />
+              <EmptyState title={t('No evaluations')} detail={t('No model evaluation runs are on record.')} />
             ) : filteredEvaluations.length === 0 ? (
-              <EmptyState title={t('No evaluations match the current filters')} detail="Widen the date range or clear a filter to see more results." />
+              <EmptyState title={t('No evaluations match the current filters')} detail={t('Widen the date range or clear a filter to see more results.')} />
             ) : (
               <ul className="divide-y divide-ink-50">
                 {filteredEvaluations.map((evaluation) => (
@@ -229,7 +229,7 @@ export function AIEvaluationPage(): React.JSX.Element {
             {selected ? (
               <>
                 <GovPanel
-                  title={`${selected.modelName} v${selected.modelVersion}`}
+                  title={t('{0} v{1}', selected.modelName, selected.modelVersion)}
                   tone="red"
                   actions={<Badge tone={VERDICT_TONE[selected.verdict]}>{VERDICT_LABEL[selected.verdict]}</Badge>}
                 >
@@ -255,13 +255,13 @@ export function AIEvaluationPage(): React.JSX.Element {
                               {d.score}
                             </span>
                             <span className="mx-1 text-ink-300">/</span>
-                            threshold {d.threshold}
+                            {t('threshold {0}', d.threshold)}
                           </span>
                         </div>
                         <div className="mt-1 flex items-center gap-2">
                           <ProgressBar value={d.score} className="flex-1" />
                           <Badge tone={d.passed ? 'positive' : 'critical'} size="sm">
-                            {d.passed ? 'Pass' : 'Fail'}
+                            {d.passed ? t('Pass') : t('Fail')}
                           </Badge>
                         </div>
                         <p className="mt-1 text-[0.6875rem] leading-relaxed text-ink-500">{d.detail}</p>

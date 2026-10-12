@@ -126,7 +126,10 @@ function matchesGlobalFilters(project: Project, filters: FilterState): boolean {
 
 export function ProjectIntelligencePage(): React.JSX.Element {
   // The shell's masthead carries the screen's name; the page states the wording.
-  usePageMasthead(t('Project Intelligence'))
+  usePageMasthead(
+    t('Project Intelligence'),
+    t('Capital project delivery across every category, with the explainable Project Risk Engine driving prioritisation. Every risk score is the transparent, published sum of seven weighted delivery-risk drivers - never a judgement of any person or organisation.'),
+  )
 
   const [searchParams] = useSearchParams()
   const openDrawer = useDrawerStore((s) => s.open)
@@ -332,7 +335,7 @@ export function ProjectIntelligencePage(): React.JSX.Element {
             <span>{row.completionPct}%</span>
             <span>{t('plan {0}%', row.plannedCompletionPct)}</span>
           </div>
-          <MiniBar value={row.completionPct} width={999} className="mt-0.5 w-full" tone={row.completionPct < row.plannedCompletionPct - 12 ? 'critical' : undefined} />
+          <MiniBar value={row.completionPct} width="full" className="mt-0.5 w-full" tone={row.completionPct < row.plannedCompletionPct - 12 ? 'critical' : undefined} />
         </div>
       ),
       sortValue: (row) => row.completionPct - row.plannedCompletionPct,
@@ -384,8 +387,8 @@ export function ProjectIntelligencePage(): React.JSX.Element {
   return (
     <PageBody>
       <PageHeader
-        eyebrow={t('Projects, Procurement & Assets')}
-        breadcrumbs={[{ label: t('Projects, Procurement & Assets') }, { label: t('Project Intelligence') }]}
+        eyebrow={t('Governance & Finance')}
+        breadcrumbs={[{ label: t('Governance & Finance') }, { label: t('Project Intelligence') }]}
         freshness={FRESHNESS}
         actions={
           <LinkButton to={ROUTES.procurement} variant="outline" icon={<ClipboardCheck className="h-3.5 w-3.5" />}>
@@ -429,7 +432,8 @@ export function ProjectIntelligencePage(): React.JSX.Element {
             <SegmentedControl
               value={riskFilter}
               onChange={setRiskFilter}
-              ariaLabel="Filter by risk band"
+              ariaLabel={t('Filter by risk class')}
+              className="scrollbar-slim max-w-full overflow-x-auto [&>button]:shrink-0 [&>button]:whitespace-nowrap"
               options={[
                 { value: 'all', label: t('All risk') },
                 { value: 'low', label: t('Low') },
@@ -446,7 +450,7 @@ export function ProjectIntelligencePage(): React.JSX.Element {
       {anyError ? <ErrorState detail={anyError.message} onRetry={() => { void projectsQuery.refetch() }} /> : null}
 
       {!anyLoading && !anyError && allRows.length === 0 ? (
-        <EmptyState title={t('No projects match the current filters')} detail="Widen the filters above to see the capital project portfolio." />
+        <EmptyState title={t('No projects match the current filters')} detail={t('Widen the filters above to see the capital project portfolio.')} />
       ) : null}
 
       {!anyLoading && !anyError && allRows.length > 0 ? (
@@ -481,7 +485,7 @@ export function ProjectIntelligencePage(): React.JSX.Element {
               <SegmentedControl
                 value={view}
                 onChange={setView}
-                ariaLabel="Toggle table or card view"
+                ariaLabel={t('View')}
                 options={[
                   { value: 'table', label: t('Table'), icon: <Table2 className="h-3 w-3" /> },
                   { value: 'grid', label: t('Cards'), icon: <LayoutGrid className="h-3 w-3" /> },
@@ -500,7 +504,7 @@ export function ProjectIntelligencePage(): React.JSX.Element {
                 pageSize={12}
                 stickyHeader
                 maxHeight="32rem"
-                searchPlaceholder="Search projects"
+                searchPlaceholder={t('Search projects')}
                 onRowClick={(row) => {
                   setSelectedProjectId(row.id)
                   openDrawer({ kind: 'project', id: row.id })
@@ -592,7 +596,7 @@ export function ProjectIntelligencePage(): React.JSX.Element {
               {t('A published, deterministic composite: seven delivery-risk drivers, each independently weighted and explained. The score identifies delivery risk requiring management attention - it is not a finding against any person or organisation.')}
             </p>
             {!selectedProject ? (
-              <EmptyState title={t('Select a project')} detail="Choose a project from the table or card view above to see its risk engine breakdown." compact />
+              <EmptyState title={t('Select a project')} detail={t('Choose a project from the table or card view above to see its risk engine breakdown.')} compact />
             ) : (
               <div>
                 <div className="mb-3 flex flex-wrap items-center gap-2">

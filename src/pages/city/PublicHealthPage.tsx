@@ -9,7 +9,6 @@ import {
   DemonstrationNotice,
   EmptyState,
   ErrorState,
-  LinkButton,
   LoadingState,
   MetricGrid,
   SeverityBadge,
@@ -30,15 +29,15 @@ import { useDrawerStore, useFilterStore, type FilterState } from '@/stores/ui.st
 import { useActiveCorporation } from '@/stores/corporation.store'
 import { cityName } from '@/config/corporations'
 import { usePageMasthead } from '@/stores/masthead.store'
-import { ROUTES } from '@/config/navigation'
 import { WARDS, wardName, wardShortName } from '@/data/reference'
 import { DISEASE_LABEL, type DiseaseIndicator, type HealthIndicator } from '@/types/city-domains'
 import type { Alert } from '@/types/intelligence'
 import type { DateRangeKey, Trend } from '@/types/common'
 import { DEMO_NOW } from '@/utils/deterministic'
-import { formatCompact, formatDelta, formatPercent } from '@/utils/format'
+import { formatCompact, formatDelta } from '@/utils/format'
 import { t } from '@/i18n'
 import { registerLayer } from '@/data/runtime'
+import { SHADE } from '@/components/ui/shade'
 
 const DATE_RANGE_HOURS: Record<DateRangeKey, number> = {
   '24h': 24,
@@ -190,7 +189,7 @@ export function PublicHealthPage(): React.JSX.Element {
       <PageHeader
         eyebrow={t('City Intelligence')}
         breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Public Health') }]}
-        controls={<FilterBar show={['date', 'ward', 'severity', 'search']} searchPlaceholder="Search ward or condition" />}
+        controls={<FilterBar show={['date', 'ward', 'severity', 'search']} searchPlaceholder={t('Search ward or condition')} />}
       />
 
       {/* --- Primary care network headline counts ------------------------ */}
@@ -241,7 +240,7 @@ export function PublicHealthPage(): React.JSX.Element {
         (() => {
           const indicators = filteredIndicators
           if (indicators.length === 0) {
-            return <EmptyState title={t('No health indicators available')} detail="No aggregate indicators were returned for the current scope." />
+            return <EmptyState title={t('No health indicators available')} detail={t('No aggregate indicators were returned for the current scope.')} />
           }
           const summary = aggregateByDisease(indicators)
 
@@ -265,7 +264,7 @@ export function PublicHealthPage(): React.JSX.Element {
               <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
                 {t('Aggregate reported cases by condition, current reporting period vs previous, across all wards.')}
               </p>
-              <DataTable rows={summary} columns={columns} rowKey={(r) => r.disease} searchable={false} dense ariaLabel="Disease indicator summary" />
+              <DataTable rows={summary} columns={columns} rowKey={(r) => r.disease} searchable={false} dense ariaLabel={t('Disease indicator summary')} />
             </GovPanel>
           )
         })()
@@ -300,7 +299,7 @@ export function PublicHealthPage(): React.JSX.Element {
                     }}
                   />
                 </div>
-                <div className="min-w-0 rounded-lg border border-ink-100 bg-surface-sunken p-3">
+                <div className={`min-w-0 rounded-lg border p-3 ${SHADE.blue.tile}`}>
                   {focused ? (
                     <>
                       <p className="label-institutional">{t('Focused indicator')}</p>
@@ -340,7 +339,7 @@ export function PublicHealthPage(): React.JSX.Element {
                       ) : null}
                     </>
                   ) : (
-                    <EmptyState compact title={t('No cell focused')} detail="Click a cell in the heatmap to inspect a ward and condition." />
+                    <EmptyState compact title={t('No cell focused')} detail={t('Click a cell in the heatmap to inspect a ward and condition.')} />
                   )}
                 </div>
               </div>
@@ -360,7 +359,7 @@ export function PublicHealthPage(): React.JSX.Element {
           if (signals.length === 0) {
             return (
               <GovPanel title={t('Outbreak signal ranking')} tone="amber">
-                <EmptyState compact title={t('No elevated signals')} detail="No ward × condition combination currently reaches the 50/100 outbreak signal threshold." />
+                <EmptyState compact title={t('No elevated signals')} detail={t('No ward × condition combination currently reaches the 50/100 outbreak signal threshold.')} />
               </GovPanel>
             )
           }
@@ -379,7 +378,7 @@ export function PublicHealthPage(): React.JSX.Element {
                 {t('Every ward × condition combination at or above a 50/100 modelled outbreak signal, ranked by strength. This is a modelled signal for prioritising field verification, not a confirmed outbreak declaration.')}
               </p>
               <div className="px-3 pt-2" style={{ height: 260 }}>
-                <ChartFrame title={t('Top signals')} unit={t('0–100 index')} timeframe="Current reporting period" height={230}>
+                <ChartFrame title={t('Top signals')} unit={t('0–100 index')} timeframe={t('Current reporting period')} height={230}>
                   <RankedBarChart
                     data={signals.slice(0, 12).map((h) => ({ label: `${wardShortName(h.wardId)} · ${DISEASE_SHORT_LABEL[h.disease]}`, value: h.outbreakSignal }))}
                   />
@@ -393,8 +392,8 @@ export function PublicHealthPage(): React.JSX.Element {
                   onRowClick={(r) => setFocusedId(r.id)}
                   activeRowKey={focusedId ?? undefined}
                   pageSize={10}
-                  searchPlaceholder="Search ward or condition"
-                  ariaLabel="Outbreak signal ranking"
+                  searchPlaceholder={t('Search ward or condition')}
+                  ariaLabel={t('Outbreak signal ranking')}
                 />
               </div>
             </GovPanel>
@@ -416,7 +415,7 @@ export function PublicHealthPage(): React.JSX.Element {
                 {t('Open operational alerts raised against the public health domain.')}
               </p>
               {alerts.length === 0 ? (
-                <EmptyState compact className="mx-3 mb-3" title={t('No open health alerts')} detail="No alert is currently open against the public health domain." />
+                <EmptyState compact className="mx-3 mb-3" title={t('No open health alerts')} detail={t('No alert is currently open against the public health domain.')} />
               ) : (
                 <div className="grid grid-cols-1 gap-3 p-3 sm:grid-cols-2 2xl:grid-cols-3">
                   {alerts.map((alert) => (
@@ -433,55 +432,6 @@ export function PublicHealthPage(): React.JSX.Element {
 
         <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
           {criticalNotice}
-
-      {/* --- Hospital utilisation summary ----------------------------------- */}
-      {hospitalsQuery.isLoading ? (
-        <LoadingState variant="metrics" />
-      ) : hospitalsQuery.error ? (
-        <ErrorState detail={hospitalsQuery.error.message} onRetry={() => hospitalsQuery.refetch()} />
-      ) : (
-        (() => {
-          const hospitals = hospitalsQuery.data ?? []
-          const totalBeds = hospitals.reduce((s, h) => s + h.bedsTotal, 0)
-          const occupiedBeds = hospitals.reduce((s, h) => s + h.bedsOccupied, 0)
-          const occupancyPct = totalBeds > 0 ? Math.round((occupiedBeds / totalBeds) * 1000) / 10 : 0
-          const icuTotal = hospitals.reduce((s, h) => s + h.icuTotal, 0)
-          const icuOccupied = hospitals.reduce((s, h) => s + h.icuOccupied, 0)
-          const icuOccupancyPct = icuTotal > 0 ? Math.round((icuOccupied / icuTotal) * 1000) / 10 : 0
-          const highLoad = hospitals.filter((h) => h.emergencyLoadIndex >= 80).length
-          const isBmc = corporation.id === 'bmc'
-
-          return (
-            <GovPanel
-              title={t('Hospital utilisation summary')}
-              tone="amber"
-              actions={<LinkButton to={ROUTES.hospitals} size="xs" variant="outline">{t('Open Hospital Intelligence')}</LinkButton>}
-            >
-              <p className="mb-3 text-xs leading-relaxed text-ink-500">
-                {t('City-wide capacity position across major, peripheral, maternity and dispensary facilities.')}
-              </p>
-              <MetricGrid columns={2}>
-                <MetricCard
-                  label={t('Functional beds')}
-                  value={formatCompact(totalBeds)}
-                  support={`${hospitals.length} facilities`}
-                  footer={
-                    isBmc && corporation.majorHospitalsCount ? (
-                      <span className="text-[0.625rem] leading-snug text-ink-400">
-                        {t('For context: BMC\'s own network runs {0} specialised major hospitals, {1} health posts, {2} dispensaries and {3} maternity homes.', corporation.majorHospitalsCount, corporation.healthPostsCount ?? '-', corporation.dispensariesCount ?? '-', corporation.maternityHomesCount ?? '-')}
-                      </span>
-                    ) : undefined
-                  }
-                />
-                <MetricCard label={t('Bed occupancy')} value={formatPercent(occupancyPct)} tone={occupancyPct >= 90 ? 'critical' : occupancyPct >= 78 ? 'warn' : 'default'} />
-                <MetricCard label={t('ICU occupancy')} value={formatPercent(icuOccupancyPct)} support={t('{0} of {1} beds', icuOccupied, icuTotal)} tone={icuOccupancyPct >= 92 ? 'critical' : icuOccupancyPct >= 80 ? 'warn' : 'default'} />
-                <MetricCard label={t('Facilities at high emergency load')} value={highLoad} support={t('Emergency load index ≥ 80')} tone={highLoad > 0 ? 'warn' : 'default'} />
-              </MetricGrid>
-            </GovPanel>
-          )
-        })()
-      )}
-
 
       {/* --- Vector-borne risk framed to monsoon season -------------------- */}
       {filteredIndicators.length > 0 ? (
@@ -553,7 +503,7 @@ export function PublicHealthPage(): React.JSX.Element {
                 </p>
               </div>
               {rows.length === 0 ? (
-                <EmptyState compact className="mt-3" title={t('No correlates recorded')} detail="No elevated signal in the current period carries a recorded correlate." />
+                <EmptyState compact className="mt-3" title={t('No correlates recorded')} detail={t('No elevated signal in the current period carries a recorded correlate.')} />
               ) : (
                 <ul className="mt-3 divide-y divide-ink-50">
                   {rows.map(([correlate, count]) => (

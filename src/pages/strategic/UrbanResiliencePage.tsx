@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { ShieldCheck, Waves } from 'lucide-react'
+import { Anchor, Building2, CloudRain, Flame, HeartPulse, Network, ShieldCheck, Siren, ThermometerSun, Waves, Zap, type LucideIcon } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { StateBadge } from '@/components/ui/badges'
 import { Card, DefinitionList, DefinitionRow, ProgressBar, ScoreDial } from '@/components/ui/primitives'
@@ -17,6 +17,21 @@ import { usePageMasthead } from '@/stores/masthead.store'
 import { cn } from '@/utils/cn'
 import { isoFromAnchor } from '@/utils/deterministic'
 import { t } from '@/i18n'
+import type { ResilienceDimensionId } from '@/domains/resilience'
+
+/** One icon per hazard, so the detail list is scannable at a glance. */
+const HAZARD_ICON: Record<ResilienceDimensionId, LucideIcon> = {
+  flood: Waves,
+  extremeRain: CloudRain,
+  heat: ThermometerSun,
+  coastal: Anchor,
+  fire: Flame,
+  buildingRisk: Building2,
+  publicHealth: HeartPulse,
+  infrastructure: Network,
+  utilityFailure: Zap,
+  emergencyResponse: Siren,
+}
 
 /**
  * src/pages/strategic/UrbanResiliencePage.tsx
@@ -103,7 +118,9 @@ export function UrbanResiliencePage(): React.JSX.Element {
               {t('Ranked weakest first - where the corporation is least prepared to absorb a shock.')}
             </p>
             <ul className="mt-2 divide-y divide-ink-50">
-              {dimensions.map((dim) => (
+              {dimensions.map((dim) => {
+                  const Icon = HAZARD_ICON[dim.id]
+                  return (
                 <li key={dim.id}>
                   <button
                     type="button"
@@ -114,7 +131,10 @@ export function UrbanResiliencePage(): React.JSX.Element {
                     )}
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <span className="truncate text-[0.8125rem] font-medium text-ink-800">{dim.label}</span>
+                      <span className="flex min-w-0 items-center gap-2">
+                        <Icon className="h-4 w-4 shrink-0 text-govt-500" aria-hidden />
+                        <span className="truncate text-[0.8125rem] font-medium text-ink-800">{dim.label}</span>
+                      </span>
                       <div className="flex shrink-0 items-center gap-2">
                         <StateBadge state={dim.state} />
                         <span className="numeric w-9 text-right text-[0.8125rem] font-semibold text-ink-900">
@@ -125,7 +145,8 @@ export function UrbanResiliencePage(): React.JSX.Element {
                     <ProgressBar value={dim.score} className="mt-1.5" />
                   </button>
                 </li>
-              ))}
+                  )
+              })}
             </ul>
           </GovPanel>
 
@@ -134,11 +155,13 @@ export function UrbanResiliencePage(): React.JSX.Element {
             <ul className="divide-y divide-ink-50">
               {[...dimensions]
                 .sort((a, b) => b.contribution - a.contribution)
-                .map((dim) => (
+                .map((dim) => {
+                  const Icon = HAZARD_ICON[dim.id]
+                  return (
                   <li key={dim.id} className="px-4 py-3">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div className="flex min-w-0 items-center gap-2">
-                        <Waves className="h-4 w-4 shrink-0 text-govt-500" aria-hidden />
+                        <Icon className="h-4 w-4 shrink-0 text-govt-500" aria-hidden />
                         <span className="truncate text-[0.8125rem] font-semibold text-ink-900">{dim.label}</span>
                         <StateBadge state={dim.state} />
                       </div>
@@ -149,7 +172,8 @@ export function UrbanResiliencePage(): React.JSX.Element {
                     <p className="mt-1.5 text-xs leading-relaxed text-ink-600">{dim.explanation}</p>
                     <p className="mt-1.5 text-[0.6875rem] font-medium text-crit-700">{t('Primary gap · {0}', dim.primaryGap)}</p>
                   </li>
-                ))}
+                  )
+                })}
             </ul>
           </GovPanel>
 

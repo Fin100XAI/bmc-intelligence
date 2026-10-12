@@ -22,7 +22,7 @@ import { useServiceQuery } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { usePageMasthead } from '@/stores/masthead.store'
 import { wardService, type WardRankMetric, type WardRankRow } from '@/services/ward.service'
-import { useDrawerStore } from '@/stores/ui.store'
+import { useContextStore, useDrawerStore } from '@/stores/ui.store'
 import type { DataFreshness } from '@/types/common'
 import type { Ward } from '@/types/organisation'
 import { DEMO_NOW } from '@/utils/deterministic'
@@ -93,7 +93,7 @@ function build$METRICS(): LeagueMetric[] {
     shortLabel: 'Risk',
     description:
       t('The ward’s composite risk index, assembled from service delivery, infrastructure condition, flood exposure, public health signal, capital delivery and revenue realisation.'),
-    merit: 'Lower is better - the index counts what is going wrong.',
+    merit: t('Lower is better - the index counts what is going wrong.'),
     higherIsBetter: false,
     unit: ' / 100',
     decimals: 0,
@@ -105,7 +105,7 @@ function build$METRICS(): LeagueMetric[] {
     shortLabel: 'Health',
     description:
       t('The ward’s composite operational health index across every service the corporation delivers there, expressed as a single 0-100 reading.'),
-    merit: 'Higher is better.',
+    merit: t('Higher is better.'),
     higherIsBetter: true,
     unit: ' / 100',
     decimals: 0,
@@ -118,7 +118,7 @@ function build$METRICS(): LeagueMetric[] {
     description:
       t('Citizen complaints currently open in the ward, counted as a standing workload rather than as a rate against population.'),
     merit:
-      'Lower is better - though a ward with very few complaints may be under-reporting rather than well served, and should be read beside its health index.',
+      t('Lower is better - though a ward with very few complaints may be under-reporting rather than well served, and should be read beside its health index.'),
     higherIsBetter: false,
     unit: '',
     decimals: 0,
@@ -129,8 +129,8 @@ function build$METRICS(): LeagueMetric[] {
     label: t('Monsoon readiness'),
     shortLabel: 'Monsoon',
     description:
-      t('Pre-monsoon readiness: desilting completed, pump availability and preparation measured against the waterlogging locations recorded in the ward.'),
-    merit: 'Higher is better.',
+      t('Pre-monsoon readiness as recorded for the season now ending: desilting completed, pump availability and preparation measured against the waterlogging locations recorded in the ward.'),
+    merit: t('Higher is better.'),
     higherIsBetter: true,
     unit: ' / 100',
     decimals: 0,
@@ -142,7 +142,7 @@ function build$METRICS(): LeagueMetric[] {
     shortLabel: 'Revenue',
     description:
       t('Own-revenue collection efficiency for the ward - what has been collected against what was targeted for the year.'),
-    merit: 'Higher is better.',
+    merit: t('Higher is better.'),
     higherIsBetter: true,
     unit: '%',
     decimals: 1,
@@ -165,6 +165,9 @@ export function WardLeaguePage(): React.JSX.Element {
 
   const [metricId, setMetricId] = useState<WardRankMetric>('risk')
   const openDrawer = useDrawerStore((s) => s.open)
+  // A league ranks every ward in scope, so the command-bar ward does not
+  // filter it - it marks that ward's row and states where it stands.
+  const contextWardId = useContextStore((s) => s.wardId)
 
   const rankQuery = useServiceQuery(queryKeys.wardLeague(`rank:${metricId}`), (u) =>
     wardService.rank(u, metricId),
@@ -187,6 +190,10 @@ export function WardLeaguePage(): React.JSX.Element {
     for (const ward of wardsQuery.data ?? []) map.set(ward.id, ward)
     return map
   }, [wardsQuery.data])
+
+  const contextIndex = contextWardId ? rows.findIndex((r) => r.wardId === contextWardId) : -1
+  const contextPosition = contextIndex + 1
+  const contextRowLabel = contextIndex >= 0 ? rows[contextIndex]!.label : ''
 
   const stats = useMemo(() => {
     if (rows.length === 0) return null
@@ -218,8 +225,8 @@ export function WardLeaguePage(): React.JSX.Element {
     return (
       <PageBody>
         <PageHeader
-          eyebrow={t('Wards & Localities')}
-          breadcrumbs={[{ label: t('Wards & Localities') }, { label: t('Ward League Table') }]}
+          eyebrow={t('Wards & Citizens')}
+          breadcrumbs={[{ label: t('Wards & Citizens') }, { label: t('Ward Intelligence') }, { label: t('League table') }]}
         />
         <LoadingState variant="metrics" />
         <LoadingState variant="table" rows={10} />
@@ -231,8 +238,8 @@ export function WardLeaguePage(): React.JSX.Element {
     return (
       <PageBody>
         <PageHeader
-          eyebrow={t('Wards & Localities')}
-          breadcrumbs={[{ label: t('Wards & Localities') }, { label: t('Ward League Table') }]}
+          eyebrow={t('Wards & Citizens')}
+          breadcrumbs={[{ label: t('Wards & Citizens') }, { label: t('Ward Intelligence') }, { label: t('League table') }]}
         />
         <ErrorState
           detail={error.message}
@@ -306,7 +313,7 @@ export function WardLeaguePage(): React.JSX.Element {
       cell: (r) => {
         if (!stats) return <span className="text-ink-400">-</span>
         const delta = r.value - stats.median
-        if (delta === 0) return <span className="numeric text-ink-500">level</span>
+        if (delta === 0) return <span className="numeric text-ink-500">{t('level')}</span>
         const good = metric.higherIsBetter ? delta > 0 : delta < 0
         return (
           <span className={good ? 'numeric text-ok-700' : 'numeric text-crit-600'}>
@@ -352,8 +359,8 @@ export function WardLeaguePage(): React.JSX.Element {
   return (
     <PageBody>
       <PageHeader
-        eyebrow={t('Wards & Localities')}
-        breadcrumbs={[{ label: t('Wards & Localities') }, { label: t('Ward League Table') }]}
+        eyebrow={t('Wards & Citizens')}
+        breadcrumbs={[{ label: t('Wards & Citizens') }, { label: t('Ward Intelligence') }, { label: t('League table') }]}
         freshness={freshness}
       />
 
@@ -366,7 +373,7 @@ export function WardLeaguePage(): React.JSX.Element {
             <SegmentedControl<WardRankMetric>
               value={metricId}
               onChange={setMetricId}
-              ariaLabel="Indicator the ward league is ranked on"
+              ariaLabel={t('Indicator the ward league is ranked on')}
               options={METRICS.map((m) => ({ value: m.id, label: m.shortLabel }))}
             />
           </div>
@@ -375,7 +382,7 @@ export function WardLeaguePage(): React.JSX.Element {
           <p className="text-[0.8125rem] font-semibold text-ink-900">
             {metric.label}{' '}
             <Badge tone={metric.higherIsBetter ? 'positive' : 'warn'} size="sm">
-              {metric.higherIsBetter ? 'Higher is better' : 'Lower is better'}
+              {metric.higherIsBetter ? t('Higher is better') : t('Lower is better')}
             </Badge>
           </p>
           <p className="mt-1 text-xs leading-relaxed text-ink-600">{metric.description}</p>
@@ -388,7 +395,7 @@ export function WardLeaguePage(): React.JSX.Element {
       {!stats || rows.length === 0 ? (
         <EmptyState
           title={t('No wards are within your authorised scope')}
-          detail="The league is drawn from the wards your role is authorised to see. An officer scoped to a single ward has no cohort to rank against."
+          detail={t('The league is drawn from the wards your role is authorised to see. An officer scoped to a single ward has no cohort to rank against.')}
         />
       ) : (
         <>
@@ -424,11 +431,11 @@ export function WardLeaguePage(): React.JSX.Element {
                   ? `${formatNumber(stats.spread, 1)} pp`
                   : formatNumber(stats.spread, metric.decimals)
               }
-              unit={metric.isCount ? ' complaints' : metric.id === 'revenue' ? '' : ' points'}
+              unit={metric.isCount ? t(' complaints') : metric.id === 'revenue' ? '' : t(' points')}
               support={t('The worst ward sits {0} of the city median away from the best', formatPercent(stats.spreadRatio * 100, 0))}
               tone={spreadTone}
               icon={<ArrowDownUp className="h-4 w-4" />}
-              explanation="The spread is the distance between the best-performing and worst-performing ward on this indicator. It is the measure of whether the city is being served evenly. A city-wide average conceals it entirely."
+              explanation={t('The spread is the distance between the best-performing and worst-performing ward on this indicator. It is the measure of whether the city is being served evenly. A city-wide average conceals it entirely.')}
             />
           </MetricGrid>
 
@@ -441,16 +448,22 @@ export function WardLeaguePage(): React.JSX.Element {
               <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
                 {t('Position one is the ward most in need of attention on the selected indicator, not the leader. Sort on any column to read it the other way round. Select a ward to open its full profile.')}
               </p>
+              {contextPosition > 0 ? (
+                <p className="mx-3 mb-2 rounded-md border border-govt-200 bg-govt-50 px-2.5 py-1.5 text-xs text-govt-800">
+                  {t('Your selected ward, {0}, is at position {1} of {2} on this indicator.', contextRowLabel, contextPosition, rows.length)}
+                </p>
+              ) : null}
               <DataTable
                 rows={rows}
                 columns={columns}
                 rowKey={(r) => r.wardId}
                 searchable
-                searchPlaceholder="Search wards"
+                searchPlaceholder={t('Search wards')}
                 onRowClick={(r) => openDrawer({ kind: 'ward', id: r.wardId })}
+                activeRowKey={contextWardId ?? undefined}
                 pageSize={15}
                 exportName={`ward-league-${metric.id}`}
-                exportFilters={{ Indicator: metric.label, Order: 'Worst first' }}
+                exportFilters={{ Indicator: metric.label, Order: t('Worst first') }}
               />
             </GovPanel>
             </div>
@@ -461,10 +474,10 @@ export function WardLeaguePage(): React.JSX.Element {
               <div className="min-w-0">
                 <p className="text-[0.8125rem] font-semibold text-ink-900">
                   {spreadTone === 'critical'
-                    ? 'The city is not being served evenly on this indicator'
+                    ? t('The city is not being served evenly on this indicator')
                     : spreadTone === 'warn'
-                      ? 'A material gap separates the best and worst wards'
-                      : 'Wards are closely grouped on this indicator'}
+                      ? t('A material gap separates the best and worst wards')
+                      : t('Wards are closely grouped on this indicator')}
                 </p>
                 <p className="mt-1 text-xs leading-relaxed text-ink-600">
                   {t('{0} stands at {1} and {2} at {3} - a spread of {4} against a city median of {5}. {6}', stats.best.label, formatValue(stats.best.value, metric), stats.worst.label, formatValue(stats.worst.value, metric), formatNumber(stats.spread, metric.decimals), formatValue(Math.round(stats.median * 10) / 10, metric), spreadTone === 'positive'
@@ -497,7 +510,7 @@ export function WardLeaguePage(): React.JSX.Element {
               <div className="min-w-0">
                 <p className="text-[0.8125rem] font-semibold text-govt-800">{t('Read the spread, not the leader')}</p>
                 <p className="mt-1 text-xs leading-relaxed text-ink-600">
-                  {t("The finding on this page is not any single ward's score. It is the distance between the best ward and the worst. A city where the best ward scores 82 and the worst 41 is not one city being served - it is two, and no city-wide average will show that. Every figure here is the figure Ward Intelligence reports for the same ward: this page orders and compares them, and computes nothing of its own beyond the median and the spread.")}
+                  {t("The finding on this page is not any single ward's score. It is the distance between the best ward and the worst. A city where the best ward scores 82 and the worst 41 is not one city being served - it is two, and no city-wide average will show that. Every figure here is the figure Ward Intelligence reports for the same division: this page orders and compares them, and computes nothing of its own beyond the median and the spread.")}
                 </p>
               </div>
             </Card>

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Activity, Loader2, Play, RotateCcw } from 'lucide-react'
+import { Activity, FlaskConical, Gauge, Loader2, Play, RotateCcw, Server, Workflow } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { Badge, StateBadge } from '@/components/ui/badges'
 import {
@@ -28,6 +28,8 @@ import { DEMO_NOW, det, isoFromAnchor } from '@/utils/deterministic'
 import { formatDateTime, formatNumber, formatPercent, formatRelative, formatShortDate } from '@/utils/format'
 import type { PipelineJob, PlatformService } from '@/types/governance'
 import { cn } from '@/utils/cn'
+import { SHADE } from '@/components/ui/shade'
+import { enumLabel } from '@/utils/enum-label'
 import { t } from '@/i18n'
 import { registerLayer } from '@/data/runtime'
 
@@ -206,8 +208,8 @@ export function PlatformHealthPage(): React.JSX.Element {
       recordsProcessed: status === 'failed' ? 0 : Math.round(job.recordsProcessed * r.float(0.85, 1.15)),
       note:
         status === 'succeeded'
-          ? 'Operator re-run completed. This does not retire the recorded failures in the last seven days.'
-          : 'Operator re-run failed again. A job failing on re-run is a defect in the job, not a transient condition.',
+          ? t('Operator re-run completed. This does not retire the recorded failures in the last seven days.')
+          : t('Operator re-run failed again. A job failing on re-run is a defect in the job, not a transient condition.'),
     }
 
     window.setTimeout(() => {
@@ -226,7 +228,7 @@ export function PlatformHealthPage(): React.JSX.Element {
 
   const summary = summaryQuery.data
   if (services.length === 0 || !summary) {
-    return <EmptyState title={t('No platform services registered')} detail="The platform health surface returned no entries." />
+    return <EmptyState title={t('No platform services registered')} detail={t('The platform health surface returned no entries.')} />
   }
 
   const rerunCount = Object.keys(reruns).length
@@ -295,7 +297,7 @@ export function PlatformHealthPage(): React.JSX.Element {
       id: 'simulated',
       header: t('Simulated'),
       cell: (s) => (
-        <Badge tone={s.simulated ? 'intel' : 'neutral'}>{s.simulated ? 'Simulated component' : 'Runs directly'}</Badge>
+        <Badge tone={s.simulated ? 'intel' : 'neutral'}>{s.simulated ? t('Simulated component') : t('Runs directly')}</Badge>
       ),
       sortValue: (s) => (s.simulated ? 1 : 0),
     },
@@ -309,7 +311,7 @@ export function PlatformHealthPage(): React.JSX.Element {
         <div className="min-w-0">
           <div className="flex items-center gap-1.5">
             <p className="font-medium text-ink-800">{j.name}</p>
-            {reruns[j.id] ? <Badge tone="intel" size="xs">{'Re-run'}</Badge> : null}
+            {reruns[j.id] ? <Badge tone="intel" size="xs">{t('Re-run')}</Badge> : null}
           </div>
           <p className="text-[0.6875rem] text-ink-400">{j.schedule}</p>
         </div>
@@ -340,7 +342,7 @@ export function PlatformHealthPage(): React.JSX.Element {
           <Badge tone="info" icon={<Loader2 className="h-3 w-3 animate-spin" />}>{t('Running…')}</Badge>
         ) : (
           <Badge tone={JOB_STATUS_TONE[j.status]} dot>
-            {j.status}
+            {enumLabel(j.status)}
           </Badge>
         ),
       sortValue: (j) => j.status,
@@ -404,37 +406,57 @@ export function PlatformHealthPage(): React.JSX.Element {
       />
 
       <MetricGrid columns={4}>
-        <Card>
-          <p className="label-institutional">{t('Overall state')}</p>
-          <div className="mt-2">
-            <StateBadge state={summary.overallState} size="sm" />
+        <Card className={cn(SHADE.blue.tile, 'flex items-start gap-3')}>
+          <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE.blue.chip)}>
+            <Server className="h-4 w-4" aria-hidden />
+          </span>
+          <div className="min-w-0">
+            <p className="label-institutional">{t('Overall state')}</p>
+            <div className="mt-1.5">
+              <StateBadge state={summary.overallState} size="sm" />
+            </div>
+            <p className="mt-1.5 text-[0.6875rem] text-ink-500">{t('Across {0} registered services', services.length)}</p>
           </div>
-          <p className="mt-1.5 text-[0.6875rem] text-ink-500">{t('Across {0} registered services', services.length)}</p>
         </Card>
-        <Card>
-          <p className="label-institutional">{t('Average availability')}</p>
-          <p className="numeric mt-2 text-metric font-semibold text-ink-900">
-            {formatPercent(summary.availabilityAvgPct, 2)}
-          </p>
-          <p className="mt-0.5 text-[0.6875rem] text-ink-500">{t('Last 30 days, modelled')}</p>
+        <Card className={cn(SHADE.teal.tile, 'flex items-start gap-3')}>
+          <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE.teal.chip)}>
+            <Gauge className="h-4 w-4" aria-hidden />
+          </span>
+          <div className="min-w-0">
+            <p className="label-institutional">{t('Average availability')}</p>
+            <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE.teal.value)}>
+              {formatPercent(summary.availabilityAvgPct, 2)}
+            </p>
+            <p className="mt-0.5 text-[0.6875rem] text-ink-500">{t('Last 30 days, modelled')}</p>
+          </div>
         </Card>
-        <Card tone={failingNow > 0 ? 'critical' : 'default'}>
-          <p className="label-institutional">{t('Failing pipeline jobs')}</p>
-          <p className="numeric mt-2 text-metric font-semibold text-ink-900">{failingNow}</p>
-          <p className="mt-0.5 text-[0.6875rem] text-ink-500">
-            {rerunCount > 0 ? `Includes ${rerunCount} operator re-run this session` : 'As last scheduled'}
-          </p>
+        <Card className={cn(SHADE[failingNow > 0 ? 'red' : 'green'].tile, 'flex items-start gap-3')}>
+          <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE[failingNow > 0 ? 'red' : 'green'].chip)}>
+            <Workflow className="h-4 w-4" aria-hidden />
+          </span>
+          <div className="min-w-0">
+            <p className="label-institutional">{t('Failing pipeline jobs')}</p>
+            <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE[failingNow > 0 ? 'red' : 'green'].value)}>{failingNow}</p>
+            <p className="mt-0.5 text-[0.6875rem] text-ink-500">
+              {rerunCount > 0 ? t('Includes {0} operator re-run this session', rerunCount) : t('As last scheduled')}
+            </p>
+          </div>
         </Card>
-        <Card tone="info">
-          <p className="label-institutional">{t('Simulated services')}</p>
-          <p className="numeric mt-2 text-metric font-semibold text-ink-900">
-            {summary.simulatedServices} / {services.length}
-          </p>
-          <ProgressBar
-            value={(summary.simulatedServices / Math.max(1, services.length)) * 100}
-            size="xs"
-            className="mt-2"
-          />
+        <Card className={cn(SHADE.amber.tile, 'flex items-start gap-3')}>
+          <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE.amber.chip)}>
+            <FlaskConical className="h-4 w-4" aria-hidden />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="label-institutional">{t('Simulated services')}</p>
+            <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE.amber.value)}>
+              {summary.simulatedServices} / {services.length}
+            </p>
+            <ProgressBar
+              value={(summary.simulatedServices / Math.max(1, services.length)) * 100}
+              size="xs"
+              className="mt-2"
+            />
+          </div>
         </Card>
       </MetricGrid>
 
@@ -496,7 +518,7 @@ export function PlatformHealthPage(): React.JSX.Element {
             columns={serviceColumns}
             rowKey={(s) => s.id}
             searchable
-            searchPlaceholder="Search services"
+            searchPlaceholder={t('Search services')}
             activeRowKey={detailId ?? undefined}
             onRowClick={(s) => setDetailId(s.id)}
             initialSort={{ columnId: 'availability', direction: 'asc' }}
@@ -515,7 +537,7 @@ export function PlatformHealthPage(): React.JSX.Element {
             columns={jobColumns}
             rowKey={(j) => j.id}
             searchable
-            searchPlaceholder="Search pipeline jobs"
+            searchPlaceholder={t('Search pipeline jobs')}
             initialSort={{ columnId: 'failures', direction: 'desc' }}
             rowAccent={(j) => (
               <span className={cn('block h-full w-full rounded-full', j.status === 'failed' || j.failures7d > 0 ? 'bg-crit-500' : 'bg-ink-100')} />
@@ -529,7 +551,7 @@ export function PlatformHealthPage(): React.JSX.Element {
                 onClick={() => rerunJob(j)}
                 title={t('Run this job again. The outcome is simulated and weighted by the job\'s own recent failures.')}
               >
-                {'Re-run'}
+                {t('Re-run')}
               </Button>
             )}
           />
@@ -549,7 +571,7 @@ export function PlatformHealthPage(): React.JSX.Element {
         <ChartFrame
           title={t('Availability by service')}
           unit="%"
-          timeframe="Last 30 days"
+          timeframe={t('Last 30 days')}
           description={t('Lowest availability first.')}
           height={Math.max(220, availabilityData.length * 26)}
         >
@@ -581,7 +603,7 @@ export function PlatformHealthPage(): React.JSX.Element {
             <>
               <StateBadge state={detail.state} />
               <Badge tone={detail.simulated ? 'intel' : 'neutral'}>
-                {detail.simulated ? 'Simulated component' : 'Runs directly'}
+                {detail.simulated ? t('Simulated component') : t('Runs directly')}
               </Badge>
               <Badge tone={detail.errorRatePct > 1 ? 'critical' : 'neutral'}>
                 {t('{0} error rate', formatPercent(detail.errorRatePct, 2))}
@@ -601,14 +623,14 @@ export function PlatformHealthPage(): React.JSX.Element {
               <ChartFrame
                 title={t('Availability, last 30 days')}
                 unit="%"
-                timeframe="Daily, modelled"
+                timeframe={t('Daily, modelled')}
                 description={t('Seeded from the service identifier, so this history is the same on every visit.')}
                 height={160}
               >
                 <TrendChart
                   points={availabilitySeries(detail)}
                   unit="%"
-                  seriesLabel="Availability"
+                  seriesLabel={t('Availability')}
                   variant="line"
                   domain={[Math.floor(Math.min(...availabilitySeries(detail).map((p) => p.value)) - 0.5), 100]}
                 />
@@ -630,15 +652,15 @@ export function PlatformHealthPage(): React.JSX.Element {
                 <span className="numeric">{formatPercent(detail.errorRatePct, 2)}</span>
               </DefinitionRow>
               <DefinitionRow label={t('Last incident')}>
-                {detail.lastIncidentAt ? formatDateTime(detail.lastIncidentAt) : 'None recorded'}
+                {detail.lastIncidentAt ? formatDateTime(detail.lastIncidentAt) : t('None recorded')}
               </DefinitionRow>
             </DefinitionList>
 
-            <GovPanel title={detail.simulated ? 'This component is simulated' : 'This component runs directly'} tone="amber">
+            <GovPanel title={detail.simulated ? t('This component is simulated') : t('This component runs directly')} tone="amber">
               <p className="text-[0.8125rem] leading-relaxed text-ink-700">
                 {detail.simulated
-                  ? 'Its availability, latency and error figures describe deterministic local logic running inside this application, not a deployed service. They are useful for demonstrating the shape of the surface and useless as a service-level indicator — nothing here can be relied upon as one.'
-                  : 'Its figures describe something genuinely served by the deployment target. They are still modelled for this environment and carry no service-level commitment, but the component itself is not a stand-in.'}
+                  ? t('Its availability, latency and error figures describe deterministic local logic running inside this application, not a deployed service. They are useful for demonstrating the shape of the surface and useless as a service-level indicator — nothing here can be relied upon as one.')
+                  : t('Its figures describe something genuinely served by the deployment target. They are still modelled for this environment and carry no service-level commitment, but the component itself is not a stand-in.')}
               </p>
             </GovPanel>
           </div>

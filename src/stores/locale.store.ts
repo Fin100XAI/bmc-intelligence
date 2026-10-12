@@ -11,6 +11,7 @@ import {
   setActiveLocale,
   type Locale,
 } from '@/i18n/locale'
+import { isCatalogueLoaded, loadLocaleCatalogue } from '@/i18n'
 
 /**
  * src/stores/locale.store.ts
@@ -35,26 +36,60 @@ import {
 
 interface LocaleState {
   locale: Locale
+  /** The language being fetched, while its catalogue downloads; else null. */
+  pending: Locale | null
   setLocale: (locale: Locale) => void
+}
+
+/** Switches the seam, the store and the data layers - catalogue already installed. */
+function applyLocale(locale: Locale, set: (partial: Partial<LocaleState>) => void): void {
+  if (locale === getLocale()) {
+    set({ pending: null })
+    return
+  }
+  // Order matters: the seam must already answer in the new language
+  // before any layer rebuilds, or the layers would be rebuilt in the
+  // outgoing one and the interface would show a half-translated city.
+  setActiveLocale(locale)
+  set({ locale, pending: null })
+  rebuildAllLayers()
 }
 
 export const useLocaleStore = create<LocaleState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       locale: getLocale(),
+      pending: null,
       setLocale: (locale) => {
-        if (locale === getLocale()) return
-        // Order matters: the seam must already answer in the new language
-        // before any layer rebuilds, or the layers would be rebuilt in the
-        // outgoing one and the interface would show a half-translated city.
-        setActiveLocale(locale)
-        set({ locale })
-        rebuildAllLayers()
+        if (locale === getLocale() && get().pending === null) return
+        // English, or a catalogue already fetched: switch in the same tick,
+        // exactly as before the catalogue became lazy.
+        if (isCatalogueLoaded(locale)) {
+          applyLocale(locale, set)
+          return
+        }
+        // Otherwise fetch it first. Only the LAST request wins, so a quick
+        // Marathi -> English -> Marathi sequence settles on what was asked
+        // for last rather than on whichever download finished last.
+        set({ pending: locale })
+        loadLocaleCatalogue(locale).then(
+          () => {
+            if (get().pending === locale) applyLocale(locale, set)
+          },
+          () => {
+            // The catalogue could not be fetched: stay in the current
+            // language rather than switching to one that would render as
+            // English anyway.
+            if (get().pending === locale) set({ pending: null })
+          },
+        )
       },
     }),
     {
       name: LOCALE_STORAGE_KEY,
       version: 1,
+      // `pending` is transient download state, never persisted.
+      partialize: (state) => ({ locale: state.locale }),
       /* The persisted value has already been read directly by
          `src/i18n/locale.ts` before any data layer evaluated. Rehydration here
          only has to reconcile the store with that decision - it must never

@@ -307,9 +307,7 @@ export const MR_PART_25: Record<string, string> = {
   'Cycles held for a named officer': 'नामनिर्देशित अधिकाऱ्यासाठी रोखलेली आवर्तने',
   'Dengue + malaria + chikungunya': 'डेंग्यू + मलेरिया + चिकुनगुनिया',
   'Detected, validated or active': 'आढळलेले, पडताळलेले किंवा सक्रिय',
-  'Dispatched to other officers': 'इतर अधिकाऱ्यांकडे पाठवलेले',
   'Durable lessons on record': 'नोंदीवरील टिकाऊ धडे',
-  'Emergency load index ≥ 80': 'आपत्कालीन भार निर्देशांक ≥ 80',
   'evidence references cited by intelligence in your scope':
     'आपल्या व्याप्तीतील बुद्धिमत्तेने उद्धृत केलेले पुरावा संदर्भ',
   'Falls where inputs sit outside the range the model was shaped on':
@@ -359,7 +357,6 @@ export const MR_PART_25: Record<string, string> = {
   'Of the tasks assigned to me': 'मला नेमून दिलेल्या कामांपैकी',
   'Open alerts past their SLA target': 'सेवा-हमी लक्ष्य उलटलेले प्रलंबित इशारे',
   'Open spaces with a reported encroachment': 'अतिक्रमणाची नोंद असलेल्या मोकळ्या जागा',
-  'Phased target {0} at 31% FY elapsed': 'आर्थिक वर्षाचा 31% कालावधी उलटल्यावर टप्पेवार लक्ष्य {0}',
   'Properties flagged for periodic reassessment': 'नियतकालिक फेरआकारणीसाठी चिन्हांकित मालमत्ता',
   'Recorded against mapped reaches': 'नकाशांकित भागांविरुद्ध नोंदवलेले',
   'Require production work to be real': 'प्रत्यक्षात येण्यासाठी उत्पादन स्तरावरील काम आवश्यक',

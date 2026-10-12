@@ -569,7 +569,9 @@ export function SegmentedControl<T extends string>({
     <div
       role="tablist"
       aria-label={ariaLabel}
-      className={cn('inline-flex items-center gap-0.5 rounded-lg border border-ink-200 bg-ink-50 p-[3px]', className)}
+      // `max-w-full` + horizontal scroll: a strip of five or six options must
+      // scroll inside itself on a phone rather than push the page sideways.
+      className={cn('scrollbar-none inline-flex max-w-full items-center gap-0.5 overflow-x-auto rounded-lg border border-ink-200 bg-ink-50 p-[3px]', className)}
     >
       {options.map((option) => {
         const active = option.value === value
@@ -581,7 +583,7 @@ export function SegmentedControl<T extends string>({
             aria-selected={active}
             onClick={() => onChange(option.value)}
             className={cn(
-              'inline-flex items-center gap-1.5 rounded-md font-semibold transition-all duration-150',
+              'inline-flex shrink-0 items-center gap-1.5 rounded-md font-semibold whitespace-nowrap transition-all duration-150',
               size === 'xs' ? 'h-6 px-2.5 text-[0.6875rem]' : 'h-[1.875rem] px-3 text-xs',
               active
                 ? 'bg-surface text-govt-700 shadow-[0_1px_2px_0_rgb(11_18_32/0.1)] ring-1 ring-ink-200/70'

@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   Activity,
+  Database,
+  Gauge,
   Loader2,
   Pencil,
   Plus,
@@ -48,7 +50,8 @@ import { DEPARTMENTS_ORDERED, departmentName, officerDisplayName } from '@/data/
 import { DEMO_NOW, det, isoFromAnchor } from '@/utils/deterministic'
 import { formatCompact, formatDateTime, formatDuration, formatNumber, formatRelative } from '@/utils/format'
 import { cn } from '@/utils/cn'
-import { DOMAIN_LABEL, type IntelligenceDomain } from '@/types/common'
+import { CLASSIFICATION_LABEL, DOMAIN_LABEL, type IntelligenceDomain } from '@/types/common'
+import { SHADE } from '@/components/ui/shade'
 import type { BadgeTone } from '@/components/ui/badges'
 import {
   DATA_SOURCE_CATEGORY_LABEL,
@@ -125,11 +128,11 @@ const CATEGORY_COLOUR: Record<DataSourceCategory, string> = {
 
 function build$QUALITY_DIMENSIONS(): Array<{ key: keyof DataSourceQuality; label: string; help: string }> {
   return [
-  { key: 'completeness', label: t('Completeness'), help: 'Share of expected records that arrived at all.' },
-  { key: 'validity', label: t('Validity'), help: 'Share of arrived records that passed schema and range validation.' },
-  { key: 'timeliness', label: t('Timeliness'), help: 'Share of records that arrived inside the freshness expectation.' },
-  { key: 'uniqueness', label: t('Uniqueness'), help: 'Share with no duplicate on the declared natural key.' },
-  { key: 'consistency', label: t('Consistency'), help: 'Agreement with the canonical ward, department and asset registers.' },
+  { key: 'completeness', label: t('Completeness'), help: t('Share of expected records that arrived at all.') },
+  { key: 'validity', label: t('Validity'), help: t('Share of arrived records that passed schema and range validation.') },
+  { key: 'timeliness', label: t('Timeliness'), help: t('Share of records that arrived inside the freshness expectation.') },
+  { key: 'uniqueness', label: t('Uniqueness'), help: t('Share with no duplicate on the declared natural key.') },
+  { key: 'consistency', label: t('Consistency'), help: t('Agreement with the canonical ward, department and asset registers.') },
 ]
 }
 let QUALITY_DIMENSIONS: Array<{ key: keyof DataSourceQuality; label: string; help: string }> = build$QUALITY_DIMENSIONS()
@@ -138,13 +141,13 @@ registerLayer(() => {
 })
 
 function retentionLabel(days: number | undefined): string {
-  if (!days) return 'Not declared'
+  if (!days) return t('Not declared')
   if (days % 365 === 0) return `${days / 365} year${days === 365 ? '' : 's'}`
   return `${formatNumber(days)} days`
 }
 
 function slaLabel(minutes: number | undefined): string {
-  if (!minutes) return 'Not declared'
+  if (!minutes) return t('Not declared')
   return formatDuration(minutes / 60)
 }
 
@@ -520,7 +523,7 @@ export function DataSourcesPage(): React.JSX.Element {
       id: 'lastSync',
       header: t('Last sync'),
       cell: (s) => (
-        <span className="text-[0.6875rem] text-ink-500">{s.recordsIngested > 0 ? formatRelative(s.lastSyncAt) : 'Never'}</span>
+        <span className="text-[0.6875rem] text-ink-500">{s.recordsIngested > 0 ? formatRelative(s.lastSyncAt) : t('Never')}</span>
       ),
       sortValue: (s) => s.lastSyncAt,
       hideBelow: 'lg',
@@ -534,7 +537,7 @@ export function DataSourcesPage(): React.JSX.Element {
         return (
           <div className="flex items-center justify-end gap-1.5">
             <IconButton
-              label={s.enabled ? `Sync ${s.name} now` : 'Enable the source to sync it'}
+              label={s.enabled ? t('Sync {0} now', s.name) : t('Enable the source to sync it')}
               disabled={!s.enabled || syncing}
               onClick={() => runSync(s)}
             >
@@ -543,7 +546,7 @@ export function DataSourcesPage(): React.JSX.Element {
             <Switch
               checked={s.enabled}
               onChange={(next) => toggleEnabled(s.id, next)}
-              label={s.enabled ? `Pause ${s.name}` : `Enable ${s.name}`}
+              label={s.enabled ? t('Pause {0}', s.name) : t('Enable {0}', s.name)}
             />
             <IconButton label={t('Edit {0}', s.name)} onClick={() => openEdit(s)}>
               <Pencil className="h-3.5 w-3.5 text-ink-400" />
@@ -613,7 +616,7 @@ export function DataSourcesPage(): React.JSX.Element {
             <ChartFrame
               title={t('Lowest quality among enabled sources')}
               unit={t('quality score /100')}
-              timeframe="Current register"
+              timeframe={t('Current register')}
               description={t('Where a data steward\'s attention is best spent first. Lower is worse.')}
               height={Math.max(200, lowestQuality.length * 26)}
             >
@@ -639,36 +642,56 @@ export function DataSourcesPage(): React.JSX.Element {
         {/* Column 2 — the register's own figures -------------------- */}
         <div className="flex min-w-0 flex-col gap-3 xl:col-span-4">
           <MetricGrid columns={2} className="xl:grid-cols-1">
-            <Card background="red">
-              <p className="label-institutional">{t('Registered sources')}</p>
-              <p className="numeric mt-2 text-metric font-semibold text-ink-900">{metrics.total}</p>
-              <p className="mt-0.5 text-[0.6875rem] text-ink-500">{t('{0} enabled · {1} paused', metrics.enabled, metrics.paused)}</p>
+            <Card className={cn(SHADE.blue.tile, 'flex items-start gap-3')}>
+              <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE.blue.chip)}>
+                <Database className="h-4 w-4" aria-hidden />
+              </span>
+              <div className="min-w-0">
+                <p className="label-institutional">{t('Registered sources')}</p>
+                <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE.blue.value)}>{metrics.total}</p>
+                <p className="mt-0.5 text-[0.6875rem] text-ink-500">{t('{0} enabled · {1} paused', metrics.enabled, metrics.paused)}</p>
+              </div>
             </Card>
-            <Card tone={metrics.needingAttention > 0 ? 'warn' : 'default'} background="amber">
-              <p className="label-institutional">{t('Needing attention')}</p>
-              <p className="numeric mt-2 text-metric font-semibold text-ink-900">{metrics.needingAttention}</p>
-              <p className="mt-0.5 text-[0.6875rem] text-ink-500">
-                {t('Degraded, stale or in error · {0} past their freshness expectation', metrics.slaBreaches)}
-              </p>
+            <Card className={cn(SHADE[metrics.needingAttention > 0 ? 'amber' : 'green'].tile, 'flex items-start gap-3')}>
+              <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE[metrics.needingAttention > 0 ? 'amber' : 'green'].chip)}>
+                <ShieldAlert className="h-4 w-4" aria-hidden />
+              </span>
+              <div className="min-w-0">
+                <p className="label-institutional">{t('Needing attention')}</p>
+                <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE[metrics.needingAttention > 0 ? 'amber' : 'green'].value)}>{metrics.needingAttention}</p>
+                <p className="mt-0.5 text-[0.6875rem] text-ink-500">
+                  {t('Degraded, stale or in error · {0} past their freshness expectation', metrics.slaBreaches)}
+                </p>
+              </div>
             </Card>
-            <Card background="green">
-              <p className="label-institutional">{t('Records ingested')}</p>
-              <p className="numeric mt-2 text-metric font-semibold text-ink-900">{formatCompact(metrics.totalRecords)}</p>
-              <p className="mt-0.5 text-[0.6875rem] text-ink-500">{t('Across all sources, simulated')}</p>
+            <Card className={cn(SHADE.teal.tile, 'flex items-start gap-3')}>
+              <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE.teal.chip)}>
+                <Table2 className="h-4 w-4" aria-hidden />
+              </span>
+              <div className="min-w-0">
+                <p className="label-institutional">{t('Records ingested')}</p>
+                <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE.teal.value)}>{formatCompact(metrics.totalRecords)}</p>
+                <p className="mt-0.5 text-[0.6875rem] text-ink-500">{t('Across all sources, simulated')}</p>
+              </div>
             </Card>
-            <Card tone="info">
-              <p className="label-institutional">{t('Mean quality (enabled)')}</p>
-              <p className="numeric mt-2 text-metric font-semibold text-ink-900">
-                {metrics.avgQuality}
-                <span className="text-base text-ink-400">/100</span>
-              </p>
-              <p className="mt-0.5 text-[0.6875rem] text-ink-500">{t('Mean of five published dimensions')}</p>
+            <Card className={cn(SHADE.green.tile, 'flex items-start gap-3')}>
+              <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE.green.chip)}>
+                <Gauge className="h-4 w-4" aria-hidden />
+              </span>
+              <div className="min-w-0">
+                <p className="label-institutional">{t('Mean quality (enabled)')}</p>
+                <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE.green.value)}>
+                  {metrics.avgQuality}
+                  <span className="text-base text-ink-400">/100</span>
+                </p>
+                <p className="mt-0.5 text-[0.6875rem] text-ink-500">{t('Mean of five published dimensions')}</p>
+              </div>
             </Card>
           </MetricGrid>
 
           <Card>
-            <ChartFrame title={t('Sources by category')} unit="sources" timeframe="Current register" height={190}>
-              <DonutChart data={categoryComposition} centreValue={String(metrics.total)} centreLabel="sources" />
+            <ChartFrame title={t('Sources by category')} unit={t('sources')} timeframe={t('Current register')} height={190}>
+              <DonutChart data={categoryComposition} centreValue={String(metrics.total)} centreLabel={t('sources')} />
             </ChartFrame>
             <div className="mt-3 space-y-1.5 border-t border-ink-100 pt-3">
               {categoryComposition.map((c) => (
@@ -726,7 +749,7 @@ export function DataSourcesPage(): React.JSX.Element {
             onChange={(e) => setClassificationFilter(e.target.value as DataClassification | '')}
             options={[
               { value: '', label: t('All classifications') },
-              ...CLASSIFICATION_OPTIONS.map((c) => ({ value: c, label: c })),
+              ...CLASSIFICATION_OPTIONS.map((c) => ({ value: c, label: CLASSIFICATION_LABEL[c] })),
             ]}
           />
           <Select
@@ -747,7 +770,7 @@ export function DataSourcesPage(): React.JSX.Element {
         {sources.length === 0 ? (
           <EmptyState
             title={t('No data sources')}
-            detail="Every source has been removed for this session. Add one, or reset the session to restore the register."
+            detail={t('Every source has been removed for this session. Add one, or reset the session to restore the register.')}
           />
         ) : (
           <div className="p-3">
@@ -764,7 +787,7 @@ export function DataSourcesPage(): React.JSX.Element {
               }}
               initialSort={{ columnId: 'name', direction: 'asc' }}
               emptyTitle={t('No sources match the current filters')}
-              emptyDetail="Widen a filter, or clear the search term, to see more of the register."
+              emptyDetail={t('Widen a filter, or clear the search term, to see more of the register.')}
             />
           </div>
         )}
@@ -803,7 +826,7 @@ export function DataSourcesPage(): React.JSX.Element {
               ]}
               value={detailTab}
               onChange={(id) => setDetailTab(id as typeof detailTab)}
-              ariaLabel="Data source detail sections"
+              ariaLabel={t('Data source detail sections')}
             />
           ) : null
         }
@@ -820,7 +843,7 @@ export function DataSourcesPage(): React.JSX.Element {
                 variant="primary"
                 icon={<RefreshCw className="h-3.5 w-3.5" />}
                 disabled={!detailSource.enabled || syncingIds.includes(detailSource.id)}
-                title={detailSource.enabled ? 'Run a simulated ingestion now' : 'Enable the source before syncing it'}
+                title={detailSource.enabled ? t('Run a simulated ingestion now') : t('Enable the source before syncing it')}
                 onClick={() => runSync(detailSource)}
               >
                 {t('Sync now')}
@@ -866,7 +889,7 @@ export function DataSourcesPage(): React.JSX.Element {
                   recordsIngested: 0,
                   qualityScore: 0,
                   latencyMs: 0,
-                  purpose: draft.purpose.trim() || 'Purpose not yet stated. A feed without a stated purpose cannot be enabled in a production deployment.',
+                  purpose: draft.purpose.trim() || t('Purpose not yet stated. A feed without a stated purpose cannot be enabled in a production deployment.'),
                   retentionDays: draft.retentionDays,
                   slaMinutes: draft.frequency === 'realtime' ? 10 : draft.frequency === '5-min' ? 15 : draft.frequency === 'hourly' ? 120 : draft.frequency === 'daily' ? 1440 : 20_160,
                   personalData: false,
@@ -957,7 +980,7 @@ export function DataSourcesPage(): React.JSX.Element {
                 id="ds-classification"
                 value={draft.classification}
                 onChange={(e) => setDraft((d) => ({ ...d, classification: e.target.value as DataClassification }))}
-                options={CLASSIFICATION_OPTIONS.map((c) => ({ value: c, label: c }))}
+                options={CLASSIFICATION_OPTIONS.map((c) => ({ value: c, label: CLASSIFICATION_LABEL[c] }))}
               />
             </div>
             <div>
@@ -1008,7 +1031,7 @@ export function DataSourcesPage(): React.JSX.Element {
                 id="edit-classification"
                 value={editDraft.classification}
                 onChange={(e) => setEditDraft((d) => (d ? { ...d, classification: e.target.value as DataClassification } : d))}
-                options={CLASSIFICATION_OPTIONS.map((c) => ({ value: c, label: c }))}
+                options={CLASSIFICATION_OPTIONS.map((c) => ({ value: c, label: CLASSIFICATION_LABEL[c] }))}
               />
             </div>
             <div>
@@ -1059,8 +1082,8 @@ export function DataSourcesPage(): React.JSX.Element {
         title={t('Remove "{0}"?', removeTarget?.name ?? '')}
         description={
           (removeTarget?.downstream?.length ?? 0) > 0
-            ? `${removeTarget?.downstream?.length} downstream metric(s) draw on this source: ${(removeTarget?.downstream ?? []).join(', ')}. Removing it from this session's register does not remove those metrics, but in a live deployment they would lose their input.`
-            : "The source is removed from this session's register. Reset the session to restore any seed sources you remove."
+            ? t('{0} downstream metric(s) draw on this source: {1}. Removing it from this session\'s register does not remove those metrics, but in a live deployment they would lose their input.', removeTarget?.downstream?.length, (removeTarget?.downstream ?? []).join(', '))
+            : t('The source is removed from this session\'s register. Reset the session to restore any seed sources you remove.')
         }
         confirmLabel={t('Remove')}
         intent="critical"
@@ -1114,19 +1137,19 @@ function DataSourceDetail({
           <Card tone={breachesSla(source) ? 'warn' : 'sunken'}>
             <p className="label-institutional">{t('Last sync')}</p>
             <p className="mt-1.5 text-[0.8125rem] font-semibold text-ink-900">
-              {source.recordsIngested > 0 ? formatRelative(source.lastSyncAt) : 'Never'}
+              {source.recordsIngested > 0 ? formatRelative(source.lastSyncAt) : t('Never')}
             </p>
             <p className="mt-0.5 text-[0.625rem] text-ink-500">{t('Expectation: {0}', slaLabel(source.slaMinutes))}</p>
           </Card>
         </MetricGrid>
 
         <DefinitionList>
-          <DefinitionRow label={t('Purpose of ingestion')}>{source.purpose ?? 'Not stated'}</DefinitionRow>
+          <DefinitionRow label={t('Purpose of ingestion')}>{source.purpose ?? t('Not stated')}</DefinitionRow>
           <DefinitionRow label={t('Owner department')}>{departmentName(source.ownerDepartmentId)}</DefinitionRow>
           <DefinitionRow label={t('Accountable officer')}>{officerDisplayName(source.ownerOfficerId)}</DefinitionRow>
           <DefinitionRow label={t('Transport')}>{DATA_SOURCE_FORMAT_LABEL[source.format]}</DefinitionRow>
           <DefinitionRow label={t('Endpoint')} mono>
-            {source.endpointLabel ?? 'Not provisioned'}
+            {source.endpointLabel ?? t('Not provisioned')}
           </DefinitionRow>
           <DefinitionRow label={t('Cadence')}>{SYNC_FREQUENCY_LABEL[source.frequency]}</DefinitionRow>
           <DefinitionRow label={t('Freshness expectation')}>{slaLabel(source.slaMinutes)}</DefinitionRow>
@@ -1156,7 +1179,7 @@ function DataSourceDetail({
                     <div className="flex flex-wrap items-center gap-1.5">
                       <SeverityBadge severity={incident.severity} withDot={false} />
                       <Badge tone={incident.resolved ? 'positive' : 'warn'}>
-                        {incident.resolved ? 'Resolved' : 'Open'}
+                        {incident.resolved ? t('Resolved') : t('Open')}
                       </Badge>
                       <div className="flex-1" />
                       <span className="text-[0.625rem] text-ink-400">{formatRelative(incident.at)}</span>
@@ -1182,20 +1205,20 @@ function DataSourceDetail({
     return (
       <div className="space-y-3">
         <p className="text-[0.8125rem] leading-relaxed text-ink-600">
-          {t('The fields this adapter ingests, exactly as declared. Fields marked')}{' '}<em>personal</em>{' '}{t('are minimised, banded or dropped before anything enters the platform store — the declaration is what a privacy review is conducted against, so an undeclared field is a defect, not an omission.')}
+          {t('The fields this adapter ingests, exactly as declared. Fields marked')}{' '}<em>{t('personal')}</em>{' '}{t('are minimised, banded or dropped before anything enters the platform store — the declaration is what a privacy review is conducted against, so an undeclared field is a defect, not an omission.')}
         </p>
         {fields.length === 0 ? (
           <EmptyState
             compact
             title={t('No schema declared')}
-            detail="Sources added during this session carry no schema until their adapter is built."
+            detail={t('Sources added during this session carry no schema until their adapter is built.')}
           />
         ) : (
           <DataTable
             rows={fields}
             rowKey={(f) => f.name}
             searchable={false}
-            ariaLabel={`Ingestion schema for ${source.name}`}
+            ariaLabel={t('Ingestion schema for {0}', source.name)}
             columns={[
               {
                 id: 'name',
@@ -1236,7 +1259,7 @@ function DataSourceDetail({
         <EmptyState
           compact
           title={t('No quality profile yet')}
-          detail="A source reports quality once it has ingested at least one batch. Enable it and run a sync."
+          detail={t('A source reports quality once it has ingested at least one batch. Enable it and run a sync.')}
         />
       )
     }
@@ -1286,14 +1309,14 @@ function DataSourceDetail({
           {t('Simulated ingestion runs, newest first. Runs that failed or arrived partial are kept in the record — a history showing only successes would misrepresent how the feed actually behaves.')}
         </p>
         {runs.length === 0 ? (
-          <EmptyState compact title={t('No runs recorded')} detail="This source has not ingested during this session." />
+          <EmptyState compact title={t('No runs recorded')} detail={t('This source has not ingested during this session.')} />
         ) : (
           <DataTable
             rows={runs}
             rowKey={(r) => r.id}
             searchable={false}
             pageSize={10}
-            ariaLabel={`Sync history for ${source.name}`}
+            ariaLabel={t('Sync history for {0}', source.name)}
             columns={[
               {
                 id: 'startedAt',
@@ -1364,7 +1387,7 @@ function DataSourceDetail({
         {t('What this feed carries. If the source stopped reporting, each of these would degrade before anything else in the platform did — which is what makes this list an impact assessment rather than a description.')}
       </p>
       {downstream.length === 0 ? (
-        <EmptyState compact title={t('No downstream consumers declared')} detail="Nothing in the platform currently derives from this source." />
+        <EmptyState compact title={t('No downstream consumers declared')} detail={t('Nothing in the platform currently derives from this source.')} />
       ) : (
         <ul className="space-y-2">
           {downstream.map((metric) => (

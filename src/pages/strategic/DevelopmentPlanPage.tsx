@@ -359,7 +359,7 @@ export function DevelopmentPlanPage(): React.JSX.Element {
           </div>
         </div>
         {filteredReservations.length === 0 ? (
-          <EmptyState title={t('No reservations match the current filters')} detail="Clear a filter to widen the register." />
+          <EmptyState title={t('No reservations match the current filters')} detail={t('Clear a filter to widen the register.')} />
         ) : (
           <DataTable rows={filteredReservations} columns={reservationColumns} rowKey={(r) => r.id} pageSize={15} />
         )}

@@ -105,8 +105,8 @@ export function MarketsPage(): React.JSX.Element {
     return (
       <PageBody>
         <PageHeader
-          eyebrow={t('City Intelligence')}
-          breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Markets & Slaughterhouses') }]}
+          eyebrow={t('City Services')}
+          breadcrumbs={[{ label: t('City Services') }, { label: t('Civic Records & Markets') }, { label: t('Markets & slaughterhouses') }]}
         />
         <LoadingState variant="metrics" />
         <LoadingState variant="table" rows={8} />
@@ -117,8 +117,8 @@ export function MarketsPage(): React.JSX.Element {
     return (
       <PageBody>
         <PageHeader
-          eyebrow={t('City Intelligence')}
-          breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Markets & Slaughterhouses') }]}
+          eyebrow={t('City Services')}
+          breadcrumbs={[{ label: t('City Services') }, { label: t('Civic Records & Markets') }, { label: t('Markets & slaughterhouses') }]}
         />
         <ErrorState
           detail={(facilitiesQuery.error ?? trendQuery.error)?.message}
@@ -286,14 +286,14 @@ export function MarketsPage(): React.JSX.Element {
   return (
     <PageBody>
       <PageHeader
-        eyebrow={t('City Intelligence')}
-        breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Markets & Slaughterhouses') }]}
+        eyebrow={t('City Services')}
+        breadcrumbs={[{ label: t('City Services') }, { label: t('Civic Records & Markets') }, { label: t('Markets & slaughterhouses') }]}
         freshness={freshness}
       />
 
       <DemonstrationNotice />
 
-      <FilterBar show={['ward', 'search']} searchPlaceholder="Search markets, abattoirs and tanneries" />
+      <FilterBar show={['ward', 'search']} searchPlaceholder={t('Search markets, abattoirs and tanneries')} />
 
       <MetricGrid columns={4}>
         <MetricCard
@@ -333,8 +333,8 @@ export function MarketsPage(): React.JSX.Element {
           value={formatNumber(overdue.length)}
           support={
             overdue.length > 0
-              ? `${formatNumber(overdueRegulated.length)} of them regulated trades · longest gap ${formatNumber(longestInterval)} days`
-              : 'Every facility inspected within the interval'
+              ? t('{0} of them regulated trades · longest gap {1} days', formatNumber(overdueRegulated.length), formatNumber(longestInterval))
+              : t('Every facility inspected within the interval')
           }
           tone={overdueRegulated.length > 0 ? 'critical' : overdue.length > 0 ? 'warn' : 'positive'}
           icon={<CalendarClock className="h-4 w-4" />}
@@ -353,7 +353,7 @@ export function MarketsPage(): React.JSX.Element {
             {filtered.length === 0 ? (
               <EmptyState
                 title={t('No facilities match the current filters')}
-                detail="Clear a filter to widen the register."
+                detail={t('Clear a filter to widen the register.')}
               />
             ) : (
               <DataTable rows={filtered} columns={columns} rowKey={(r) => r.id} pageSize={12} />
@@ -411,7 +411,7 @@ export function MarketsPage(): React.JSX.Element {
             </p>
             <div className="px-3 pb-3" style={{ height: Math.max(210, lowestHygiene.length * 26) }}>
               {lowestHygiene.length === 0 ? (
-                <EmptyState compact title={t('No facilities in scope')} detail="Clear a filter to widen the register." />
+                <EmptyState compact title={t('No facilities in scope')} detail={t('Clear a filter to widen the register.')} />
               ) : (
                 <RankedBarChart
                   data={lowestHygiene.map((m) => ({ label: m.name.slice(0, 22), value: m.hygieneScore }))}

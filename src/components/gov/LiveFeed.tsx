@@ -7,6 +7,7 @@ import { DOMAIN_LABEL, type Severity } from '@/types/common'
 import type { User } from '@/types/organisation'
 import { cn } from '@/utils/cn'
 import { t } from '@/i18n'
+import { enumLabel } from '@/utils/enum-label'
 
 /**
  * The live updates column.
@@ -117,7 +118,7 @@ export function buildFeed(user: User | null, now: Date, limit = 40): FeedEntry[]
       title: incident.title,
       detail: incident.description,
       severity: incident.severity,
-      tag: incident.type.replace(/-/g, ' '),
+      tag: enumLabel(incident.type),
     })
   }
 
@@ -260,11 +261,11 @@ export function LiveFeed({
                   <span aria-hidden className={cn('mt-0.5 w-[3px] shrink-0 self-stretch rounded-full', severityTone(entry.severity))} />
                   <span className="min-w-0 flex-1">
                     <span className="flex flex-wrap items-center gap-1.5">
-                      <span className="text-[0.5625rem] font-bold tracking-[0.08em] text-govt-700 uppercase">
+                      <span className="text-[0.625rem] font-bold tracking-[0.08em] text-govt-700 uppercase">
                         {KIND_LABEL[entry.kind]}
                       </span>
                       <span aria-hidden className="text-ink-300">·</span>
-                      <span className="truncate text-[0.5625rem] font-semibold tracking-wide text-ink-500 uppercase">
+                      <span className="truncate text-[0.625rem] font-semibold tracking-wide text-ink-500 uppercase">
                         {entry.tag}
                       </span>
                       {isNew ? (

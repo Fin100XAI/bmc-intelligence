@@ -1,12 +1,9 @@
 import { useMemo, useState } from 'react'
-import {
-  AlertOctagon,
-  Compass,
-  Sparkles,
-} from 'lucide-react'
+import { AlertOctagon, AlertTriangle, ArrowUpRight, CheckCircle2, Compass, Cpu, FileCheck, Hourglass, PencilLine, Percent, ShieldAlert, Sparkles, XCircle } from 'lucide-react'
+import { KpiTile } from '@/components/infographic'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { Badge, SeverityBadge } from '@/components/ui/badges'
-import { Button, Card, Label, LinkButton, MetricGrid, ProgressBar, Select } from '@/components/ui/primitives'
+import { Button, Card, Label, LinkButton, MetricGrid, Select } from '@/components/ui/primitives'
 import { DataTable } from '@/components/ui/DataTable'
 import { DemonstrationNotice, EmptyState, ErrorState, LoadingState } from '@/components/ui/states'
 import { ConfirmDialog, Tabs } from '@/components/ui/overlays'
@@ -25,6 +22,7 @@ import { formatDate, formatPercent, formatRelative } from '@/utils/format'
 import { DOMAIN_LABEL } from '@/types/common'
 import { AI_RISK_LABEL, type AIIncident, type AIModel, type AIRiskEntry, type HumanOversightRecord, type PromptTemplate } from '@/types/ai'
 import { cn } from '@/utils/cn'
+import { enumLabel } from '@/utils/enum-label'
 import { t } from '@/i18n'
 import { registerLayer } from '@/data/runtime'
 
@@ -39,14 +37,14 @@ import { registerLayer } from '@/data/runtime'
 
 function build$AI_MAY_DO(): Array<{ verb: string; detail: string }> {
   return [
-  { verb: 'Analyse', detail: t('Evaluate structured municipal records against published rules and thresholds.') },
-  { verb: 'Recommend', detail: t('Propose an action with a stated rationale, evidence and an accountable human owner.') },
-  { verb: 'Forecast', detail: t('Project a metric forward under stated assumptions, with confidence always attached.') },
-  { verb: 'Summarise', detail: t('Condense a timeline, brief or record set without adding an unsupported claim.') },
-  { verb: 'Detect anomalies', detail: t('Flag a statistical departure from cohort comparables for human reconciliation.') },
-  { verb: 'Prioritise', detail: t('Order a worklist against published, reviewable weights for human confirmation.') },
-  { verb: 'Simulate', detail: t('Recalculate an outcome under a hypothetical input, always labelled as simulation.') },
-  { verb: 'Explain', detail: t('Trace a derived figure back through its lineage, weights and contributing inputs.') },
+  { verb: t('Analyse'), detail: t('Evaluate structured municipal records against published rules and thresholds.') },
+  { verb: t('Recommend'), detail: t('Propose an action with a stated rationale, evidence and an accountable human owner.') },
+  { verb: t('Forecast'), detail: t('Project a metric forward under stated assumptions, with confidence always attached.') },
+  { verb: t('Summarise'), detail: t('Condense a timeline, brief or record set without adding an unsupported claim.') },
+  { verb: t('Detect anomalies'), detail: t('Flag a statistical departure from cohort comparables for human reconciliation.') },
+  { verb: t('Prioritise'), detail: t('Order a worklist against published, reviewable weights for human confirmation.') },
+  { verb: t('Simulate'), detail: t('Recalculate an outcome under a hypothetical input, always labelled as simulation.') },
+  { verb: t('Explain'), detail: t('Trace a derived figure back through its lineage, weights and contributing inputs.') },
 ]
 }
 let AI_MAY_DO: Array<{ verb: string; detail: string }> = build$AI_MAY_DO()
@@ -189,11 +187,11 @@ export function AIGovernancePage(): React.JSX.Element {
             }
             statusOptions={
               tab === 'models'
-                ? (['active', 'restricted', 'retired', 'pending-approval'] as AIModel['status'][]).map((s) => ({ value: s, label: s.replace(/-/g, ' ') }))
+                ? (['active', 'restricted', 'retired', 'pending-approval'] as AIModel['status'][]).map((s) => ({ value: s, label: enumLabel(s) }))
                 : tab === 'prompts'
-                  ? (['draft', 'under-review', 'approved', 'withdrawn'] as PromptTemplate['approvalStatus'][]).map((s) => ({ value: s, label: s.replace(/-/g, ' ') }))
+                  ? (['draft', 'under-review', 'approved', 'withdrawn'] as PromptTemplate['approvalStatus'][]).map((s) => ({ value: s, label: enumLabel(s) }))
                   : tab === 'risk'
-                    ? (['open', 'mitigated', 'accepted', 'monitoring'] as AIRiskEntry['status'][]).map((s) => ({ value: s, label: s }))
+                    ? (['open', 'mitigated', 'accepted', 'monitoring'] as AIRiskEntry['status'][]).map((s) => ({ value: s, label: enumLabel(s) }))
                     : tab === 'incidents'
                       ? INCIDENT_STAGES.map((s) => ({ value: s, label: INCIDENT_STAGE_LABEL[s] }))
                       : undefined
@@ -208,7 +206,7 @@ export function AIGovernancePage(): React.JSX.Element {
       />
 
       {/* ---------------------------------------------------- Human-in-the-loop */}
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <GovPanel title={t('AI must never')} tone="critical">
           <p className="mb-3 text-xs leading-relaxed text-ink-500">{t('Technically blocked at the gateway, regardless of role or confidence.')}</p>
           <ul className="mt-3 space-y-2.5">
@@ -235,26 +233,11 @@ export function AIGovernancePage(): React.JSX.Element {
       </div>
 
       <MetricGrid columns={5}>
-        <Card>
-          <p className="label-institutional">{t('Active models')}</p>
-          <p className="numeric mt-2 text-metric font-semibold text-ink-900">{activeModels} / {models.length}</p>
-        </Card>
-        <Card tone={highRiskModels > 0 ? 'warn' : 'default'}>
-          <p className="label-institutional">{t('High risk-class models')}</p>
-          <p className="numeric mt-2 text-metric font-semibold text-ink-900">{highRiskModels}</p>
-        </Card>
-        <Card>
-          <p className="label-institutional">{t('Approved prompts')}</p>
-          <p className="numeric mt-2 text-metric font-semibold text-ink-900">{approvedPrompts} / {prompts.length}</p>
-        </Card>
-        <Card tone={openRisks > 0 ? 'warn' : 'default'}>
-          <p className="label-institutional">{t('Open / monitored AI risks')}</p>
-          <p className="numeric mt-2 text-metric font-semibold text-ink-900">{openRisks}</p>
-        </Card>
-        <Card tone={openIncidents > 0 ? 'critical' : 'default'}>
-          <p className="label-institutional">{t('Open AI incidents')}</p>
-          <p className="numeric mt-2 text-metric font-semibold text-ink-900">{openIncidents}</p>
-        </Card>
+        <KpiTile icon={<Cpu className="h-5 w-5" />} label={t('Active models')} value={`${activeModels} / ${models.length}`} shade="blue" />
+        <KpiTile icon={<ShieldAlert className="h-5 w-5" />} label={t('High risk-class models')} value={highRiskModels} tone={highRiskModels > 0 ? 'warn' : 'positive'} />
+        <KpiTile icon={<FileCheck className="h-5 w-5" />} label={t('Approved prompts')} value={`${approvedPrompts} / ${prompts.length}`} shade="teal" />
+        <KpiTile icon={<AlertTriangle className="h-5 w-5" />} label={t('Open / monitored AI risks')} value={openRisks} tone={openRisks > 0 ? 'warn' : 'positive'} />
+        <KpiTile icon={<AlertOctagon className="h-5 w-5" />} label={t('Open AI incidents')} value={openIncidents} tone={openIncidents > 0 ? 'critical' : 'positive'} />
       </MetricGrid>
 
       <Tabs
@@ -267,7 +250,7 @@ export function AIGovernancePage(): React.JSX.Element {
         ]}
         value={tab}
         onChange={(id) => setTab(id as TabId)}
-        ariaLabel="AI Governance sections"
+        ariaLabel={t('AI Governance sections')}
       />
 
       {tab === 'models' ? (
@@ -282,7 +265,7 @@ export function AIGovernancePage(): React.JSX.Element {
               rows={models}
               rowKey={(m: AIModel) => m.id}
               searchable
-              searchPlaceholder="Search models"
+              searchPlaceholder={t('Search models')}
               columns={[
                 { id: 'name', header: t('Model'), cell: (m: AIModel) => (
                   <div className="min-w-0">
@@ -291,17 +274,17 @@ export function AIGovernancePage(): React.JSX.Element {
                   </div>
                 ), sortValue: (m: AIModel) => m.name },
                 { id: 'risk', header: t('Risk class'), cell: (m: AIModel) => (
-                  <Badge tone={m.riskClass === 'high' ? 'critical' : m.riskClass === 'moderate' ? 'warn' : 'neutral'}>{m.riskClass}</Badge>
+                  <Badge tone={m.riskClass === 'high' ? 'critical' : m.riskClass === 'moderate' ? 'warn' : 'neutral'}>{enumLabel(m.riskClass)}</Badge>
                 ), sortValue: (m: AIModel) => m.riskClass },
                 { id: 'evaluation', header: t('Evaluation status'), cell: (m: AIModel) => (
                   <Badge tone={m.evaluationStatus === 'passed' ? 'positive' : m.evaluationStatus === 'failed' ? 'critical' : m.evaluationStatus === 're-evaluation-due' ? 'warn' : 'neutral'}>
-                    {m.evaluationStatus.replace(/-/g, ' ')}
+                    {enumLabel(m.evaluationStatus)}
                   </Badge>
                 ), sortValue: (m: AIModel) => m.evaluationStatus },
                 { id: 'lastEvaluated', header: t('Last evaluated'), cell: (m: AIModel) => formatDate(m.lastEvaluatedAt), sortValue: (m: AIModel) => m.lastEvaluatedAt, hideBelow: 'lg' },
                 { id: 'status', header: t('Status'), cell: (m: AIModel) => (
                   <Badge tone={m.status === 'active' ? 'positive' : m.status === 'retired' ? 'muted' : m.status === 'restricted' ? 'warn' : 'neutral'} dot>
-                    {m.status.replace('-', ' ')}
+                    {enumLabel(m.status)}
                   </Badge>
                 ), sortValue: (m: AIModel) => m.status },
               ]}
@@ -322,7 +305,7 @@ export function AIGovernancePage(): React.JSX.Element {
               rows={prompts}
               rowKey={(p: PromptTemplate) => p.id}
               searchable
-              searchPlaceholder="Search prompt templates"
+              searchPlaceholder={t('Search prompt templates')}
               columns={[
                 { id: 'title', header: t('Template'), cell: (p: PromptTemplate) => (
                   <div className="min-w-0">
@@ -332,11 +315,11 @@ export function AIGovernancePage(): React.JSX.Element {
                 ), sortValue: (p: PromptTemplate) => p.title },
                 { id: 'approval', header: t('Approval status'), cell: (p: PromptTemplate) => (
                   <Badge tone={p.approvalStatus === 'approved' ? 'positive' : p.approvalStatus === 'under-review' ? 'warn' : p.approvalStatus === 'withdrawn' ? 'muted' : 'neutral'}>
-                    {p.approvalStatus.replace('-', ' ')}
+                    {enumLabel(p.approvalStatus)}
                   </Badge>
                 ), sortValue: (p: PromptTemplate) => p.approvalStatus },
                 { id: 'risk', header: t('Risk class'), cell: (p: PromptTemplate) => (
-                  <Badge tone={p.riskClass === 'high' ? 'critical' : p.riskClass === 'moderate' ? 'warn' : 'neutral'}>{p.riskClass}</Badge>
+                  <Badge tone={p.riskClass === 'high' ? 'critical' : p.riskClass === 'moderate' ? 'warn' : 'neutral'}>{enumLabel(p.riskClass)}</Badge>
                 ), sortValue: (p: PromptTemplate) => p.riskClass },
                 { id: 'roles', header: t('Allowed roles'), cell: (p: PromptTemplate) => <span className="numeric">{p.allowedRoles.length}</span>, sortValue: (p: PromptTemplate) => p.allowedRoles.length, align: 'right', hideBelow: 'lg' },
                 { id: 'modified', header: t('Last modified'), cell: (p: PromptTemplate) => formatDate(p.lastModifiedAt), sortValue: (p: PromptTemplate) => p.lastModifiedAt, hideBelow: 'lg' },
@@ -382,7 +365,7 @@ export function AIGovernancePage(): React.JSX.Element {
                         return (
                           <td
                             key={likelihood}
-                            title={cellRisks.map((r) => AI_RISK_LABEL[r.category]).join(', ') || 'No registered risk at this combination'}
+                            title={cellRisks.map((r) => AI_RISK_LABEL[r.category]).join(', ') || t('No registered risk at this combination')}
                             className={cn(
                               'h-16 rounded-md text-lg font-semibold',
                               cellRisks.length === 0
@@ -414,7 +397,7 @@ export function AIGovernancePage(): React.JSX.Element {
                 rows={risks}
                 rowKey={(r: AIRiskEntry) => r.id}
                 searchable
-                searchPlaceholder="Search risks"
+                searchPlaceholder={t('Search risks')}
                 pageSize={10}
                 initialSort={{ columnId: 'residual', direction: 'desc' }}
                 columns={[
@@ -431,7 +414,7 @@ export function AIGovernancePage(): React.JSX.Element {
                 ]}
               />
             </div>
-            <div className="mt-4 grid gap-2 sm:grid-cols-2">
+            <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
               {risks.map((r) => (
                 <div key={`controls-${r.id}`} className="rounded-md border border-ink-100 bg-surface-sunken p-2.5">
                   <p className="text-[0.6875rem] font-semibold text-ink-700">{t('{0} - controls in place', AI_RISK_LABEL[r.category])}</p>
@@ -459,31 +442,17 @@ export function AIGovernancePage(): React.JSX.Element {
             <ErrorState detail={oversightSummaryQuery.error.message} onRetry={() => oversightSummaryQuery.refetch()} />
           ) : oversightSummary ? (
             <MetricGrid columns={6}>
-              <Card tone="warn">
-                <p className="label-institutional">{t('Pending')}</p>
-                <p className="numeric mt-2 text-metric font-semibold text-ink-900">{oversightSummary.pending}</p>
-              </Card>
-              <Card>
-                <p className="label-institutional">{t('Accepted')}</p>
-                <p className="numeric mt-2 text-metric font-semibold text-ink-900">{oversightSummary.accepted}</p>
-              </Card>
-              <Card>
-                <p className="label-institutional">{t('Modified')}</p>
-                <p className="numeric mt-2 text-metric font-semibold text-ink-900">{oversightSummary.modified}</p>
-              </Card>
-              <Card>
-                <p className="label-institutional">{t('Rejected')}</p>
-                <p className="numeric mt-2 text-metric font-semibold text-ink-900">{oversightSummary.rejected}</p>
-              </Card>
-              <Card>
-                <p className="label-institutional">{t('Escalated')}</p>
-                <p className="numeric mt-2 text-metric font-semibold text-ink-900">{oversightSummary.escalated}</p>
-              </Card>
-              <Card tone="positive">
-                <p className="label-institutional">{t('Acceptance rate')}</p>
-                <p className="numeric mt-2 text-metric font-semibold text-ink-900">{formatPercent(oversightSummary.acceptanceRate, 1)}</p>
-                <ProgressBar value={oversightSummary.acceptanceRate} size="xs" className="mt-2" />
-              </Card>
+              <KpiTile icon={<Hourglass className="h-5 w-5" />} label={t('Pending')} value={oversightSummary.pending} tone="warn" />
+              <KpiTile icon={<CheckCircle2 className="h-5 w-5" />} label={t('Accepted')} value={oversightSummary.accepted} shade="green" />
+              <KpiTile icon={<PencilLine className="h-5 w-5" />} label={t('Modified')} value={oversightSummary.modified} shade="blue" />
+              <KpiTile icon={<XCircle className="h-5 w-5" />} label={t('Rejected')} value={oversightSummary.rejected} shade="red" />
+              <KpiTile icon={<ArrowUpRight className="h-5 w-5" />} label={t('Escalated')} value={oversightSummary.escalated} shade="orange" />
+              <KpiTile
+                icon={<Percent className="h-5 w-5" />}
+                label={t('Acceptance rate')}
+                value={formatPercent(oversightSummary.acceptanceRate, 1)}
+                tone="positive"
+              />
             </MetricGrid>
           ) : null}
 
@@ -501,7 +470,7 @@ export function AIGovernancePage(): React.JSX.Element {
                   rows={(oversightQuery.data?.items ?? []).filter((r) => matchesOversightFilters(r, filters))}
                   rowKey={(r: HumanOversightRecord) => r.id}
                   searchable
-                  searchPlaceholder="Search recommendations"
+                  searchPlaceholder={t('Search recommendations')}
                   pageSize={10}
                   initialSort={{ columnId: 'submitted', direction: 'desc' }}
                   columns={[
@@ -519,7 +488,7 @@ export function AIGovernancePage(): React.JSX.Element {
                         size="xs"
                         variant="outline"
                         disabled={!canReview}
-                        title={canReview ? 'Record a human review outcome for this recommendation' : 'Your role does not hold ai-governance:approve. This control is disabled by the permission engine.'}
+                        title={canReview ? t('Record a human review outcome for this recommendation') : t('Your role does not hold ai-governance:approve. This control is disabled by the permission engine.')}
                         onClick={(e) => {
                           e.stopPropagation()
                           setReviewOutcome('accepted')
@@ -605,12 +574,12 @@ export function AIGovernancePage(): React.JSX.Element {
           if (!reviewTarget) return
           void reviewMutation(reviewTarget.id, reviewOutcome, reason)
         }}
-        title={reviewTarget ? `Review recommendation - ${reviewTarget.recommendationTitle.slice(0, 60)}` : 'Review recommendation'}
+        title={reviewTarget ? t('Review recommendation - {0}', reviewTarget.recommendationTitle.slice(0, 60)) : t('Review recommendation')}
         description={t('Recorded permanently in the audit trail against your name. This action never modifies the underlying AI request - only the human review outcome.')}
         confirmLabel={t('Record review outcome')}
         intent="primary"
         requireReason
-        reasonLabel="Review note (recorded in the audit trail)"
+        reasonLabel={t('Review note (recorded in the audit trail)')}
         extra={
           <div>
             <Label htmlFor="review-outcome">{t('Outcome')}</Label>

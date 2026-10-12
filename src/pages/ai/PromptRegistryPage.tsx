@@ -11,6 +11,9 @@ import type { FilterState } from '@/stores/ui.store'
 import { getRole } from '@/security'
 import { DEMO_NOW, isoFromAnchor } from '@/utils/deterministic'
 import { formatRelative } from '@/utils/format'
+import { officerDisplayName } from '@/data/reference'
+import { DEMO_USERS } from '@/stores/auth.store'
+import { enumLabel } from '@/utils/enum-label'
 import type { DateRangeKey } from '@/types/common'
 import { AI_USE_CASE_LABEL, type PromptTemplate } from '@/types/ai'
 import {
@@ -88,6 +91,14 @@ function matchesGlobalFilters(prompt: PromptTemplate, filters: FilterState): boo
   return true
 }
 
+
+/** Owners are recorded as officer or demonstration-user ids; show the post, never the raw id. */
+function ownerLabel(id: string): string {
+  const name = officerDisplayName(id)
+  if (name !== id) return name
+  return DEMO_USERS.find((u) => u.id === id)?.designation ?? id
+}
+
 export function PromptRegistryPage(): React.JSX.Element {
   // The shell's masthead states the screen's name; the page states the wording.
   usePageMasthead(t('Prompt Registry'))
@@ -129,18 +140,18 @@ export function PromptRegistryPage(): React.JSX.Element {
       cell: (row) => <Badge tone="intel">{AI_USE_CASE_LABEL[row.useCase]}</Badge>,
       sortValue: (row) => row.useCase,
     },
-    { id: 'owner', header: t('Owner'), cell: (row) => row.ownerId, sortValue: (row) => row.ownerId, hideBelow: 'xl' },
+    { id: 'owner', header: t('Owner'), cell: (row) => ownerLabel(row.ownerId), sortValue: (row) => ownerLabel(row.ownerId), hideBelow: 'xl' },
     { id: 'version', header: t('Version'), cell: (row) => <span className="font-mono text-xs">{row.version}</span>, sortValue: (row) => row.version, hideBelow: 'md' },
     {
       id: 'approval',
       header: t('Approval status'),
-      cell: (row) => <Badge tone={APPROVAL_TONE[row.approvalStatus]} dot>{row.approvalStatus.replace(/-/g, ' ')}</Badge>,
+      cell: (row) => <Badge tone={APPROVAL_TONE[row.approvalStatus]} dot>{enumLabel(row.approvalStatus)}</Badge>,
       sortValue: (row) => row.approvalStatus,
     },
     {
       id: 'risk',
       header: t('Risk class'),
-      cell: (row) => <Badge tone={RISK_TONE[row.riskClass]}>{row.riskClass}</Badge>,
+      cell: (row) => <Badge tone={RISK_TONE[row.riskClass]}>{enumLabel(row.riskClass)}</Badge>,
       sortValue: (row) => row.riskClass,
     },
     {
@@ -181,7 +192,7 @@ export function PromptRegistryPage(): React.JSX.Element {
         <div className="flex min-w-0 flex-col gap-3 xl:col-span-8">
           {!promptsQuery.isLoading && !promptsQuery.error ? (
             rawPrompts.length === 0 ? (
-              <EmptyState title={t('No prompt templates registered')} detail="No prompt templates are visible within your authorised scope." />
+              <EmptyState title={t('No prompt templates registered')} detail={t('No prompt templates are visible within your authorised scope.')} />
             ) : (
               <>
                 <div className="flex flex-wrap items-center gap-2">
@@ -224,11 +235,11 @@ export function PromptRegistryPage(): React.JSX.Element {
                     stickyHeader
                     maxHeight="30rem"
                     searchable={false}
-                    searchPlaceholder="Search prompts"
+                    searchPlaceholder={t('Search prompts')}
                     onRowClick={(row) => setSelectedId(row.id)}
                     activeRowKey={selected?.id}
                     emptyTitle={t('No prompts match these filters')}
-                    emptyDetail="Adjust the approval or risk filters above."
+                    emptyDetail={t('Adjust the approval or risk filters above.')}
                   />
                 </GovPanel>
               </>
@@ -254,15 +265,15 @@ export function PromptRegistryPage(): React.JSX.Element {
                 title={selected.title}
                 subtitle={t('{0} · v{1}', selected.id, selected.version)}
                 tone="red"
-                actions={<Badge tone={APPROVAL_TONE[selected.approvalStatus]} dot>{selected.approvalStatus.replace(/-/g, ' ')}</Badge>}
+                actions={<Badge tone={APPROVAL_TONE[selected.approvalStatus]} dot>{enumLabel(selected.approvalStatus)}</Badge>}
               >
                 <p className="mb-3 text-xs leading-relaxed text-ink-500">
                   {t('{0} · last modified {1}', AI_USE_CASE_LABEL[selected.useCase], formatRelative(selected.lastModifiedAt))}
                 </p>
 
                 <div className="mt-3 flex flex-wrap items-center gap-1.5">
-                  <Badge tone={RISK_TONE[selected.riskClass]}>{selected.riskClass} risk</Badge>
-                  <Badge tone="muted">{t('Owner: {0}', selected.ownerId)}</Badge>
+                  <Badge tone={RISK_TONE[selected.riskClass]}>{t('{0} risk', enumLabel(selected.riskClass))}</Badge>
+                  <Badge tone="muted">{t('Owner: {0}', ownerLabel(selected.ownerId))}</Badge>
                 </div>
 
                 <div className="mt-4">
@@ -300,7 +311,7 @@ export function PromptRegistryPage(): React.JSX.Element {
                 </div>
               </GovPanel>
             ) : (
-              <EmptyState title={t('No prompt selected')} detail="Select a prompt from the register to view its body and guardrails." />
+              <EmptyState title={t('No prompt selected')} detail={t('Select a prompt from the register to view its body and guardrails.')} />
             )}
 
             <Card tone="info">

@@ -3,12 +3,15 @@ import {
   ArrowDown,
   ArrowUp,
   Award,
+  Gauge,
   GitBranch,
+  Layers,
   MessageSquareWarning,
   RefreshCcw,
   Repeat,
   Scale,
   ShieldCheck,
+  Siren,
   Sparkles,
   Timer,
   Users2,
@@ -27,10 +30,15 @@ import { resolutionService } from '@/services'
 import type { OwnershipProtocolState, ResolutionCase } from '@/domains/resolution/engine'
 import { usePageMasthead } from '@/stores/masthead.store'
 import { WARDS } from '@/data/reference'
+import { canAccess } from '@/security/access'
+import { useCurrentUser } from '@/stores/auth.store'
+import { useContextStore } from '@/stores/ui.store'
 import { COMPLAINT_CATEGORY_LABEL, type ComplaintCategory } from '@/types/operations'
 import { formatPercent } from '@/utils/format'
 import { isoFromAnchor } from '@/utils/deterministic'
 import { t } from '@/i18n'
+import { SHADE } from '@/components/ui/shade'
+import { cn } from '@/utils/cn'
 import { registerLayer } from '@/data/runtime'
 
 /**
@@ -124,7 +132,7 @@ function Objective({
   detail: string
 }): React.JSX.Element {
   return (
-    <li className="flex items-start gap-2 rounded-lg border border-ink-100 p-2.5">
+    <li className={cn('flex items-start gap-2 rounded-lg border p-2.5', SHADE.green.tile)}>
       {up ? (
         <ArrowUp className="mt-0.5 h-3.5 w-3.5 shrink-0 text-ok-600" aria-hidden />
       ) : (
@@ -133,7 +141,7 @@ function Objective({
       <div className="min-w-0">
         <div className="flex items-baseline justify-between gap-2">
           <span className="truncate text-xs font-medium text-ink-700">{label}</span>
-          <span className="numeric shrink-0 text-sm font-bold text-ink-900">{value}</span>
+          <span className={cn('numeric shrink-0 text-sm font-bold', SHADE.green.value)}>{value}</span>
         </div>
         <p className="mt-0.5 text-[0.6875rem] text-ink-500">{detail}</p>
       </div>
@@ -142,7 +150,18 @@ function Objective({
 }
 
 export function ResolutionIntelligencePage(): React.JSX.Element {
-  const [wardId, setWardId] = useState<string>('')
+  /*
+   * The ward control composes with the command-bar ward context: a new
+   * selection in the command bar governs the page, and choosing here overrides
+   * it until the command bar moves again (the same pattern as Hyperlocal).
+   * Holding it purely locally made the shared ward selection inert here.
+   */
+  const contextWardId = useContextStore((s) => s.wardId)
+  const [localWard, setLocalWard] = useState<{ wardId: string; from: string | null }>({ wardId: '', from: null })
+  const wardId = localWard.from === contextWardId ? localWard.wardId : contextWardId ?? ''
+  const setWardId = (id: string): void => setLocalWard({ wardId: id, from: contextWardId })
+  const user = useCurrentUser()
+  const authorisedWards = useMemo(() => WARDS.filter((w) => canAccess(user, 'ward', 'view', { wardId: w.id }).allowed), [user])
   const [category, setCategory] = useState<string>('')
   const [selectedPair, setSelectedPair] = useState<string | null>(null)
 
@@ -312,7 +331,7 @@ export function ResolutionIntelligencePage(): React.JSX.Element {
                 aria-label={t('Filter by ward')}
                 options={[
                   { value: '', label: t('All authorised wards') },
-                  ...WARDS.map((w) => ({ value: w.id, label: `${w.code} - ${w.name.split(' · ')[0]}` })),
+                  ...authorisedWards.map((w) => ({ value: w.id, label: `${w.code} - ${w.name.split(' · ')[0]}` })),
                 ]}
               />
             </div>
@@ -381,14 +400,13 @@ export function ResolutionIntelligencePage(): React.JSX.Element {
           tone={(snapshot?.slaAtRisk ?? 0) > 0 ? 'critical' : 'default'}
           support={t('Open cases with a predicted breach probability of 60% or more')}
           icon={<Timer className="h-4 w-4" />}
-          background="gold"
         />
         <MetricCard
           label={t('Recurring problems')}
           value={snapshot?.recurringProblems ?? 0}
           support={t('Cases raised before at the same locality and category')}
           icon={<RefreshCcw className="h-4 w-4" />}
-          background="neutral"
+          shade="amber"
         />
         <MetricCard
           label={t('Resolution Quality Index')}
@@ -466,16 +484,25 @@ export function ResolutionIntelligencePage(): React.JSX.Element {
                 {t('Repeat reports at the same locality and service category are fused into one cluster. A cluster severe or large enough is read as a single probable incident needing one coordinated case, not many disconnected ones.')}
               </p>
               <div className="mx-3 mb-3 grid grid-cols-3 gap-2">
-                <div className="rounded-lg border border-ink-100 p-3 text-center">
-                  <p className="numeric text-xl font-bold text-ink-900">{fusion?.complaints ?? 0}</p>
+                <div className={cn('rounded-lg border p-3 text-center', SHADE.blue.tile)}>
+                  <span className={cn('mx-auto mb-1.5 flex h-8 w-8 items-center justify-center rounded-lg text-white', SHADE.blue.chip)}>
+                    <MessageSquareWarning className="h-4 w-4" />
+                  </span>
+                  <p className={cn('numeric text-xl font-bold', SHADE.blue.value)}>{fusion?.complaints ?? 0}</p>
                   <p className="text-[0.625rem] text-ink-500">{t('Complaints')}</p>
                 </div>
-                <div className="rounded-lg border border-ink-100 p-3 text-center">
-                  <p className="numeric text-xl font-bold text-ink-900">{fusion?.clusters ?? 0}</p>
+                <div className={cn('rounded-lg border p-3 text-center', SHADE.amber.tile)}>
+                  <span className={cn('mx-auto mb-1.5 flex h-8 w-8 items-center justify-center rounded-lg text-white', SHADE.amber.chip)}>
+                    <Layers className="h-4 w-4" />
+                  </span>
+                  <p className={cn('numeric text-xl font-bold', SHADE.amber.value)}>{fusion?.clusters ?? 0}</p>
                   <p className="text-[0.625rem] text-ink-500">{t('Clusters')}</p>
                 </div>
-                <div className="rounded-lg border border-crit-200 bg-crit-50 p-3 text-center">
-                  <p className="numeric text-xl font-bold text-crit-700">{fusion?.incidents ?? 0}</p>
+                <div className={cn('rounded-lg border p-3 text-center', SHADE.red.tile)}>
+                  <span className={cn('mx-auto mb-1.5 flex h-8 w-8 items-center justify-center rounded-lg text-white', SHADE.red.chip)}>
+                    <Siren className="h-4 w-4" />
+                  </span>
+                  <p className={cn('numeric text-xl font-bold', SHADE.red.value)}>{fusion?.incidents ?? 0}</p>
                   <p className="text-[0.625rem] text-crit-600">{t('Probable incidents')}</p>
                 </div>
               </div>
@@ -619,19 +646,45 @@ export function ResolutionIntelligencePage(): React.JSX.Element {
               )}
             </GovPanel>
 
-            {/* No-Ping-Pong Protocol ------------------------------------ */}
+            {/* No-Ping-Pong Protocol and the transfer loops it exists to stop */}
             <GovPanel title={t('No-Ping-Pong Protocol')} tone="amber" dense className="mt-4">
               <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
                 {t('A department cannot merely forward a case. It accepts, accepts with a dependency, or challenges ownership with a proposed correct owner. An unresolved challenge becomes joint ownership or is referred to escalation authority - never left to bounce indefinitely.')}
               </p>
               <ul className="mx-3 mb-3 grid grid-cols-2 gap-2 sm:grid-cols-5">
                 {protocol.map((p) => (
-                  <li key={p.state} className="rounded-lg border border-ink-100 p-2.5 text-center">
-                    <p className="numeric text-lg font-bold text-ink-900">{p.count}</p>
+                  <li key={p.state} className={cn('rounded-lg border p-2.5 text-center', SHADE.auto.tile)}>
+                    <span className={cn('mx-auto mb-1.5 flex h-7 w-7 items-center justify-center rounded-lg text-white', SHADE.auto.chip)}>
+                      <GitBranch className="h-3.5 w-3.5" />
+                    </span>
+                    <p className={cn('numeric text-lg font-bold', SHADE.auto.value)}>{p.count}</p>
                     <p className="text-[0.625rem] text-ink-500">{p.label}</p>
                   </li>
                 ))}
               </ul>
+              <div className="mx-3 mb-3 border-t border-ink-100 pt-3">
+                <p className="text-[0.6875rem] font-semibold tracking-wide text-ink-400 uppercase">{t('Transfer loops detected')}</p>
+                <p className="mt-1 mb-2 text-xs leading-relaxed text-ink-500">
+                  {t('Cases bouncing between departments instead of converging - a structural routing problem, not a complaint volume problem.')}
+                </p>
+                {loops.length === 0 ? (
+                  <EmptyState title={t('No transfer loop detected in scope')} />
+                ) : (
+                  <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    {loops.slice(0, 8).map((c) => (
+                      <li key={c.id} className={cn('rounded-lg border p-2.5', SHADE.red.tile)}>
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="min-w-0 truncate text-[0.8125rem] font-medium text-ink-800">{c.id}</p>
+                          <Badge tone="critical">{t('{0} transfers', c.transferCount)}</Badge>
+                        </div>
+                        <p className="mt-1 text-[0.6875rem] text-ink-500">
+                          {c.categoryLabel} · {c.wardLabel} · {c.primary.departmentLabel}
+                        </p>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             </GovPanel>
           </>
         }
@@ -639,8 +692,11 @@ export function ResolutionIntelligencePage(): React.JSX.Element {
           <>
             {/* Resolution Quality Index --------------------------------- */}
             <GovPanel title={t('Resolution Quality Index')} tone="green" dense>
-              <div className="flex items-center gap-3 border-b border-ink-100 px-3 py-3">
-                <p className="numeric text-3xl font-bold text-ink-900">{quality?.score ?? 0}</p>
+              <div className={cn('flex items-center gap-3 border-b px-3 py-3', SHADE.green.tile)}>
+                <span className={cn('flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-white', SHADE.green.chip)} aria-hidden>
+                  <Gauge className="h-5 w-5" />
+                </span>
+                <p className={cn('numeric text-3xl font-bold', SHADE.green.value)}>{quality?.score ?? 0}</p>
                 <p className="text-[0.6875rem] leading-snug text-ink-500">
                   {t('of 100 · weighted composite - every weight and contribution published below')}
                 </p>
@@ -691,7 +747,7 @@ export function ResolutionIntelligencePage(): React.JSX.Element {
                     />
                   </div>
                   {selectedFlow ? (
-                    <div className="mt-3 rounded-lg border border-ink-100 p-2.5">
+                    <div className={cn('mt-3 rounded-lg border p-2.5', SHADE.teal.tile)}>
                       <p className="text-[0.8125rem] font-semibold text-ink-800">
                         {selectedFlow.fromLabel} ↔ {selectedFlow.toLabel}
                       </p>
@@ -714,37 +770,13 @@ export function ResolutionIntelligencePage(): React.JSX.Element {
               ) : (
                 <ul className="space-y-2">
                   {fusion.emergingRisk.map((c) => (
-                    <li key={c.id} className="rounded-lg border border-ink-100 p-2.5">
+                    <li key={c.id} className={cn('rounded-lg border p-2.5', SHADE.amber.tile)}>
                       <div className="flex items-start justify-between gap-2">
                         <p className="min-w-0 truncate text-[0.8125rem] font-medium text-ink-800">{c.localityName}</p>
                         <Badge tone="warn">{t('{0} reports', c.complaints)}</Badge>
                       </div>
                       <p className="mt-1 text-[0.6875rem] text-ink-500">
                         {c.categoryLabel} · {c.wardLabel}
-                      </p>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </GovPanel>
-
-            {/* No-Ping-Pong: loops ---------------------------------------- */}
-            <GovPanel title={t('No-Ping-Pong: Transfer Loops Detected')} tone="red">
-              <p className="mb-3 text-xs leading-relaxed text-ink-500">
-                {t('Cases bouncing between departments instead of converging - a structural routing problem, not a complaint volume problem.')}
-              </p>
-              {loops.length === 0 ? (
-                <EmptyState title={t('No transfer loop detected in scope')} />
-              ) : (
-                <ul className="mt-3 space-y-2">
-                  {loops.slice(0, 8).map((c) => (
-                    <li key={c.id} className="rounded-lg border border-ink-100 p-2.5">
-                      <div className="flex items-start justify-between gap-2">
-                        <p className="min-w-0 truncate text-[0.8125rem] font-medium text-ink-800">{c.id}</p>
-                        <Badge tone="critical">{t('{0} transfers', c.transferCount)}</Badge>
-                      </div>
-                      <p className="mt-1 text-[0.6875rem] text-ink-500">
-                        {c.categoryLabel} · {c.wardLabel} · {c.primary.departmentLabel}
                       </p>
                     </li>
                   ))}

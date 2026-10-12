@@ -1,19 +1,21 @@
 import { useMemo, useState, type FormEvent } from 'react'
-import { CheckCircle2, Inbox, Send, UserPlus } from 'lucide-react'
+import { AlarmClock, CalendarClock, CheckCircle2, Circle, Hourglass, Inbox, Loader, OctagonX, Send, UserCheck, UserPlus } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
-import { Badge, SeverityBadge } from '@/components/ui/badges'
-import { Button, Input, Label, MetricGrid, Select, Textarea } from '@/components/ui/primitives'
+import { Badge, SeverityBadge, SeverityRail } from '@/components/ui/badges'
+import { Button, Input, Label, ScoreDial, Select, Textarea } from '@/components/ui/primitives'
+import { CHART_COLOURS, CompositionBar } from '@/components/charts'
+import { KpiTile, type InfoTone } from '@/components/infographic'
+import { BreakdownBars, Meter, SegmentDonut, type Segment } from '@/components/infographic/work-surface'
 import { GovPanel } from '@/components/gov/GovPanel'
 import { Modal } from '@/components/ui/overlays'
 import { DemonstrationNotice, EmptyState, ErrorState, LoadingState } from '@/components/ui/states'
-import { MetricCard } from '@/components/cards/MetricCard'
 import { FilterBar } from '@/components/filters/FilterBar'
 import { useServiceQuery, useServiceAction } from '@/hooks'
 import { queryKeys } from '@/app/queryClient'
 import { actionService, type ActionCreateInput, type AssignableUser } from '@/services'
 import type { ActionItem, ActionStatus } from '@/types/operations'
 import { ACTION_STATUS_LABEL } from '@/types/operations'
-import { DOMAIN_LABEL, type DateRangeKey, type IntelligenceDomain, type Severity } from '@/types/common'
+import { DOMAIN_LABEL, SEVERITY_LABEL, type DateRangeKey, type IntelligenceDomain, type Severity } from '@/types/common'
 import type { User } from '@/types/organisation'
 import { allowed } from '@/security/access'
 import { useCurrentUser } from '@/stores/auth.store'
@@ -24,6 +26,8 @@ import { departmentName, wardName } from '@/data/reference'
 import { DEMO_NOW, isoFromAnchor } from '@/utils/deterministic'
 import { formatDate, formatRelative } from '@/utils/format'
 import { t } from '@/i18n'
+import { SHADE, type Shade } from '@/components/ui/shade'
+import { cn } from '@/utils/cn'
 
 /**
  * src/pages/command/MyTasksPage.tsx
@@ -121,34 +125,81 @@ export function MyTasksPage(): React.JSX.Element {
   const myTasksQuery = useServiceQuery(queryKeys.myTasks('to-me'), (u) => actionService.myTasks(u))
   const assignedQuery = useServiceQuery(queryKeys.myTasks('by-me'), (u) => actionService.assignedByMe(u))
 
-  const myTasks = useMemo(
-    () => (myTasksQuery.data ?? []).filter((task) => matchesGlobalFilters(task, filters)),
-    [myTasksQuery.data, filters],
-  )
-  const assignedByMe = useMemo(
-    () => (assignedQuery.data ?? []).filter((task) => matchesGlobalFilters(task, filters)),
-    [assignedQuery.data, filters],
-  )
+  const myTasks = useMemo(() => (myTasksQuery.data ?? []).filter((task) => matchesGlobalFilters(task, filters)), [myTasksQuery.data, filters])
+  const assignedByMe = useMemo(() => (assignedQuery.data ?? []).filter((task) => matchesGlobalFilters(task, filters)), [assignedQuery.data, filters])
 
   const domainOptions = useMemo<IntelligenceDomain[]>(
     () =>
-      Array.from(new Set([...(myTasksQuery.data ?? []), ...(assignedQuery.data ?? [])].map((task) => task.domain))).sort(
-        (a, b) => DOMAIN_LABEL[a].localeCompare(DOMAIN_LABEL[b]),
+      Array.from(new Set([...(myTasksQuery.data ?? []), ...(assignedQuery.data ?? [])].map((task) => task.domain))).sort((a, b) =>
+        DOMAIN_LABEL[a].localeCompare(DOMAIN_LABEL[b]),
       ),
     [myTasksQuery.data, assignedQuery.data],
   )
   const statusOptions = useMemo(
     () =>
-      Array.from(
-        new Set([...(myTasksQuery.data ?? []), ...(assignedQuery.data ?? [])].map((task) => task.status)),
-      ).map((s: ActionStatus) => ({ value: s, label: ACTION_STATUS_LABEL[s] })),
+      Array.from(new Set([...(myTasksQuery.data ?? []), ...(assignedQuery.data ?? [])].map((task) => task.status))).map((s: ActionStatus) => ({
+        value: s,
+        label: ACTION_STATUS_LABEL[s],
+      })),
     [myTasksQuery.data, assignedQuery.data],
   )
 
   if (myTasksQuery.isLoading) return <LoadingState variant="block" rows={6} />
   if (myTasksQuery.error) return <ErrorState detail={myTasksQuery.error.message} onRetry={() => myTasksQuery.refetch()} />
 
-  const openCount = myTasks.filter((actionItem) => actionItem.status !== 'closed' && actionItem.status !== 'verified').length
+  const stats = taskStats(myTasks)
+  const byMeStats = taskStats(assignedByMe)
+  const completionPct = myTasks.length > 0 ? (stats.done / myTasks.length) * 100 : 0
+
+  const statusSegments: Segment[] = STATUS_ORDER.map((s) => ({
+    id: s,
+    label: ACTION_STATUS_LABEL[s],
+    value: myTasks.filter((task) => task.status === s).length,
+    colour: STATUS_COLOUR[s],
+  }))
+  const prioritySegments: Segment[] = PRIORITIES.map((p) => ({
+    id: p,
+    label: SEVERITY_LABEL[p],
+    value: myTasks.filter((task) => task.priority === p).length,
+    colour: PRIORITY_COLOUR[p],
+  }))
+  const dueSegments: Segment[] = [
+    {
+      id: 'overdue',
+      label: t('Overdue'),
+      value: stats.overdue,
+      colour: CHART_COLOURS.critical,
+      icon: <AlarmClock className="h-3 w-3" />,
+    },
+    {
+      id: 'soon',
+      label: t('Due within 3 days'),
+      value: stats.dueSoon,
+      colour: CHART_COLOURS.warn,
+      icon: <Hourglass className="h-3 w-3" />,
+    },
+    {
+      id: 'fortnight',
+      label: t('Due in 4–14 days'),
+      value: stats.dueFortnight,
+      colour: CHART_COLOURS.primary,
+      icon: <CalendarClock className="h-3 w-3" />,
+    },
+    {
+      id: 'later',
+      label: t('Due later'),
+      value: stats.dueLater,
+      colour: CHART_COLOURS.neutral,
+      icon: <CalendarClock className="h-3 w-3" />,
+    },
+    {
+      id: 'done',
+      label: t('Completed'),
+      value: stats.done,
+      colour: CHART_COLOURS.positive,
+      icon: <CheckCircle2 className="h-3 w-3" />,
+    },
+  ]
 
   return (
     <PageBody>
@@ -172,15 +223,114 @@ export function MyTasksPage(): React.JSX.Element {
 
       <DemonstrationNotice />
 
-      {/* ── Two columns ──────────────────────────────────────────────
-          The officer's own workload reads down the wide column — what is
-          waiting on them first, what they have handed on beneath it — with
-          the three standing figures beside it rather than above it, so the
-          first register is on screen without scrolling. */}
+      {/* ── Hero: the completion gauge, then the six standing figures ──
+          The officer reads "how much of my work is done" first, then what
+          is late, due and blocked - each a picture with the number in large
+          type - before the register itself. */}
+      <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,4fr)_minmax(0,8fr)]">
+        <div className={cn('flex flex-col items-center gap-4 rounded-xl border p-4 shadow-xs sm:flex-row', SHADE[stats.overdue > 0 ? 'amber' : 'green'].tile)}>
+          <ScoreDial score={Math.round(completionPct)} size={136} label="%" caption={t('Tasks completed')} />
+          <div className="w-full min-w-0 flex-1 space-y-2 text-center sm:text-left">
+            <p className="text-[0.6875rem] font-bold tracking-[0.09em] text-ink-500 uppercase">{t('My workload')}</p>
+            <p className="text-lg leading-tight font-bold text-ink-900">{t('{0} of {1} tasks still open', stats.active, myTasks.length)}</p>
+            <p className={`text-[0.75rem] font-semibold ${stats.overdue > 0 ? 'text-crit-700' : 'text-ok-700'}`}>
+              {stats.overdue > 0 ? t('{0} past the due date', stats.overdue) : t('Nothing past the due date')}
+            </p>
+            {myTasks.length > 0 ? (
+              <CompositionBar
+                height={10}
+                segments={dueSegments
+                  .filter((s) => s.value > 0)
+                  .map((s) => ({
+                    id: s.id,
+                    label: s.label,
+                    value: s.value,
+                    colour: s.colour,
+                  }))}
+              />
+            ) : null}
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+          <KpiTile
+            icon={<Inbox className="h-5 w-5" />}
+            label={t('Assigned to me')}
+            value={myTasks.length}
+            reading={t('{0} still open', stats.active)}
+            tone="neutral"
+            shade="blue"
+          />
+          <KpiTile
+            icon={<AlarmClock className="h-5 w-5" />}
+            label={t('Overdue')}
+            value={stats.overdue}
+            reading={stats.overdue > 0 ? t('Past the due date') : t('None overdue')}
+            tone={stats.overdue > 0 ? 'critical' : 'positive'}
+            shade="tone"
+          />
+          <KpiTile
+            icon={<Hourglass className="h-5 w-5" />}
+            label={t('Due within 3 days')}
+            value={stats.dueSoon}
+            reading={t('Plan these first')}
+            tone={stats.dueSoon > 0 ? 'warn' : 'positive'}
+            shade="amber"
+          />
+          <KpiTile
+            icon={<OctagonX className="h-5 w-5" />}
+            label={t('Blocked')}
+            value={stats.blocked}
+            reading={stats.blocked > 0 ? t('Need a decision to proceed') : t('Nothing blocked')}
+            tone={stats.blocked > 0 ? 'critical' : 'positive'}
+            shade="tone"
+          />
+          <KpiTile
+            icon={<CheckCircle2 className="h-5 w-5" />}
+            label={t('Completed')}
+            value={stats.done}
+            reading={t('Of the tasks assigned to me')}
+            tone="positive"
+            shade="green"
+          />
+          <KpiTile
+            icon={<Send className="h-5 w-5" />}
+            label={t('Assigned by me')}
+            value={assignedByMe.length}
+            reading={t('{0} still open', byMeStats.active)}
+            tone="neutral"
+            shade="teal"
+          />
+        </div>
+      </div>
+
+      {/* ── The shape of my register: status · priority · due position ── */}
+      {myTasks.length > 0 ? (
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
+          <GovPanel title={t('My tasks by status')} subtitle={t('Where each task sits in its workflow')} tone="green" dense>
+            <div className="p-3">
+              <SegmentDonut segments={statusSegments} centreLabel={t('tasks')} size={150} />
+            </div>
+          </GovPanel>
+          <GovPanel title={t('By priority')} subtitle={t('Tasks assigned to me')} tone="red" dense>
+            <div className="p-3">
+              <BreakdownBars rows={prioritySegments} />
+            </div>
+          </GovPanel>
+          <GovPanel title={t('Due-date position')} subtitle={t('Against the demonstration clock')} tone="amber" dense>
+            <div className="p-3">
+              <BreakdownBars rows={dueSegments} />
+            </div>
+          </GovPanel>
+        </div>
+      ) : null}
+
+      {/* ── The registers ─────────────────────────────────────────────
+          What is waiting on the officer reads in the wide column, what they
+          have handed on beside it. Each row carries its priority as a colour
+          rail, its workflow stage as a meter and its due position as a pill. */}
       <div className="grid grid-cols-1 gap-3 xl:grid-cols-12">
-        {/* Column 1 — the registers -------------------------------- */}
-        <div className="flex min-w-0 flex-col gap-3 xl:col-span-8">
-          <GovPanel title={t('Assigned to me')} tone="amber" dense>
+        <div className="min-w-0 xl:col-span-7">
+          <GovPanel title={t('Assigned to me')} subtitle={t('{0} task(s)', myTasks.length)} tone="amber" dense>
             <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
               {t('Tasks another officer has assigned to you. Assignment is the authorisation — these appear regardless of domain.')}
             </p>
@@ -188,43 +338,60 @@ export function MyTasksPage(): React.JSX.Element {
               <EmptyState
                 className="mx-3 mb-3"
                 title={t('No tasks assigned to you')}
-                detail="When another officer assigns you a task, it will appear here the moment you sign in."
+                detail={t('When another officer assigns you a task, it will appear here the moment you sign in.')}
               />
             ) : (
-              <ul className="divide-y divide-ink-50">
-                {myTasks.map((task) => (
+              <ul className="space-y-2 px-3 pb-3">
+                {sortForQueue(myTasks).map((task) => (
                   <TaskRow key={task.id} task={task} perspective="to-me" />
                 ))}
               </ul>
             )}
           </GovPanel>
+        </div>
 
+        <div className="min-w-0 xl:col-span-5">
           {assignedByMe.length > 0 ? (
-            <GovPanel title={t('Assigned by me')} tone="red" dense>
-              <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
-                {t('Tasks you have dispatched to other officers. Each is now on that officer\'s own dashboard.')}
-              </p>
-              <ul className="divide-y divide-ink-50">
-                {assignedByMe.map((task) => (
+            <GovPanel title={t('Assigned by me')} subtitle={t('{0} task(s)', assignedByMe.length)} tone="red" dense>
+              <div className="space-y-2 px-3 pt-3 pb-2">
+                <CompositionBar
+                  height={10}
+                  segments={[
+                    {
+                      id: 'overdue',
+                      label: t('Overdue'),
+                      value: byMeStats.overdue,
+                      colour: CHART_COLOURS.critical,
+                    },
+                    {
+                      id: 'open',
+                      label: t('On schedule'),
+                      value: Math.max(0, byMeStats.active - byMeStats.overdue),
+                      colour: CHART_COLOURS.primary,
+                    },
+                    {
+                      id: 'done',
+                      label: t('Completed'),
+                      value: byMeStats.done,
+                      colour: CHART_COLOURS.positive,
+                    },
+                  ].filter((s) => s.value > 0)}
+                />
+                <p className="text-xs leading-relaxed text-ink-500">
+                  {t("Tasks you have dispatched to other officers. Each is now on that officer's own dashboard.")}
+                </p>
+              </div>
+              <ul className="space-y-2 px-3 pb-3">
+                {sortForQueue(assignedByMe).map((task) => (
                   <TaskRow key={task.id} task={task} perspective="by-me" />
                 ))}
               </ul>
             </GovPanel>
-          ) : null}
-        </div>
-
-        {/* Column 2 — the standing figures -------------------------- */}
-        <div className="min-w-0 xl:col-span-4">
-          <MetricGrid columns={3} className="xl:grid-cols-1">
-            <MetricCard label={t('Assigned to me')} value={myTasks.length} support={t('{0} still open', openCount)} icon={<Inbox className="h-4 w-4" />} />
-            <MetricCard label={t('Assigned by me')} value={assignedByMe.length} support={t('Dispatched to other officers')} icon={<Send className="h-4 w-4" />} />
-            <MetricCard
-              label={t('Completed')}
-              value={myTasks.filter((actionItem) => actionItem.status === 'completed' || actionItem.status === 'verified' || actionItem.status === 'closed').length}
-              support={t('Of the tasks assigned to me')}
-              icon={<CheckCircle2 className="h-4 w-4" />}
-            />
-          </MetricGrid>
+          ) : (
+            <GovPanel title={t('Assigned by me')} tone="red" dense>
+              <EmptyState className="m-3" title={t('Nothing dispatched yet')} detail={t("Use “Assign a task” to place work on another officer's dashboard.")} />
+            </GovPanel>
+          )}
         </div>
       </div>
 
@@ -233,8 +400,103 @@ export function MyTasksPage(): React.JSX.Element {
   )
 }
 
+const DONE_STATUSES: ActionStatus[] = ['completed', 'verified', 'closed']
+const STATUS_ORDER: ActionStatus[] = ['open', 'assigned', 'in-progress', 'blocked', 'completed', 'verified', 'closed']
+
+const STATUS_COLOUR: Record<ActionStatus, string> = {
+  open: CHART_COLOURS.neutral,
+  assigned: CHART_COLOURS.primarySoft,
+  'in-progress': CHART_COLOURS.primary,
+  blocked: CHART_COLOURS.critical,
+  completed: CHART_COLOURS.positive,
+  verified: CHART_COLOURS.positive,
+  closed: CHART_COLOURS.intel,
+}
+
+/** How far along its workflow a task is, for the row meter. */
+const STATUS_STAGE: Record<ActionStatus, number> = {
+  open: 8,
+  assigned: 25,
+  'in-progress': 55,
+  blocked: 55,
+  completed: 85,
+  verified: 100,
+  closed: 100,
+}
+
+const PRIORITY_COLOUR: Record<Severity, string> = {
+  critical: CHART_COLOURS.critical,
+  high: CHART_COLOURS.risk,
+  medium: CHART_COLOURS.warn,
+  low: CHART_COLOURS.primary,
+  info: CHART_COLOURS.neutral,
+}
+
+const DAY_MS = 86_400_000
+
+function isDone(task: ActionItem): boolean {
+  return DONE_STATUSES.includes(task.status)
+}
+
+/** Whole days from the demonstration clock to the due date; negative is overdue. */
+function daysToDue(task: ActionItem): number {
+  return Math.floor((new Date(task.dueDate).getTime() - DEMO_NOW.getTime()) / DAY_MS)
+}
+
+interface TaskStats {
+  active: number
+  done: number
+  overdue: number
+  dueSoon: number
+  dueFortnight: number
+  dueLater: number
+  blocked: number
+}
+
+function taskStats(tasks: ActionItem[]): TaskStats {
+  const active = tasks.filter((task) => !isDone(task))
+  const days = active.map(daysToDue)
+  return {
+    active: active.length,
+    done: tasks.length - active.length,
+    overdue: days.filter((d) => d < 0).length,
+    dueSoon: days.filter((d) => d >= 0 && d <= 3).length,
+    dueFortnight: days.filter((d) => d > 3 && d <= 14).length,
+    dueLater: days.filter((d) => d > 14).length,
+    blocked: active.filter((task) => task.status === 'blocked').length,
+  }
+}
+
+/** Work-queue order: open work before finished work, then the earliest due date first. */
+function sortForQueue(tasks: ActionItem[]): ActionItem[] {
+  return [...tasks].sort((a, b) => {
+    const doneDiff = Number(isDone(a)) - Number(isDone(b))
+    if (doneDiff !== 0) return doneDiff
+    return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+  })
+}
+
+function StatusIcon({ status }: { status: ActionStatus }): React.JSX.Element {
+  const cls = 'h-4 w-4'
+  if (status === 'blocked') return <OctagonX className={cls} />
+  if (status === 'in-progress') return <Loader className={cls} />
+  if (DONE_STATUSES.includes(status)) return <CheckCircle2 className={cls} />
+  if (status === 'assigned') return <UserCheck className={cls} />
+  return <Circle className={cls} />
+}
+
 function TaskRow({ task, perspective }: { task: ActionItem; perspective: 'to-me' | 'by-me' }): React.JSX.Element {
   const openDrawer = useDrawerStore((s) => s.open)
+  const done = isDone(task)
+  const days = daysToDue(task)
+  const dueTone = done ? 'positive' : days < 0 ? 'critical' : days <= 3 ? 'warn' : 'info'
+  const dueLabel = done ? t('Done') : days < 0 ? t('Overdue by {0} day(s)', Math.abs(days)) : days === 0 ? t('Due today') : t('Due in {0} day(s)', days)
+  // The row wears the shade of where it stands: blocked or overdue red, due
+  // within three days amber, done green, otherwise an ordinary open task blue.
+  const rowShade: Shade = task.status === 'blocked' || (!done && days < 0) ? 'red' : done ? 'green' : days <= 3 ? 'amber' : 'blue'
+  const stageTone: InfoTone = task.status === 'blocked' ? 'critical' : done ? 'positive' : 'neutral'
+  const discClass =
+    task.status === 'blocked' ? 'bg-crit-50 text-crit-600 ring-crit-200' : done ? 'bg-ok-50 text-ok-600 ring-ok-200' : 'bg-govt-50 text-govt-600 ring-govt-200'
 
   return (
     <li>
@@ -244,8 +506,15 @@ function TaskRow({ task, perspective }: { task: ActionItem; perspective: 'to-me'
         type="button"
         onClick={() => openDrawer({ kind: 'action', id: task.id })}
         aria-label={t('Open task {0}: {1}', task.reference, task.title)}
-        className="flex w-full flex-wrap items-start justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-surface-sunken focus:outline-none focus-visible:bg-surface-sunken focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-govt-500"
+        className={cn(
+          'flex w-full items-stretch gap-3 rounded-lg border p-2.5 text-left transition-shadow hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-govt-500',
+          SHADE[rowShade].tile,
+        )}
       >
+        <SeverityRail severity={task.priority} className="self-stretch" />
+        <span className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ring-1 ${discClass}`} aria-hidden>
+          <StatusIcon status={task.status} />
+        </span>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-1.5">
             <SeverityBadge severity={task.priority} />
@@ -254,17 +523,23 @@ function TaskRow({ task, perspective }: { task: ActionItem; perspective: 'to-me'
             </Badge>
             <span className="numeric text-[0.625rem] text-ink-400">{task.reference}</span>
           </div>
-          <p className="mt-1 text-[0.8125rem] font-semibold text-ink-900">{task.title}</p>
-          <p className="mt-0.5 line-clamp-2 text-[0.6875rem] leading-relaxed text-ink-500">{task.description}</p>
+          <p className="mt-1 text-[0.8125rem] leading-snug font-semibold text-ink-900">{task.title}</p>
+          <p className="mt-0.5 line-clamp-1 text-[0.6875rem] text-ink-500">{task.description}</p>
+          <div className="mt-1.5 flex items-center gap-2">
+            <Meter value={STATUS_STAGE[task.status]} tone={stageTone} className="w-20 shrink-0" />
+            <span className="truncate text-[0.625rem] text-ink-400">
+              {departmentName(task.departmentId)} ·{' '}
+              {perspective === 'to-me' ? t('Assigned {0}', formatRelative(task.createdAt)) : t('Created {0}', formatRelative(task.createdAt))}
+            </span>
+          </div>
         </div>
-        <div className="shrink-0 text-right text-[0.6875rem] text-ink-500">
-          <p>
-            <span className="text-ink-400">{t('Due')}</span> {formatDate(task.dueDate)}
-          </p>
-          <p className="mt-0.5 text-ink-400">{departmentName(task.departmentId)}</p>
-          <p className="mt-0.5 text-ink-400">
-            {perspective === 'to-me' ? 'Assigned' : 'Created'} {formatRelative(task.createdAt)}
-          </p>
+        <div className="flex shrink-0 flex-col items-end gap-1 text-right">
+          <Badge tone={dueTone} icon={<CalendarClock className="h-3 w-3" />}>
+            {dueLabel}
+          </Badge>
+          <span className="text-[0.625rem] text-ink-400">
+            {t('Due')} {formatDate(task.dueDate)}
+          </span>
         </div>
       </button>
     </li>
@@ -278,7 +553,11 @@ function AssignTaskModal({ onClose }: { onClose: () => void }): React.JSX.Elemen
     (u, input: ActionCreateInput) => actionService.create(u, input),
     // Invalidate the general action list, every My Tasks view and the single
     // action record, so both sides of the assignment update immediately.
-    [['bmc-mii', 'actions'], ['bmc-mii', 'my-tasks'], ['bmc-mii', 'action']],
+    [
+      ['bmc-mii', 'actions'],
+      ['bmc-mii', 'my-tasks'],
+      ['bmc-mii', 'action'],
+    ],
   )
 
   const officers = useMemo(() => officersQuery.data ?? [], [officersQuery.data])
@@ -292,22 +571,22 @@ function AssignTaskModal({ onClose }: { onClose: () => void }): React.JSX.Elemen
 
   const assignee = officers.find((o) => o.id === assigneeId)
   const taskWards = user && assignee ? wardsForTask(user, assignee) : []
-  const scopeNote = taskWards.length > 0 ? `, tagged to ${wardName(taskWards[0]!)}` : ', city-wide'
+  const scopeNote = taskWards.length > 0 ? t(', tagged to {0}', wardName(taskWards[0]!)) : ', city-wide'
 
   const handleSubmit = async (event: FormEvent): Promise<void> => {
     event.preventDefault()
     setError(null)
     if (!assignee) {
-      setError('Select an officer to assign the task to.')
+      setError(t('Select an officer to assign the task to.'))
       return
     }
     if (title.trim().length < 4) {
-      setError('Give the task a title of at least four characters.')
+      setError(t('Give the task a title of at least four characters.'))
       return
     }
 
     if (!user) {
-      setError('No authenticated principal. The task was not raised.')
+      setError(t('No authenticated principal. The task was not raised.'))
       return
     }
 
@@ -316,7 +595,7 @@ function AssignTaskModal({ onClose }: { onClose: () => void }): React.JSX.Elemen
       await createTask(buildInput(user, assignee, title, description, priority, dueDate))
       onClose()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'The task could not be assigned.')
+      setError(err instanceof Error ? err.message : t('The task could not be assigned.'))
       setSubmitting(false)
     }
   }
@@ -326,7 +605,7 @@ function AssignTaskModal({ onClose }: { onClose: () => void }): React.JSX.Elemen
       open
       onClose={onClose}
       title={t('Assign a task')}
-      description={t('The task is placed on the selected officer\'s own dashboard. Sign in as them to see it under Assigned to me.')}
+      description={t("The task is placed on the selected officer's own dashboard. Sign in as them to see it under Assigned to me.")}
       width="md"
       footer={
         <>
@@ -334,7 +613,7 @@ function AssignTaskModal({ onClose }: { onClose: () => void }): React.JSX.Elemen
             {t('Cancel')}
           </Button>
           <Button variant="primary" onClick={handleSubmit} disabled={submitting} icon={<UserPlus className="h-4 w-4" />}>
-            {submitting ? 'Assigning…' : 'Assign task'}
+            {submitting ? 'Assigning…' : t('Assign task')}
           </Button>
         </>
       }
@@ -358,7 +637,12 @@ function AssignTaskModal({ onClose }: { onClose: () => void }): React.JSX.Elemen
           />
           {assignee && user ? (
             <p className="mt-1 text-[0.6875rem] text-ink-500">
-              {t('Raised under {0}{1}. It appears on {2} under “Assigned to me”.', departmentName(user.departmentId), scopeNote, assignee.isSelf ? 'your own dashboard' : `${assignee.name}'s dashboard`)}
+              {t(
+                'Raised under {0}{1}. It appears on {2} under “Assigned to me”.',
+                departmentName(user.departmentId),
+                scopeNote,
+                assignee.isSelf ? 'your own dashboard' : `${assignee.name}'s dashboard`,
+              )}
             </p>
           ) : null}
         </div>
@@ -388,7 +672,10 @@ function AssignTaskModal({ onClose }: { onClose: () => void }): React.JSX.Elemen
               id="task-priority"
               value={priority}
               onChange={(e) => setPriority(e.target.value as Severity)}
-              options={PRIORITIES.map((p) => ({ value: p, label: p.charAt(0).toUpperCase() + p.slice(1) }))}
+              options={PRIORITIES.map((p) => ({
+                value: p,
+                label: p.charAt(0).toUpperCase() + p.slice(1),
+              }))}
             />
           </div>
           <div>
@@ -428,20 +715,13 @@ function wardsForTask(raisedBy: User, assignee: AssignableUser): string[] {
  * Delivery, not under the ward office. Ownership, and therefore whose
  * dashboard the task lands on, is carried by `ownerId` alone.
  */
-function buildInput(
-  raisedBy: User,
-  assignee: AssignableUser,
-  title: string,
-  description: string,
-  priority: Severity,
-  dueDate: string,
-): ActionCreateInput {
+function buildInput(raisedBy: User, assignee: AssignableUser, title: string, description: string, priority: Severity, dueDate: string): ActionCreateInput {
   // A picked date parses deterministically; the fallback anchors to the frozen
   // demonstration clock (seven days out) rather than real wall-clock time.
   const due = dueDate ? new Date(`${dueDate}T00:00:00`).toISOString() : isoFromAnchor(7 * 24 * 60)
   return {
     title: title.trim(),
-    description: description.trim() || 'No further detail provided.',
+    description: description.trim() || t('No further detail provided.'),
     ownerId: assignee.id,
     departmentId: raisedBy.departmentId,
     wardIds: wardsForTask(raisedBy, assignee),

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { CheckCircle2, XCircle } from 'lucide-react'
+import { CheckCircle2, XCircle, Boxes, ListChecks, Scale, UserCog } from 'lucide-react'
 import { PageBody, PageHeader, SplitLayout } from '@/components/layout/PageHeader'
 import { Badge, ClassificationBadge } from '@/components/ui/badges'
 import {
@@ -37,6 +37,7 @@ import { DEPARTMENTS_ORDERED, wardName } from '@/data/reference'
 import { cn } from '@/utils/cn'
 import { t } from '@/i18n'
 import { registerLayer } from '@/data/runtime'
+import { SHADE } from '@/components/ui/shade'
 
 /**
  * src/pages/trust/AccessGovernancePage.tsx
@@ -186,23 +187,43 @@ export function AccessGovernancePage(): React.JSX.Element {
       />
 
       <MetricGrid columns={4}>
-        <Card>
-          <p className="label-institutional">{t('Roles in the catalogue')}</p>
-          <p className="numeric mt-2 text-metric font-semibold text-ink-900">{ROLES_ORDERED.length}</p>
+        <Card className={cn(SHADE.blue.tile, 'flex items-start gap-3')}>
+          <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE.blue.chip)}>
+            <UserCog className="h-4 w-4" aria-hidden />
+          </span>
+          <div className="min-w-0">
+            <p className="label-institutional">{t('Roles in the catalogue')}</p>
+            <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE.blue.value)}>{ROLES_ORDERED.length}</p>
+          </div>
         </Card>
-        <Card>
-          <p className="label-institutional">{t('Resources governed')}</p>
-          <p className="numeric mt-2 text-metric font-semibold text-ink-900">{ALL_RESOURCES.length}</p>
+        <Card className={cn(SHADE.teal.tile, 'flex items-start gap-3')}>
+          <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE.teal.chip)}>
+            <Boxes className="h-4 w-4" aria-hidden />
+          </span>
+          <div className="min-w-0">
+            <p className="label-institutional">{t('Resources governed')}</p>
+            <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE.teal.value)}>{ALL_RESOURCES.length}</p>
+          </div>
         </Card>
-        <Card>
-          <p className="label-institutional">{t('Action types')}</p>
-          <p className="numeric mt-2 text-metric font-semibold text-ink-900">{ALL_ACTIONS.length}</p>
+        <Card className={cn(SHADE.blue.tile, 'flex items-start gap-3')}>
+          <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE.blue.chip)}>
+            <ListChecks className="h-4 w-4" aria-hidden />
+          </span>
+          <div className="min-w-0">
+            <p className="label-institutional">{t('Action types')}</p>
+            <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE.blue.value)}>{ALL_ACTIONS.length}</p>
+          </div>
         </Card>
-        <Card tone="info">
-          <p className="label-institutional">{t('Decision bases')}</p>
-          <p className="mt-2 text-xs leading-relaxed text-ink-700">
-            {t('role-permission · ward-scope · department-scope · domain-scope · classification-ceiling')}
-          </p>
+        <Card className={cn(SHADE.teal.tile, 'flex items-start gap-3')}>
+          <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE.teal.chip)}>
+            <Scale className="h-4 w-4" aria-hidden />
+          </span>
+          <div className="min-w-0">
+            <p className="label-institutional">{t('Decision bases')}</p>
+            <p className="mt-2 text-xs leading-relaxed text-ink-700">
+              {t('role-permission · ward-scope · department-scope · domain-scope · classification-ceiling')}
+            </p>
+          </div>
         </Card>
       </MetricGrid>
 
@@ -227,7 +248,7 @@ export function AccessGovernancePage(): React.JSX.Element {
               onRowClick={(r) => setSelectedRoleId(r.id)}
               activeRowKey={selectedRoleId}
               searchable
-              searchPlaceholder="Search roles"
+              searchPlaceholder={t('Search roles')}
               pageSize={14}
               initialSort={{ columnId: 'permissions', direction: 'desc' }}
             />
@@ -369,7 +390,7 @@ export function AccessGovernancePage(): React.JSX.Element {
             />
           </div>
           <div>
-            <Label htmlFor="tester-classification" hint="optional">
+            <Label htmlFor="tester-classification" hint={t('optional')}>
               {t('Record classification')}
             </Label>
             <Select
@@ -386,7 +407,7 @@ export function AccessGovernancePage(): React.JSX.Element {
             />
           </div>
           <div>
-            <Label htmlFor="tester-ward" hint="optional">
+            <Label htmlFor="tester-ward" hint={t('optional')}>
               {t('Record ward')}
             </Label>
             <Select
@@ -397,7 +418,7 @@ export function AccessGovernancePage(): React.JSX.Element {
             />
           </div>
           <div>
-            <Label htmlFor="tester-department" hint="optional">
+            <Label htmlFor="tester-department" hint={t('optional')}>
               {t('Record department')}
             </Label>
             <Select
@@ -411,7 +432,7 @@ export function AccessGovernancePage(): React.JSX.Element {
             />
           </div>
           <div>
-            <Label htmlFor="tester-domain" hint="optional">
+            <Label htmlFor="tester-domain" hint={t('optional')}>
               {t('Record domain')}
             </Label>
             <Select
@@ -428,7 +449,7 @@ export function AccessGovernancePage(): React.JSX.Element {
 
         <Divider className="my-4" />
 
-        <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-1">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-1">
           <Card tone={decision.allowed ? 'positive' : 'critical'}>
             <div className="flex items-center gap-2">
               {decision.allowed ? (
@@ -437,7 +458,7 @@ export function AccessGovernancePage(): React.JSX.Element {
                 <XCircle className="h-5 w-5 shrink-0 text-crit-600" />
               )}
               <p className={cn('text-sm font-semibold', decision.allowed ? 'text-ok-700' : 'text-crit-700')}>
-                {decision.allowed ? 'Access granted' : 'Access denied'}
+                {decision.allowed ? t('Access granted') : t('Access denied')}
               </p>
             </div>
             <p className="mt-2 text-[0.8125rem] leading-relaxed text-ink-700">{decision.reason}</p>
@@ -464,7 +485,7 @@ export function AccessGovernancePage(): React.JSX.Element {
                   {ROLES_ORDERED.find((r) => r.id === activeUser.roleId)?.name ?? activeUser.roleId}
                 </DefinitionRow>
                 <DefinitionRow label={t('Scope')}>{describeScope(activeUser, wardName)}</DefinitionRow>
-                <DefinitionRow label={t('MFA enrolled')}>{activeUser.mfaEnrolled ? 'Yes' : 'No'}</DefinitionRow>
+                <DefinitionRow label={t('MFA enrolled')}>{activeUser.mfaEnrolled ? t('Yes') : t('No')}</DefinitionRow>
               </DefinitionList>
               <p className="label-institutional mt-3 mb-1.5">{t('Permissions held ({0})', expandPermissions(activeUser).length)}</p>
               <div className="scrollbar-slim max-h-32 overflow-y-auto">

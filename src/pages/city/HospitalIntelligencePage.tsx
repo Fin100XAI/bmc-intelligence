@@ -97,7 +97,7 @@ export function HospitalIntelligencePage(): React.JSX.Element {
     return (
       <PageBody>
         <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Hospital Intelligence') }]} />
-        <EmptyState title={t('No facilities available')} detail="No hospital records were returned for the current scope." />
+        <EmptyState title={t('No facilities available')} detail={t('No hospital records were returned for the current scope.')} />
         <DemonstrationNotice />
       </PageBody>
     )
@@ -233,7 +233,7 @@ export function HospitalIntelligencePage(): React.JSX.Element {
         <MetricCard
           label={t('Functional beds')}
           value={formatCompact(totalBeds)}
-          support={`${filtered.length} facilities`}
+          support={t('{0} facilities', filtered.length)}
           icon={<Building2 className="h-4 w-4" />}
           background="red"
           footer={
@@ -266,7 +266,7 @@ export function HospitalIntelligencePage(): React.JSX.Element {
           {t('Sortable, filterable by type and ward. Select a row to inspect service availability.')}
         </p>
         <div className="flex flex-wrap items-center gap-2 px-3 pb-3">
-          <FilterBar show={['ward', 'search']} searchPlaceholder="Search facility or ward" compact />
+          <FilterBar show={['ward', 'search']} searchPlaceholder={t('Search facility or ward')} compact />
           <div className="flex items-center gap-1.5">
             <Label className="mb-0 whitespace-nowrap">{t('Type')}</Label>
             <Select
@@ -291,7 +291,7 @@ export function HospitalIntelligencePage(): React.JSX.Element {
               detail={t('The nearest is {0} in {1}, about {2} km away - {3} beds, {4} occupied. Residents of this {5} are served from there.', nearestFacility.hospital.name, wardName(nearestFacility.hospital.wardId), nearestFacility.km.toFixed(1), nearestFacility.hospital.bedsTotal, formatPercent(nearestFacility.hospital.occupancyPct), corporation.wardTerminology.toLowerCase())}
             />
           ) : (
-            <EmptyState className="m-3" title={t('No facilities match the current filters')} detail="Adjust the type, ward or search term above." />
+            <EmptyState className="m-3" title={t('No facilities match the current filters')} detail={t('Adjust the type, ward or search term above.')} />
           )
         ) : (
           <DataTable
@@ -303,7 +303,7 @@ export function HospitalIntelligencePage(): React.JSX.Element {
             pageSize={12}
             searchable={false}
             initialSort={{ columnId: 'beds', direction: 'desc' }}
-            ariaLabel="Hospital facility register"
+            ariaLabel={t('Hospital facility register')}
           />
         )}
       </GovPanel>
@@ -350,19 +350,26 @@ export function HospitalIntelligencePage(): React.JSX.Element {
 
       <GovPanel title={t('Accessibility and flood exposure')} tone="amber">
         <p className="mb-3 text-xs leading-relaxed text-ink-500">
-          {t('Comparing hospital accessibility between flood-prone / low-lying wards and other wards.')}
+          {t('Comparing health facility accessibility between flood-prone / low-lying wards and other wards.')}
         </p>
         <MetricGrid columns={3}>
           <MetricCard label={t('Facilities in flood-exposed wards')} value={inFloodWards.length} support={t('of {0} facilities city-wide', hospitals.length)} />
-          <MetricCard label={t('Avg. accessibility, flood-exposed wards')} value={avgAccessFlood} unit="/100" tone={avgAccessFlood < avgAccessOther ? 'warn' : 'default'} />
-          <MetricCard label={t('Avg. accessibility, other wards')} value={avgAccessOther} unit="/100" />
+          <MetricCard label={t('Avg. accessibility, flood-exposed wards')} value={inFloodWards.length > 0 ? avgAccessFlood : '-'} unit={inFloodWards.length > 0 ? '/100' : undefined} tone={inFloodWards.length > 0 && notInFloodWards.length > 0 && avgAccessFlood < avgAccessOther ? 'warn' : 'default'} />
+          {/* With no facility outside the flood-exposed wards there is nothing to
+              compare against; a mean of an empty set is not 0/100. */}
+          <MetricCard
+            label={t('Avg. accessibility, other wards')}
+            value={notInFloodWards.length > 0 ? avgAccessOther : '-'}
+            unit={notInFloodWards.length > 0 ? '/100' : undefined}
+            support={notInFloodWards.length > 0 ? t('{0} facilities', notInFloodWards.length) : t('No comparison - every facility is in a ward flagged flood-prone')}
+          />
         </MetricGrid>
         {lowAccessFlood.length > 0 ? (
           <div className="mt-4">
             <ChartFrame
               title={t('Lowest accessibility, flood-exposed wards')}
               unit={t('Accessibility index (0–100, lower is worse)')}
-              timeframe="Current position"
+              timeframe={t('Current position')}
               height={Math.max(140, lowAccessFlood.length * 26)}
             >
               <RankedBarChart data={lowAccessFlood.slice(0, 10).map((h) => ({ label: h.name.length > 20 ? `${h.name.slice(0, 18)}…` : h.name, value: h.accessibilityIndex }))} higherIsWorse={false} />
@@ -370,7 +377,7 @@ export function HospitalIntelligencePage(): React.JSX.Element {
           </div>
         ) : null}
         <p className="mt-3 border-t border-ink-100 pt-2.5 text-[0.6875rem] leading-relaxed text-ink-400">
-          {t('Wards are flagged flood-prone based on structural, low-lying exposure - the same flag monsoon intelligence uses. The lower accessibility figures observed at facilities within these wards reflect a modelled')}{' '}<span className="font-medium text-ink-600">exposure</span>{' '}{t("- the ward's susceptibility to access disruption during flooding - and are not a prediction of when or whether any specific facility will become inaccessible.")}
+          {t('Wards are flagged flood-prone based on structural, low-lying exposure - the same flag monsoon intelligence uses. The lower accessibility figures observed at facilities within these wards reflect a modelled')}{' '}<span className="font-medium text-ink-600">{t('exposure')}</span>{' '}{t("- the ward's susceptibility to access disruption during flooding - and are not a prediction of when or whether any specific facility will become inaccessible.")}
         </p>
       </GovPanel>
         </div>
@@ -393,7 +400,7 @@ export function HospitalIntelligencePage(): React.JSX.Element {
                         {h.name} <span className="font-normal text-ink-500">· {wardName(h.wardId)}</span>
                       </span>
                       <span className="flex shrink-0 items-center gap-1.5">
-                        <Badge tone="warn">{formatPercent(h.occupancyPct)} occupied</Badge>
+                        <Badge tone="warn">{t('{0} occupied', formatPercent(h.occupancyPct))}</Badge>
                         <Badge tone={toneForScore(h.emergencyLoadIndex, false)}>{t('Load {0}', h.emergencyLoadIndex)}</Badge>
                       </span>
                     </button>

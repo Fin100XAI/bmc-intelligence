@@ -11,12 +11,12 @@ import { usePageMasthead } from '@/stores/masthead.store'
 import { activeCorporation } from '@/config/municipality.config'
 import { allowed } from '@/security'
 import { ROUTES } from '@/config/navigation'
-import { OPERATIONAL_STATE_LABEL, type OperationalState } from '@/types/common'
+import { CONFIDENCE_LABEL, OPERATIONAL_STATE_LABEL, type OperationalState } from '@/types/common'
 import { BUDGET_HEAD_LABEL, type BudgetHead, type BudgetLine, type BudgetScenarioInput } from '@/types/finance'
 import type { Project } from '@/types/finance'
 import { FilterBar } from '@/components/filters/FilterBar'
 import { departmentName, wardName } from '@/data/reference'
-import { isoFromAnchor } from '@/utils/deterministic'
+import { FY_ELAPSED_FRACTION, FY_ELAPSED_PCT, isoFromAnchor } from '@/utils/deterministic'
 import { formatCrore, formatDelta, formatPercent } from '@/utils/format'
 import {
   Badge,
@@ -53,8 +53,6 @@ import { registerLayer } from '@/data/runtime'
  * over-spend. The scenario panel is illustrative simulation only - never a
  * forecast - and every scenario output carries `<SimulationBadge />`.
  */
-
-const FY_ELAPSED_FRACTION = 0.31
 
 const FRESHNESS = {
   generatedAt: isoFromAnchor(0),
@@ -358,19 +356,19 @@ export function BudgetIntelligencePage(): React.JSX.Element {
     if (!scenarioResult) return []
     const risks: string[] = []
     if (scenarioResult.scenario.utilisationPct > 100) {
-      risks.push('Scenario utilisation exceeds 100% of the revised allocation - this would require an in-year revised sanction.')
+      risks.push(t('Scenario utilisation exceeds 100% of the revised allocation - this would require an in-year revised sanction.'))
     }
     if (scenarioResult.confidence === 'low') {
-      risks.push('One or more inputs exceed a ±25% change; confidence in this scenario is assessed as low.')
+      risks.push(t('One or more inputs exceed a ±25% change; confidence in this scenario is assessed as low.'))
     }
     if (scenarioResult.deltaCrore < 0) {
-      risks.push('Net allocation falls under this scenario; committed capital works would require re-phasing or deferral.')
+      risks.push(t('Net allocation falls under this scenario; committed capital works would require re-phasing or deferral.'))
     }
     if (scenarioInputs.collectionEfficiencyDeltaPct < -10) {
-      risks.push('A material fall in collection efficiency would constrain cash availability independent of the allocation change.')
+      risks.push(t('A material fall in collection efficiency would constrain cash availability independent of the allocation change.'))
     }
     if (risks.length === 0) {
-      risks.push('No threshold-based risk condition is raised for this combination of inputs.')
+      risks.push(t('No threshold-based risk condition is raised for this combination of inputs.'))
     }
     return risks
   }, [scenarioResult, scenarioInputs])
@@ -381,8 +379,8 @@ export function BudgetIntelligencePage(): React.JSX.Element {
   return (
     <PageBody>
       <PageHeader
-        eyebrow={t('Revenue & Municipal Finance')}
-        breadcrumbs={[{ label: t('Revenue & Municipal Finance') }, { label: t('Budget Intelligence') }]}
+        eyebrow={t('Revenue & Finance')}
+        breadcrumbs={[{ label: t('Revenue & Finance') }, { label: t('Budget & Financial Health') }]}
         freshness={FRESHNESS}
         actions={
           <LinkButton to={ROUTES.projects} variant="outline" icon={<HardHat className="h-3.5 w-3.5" />}>
@@ -408,7 +406,7 @@ export function BudgetIntelligencePage(): React.JSX.Element {
             tone="primary"
           >
             <p className="mb-3 text-xs leading-relaxed text-ink-500">
-              {t('Revised allocation, booked expenditure and commitment position against the phased plan. Variance is measured against the phased (31% elapsed) plan, not the full annual allocation - positive means behind plan, negative means ahead of plan.')}
+              {t('Revised allocation, booked expenditure and commitment position against the phased plan. Variance is measured against the phased ({0}% elapsed) plan, not the full annual allocation - positive means behind plan, negative means ahead of plan.', FY_ELAPSED_PCT)}
             </p>
             <MetricGrid columns={5} className="mt-4">
               <MetricCard
@@ -426,7 +424,7 @@ export function BudgetIntelligencePage(): React.JSX.Element {
               <MetricCard
                 label={t('Actual expenditure - YTD')}
                 value={formatCrore(totals.actual)}
-                support={`${formatPercent(totals.utilisationPct)} utilisation`}
+                support={t('{0} utilisation', formatPercent(totals.utilisationPct))}
                 progress={{ value: totals.utilisationPct, max: 100 }}
               />
               <MetricCard label={t('Committed')} value={formatCrore(totals.committed)} support={t('Contracted but not yet booked')} />
@@ -438,7 +436,7 @@ export function BudgetIntelligencePage(): React.JSX.Element {
               <MetricCard
                 label={t('Variance vs phased plan')}
                 value={formatDelta(cityVariancePct)}
-                support={cityVariancePct > 0 ? 'Behind the phased plan' : cityVariancePct < 0 ? 'Ahead of the phased plan' : 'On the phased plan'}
+                support={cityVariancePct > 0 ? t('Behind the phased plan') : cityVariancePct < 0 ? t('Ahead of the phased plan') : t('On the phased plan')}
                 tone={varianceTone(cityVariancePct) === 'positive' ? 'default' : varianceTone(cityVariancePct) === 'warn' ? 'warn' : 'critical'}
               />
             </MetricGrid>
@@ -483,12 +481,12 @@ export function BudgetIntelligencePage(): React.JSX.Element {
             <ChartFrame
               title={t('Financial position progression')}
               unit={t('₹ crore')}
-              timeframe="FY 2026–27 - control stages, not a calendar series"
+              timeframe={t('FY 2026–27 - control stages, not a calendar series')}
               description={t('Progression across the financial control stages for the current year: approved, revised, committed, actual to date and the modelled year-end forecast.')}
               freshness={FRESHNESS}
               height={260}
             >
-              <TrendChart points={progressionPoints} unit={t('₹ Cr')} variant="area" seriesLabel="₹ Crore" />
+              <TrendChart points={progressionPoints} unit={t('₹ Cr')} variant="area" seriesLabel={t('₹ Crore')} />
             </ChartFrame>
           </Card>
           </div>
@@ -505,14 +503,14 @@ export function BudgetIntelligencePage(): React.JSX.Element {
               pageSize={10}
               stickyHeader
               maxHeight="26rem"
-              searchPlaceholder="Search departments"
+              searchPlaceholder={t('Search departments')}
               onRowClick={(row) => setSelectedDepartmentId(row.departmentId === selectedDepartmentId ? null : row.departmentId)}
               activeRowKey={selectedDepartmentId ?? undefined}
             />
           </GovPanel>
 
           <GovPanel
-            title={selectedDepartmentId ? `Head, ward and project drilldown - ${departmentName(selectedDepartmentId)}` : 'Head breakdown - all departments'}
+            title={selectedDepartmentId ? t('Head, ward and project drilldown - {0}', departmentName(selectedDepartmentId)) : t('Head breakdown - all departments')}
             tone="amber"
             actions={
               selectedDepartmentId ? (
@@ -524,8 +522,8 @@ export function BudgetIntelligencePage(): React.JSX.Element {
           >
             <p className="mb-3 text-xs leading-relaxed text-ink-500">
               {selectedDepartmentId
-                ? 'Budget heads, capital-linked wards and projects for the selected department. Select the department row again to clear.'
-                : 'Revenue, capital, establishment and debt-service expenditure, city-wide. Select a department above to scope this view.'}
+                ? t('Budget heads, capital-linked wards and projects for the selected department. Select the department row again to clear.')
+                : t('Revenue, capital, establishment and debt-service expenditure, city-wide. Select a department above to scope this view.')}
             </p>
             <div className="mt-3 grid grid-cols-1 gap-4 lg:grid-cols-2">
               <div className="scrollbar-slim overflow-x-auto">
@@ -570,7 +568,7 @@ export function BudgetIntelligencePage(): React.JSX.Element {
                   data={headRows.map((h) => ({ label: BUDGET_HEAD_LABEL[h.head], value: h.revisedCrore, colour: HEAD_COLOUR[h.head] }))}
                   unit={t('₹ Cr')}
                   centreValue={formatCrore(headRows.reduce((s, h) => s + h.revisedCrore, 0), 0)}
-                  centreLabel="Revised allocation"
+                  centreLabel={t('Revised allocation')}
                 />
               </div>
             </div>
@@ -660,7 +658,7 @@ export function BudgetIntelligencePage(): React.JSX.Element {
                 pageSize={8}
                 stickyHeader
                 maxHeight="22rem"
-                searchPlaceholder="Search wards"
+                searchPlaceholder={t('Search wards')}
               />
             </GovPanel>
 
@@ -730,17 +728,17 @@ export function BudgetIntelligencePage(): React.JSX.Element {
               <Button
                 variant="primary"
                 disabled={!canRunScenario || scenarioPending}
-                title={canRunScenario ? undefined : 'Your role does not hold budget:edit. This control is disabled by the permission engine.'}
+                title={canRunScenario ? undefined : t('Your role does not hold budget:edit. This control is disabled by the permission engine.')}
                 onClick={() => {
                   setScenarioPending(true)
                   setScenarioError(null)
                   runScenario(scenarioInputs)
                     .then((result) => setScenarioResult(result))
-                    .catch((err: unknown) => setScenarioError(err instanceof Error ? err.message : 'The scenario could not be run.'))
+                    .catch((err: unknown) => setScenarioError(err instanceof Error ? err.message : t('The scenario could not be run.')))
                     .finally(() => setScenarioPending(false))
                 }}
               >
-                {scenarioPending ? 'Running scenario…' : 'Run scenario'}
+                {scenarioPending ? t('Running scenario…') : t('Run scenario')}
               </Button>
               {scenarioResult ? (
                 <Button
@@ -762,7 +760,7 @@ export function BudgetIntelligencePage(): React.JSX.Element {
                   <SimulationBadge />
                   <Badge tone="warn">{t('Simulation - not forecast')}</Badge>
                   <Badge tone={scenarioResult.confidence === 'high' ? 'positive' : scenarioResult.confidence === 'medium' ? 'warn' : 'risk'}>
-                    {scenarioResult.confidence} confidence
+                    {t('{0} confidence', CONFIDENCE_LABEL[scenarioResult.confidence])}
                   </Badge>
                 </div>
 
@@ -841,7 +839,7 @@ export function BudgetIntelligencePage(): React.JSX.Element {
       ) : null}
 
       {!anyLoading && !anyError && !totals ? (
-        <EmptyState title={t('No budget position available')} detail="The finance service did not return a city-wide budget position for the current scope." />
+        <EmptyState title={t('No budget position available')} detail={t('The finance service did not return a city-wide budget position for the current scope.')} />
       ) : null}
 
       <DemonstrationNotice />

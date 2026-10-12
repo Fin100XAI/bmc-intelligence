@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { Lightbulb, Zap, TriangleAlert, Gauge } from 'lucide-react'
+import { Lightbulb, Zap, TriangleAlert, Gauge, IndianRupee } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import {
   Badge,
@@ -36,6 +36,7 @@ import type { DataFreshness } from '@/types/common'
 import { DEMO_NOW } from '@/utils/deterministic'
 import { formatNumber, formatRelative } from '@/utils/format'
 import { t } from '@/i18n'
+import { SHADE } from '@/components/ui/shade'
 
 /**
  * src/pages/city/StreetLightingPage.tsx
@@ -87,7 +88,7 @@ export function StreetLightingPage(): React.JSX.Element {
   if (circuitsQuery.isLoading || faultsQuery.isLoading) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Street Lighting') }]} />
+        <PageHeader eyebrow={t('City Services')} breadcrumbs={[{ label: t('City Services') }, { label: t('Roads, Traffic & Lighting') }, { label: t('Street lighting') }]} />
         <LoadingState variant="metrics" />
         <LoadingState variant="table" rows={8} />
       </PageBody>
@@ -96,7 +97,7 @@ export function StreetLightingPage(): React.JSX.Element {
   if (circuitsQuery.error || faultsQuery.error) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Street Lighting') }]} />
+        <PageHeader eyebrow={t('City Services')} breadcrumbs={[{ label: t('City Services') }, { label: t('Roads, Traffic & Lighting') }, { label: t('Street lighting') }]} />
         <ErrorState
           detail={(circuitsQuery.error ?? faultsQuery.error)?.message}
           onRetry={() => { void circuitsQuery.refetch(); void faultsQuery.refetch() }}
@@ -134,7 +135,8 @@ export function StreetLightingPage(): React.JSX.Element {
    */
   const nonLed = filtered.filter((c) => c.lampType !== 'led')
   const nonLedMonthlyCost = nonLed.reduce((s, c) => s + c.monthlyEnergyCostRupees, 0)
-  const indicativeAnnualSaving = Math.round((nonLedMonthlyCost * 0.66 * 12) / 100000) / 10
+  // ₹ crore to one decimal place: 1 crore = 1e7, so divide by 1e6 and then by 10.
+  const indicativeAnnualSaving = Math.round((nonLedMonthlyCost * 0.66 * 12) / 1e6) / 10
 
   const freshness: DataFreshness = {
     generatedAt: DEMO_NOW.toISOString(),
@@ -219,14 +221,14 @@ export function StreetLightingPage(): React.JSX.Element {
   return (
     <PageBody>
       <PageHeader
-        eyebrow={t('City Intelligence')}
-        breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Street Lighting') }]}
+        eyebrow={t('City Services')}
+        breadcrumbs={[{ label: t('City Services') }, { label: t('Roads, Traffic & Lighting') }, { label: t('Street lighting') }]}
         freshness={freshness}
       />
 
       <DemonstrationNotice />
 
-      <FilterBar show={['ward', 'search']} searchPlaceholder="Search circuits" />
+      <FilterBar show={['ward', 'search']} searchPlaceholder={t('Search circuits')} />
 
       <MetricGrid columns={4}>
         <MetricCard
@@ -282,7 +284,7 @@ export function StreetLightingPage(): React.JSX.Element {
             {t('Reported and assigned faults, measured against the restoration time the corporation commits to for each severity.')}
           </p>
           {openFaults.length === 0 ? (
-            <EmptyState className="mx-3 mb-3" title={t('No open lighting faults')} detail="Every reported fault within your ward scope has been rectified." />
+            <EmptyState className="mx-3 mb-3" title={t('No open lighting faults')} detail={t('Every reported fault within your ward scope has been rectified.')} />
           ) : (
             <DataTable rows={openFaults} columns={faultColumns} rowKey={(r) => r.id} pageSize={10} />
           )}
@@ -293,7 +295,7 @@ export function StreetLightingPage(): React.JSX.Element {
             {t('Every feeder circuit within your authorised ward scope.')}
           </p>
           {filtered.length === 0 ? (
-            <EmptyState className="mx-3 mb-3" title={t('No circuits match the current filters')} detail="Clear a filter to widen the register." />
+            <EmptyState className="mx-3 mb-3" title={t('No circuits match the current filters')} detail={t('Clear a filter to widen the register.')} />
           ) : (
             <DataTable rows={filtered} columns={circuitColumns} rowKey={(r) => r.id} pageSize={15} />
           )}
@@ -324,13 +326,18 @@ export function StreetLightingPage(): React.JSX.Element {
                 centreLabel="LED"
               />
             </div>
-            <div className="mt-3 rounded-lg bg-surface-sunken p-3">
-              <p className="text-[0.6875rem] font-semibold text-ink-700">
-                {t('Indicative saving from completing conversion: ₹{0} Cr a year', indicativeAnnualSaving)}
-              </p>
-              <p className="mt-1 text-[0.625rem] leading-relaxed text-ink-500">
-                {t("Counts the energy difference only, at roughly a third of the draw of the fitting replaced. Nothing is claimed here for lamp life, maintenance or failure rates - all real, none quantifiable without the corporation's own contract terms.")}
-              </p>
+            <div className={`mt-3 flex items-start gap-2.5 rounded-lg border p-3 ${SHADE.gold.tile}`}>
+              <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white ${SHADE.gold.chip}`} aria-hidden>
+                <IndianRupee className="h-4 w-4" />
+              </span>
+              <div className="min-w-0">
+                <p className={`text-[0.6875rem] font-semibold ${SHADE.gold.value}`}>
+                  {t('Indicative saving from completing conversion: ₹{0} Cr a year', indicativeAnnualSaving)}
+                </p>
+                <p className="mt-1 text-[0.625rem] leading-relaxed text-ink-500">
+                  {t("Counts the energy difference only, at roughly a third of the draw of the fitting replaced. Nothing is claimed here for lamp life, maintenance or failure rates - all real, none quantifiable without the corporation's own contract terms.")}
+                </p>
+              </div>
             </div>
           </Card>
         </div>

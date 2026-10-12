@@ -39,6 +39,7 @@ import { DEMO_NOW } from '@/utils/deterministic'
 import { formatDate, formatDateTime } from '@/utils/format'
 import { t } from '@/i18n'
 import { registerLayer } from '@/data/runtime'
+import { SHADE, shadeForTone } from '@/components/ui/shade'
 
 /**
  * Coastal and shoreline segment intelligence - beaches, seawalls, mangroves,
@@ -176,8 +177,8 @@ function CoastalNotApplicable({ corporation }: { corporation: CorporationRef }):
   return (
     <PageBody>
       <PageHeader
-        eyebrow={t('City Intelligence')}
-        breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Coastal Intelligence') }]}
+        eyebrow={t('Environment & Public Realm')}
+        breadcrumbs={[{ label: t('Environment & Public Realm') }, { label: t('Coastal Intelligence') }]}
         meta={<Badge tone="neutral">{t('Not applicable to this corporation')}</Badge>}
       />
 
@@ -210,7 +211,7 @@ function CoastalNotApplicable({ corporation }: { corporation: CorporationRef }):
             {waterBodies.map((body) => (
               <li
                 key={body}
-                className="flex items-start gap-2 rounded-lg border border-ink-100 bg-surface-sunken px-3 py-2.5"
+                className={`flex items-start gap-2 rounded-lg border px-3 py-2.5 ${SHADE.auto.tile}`}
               >
                 <Waves className="mt-0.5 h-3.5 w-3.5 shrink-0 text-govt-500" aria-hidden />
                 <span className="min-w-0 text-[0.8125rem] leading-snug text-ink-800">{body}</span>
@@ -223,7 +224,7 @@ function CoastalNotApplicable({ corporation }: { corporation: CorporationRef }):
             compact
             icon={<Droplets className="h-4 w-4" />}
             title={t('No named water bodies recorded')}
-            detail={`The reference roster carries no published rivers, creeks or lakes for ${municipality.shortName}. Nothing has been invented in their place.`}
+            detail={t('The reference roster carries no published rivers, creeks or lakes for {0}. Nothing has been invented in their place.', municipality.shortName)}
           />
         )}
         {corporation.form.greenBelt ? (
@@ -241,11 +242,11 @@ function CoastalNotApplicable({ corporation }: { corporation: CorporationRef }):
           {WATER_MODULE_ROUTES.map((module) => (
             <div
               key={module.to}
-              className="flex min-w-0 flex-col rounded-lg border border-ink-100 bg-surface-sunken p-3.5"
+              className={`flex min-w-0 flex-col rounded-lg border p-3.5 ${SHADE.auto.tile}`}
             >
               <div className="flex items-center gap-2">
                 <span
-                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-govt-50 text-govt-600 ring-1 ring-govt-100 ring-inset"
+                  className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-white ${SHADE.auto.chip}`}
                   aria-hidden
                 >
                   {module.icon}
@@ -299,7 +300,12 @@ export function CoastalIntelligencePage(): React.JSX.Element {
   // is a different reading of the same screen, and the masthead has to carry
   // whichever one is on show. Declaring it in the child would lose the race —
   // child effects run before the parent's, so the parent would overwrite it.
-  usePageMasthead(t('Coastal Intelligence'))
+  usePageMasthead(
+    t('Coastal Intelligence'),
+    coastal
+      ? t('Shoreline segment-level exposure - beaches, seawalls, mangroves, creeks and promenades - read alongside tide behaviour and modelled monsoon flood exposure.')
+      : t('Coastal zone management covers the sea shoreline and tidal creek frontage a municipal corporation is responsible for. {0} has neither within its limits, so this module states that position rather than presenting a coastline the corporation does not hold.', municipality.shortName),
+  )
 
   const segmentsQuery = useServiceQuery(COASTAL_SEGMENTS_KEY, (u) => coastalService.segments(u), { enabled: coastal })
   const summaryQuery = useServiceQuery(COASTAL_SUMMARY_KEY, (u) => coastalService.coastalSummary(u), {
@@ -312,7 +318,7 @@ export function CoastalIntelligencePage(): React.JSX.Element {
   if (segmentsQuery.isLoading || summaryQuery.isLoading) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Coastal Intelligence') }]} />
+        <PageHeader eyebrow={t('Environment & Public Realm')} breadcrumbs={[{ label: t('Environment & Public Realm') }, { label: t('Coastal Intelligence') }]} />
         <LoadingState variant="metrics" />
         <LoadingState variant="table" rows={8} />
       </PageBody>
@@ -321,7 +327,7 @@ export function CoastalIntelligencePage(): React.JSX.Element {
   if (segmentsQuery.error || summaryQuery.error) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Coastal Intelligence') }]} />
+        <PageHeader eyebrow={t('Environment & Public Realm')} breadcrumbs={[{ label: t('Environment & Public Realm') }, { label: t('Coastal Intelligence') }]} />
         <ErrorState
           detail={(segmentsQuery.error ?? summaryQuery.error)?.message}
           onRetry={() => {
@@ -340,8 +346,8 @@ export function CoastalIntelligencePage(): React.JSX.Element {
   if (segments.length === 0 || !summary) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Coastal Intelligence') }]} />
-        <EmptyState title={t('No coastal segments available')} detail="No shoreline segment records are held for this corporation. This is a record availability gap, not a permission restriction." />
+        <PageHeader eyebrow={t('Environment & Public Realm')} breadcrumbs={[{ label: t('Environment & Public Realm') }, { label: t('Coastal Intelligence') }]} />
+        <EmptyState title={t('No coastal segments available')} detail={t('No shoreline segment records are held for this corporation. This is a record availability gap, not a permission restriction.')} />
         <DemonstrationNotice />
       </PageBody>
     )
@@ -434,7 +440,7 @@ export function CoastalIntelligencePage(): React.JSX.Element {
 
   const tideColumns: Array<Column<TideWindow>> = [
     { id: 'at', header: t('Window'), cell: (r) => formatDateTime(r.at), sortValue: (r) => r.at },
-    { id: 'type', header: t('Type'), cell: (r) => <Badge tone={r.type === 'high' ? 'info' : 'muted'}>{r.type === 'high' ? 'High tide' : 'Low tide'}</Badge>, sortValue: (r) => r.type },
+    { id: 'type', header: t('Type'), cell: (r) => <Badge tone={r.type === 'high' ? 'info' : 'muted'}>{r.type === 'high' ? t('High tide') : t('Low tide')}</Badge>, sortValue: (r) => r.type },
     { id: 'height', header: t('Height'), cell: (r) => `${r.heightM} m`, sortValue: (r) => r.heightM, align: 'right' },
     {
       id: 'blocks',
@@ -447,8 +453,8 @@ export function CoastalIntelligencePage(): React.JSX.Element {
   return (
     <PageBody>
       <PageHeader
-        eyebrow={t('City Intelligence')}
-        breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Coastal Intelligence') }]}
+        eyebrow={t('Environment & Public Realm')}
+        breadcrumbs={[{ label: t('Environment & Public Realm') }, { label: t('Coastal Intelligence') }]}
         freshness={freshness}
       />
 
@@ -496,14 +502,14 @@ export function CoastalIntelligencePage(): React.JSX.Element {
               {t('Sortable and filterable by type, protection status and ward. Select a row to open the ward profile for its primary ward.')}
             </p>
             <div className="flex flex-wrap items-center gap-2 px-4 pb-3">
-              <FilterBar show={['ward', 'search']} searchPlaceholder="Search segment or ward" compact />
+              <FilterBar show={['ward', 'search']} searchPlaceholder={t('Search segment or ward')} compact />
               <div className="flex items-center gap-1.5">
                 <Label className="mb-0 whitespace-nowrap">{t('Type')}</Label>
                 <Select
                   value={typeFilter}
                   onChange={(e) => setTypeFilter(e.target.value as 'all' | CoastalSegment['type'])}
                   className="w-auto min-w-[9rem]"
-                  options={[{ value: 'all', label: t('All types') }, ...COASTAL_TYPES.map((entry) => ({ value: entry, label: COASTAL_TYPE_LABEL[entry] }))]}
+                  options={[{ value: 'all', label: t('All types') }, ...COASTAL_TYPES.filter((entry) => segments.some((s) => s.type === entry)).map((entry) => ({ value: entry, label: COASTAL_TYPE_LABEL[entry] }))]}
                   aria-label={t('Filter by segment type')}
                 />
               </div>
@@ -519,7 +525,7 @@ export function CoastalIntelligencePage(): React.JSX.Element {
               </div>
             </div>
             {filteredSegments.length === 0 ? (
-              <EmptyState className="m-4" title={t('No segments match the current filters')} detail="Adjust the type, protection status, ward or search term above." />
+              <EmptyState className="m-4" title={t('No segments match the current filters')} detail={t('Adjust the type, protection status, ward or search term above.')} />
             ) : (
               <DataTable
                 rows={filteredSegments}
@@ -532,7 +538,7 @@ export function CoastalIntelligencePage(): React.JSX.Element {
                 pageSize={12}
                 searchable={false}
                 initialSort={{ columnId: 'vulnerability', direction: 'desc' }}
-                ariaLabel="Coastal segment register"
+                ariaLabel={t('Coastal segment register')}
               />
             )}
           </GovPanel>
@@ -583,19 +589,24 @@ export function CoastalIntelligencePage(): React.JSX.Element {
                 ) : tidesQuery.error ? (
                   <ErrorState detail={tidesQuery.error.message} onRetry={() => tidesQuery.refetch()} />
                 ) : tides.length === 0 ? (
-                  <EmptyState compact title={t('No tide windows available')} detail="No tide window observations are held for this corporation." />
+                  <EmptyState compact title={t('No tide windows available')} detail={t('No tide window observations are held for this corporation.')} />
                 ) : (
-                  <DataTable rows={[...tides].sort((a, b) => (a.at < b.at ? -1 : 1))} columns={tideColumns} rowKey={(r) => r.id} searchable={false} pageSize={8} ariaLabel="Tide windows" dense />
+                  <DataTable rows={[...tides].sort((a, b) => (a.at < b.at ? -1 : 1))} columns={tideColumns} rowKey={(r) => r.id} searchable={false} pageSize={8} ariaLabel={t('Tide windows')} dense />
                 )}
               </div>
-              <div className="rounded-lg border border-ink-100 bg-surface-sunken p-3">
-                <p className="label-institutional">{t('High tide windows blocking discharge')}</p>
-                <p className="numeric mt-1 text-2xl font-semibold text-ink-900">{blockingTides.length}</p>
+              <div className={`rounded-lg border p-3 ${SHADE[blockingTides.length > 0 ? 'amber' : 'green'].tile}`}>
+                <p className="label-institutional flex items-center gap-2">
+                  <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white ${SHADE[blockingTides.length > 0 ? 'amber' : 'green'].chip}`} aria-hidden>
+                    <Waves className="h-4 w-4" />
+                  </span>
+                  {t('High tide windows blocking discharge')}
+                </p>
+                <p className={`numeric mt-1 text-2xl font-semibold ${SHADE[blockingTides.length > 0 ? 'amber' : 'green'].value}`}>{blockingTides.length}</p>
                 <p className="mt-0.5 text-[0.6875rem] text-ink-400">{t('of {0} recorded windows', tides.length)}</p>
 
                 <div className="mt-3 border-t border-ink-100 pt-2.5">
                   <p className="label-institutional">{t('Elevated vulnerability, not fully protected')}</p>
-                  <p className="numeric mt-1 text-lg font-semibold text-ink-900">{highRiskUnprotected.length} segment{highRiskUnprotected.length === 1 ? '' : 's'}</p>
+                  <p className={`numeric mt-1 text-lg font-semibold ${SHADE[highRiskUnprotected.length > 0 ? 'red' : 'green'].value}`}>{highRiskUnprotected.length} segment{highRiskUnprotected.length === 1 ? '' : 's'}</p>
                   {highRiskUnprotected.length > 0 ? (
                     <ul className="mt-1.5 space-y-1">
                       {highRiskUnprotected.slice(0, 5).map((s) => (
@@ -627,9 +638,9 @@ export function CoastalIntelligencePage(): React.JSX.Element {
               />
               <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3 xl:grid-cols-1">
                 {byProtection.map((p) => (
-                  <div key={p.status} className="rounded-lg border border-ink-100 bg-surface-sunken p-2.5">
+                  <div key={p.status} className={`rounded-lg border p-2.5 ${SHADE[shadeForTone(PROTECTION_TONE[p.status])].tile}`}>
                     <Badge tone={PROTECTION_TONE[p.status]}>{PROTECTION_LABEL[p.status]}</Badge>
-                    <p className="numeric mt-1.5 text-sm font-semibold text-ink-900">
+                    <p className={`numeric mt-1.5 text-sm font-semibold ${SHADE[shadeForTone(PROTECTION_TONE[p.status])].value}`}>
                       {p.count} segment{p.count === 1 ? '' : 's'} <span className="font-normal text-ink-400">{t('· {0} km', p.lengthKm)}</span>
                     </p>
                     <p className="mt-0.5 text-[0.6875rem] text-ink-500">{t('Avg. vulnerability {0}/100', p.avgVulnerability)}</p>
@@ -644,7 +655,7 @@ export function CoastalIntelligencePage(): React.JSX.Element {
               {t('Every coastal segment ranked by modelled vulnerability index.')}
             </p>
             <div className="mt-3">
-              <ChartFrame title={t('Segment vulnerability')} unit={t('Vulnerability index (0–100)')} timeframe="Most recent survey" height={Math.max(180, segments.length * 22)}>
+              <ChartFrame title={t('Segment vulnerability')} unit={t('Vulnerability index (0–100)')} timeframe={t('Most recent survey')} height={Math.max(180, segments.length * 22)}>
                 <RankedBarChart
                   data={[...segments]
                     .sort((a, b) => b.vulnerabilityIndex - a.vulnerabilityIndex)

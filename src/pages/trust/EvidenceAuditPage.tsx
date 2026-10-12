@@ -1,5 +1,8 @@
 import { useMemo, useState } from 'react'
-import { Download, ShieldOff } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { ROUTES } from '@/config/navigation'
+import { Download, FileSearch, Lock, ShieldOff, Activity, Filter, ShieldX, Users, Bot, Gauge } from 'lucide-react'
+import { KpiTile } from '@/components/infographic'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { Badge, ClassificationBadge } from '@/components/ui/badges'
 import { Button, Card, Input, Label, MetricGrid, Select } from '@/components/ui/primitives'
@@ -23,7 +26,7 @@ import { useCurrentUser } from '@/stores/auth.store'
 import { useDrawerStore, useFilterStore, type FilterState } from '@/stores/ui.store'
 import { usePageMasthead } from '@/stores/masthead.store'
 import { wardName } from '@/data/reference'
-import { formatDateTime, formatRelative } from '@/utils/format'
+import { formatDateTime, formatNumber, formatRelative } from '@/utils/format'
 import { DEMO_NOW } from '@/utils/deterministic'
 import { CLASSIFICATION_LABEL, type DataClassification, type DateRangeKey } from '@/types/common'
 import type { AuditAction, AuditEvent } from '@/types/governance'
@@ -32,6 +35,7 @@ import type { EvidenceItem, EvidenceKind } from '@/types/intelligence'
 import { cn } from '@/utils/cn'
 import { t } from '@/i18n'
 import { registerLayer } from '@/data/runtime'
+import { SHADE } from '@/components/ui/shade'
 
 const DATE_RANGE_HOURS: Record<DateRangeKey, number> = {
   '24h': 24,
@@ -135,6 +139,9 @@ export function EvidenceAuditPage(): React.JSX.Element {
     if (evClassificationFilter) f.classification = evClassificationFilter
     if (evWardFilter) f.wardId = evWardFilter
     if (evidenceSearch.trim()) f.search = evidenceSearch.trim()
+    // The whole scoped corpus: the filter bar narrows it afterwards, and a
+    // "latest 120" cut taken first would leave a single ward empty.
+    f.limit = 5000
     return f
   }, [kindFilter, evClassificationFilter, evWardFilter, evidenceSearch])
 
@@ -151,6 +158,14 @@ export function EvidenceAuditPage(): React.JSX.Element {
   // filter bar's ward/department/date/search are applied on top, client-side.
   const filteredEvidence = (evidenceQuery.data ?? []).filter((e) => matchesEvidenceGlobalFilters(e, globalFilters))
   const wardOptions = wardsQuery.data ?? []
+  const [shown, setShown] = useState(30)
+  const resetGlobalFilters = useFilterStore((s) => s.resetFilters)
+  const restrictedCount = filteredEvidence.filter((e) => e.classification === 'restricted').length
+  const kindCounts = useMemo(() => {
+    const m = new Map<EvidenceKind, number>()
+    for (const e of filteredEvidence) m.set(e.kind, (m.get(e.kind) ?? 0) + 1)
+    return [...m.entries()].sort((a, b) => b[1] - a[1])
+  }, [filteredEvidence])
 
   // ------------------------------------------------------------------ Audit
   const auditQuery = useServiceQuery(queryKeys.audit(), (user) => auditService.list(user, { pageSize: 260 }))
@@ -162,7 +177,7 @@ export function EvidenceAuditPage(): React.JSX.Element {
   const [dateTo, setDateTo] = useState('')
   const [exportResult, setExportResult] = useState<{ count: number; at: string } | null>(null)
 
-  const auditEvents = auditQuery.data?.items ?? []
+  const auditEvents = useMemo(() => auditQuery.data?.items ?? [], [auditQuery.data])
   const actorOptions = useMemo(() => Array.from(new Set(auditEvents.map((e) => e.actorName))).sort(), [auditEvents])
 
   const activeAuditFilters: AuditFilters = useMemo(() => {
@@ -230,7 +245,7 @@ export function EvidenceAuditPage(): React.JSX.Element {
               ]}
               value={tab}
               onChange={(id) => setTab(id as 'evidence' | 'audit')}
-              ariaLabel="Evidence and audit sections"
+              ariaLabel={t('Evidence and audit sections')}
             />
             <FilterBar show={tab === 'evidence' ? ['ward', 'department', 'date', 'search'] : ['date', 'search']} />
           </div>
@@ -239,7 +254,10 @@ export function EvidenceAuditPage(): React.JSX.Element {
 
       <GovPanel title={t('The provenance chain')} tone="amber">
         <p className="mb-3 text-xs leading-relaxed text-ink-500">
-          {t('Every figure the platform presents can be traced through these nine stages, end to end.')}
+          {t('Every figure the platform presents can be traced through these nine stages, end to end. Sourced figures, each with its document and verbatim quote, are in the Evidence Registry.')}{' '}
+          <Link to={ROUTES.evidenceRegistry} className="font-semibold text-govt-700 underline underline-offset-2 hover:text-govt-900">
+            {t('Open the Evidence Registry')}
+          </Link>
         </p>
         <div className="flex flex-col gap-2 overflow-x-auto sm:flex-row sm:items-stretch">
           {PROVENANCE_RAIL.map((stage, i) => (
@@ -262,69 +280,120 @@ export function EvidenceAuditPage(): React.JSX.Element {
             <ErrorState detail={evidenceQuery.error.message} onRetry={() => evidenceQuery.refetch()} />
           ) : (
             <>
-              <MetricGrid columns={4}>
-                <Card>
-                  <p className="label-institutional">{t('Evidence records reachable')}</p>
-                  <p className="numeric mt-2 text-metric font-semibold text-ink-900">{filteredEvidence.length}</p>
-                </Card>
-                <Card>
-                  <p className="label-institutional">{t('Restricted classification')}</p>
-                  <p className="numeric mt-2 text-metric font-semibold text-ink-900">
-                    {filteredEvidence.filter((e) => e.classification === 'restricted').length}
-                  </p>
-                </Card>
-                <Card>
-                  <p className="label-institutional">{t('Model-assisted records')}</p>
-                  <p className="numeric mt-2 text-metric font-semibold text-ink-900">
-                    {filteredEvidence.filter((e) => e.modelId).length}
-                  </p>
-                </Card>
-                <Card>
-                  <p className="label-institutional">{t('Average data quality')}</p>
-                  <p className="numeric mt-2 text-metric font-semibold text-ink-900">
-                    {filteredEvidence.length > 0
+              <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+                <KpiTile
+                  icon={<FileSearch className="h-5 w-5" />}
+                  label={t('Evidence records reachable')}
+                  value={formatNumber(filteredEvidence.length)}
+                  reading={t('within your post\'s scope and the filters below')}
+                />
+                <KpiTile
+                  icon={<Lock className="h-5 w-5" />}
+                  label={t('Restricted classification')}
+                  value={formatNumber(restrictedCount)}
+                  reading={t('readable only to posts cleared for them')}
+                  tone={restrictedCount > 0 ? 'warn' : 'neutral'}
+                />
+                <KpiTile
+                  icon={<Bot className="h-5 w-5" />}
+                  label={t('Model-assisted records')}
+                  value={formatNumber(filteredEvidence.filter((e) => e.modelId).length)}
+                  reading={t('records carrying a model identifier')}
+                  shade="teal"
+                />
+                <KpiTile
+                  icon={<Gauge className="h-5 w-5" />}
+                  label={t('Average data quality')}
+                  value={`${
+                    filteredEvidence.length > 0
                       ? Math.round(filteredEvidence.reduce((s, e) => s + e.dataQuality, 0) / filteredEvidence.length)
-                      : 0}
-                    /100
-                  </p>
-                </Card>
-              </MetricGrid>
+                      : 0
+                  }/100`}
+                  reading={t('mean across the records shown')}
+                  shade="blue"
+                />
+              </div>
 
-              <GovPanel title={t('Evidence corpus')} tone="red">
+              <GovPanel
+                title={t('Evidence corpus')}
+                subtitle={t('Open a record to inspect its full provenance chain.')}
+                tone="primary"
+                actions={
+                  <Badge tone="info" size="sm">
+                    {t('{0} record(s)', formatNumber(filteredEvidence.length))}
+                  </Badge>
+                }
+              >
                 <p className="mb-3 text-xs leading-relaxed text-ink-500">
                   {t('The evidence corpus browsed in full, scoped to your principal\'s ward, department and classification ceiling. Open a record to inspect its full provenance chain.')}
                 </p>
+
+                {/* One click per kind - the quickest way into a large corpus. */}
+                <div className="mb-3 flex flex-wrap gap-1.5">
+                  {kindCounts.map(([kind, n]) => {
+                    const on = kindFilter === kind
+                    return (
+                      <button
+                        key={kind}
+                        type="button"
+                        aria-pressed={on}
+                        onClick={() => setKindFilter(on ? '' : kind)}
+                        className={cn(
+                          'inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[0.6875rem] font-semibold ring-1 transition-colors',
+                          on ? 'bg-navy-900 text-white ring-navy-900' : 'bg-surface text-ink-700 ring-ink-200 hover:bg-govt-50 hover:ring-govt-300',
+                        )}
+                      >
+                        {KIND_LABEL[kind]}
+                        <span className={cn('numeric rounded-full px-1.5', on ? 'bg-white/20' : 'bg-ink-100 text-ink-600')}>{formatNumber(n)}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+
                 <div className="flex flex-wrap items-center gap-2">
                   <div className="w-full max-w-56">
                     <Label htmlFor="ev-search" className="sr-only">{t('Search evidence')}</Label>
                     <Input id="ev-search" value={evidenceSearch} onChange={(e) => setEvidenceSearch(e.target.value)} placeholder={t('Search title or summary')} />
                   </div>
                   <Select
-                    value={kindFilter}
-                    onChange={(e) => setKindFilter(e.target.value as EvidenceKind | '')}
-                    options={[{ value: '', label: t('All kinds') }, ...(Object.keys(KIND_LABEL) as EvidenceKind[]).map((k) => ({ value: k, label: KIND_LABEL[k] }))]}
-                  />
-                  <Select
+                    className="w-auto min-w-[11rem]"
                     value={evClassificationFilter}
                     onChange={(e) => setEvClassificationFilter(e.target.value as DataClassification | '')}
                     options={[{ value: '', label: t('All classifications') }, ...(Object.keys(CLASSIFICATION_LABEL) as DataClassification[]).map((c) => ({ value: c, label: CLASSIFICATION_LABEL[c] }))]}
                   />
                   <Select
+                    className="w-auto min-w-[11rem]"
                     value={evWardFilter}
                     onChange={(e) => setEvWardFilter(e.target.value)}
                     options={[{ value: '', label: t('All wards') }, ...wardOptions.map((w) => ({ value: w.id, label: wardName(w.id) }))]}
                   />
-                  <span className="numeric text-xs text-ink-400">{t('{0} record(s) matching the current filters', filteredEvidence.length)}</span>
+                  {globalFilters.wardIds.length > 0 ? (
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-warn-50 px-2.5 py-1 text-[0.6875rem] text-warn-700 ring-1 ring-warn-200">
+                      {t('Filter bar: {0}', globalFilters.wardIds.map((w) => wardName(w)).join(', '))}
+                      <button type="button" onClick={resetGlobalFilters} className="font-bold underline">
+                        {t('Clear')}
+                      </button>
+                    </span>
+                  ) : null}
                 </div>
 
                 {filteredEvidence.length === 0 ? (
                   <EmptyState className="mt-3" compact title={t('No evidence matches the current filters')} />
                 ) : (
-                  <div className="mt-3 grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
-                    {filteredEvidence.map((e) => (
-                      <EvidenceCard key={e.id} evidence={e} onOpen={() => openDrawer({ kind: 'evidence', id: e.id })} />
-                    ))}
-                  </div>
+                  <>
+                    <div className="mt-3 grid grid-cols-1 gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
+                      {filteredEvidence.slice(0, shown).map((e) => (
+                        <EvidenceCard key={e.id} evidence={e} onOpen={() => openDrawer({ kind: 'evidence', id: e.id })} />
+                      ))}
+                    </div>
+                    {filteredEvidence.length > shown ? (
+                      <div className="mt-3 flex justify-center">
+                        <Button onClick={() => setShown((n) => n + 30)}>
+                          {t('Show {0} more of {1}', formatNumber(Math.min(30, filteredEvidence.length - shown)), formatNumber(filteredEvidence.length - shown))}
+                        </Button>
+                      </div>
+                    ) : null}
+                  </>
                 )}
               </GovPanel>
             </>
@@ -339,23 +408,43 @@ export function EvidenceAuditPage(): React.JSX.Element {
           ) : (
             <>
               <MetricGrid columns={4}>
-                <Card>
-                  <p className="label-institutional">{t('Audit events in scope')}</p>
-                  <p className="numeric mt-2 text-metric font-semibold text-ink-900">{auditEvents.length}</p>
+                <Card className={cn(SHADE.blue.tile, 'flex items-start gap-3')}>
+                  <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE.blue.chip)}>
+                    <Activity className="h-4 w-4" aria-hidden />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="label-institutional">{t('Audit events in scope')}</p>
+                    <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE.blue.value)}>{auditEvents.length}</p>
+                  </div>
                 </Card>
-                <Card tone={auditEvents.some((e) => e.outcome === 'denied') ? 'warn' : 'default'}>
-                  <p className="label-institutional">{t('Access denied')}</p>
-                  <p className="numeric mt-2 text-metric font-semibold text-ink-900">
-                    {auditEvents.filter((e) => e.outcome === 'denied').length}
-                  </p>
+                <Card className={cn(SHADE[auditEvents.some((e) => e.outcome === 'denied') ? 'amber' : 'green'].tile, 'flex items-start gap-3')}>
+                  <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE[auditEvents.some((e) => e.outcome === 'denied') ? 'amber' : 'green'].chip)}>
+                    <ShieldX className="h-4 w-4" aria-hidden />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="label-institutional">{t('Access denied')}</p>
+                    <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE[auditEvents.some((e) => e.outcome === 'denied') ? 'amber' : 'green'].value)}>
+                      {auditEvents.filter((e) => e.outcome === 'denied').length}
+                    </p>
+                  </div>
                 </Card>
-                <Card>
-                  <p className="label-institutional">{t('Distinct actors')}</p>
-                  <p className="numeric mt-2 text-metric font-semibold text-ink-900">{actorOptions.length}</p>
+                <Card className={cn(SHADE.teal.tile, 'flex items-start gap-3')}>
+                  <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE.teal.chip)}>
+                    <Users className="h-4 w-4" aria-hidden />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="label-institutional">{t('Distinct actors')}</p>
+                    <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE.teal.value)}>{actorOptions.length}</p>
+                  </div>
                 </Card>
-                <Card>
-                  <p className="label-institutional">{t('Filtered result')}</p>
-                  <p className="numeric mt-2 text-metric font-semibold text-ink-900">{filteredAudit.length}</p>
+                <Card className={cn(SHADE.blue.tile, 'flex items-start gap-3')}>
+                  <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE.blue.chip)}>
+                    <Filter className="h-4 w-4" aria-hidden />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="label-institutional">{t('Filtered result')}</p>
+                    <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE.blue.value)}>{filteredAudit.length}</p>
+                  </div>
                 </Card>
               </MetricGrid>
 
@@ -374,7 +463,7 @@ export function EvidenceAuditPage(): React.JSX.Element {
                     variant="primary"
                     icon={<Download className="h-3.5 w-3.5" />}
                     disabled={!canExport}
-                    title={canExport ? 'Export the filtered audit trail. This export is itself recorded as an audit event.' : 'Your role does not hold audit:export. This control is disabled by the permission engine.'}
+                    title={canExport ? t('Export the filtered audit trail. This export is itself recorded as an audit event.') : t('Your role does not hold audit:export. This control is disabled by the permission engine.')}
                     onClick={async () => {
                       const result = await exportAudit(activeAuditFilters)
                       setExportResult({ count: result.length, at: new Date().toISOString() })
@@ -406,7 +495,7 @@ export function EvidenceAuditPage(): React.JSX.Element {
                     columns={auditColumns}
                     rowKey={(e) => e.id}
                     searchable
-                    searchPlaceholder="Search resource or reason"
+                    searchPlaceholder={t('Search resource or reason')}
                     pageSize={15}
                     initialSort={{ columnId: 'timestamp', direction: 'desc' }}
                     rowAccent={(e) => <span className={cn('block h-full w-full rounded-full', e.outcome === 'denied' ? 'bg-crit-500' : 'bg-transparent')} />}

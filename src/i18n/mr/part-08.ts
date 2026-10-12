@@ -324,13 +324,10 @@ export const MR_PART_08: Record<string, string> = {
   '{0} case(s) with a recorded outcome.': 'नोंदवलेला निष्कर्ष असलेली {0} प्रकरणे.',
   '{0} cases · evaluated {1}': '{0} प्रकरणे · मूल्यमापन {1}',
   '{0} cases this period · {1} vs prior': 'या कालावधीत {0} प्रकरणे · मागील तुलनेत {1}',
-  '{0} categories below SLA threshold': 'सेवा-हमी मर्यादेखालील {0} श्रेणी',
   '{0} City Intelligence Index': '{0} शहर बुद्धिमत्ता निर्देशांक',
   '{0} closure(s)': '{0} बंदी',
   '{0} control{1} could not be exercised on this role.':
     'या भूमिकेवर {0} नियंत्रण{1} तपासता आले नाही.',
-  '{0} critical, {1} high': '{0} अतितीव्र, {1} उच्च',
-  '{0} critical, {1} high, {2} medium, {3} low': '{0} अतितीव्र, {1} उच्च, {2} मध्यम, {3} निम्न',
   '{0} dataset(s) matching': 'जुळणारे {0} माहितीसंच',
   '{0} days ago': '{0} दिवसांपूर्वी',
   '{0} days supply': '{0} दिवसांचा पुरवठा',
@@ -338,7 +335,6 @@ export const MR_PART_08: Record<string, string> = {
   '{0} describe architecture with nothing to exercise':
     '{0} रचनेचे वर्णन करतात, पण तपासून पाहण्यासारखे काहीही नाही',
   '{0} done · {1} outstanding': '{0} पूर्ण · {1} शिल्लक',
-  '{0} draft or under review': '{0} मसुदा किंवा पुनरावलोकनाधीन',
   '{0} eligible residents are not enrolled - {1}% coverage':
     '{0} पात्र रहिवासी नोंदणीकृत नाहीत - {1}% व्याप्ती',
   '{0} enabled · {1} paused': '{0} सुरू · {1} स्थगित',
@@ -368,11 +364,8 @@ export const MR_PART_08: Record<string, string> = {
     '{2} कार्यप्रवाह{3} मिळून {0} अनिवार्य मानवी तपासणी-बिंदू{1} - प्रत्येक सक्तीचा, एकही ऐच्छिक नाही.',
   '{0} metric{1} currently withheld from evidence chains':
     'पुरावा साखळ्यांमधून सध्या रोखलेले {0} मापदंड{1}',
-  '{0} MLD supplied against {1} MLD demand ({2} zone(s) at risk)':
-    '{1} MLD मागणीविरुद्ध {0} MLD पुरवठा ({2} झोन जोखमीत)',
   '{0} Monsoon Intelligence Centre': '{0} पावसाळा बुद्धिमत्ता केंद्र',
   '{0} notification types muted': '{0} सूचना प्रकार बंद केले',
-  '{0} of {1} ({2})': '{1} पैकी {0} ({2})',
   '{0} of {1} active': '{1} पैकी {0} कार्यरत',
   '{0} of {1} alert(s) shown': '{1} पैकी {0} इशारे दाखवले',
   '{0} of {1} drainage reaches remain below the {2}% desilting operational threshold against the {3}% pre-monsoon target, and {4} of {5} pumping stations report readiness below the {6}% operational threshold. Effective discharge capacity at these reaches is constrained accordingly whenever rainfall intensity rises - this is a statement of current network condition, not a forecast of any specific rainfall event.':
@@ -400,7 +393,6 @@ export const MR_PART_08: Record<string, string> = {
   '{0} reach(es) across {1} ward(s) remain below the {2}% operational threshold used departmentally to trigger priority attention.':
     '{1} प्रभागांमधील {0} पात्रे, प्राधान्याने लक्ष देण्यासाठी विभागात वापरल्या जाणाऱ्या {2}% कामकाज मर्यादेखाली आहेत.',
   '{0} record(s)': '{0} नोंदी',
-  '{0} record(s) matching the current filters': 'सध्याच्या गाळण्यांशी जुळणाऱ्या {0} नोंदी',
   '{0} residents · {1} km² · {2} households · Ward Officer: {3}':
     '{0} रहिवासी · {1} किमी² · {2} कुटुंबे · प्रभाग अधिकारी: {3}',
   '{0} risk · {1}/100': '{0} जोखीम · {1}/100',

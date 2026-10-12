@@ -67,13 +67,13 @@ function formatSlope(slope: number): string {
 }
 
 function build$BREADCRUMBS() {
-  return [{ label: t('Wards & Localities') }, { label: t('Ward Trajectory & Early Warning') }]
+  return [{ label: t('Wards & Citizens') }, { label: t('Ward Intelligence') }, { label: t('Trajectory') }]
 }
 let BREADCRUMBS: ReturnType<typeof build$BREADCRUMBS> = build$BREADCRUMBS()
 registerLayer(() => {
   BREADCRUMBS = build$BREADCRUMBS()
 })
-const EYEBROW = 'Wards & Localities'
+const EYEBROW = 'Wards & Citizens'
 const TITLE = 'Ward Trajectory & Early Warning'
 
 export function WardTrajectoryPage(): React.JSX.Element {
@@ -232,7 +232,7 @@ export function WardTrajectoryPage(): React.JSX.Element {
       header: t('{0}-month change', observationMonths),
       cell: (r) => (
         <span className={r.changeOverWindow < 0 ? 'numeric text-crit-600' : 'numeric text-ink-700'}>
-          {formatSlope(r.changeOverWindow)} pts
+          {t('{0} pts', formatSlope(r.changeOverWindow))}
         </span>
       ),
       sortValue: (r) => r.changeOverWindow,
@@ -253,7 +253,7 @@ export function WardTrajectoryPage(): React.JSX.Element {
                 : 'numeric text-ink-500'
           }
         >
-          {formatSlope(r.slopePerMonth)} pts
+          {t('{0} pts', formatSlope(r.slopePerMonth))}
         </span>
       ),
       sortValue: (r) => r.slopePerMonth,
@@ -291,7 +291,7 @@ export function WardTrajectoryPage(): React.JSX.Element {
       // Wards with no projected crossing sort to the far end rather than to the
       // top, so the table never opens on the wards that need nothing.
       sortValue: (r) => (r.alreadyBelowThreshold ? -1 : (r.monthsToThreshold ?? 9999)),
-      exportValue: (r) => (r.alreadyBelowThreshold ? 'Already below' : (r.monthsToThreshold ?? null)),
+      exportValue: (r) => (r.alreadyBelowThreshold ? t('Already below') : (r.monthsToThreshold ?? null)),
       align: 'right',
     },
     {
@@ -313,7 +313,7 @@ export function WardTrajectoryPage(): React.JSX.Element {
 
       <DemonstrationNotice />
 
-      <FilterBar show={['ward', 'search']} searchPlaceholder="Search wards by name or code" />
+      <FilterBar show={['ward', 'search']} searchPlaceholder={t('Search wards by name or code')} />
 
       <MetricGrid columns={4}>
         <MetricCard
@@ -323,7 +323,7 @@ export function WardTrajectoryPage(): React.JSX.Element {
           tone={summary.deteriorating > 0 ? 'critical' : 'positive'}
           icon={<TrendingDown className="h-4 w-4" />}
           origin="derived-metric"
-          explanation={`A ward is reported as moving only where its fitted slope exceeds ${steadyBandPerMonth} points per month in either direction. Anything inside that band is reported as steady, so ordinary month-to-month variation is not read as a trend.`}
+          explanation={t('A ward is reported as moving only where its fitted slope exceeds {0} points per month in either direction. Anything inside that band is reported as steady, so ordinary month-to-month variation is not read as a trend.', steadyBandPerMonth)}
           background="red"
         />
         <MetricCard
@@ -331,8 +331,8 @@ export function WardTrajectoryPage(): React.JSX.Element {
           value={fastest ? fastest.wardShortName : 'None'}
           support={
             fastest
-              ? `${formatSlope(fastest.slopePerMonth)} points per month · now at ${fastest.currentScore}`
-              : 'No ward is falling faster than the steady band'
+              ? t('{0} points per month · now at {1}', formatSlope(fastest.slopePerMonth), fastest.currentScore)
+              : t('No ward is falling faster than the steady band')
           }
           tone={fastest ? 'critical' : 'positive'}
           icon={<ArrowDownRight className="h-4 w-4" />}
@@ -346,7 +346,7 @@ export function WardTrajectoryPage(): React.JSX.Element {
           tone={summary.crossingWithinHorizon > 0 ? 'warn' : 'positive'}
           icon={<CalendarClock className="h-4 w-4" />}
           origin="model-output"
-          explanation="A straight-line extension of the fitted slope, not a forecast. It assumes nothing changes, which is precisely the assumption an intervention is meant to break."
+          explanation={t('A straight-line extension of the fitted slope, not a forecast. It assumes nothing changes, which is precisely the assumption an intervention is meant to break.')}
           background="green"
         />
         <MetricCard
@@ -367,7 +367,7 @@ export function WardTrajectoryPage(): React.JSX.Element {
           <EmptyState
             className="mx-3 mb-3"
             title={t('No wards match the current filters')}
-            detail="Clear a ward or search filter to widen the cohort. Ranks and counts are computed across the wards you are authorised to see, so a narrower scope produces a smaller cohort rather than a partial one."
+            detail={t('Clear a ward or search filter to widen the cohort. Ranks and counts are computed across the wards you are authorised to see, so a narrower scope produces a smaller cohort rather than a partial one.')}
           />
         </GovPanel>
       ) : (
@@ -400,7 +400,7 @@ export function WardTrajectoryPage(): React.JSX.Element {
                     series={highlightSeries}
                     showLegend
                     referenceValue={interventionThreshold}
-                    referenceLabel={`Intervention threshold ${interventionThreshold}`}
+                    referenceLabel={t('Intervention threshold {0}', interventionThreshold)}
                   />
                 </div>
                 <p className="px-3 pb-4 text-[0.6875rem] leading-relaxed text-ink-500">
@@ -411,14 +411,14 @@ export function WardTrajectoryPage(): React.JSX.Element {
 
             <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
               <GovPanel
-                title={fastest ? `${fastest.wardName} - observed and extended` : 'No ward is deteriorating'}
+                title={fastest ? t('{0} - observed and extended', fastest.wardName) : t('No ward is deteriorating')}
                 tone="amber"
                 dense
               >
                 <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
                   {fastest
-                    ? `${observationMonths} reconstructed months followed by ${projectionHorizonMonths} months of straight-line extension at ${formatSlope(fastest.slopePerMonth)} points per month.`
-                    : 'Every ward in the current cohort is steady or improving, so there is no falling trajectory to extend.'}
+                    ? t('{0} reconstructed months followed by {1} months of straight-line extension at {2} points per month.', observationMonths, projectionHorizonMonths, formatSlope(fastest.slopePerMonth))
+                    : t('Every ward in the current cohort is steady or improving, so there is no falling trajectory to extend.')}
                 </p>
                 {fastest ? (
                   <>
@@ -438,11 +438,11 @@ export function WardTrajectoryPage(): React.JSX.Element {
                         <TrendChart
                           points={projectionQuery.data ?? []}
                           variant="line"
-                          unit=" pts"
-                          seriesLabel="Health score"
+                          unit={t(' pts')}
+                          seriesLabel={t('Health score')}
                           colour={CHART_COLOURS.critical}
                           referenceValue={interventionThreshold}
-                          referenceLabel={`Threshold ${interventionThreshold}`}
+                          referenceLabel={t('Threshold {0}', interventionThreshold)}
                           domain={['auto', 'auto']}
                         />
                       )}
@@ -450,10 +450,10 @@ export function WardTrajectoryPage(): React.JSX.Element {
                     <div className="border-t border-ink-100 px-3 py-3">
                       <p className="text-[0.6875rem] leading-relaxed text-ink-500">
                         {t('Points beyond {0} are marked as simulated in the tooltip. {1}', fastest.series[fastest.series.length - 1]?.month, fastest.alreadyBelowThreshold
-                          ? `${fastest.wardShortName} is already below ${interventionThreshold}, so no crossing is projected - the question is no longer when to intervene.`
+                          ? t('{0} is already below {1}, so no crossing is projected - the question is no longer when to intervene.', fastest.wardShortName, interventionThreshold)
                           : fastest.crossingMonth
-                            ? `On this rate the ward reaches ${interventionThreshold} in ${fastest.monthsToThreshold?.toFixed(1)} months, around ${fastest.crossingMonth}.`
-                            : `The rate does not carry the ward below ${interventionThreshold} inside a horizon worth stating as a date.`)}
+                            ? t('On this rate the ward reaches {0} in {1} months, around {2}.', interventionThreshold, fastest.monthsToThreshold?.toFixed(1), fastest.crossingMonth)
+                            : t('The rate does not carry the ward below {0} inside a horizon worth stating as a date.', interventionThreshold))}
                       </p>
                     </div>
                   </>
@@ -462,7 +462,7 @@ export function WardTrajectoryPage(): React.JSX.Element {
                     <EmptyState
                       compact
                       title={t('No falling trajectory to extend')}
-                      detail={`Every ward in the current cohort sits inside the ${steadyBandPerMonth}-point steady band or above it.`}
+                      detail={t('Every ward in the current cohort sits inside the {0}-point steady band or above it.', steadyBandPerMonth)}
                     />
                   </div>
                 )}

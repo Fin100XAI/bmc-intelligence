@@ -76,12 +76,12 @@ export function SolidWasteIntelligencePage(): React.JSX.Element {
   const facilitiesQuery = useServiceQuery(queryKeys.waste('facilities'), (u) => wasteService.facilities(u))
   const hotspotsQuery = useServiceQuery(queryKeys.waste('hotspots'), (u) => wasteService.hotspots(u))
 
-  const breadcrumbs = [{ label: t('City Intelligence') }, { label: t('Solid Waste Intelligence') }]
+  const breadcrumbs = [{ label: t('City Services') }, { label: t('Solid Waste') }]
 
   if (performanceQuery.isLoading || routesQuery.isLoading || facilitiesQuery.isLoading || hotspotsQuery.isLoading) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={breadcrumbs} />
+        <PageHeader eyebrow={t('City Services')} breadcrumbs={breadcrumbs} />
         <LoadingState variant="metrics" />
         <LoadingState variant="table" rows={8} />
       </PageBody>
@@ -92,7 +92,7 @@ export function SolidWasteIntelligencePage(): React.JSX.Element {
   if (anyError) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={breadcrumbs} />
+        <PageHeader eyebrow={t('City Services')} breadcrumbs={breadcrumbs} />
         <ErrorState
           detail={anyError.message}
           onRetry={() => {
@@ -114,8 +114,8 @@ export function SolidWasteIntelligencePage(): React.JSX.Element {
   if (performance.length === 0) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('City Intelligence')} breadcrumbs={breadcrumbs} />
-        <EmptyState title={t('No solid waste data available')} detail="No ward performance records were returned for the current scope." />
+        <PageHeader eyebrow={t('City Services')} breadcrumbs={breadcrumbs} />
+        <EmptyState title={t('No solid waste data available')} detail={t('No ward performance records were returned for the current scope.')} />
         <DemonstrationNotice />
       </PageBody>
     )
@@ -287,7 +287,7 @@ export function SolidWasteIntelligencePage(): React.JSX.Element {
       header: t('Remaining life'),
       cell: (r) =>
         typeof r.remainingLifeYears === 'number' ? (
-          <Badge tone={r.remainingLifeYears <= LOW_REMAINING_LIFE_YEARS ? 'critical' : 'neutral'}>{r.remainingLifeYears} yr</Badge>
+          <Badge tone={r.remainingLifeYears <= LOW_REMAINING_LIFE_YEARS ? 'critical' : 'neutral'}>{t('{0} yr', r.remainingLifeYears)}</Badge>
         ) : (
           <span className="text-ink-300">-</span>
         ),
@@ -318,10 +318,10 @@ export function SolidWasteIntelligencePage(): React.JSX.Element {
   return (
     <PageBody>
       <PageHeader
-        eyebrow={t('City Intelligence')}
+        eyebrow={t('City Services')}
         breadcrumbs={breadcrumbs}
         freshness={FRESHNESS}
-        controls={<FilterBar show={['ward', 'search']} searchPlaceholder="Search ward, route or facility" />}
+        controls={<FilterBar show={['ward', 'search']} searchPlaceholder={t('Search ward, route or facility')} />}
       />
 
       <MetricGrid columns={4}>
@@ -363,9 +363,9 @@ export function SolidWasteIntelligencePage(): React.JSX.Element {
             columns={performanceColumns}
             rowKey={(r) => r.wardId}
             pageSize={12}
-            searchPlaceholder="Search ward"
+            searchPlaceholder={t('Search ward')}
             initialSort={{ columnId: 'coverage', direction: 'asc' }}
-            ariaLabel="Ward collection performance"
+            ariaLabel={t('Ward collection performance')}
           />
         </GovPanel>
 
@@ -391,7 +391,7 @@ export function SolidWasteIntelligencePage(): React.JSX.Element {
             />
             <div className="min-w-0">
               {filteredRoutes.length === 0 ? (
-                <EmptyState title={t('No routes match the current filters')} detail="Select a single ward, or clear the ward filter, to see routes." />
+                <EmptyState title={t('No routes match the current filters')} detail={t('Select a single ward, or clear the ward filter, to see routes.')} />
               ) : (
                 <DataTable
                   rows={filteredRoutes}
@@ -402,7 +402,7 @@ export function SolidWasteIntelligencePage(): React.JSX.Element {
                   onRowClick={(r) => setSelectedRouteId(r.id === selectedRouteId ? null : r.id)}
                   activeRowKey={selectedRouteId ?? undefined}
                   initialSort={{ columnId: 'adherence', direction: 'asc' }}
-                  ariaLabel="Collection routes"
+                  ariaLabel={t('Collection routes')}
                   maxHeight="26rem"
                   stickyHeader
                 />
@@ -426,9 +426,9 @@ export function SolidWasteIntelligencePage(): React.JSX.Element {
             columns={facilityColumns}
             rowKey={(r) => r.id}
             pageSize={10}
-            searchPlaceholder="Search facility"
+            searchPlaceholder={t('Search facility')}
             initialSort={{ columnId: 'utilisation', direction: 'desc' }}
-            ariaLabel="Processing and disposal facilities"
+            ariaLabel={t('Processing and disposal facilities')}
           />
         </GovPanel>
         </div>
@@ -448,29 +448,29 @@ export function SolidWasteIntelligencePage(): React.JSX.Element {
               {t('Locations with repeated dumping or accumulation, ranked by recurrence count.')}
             </p>
             {filteredHotspots.length === 0 ? (
-              <EmptyState className="m-4" title={t('No recurring hotspots match the current filters')} detail="No hotspot records were returned for the selected ward or search term." />
+              <EmptyState className="m-4" title={t('No recurring hotspots match the current filters')} detail={t('No hotspot records were returned for the selected ward or search term.')} />
             ) : (
               <DataTable
                 rows={filteredHotspots}
                 columns={hotspotColumns}
                 rowKey={(r) => r.id}
                 pageSize={10}
-                searchPlaceholder="Search location or ward"
+                searchPlaceholder={t('Search location or ward')}
                 initialSort={{ columnId: 'recurrence', direction: 'desc' }}
-                ariaLabel="Recurring hotspots"
+                ariaLabel={t('Recurring hotspots')}
               />
             )}
           </GovPanel>
 
           <Card>
-            <ChartFrame title={t('Diversion from landfill')} unit={t('Tonnes per day')} timeframe="Current modelled load" description={t('Processing, composting and bio-methanation load against landfill load. Transfer-station throughput is excluded as it passes onward to another facility.')} height={220}>
+            <ChartFrame title={t('Diversion from landfill')} unit={t('Tonnes per day')} timeframe={t('Current modelled load')} description={t('Processing, composting and bio-methanation load against landfill load. Transfer-station throughput is excluded as it passes onward to another facility.')} height={220}>
               <DonutChart
                 data={[
                   { label: t('Diverted (processing, composting, biogas)'), value: diversionLoad, colour: CHART_COLOURS.positive },
                   { label: t('Landfilled'), value: landfillLoad, colour: CHART_COLOURS.critical },
                 ]}
                 centreValue={`${Math.round(diversionPct)}%`}
-                centreLabel="diverted"
+                centreLabel={t('diverted')}
               />
             </ChartFrame>
             <p className="mt-2 text-[0.6875rem] leading-relaxed text-ink-400">

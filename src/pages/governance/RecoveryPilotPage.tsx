@@ -188,8 +188,8 @@ export function RecoveryPilotPage(): React.JSX.Element {
   return (
     <PageBody>
       <PageHeader
-        eyebrow={t('Revenue & Municipal Finance')}
-        breadcrumbs={[{ label: t('Revenue & Municipal Finance') }, { label: t('Recovery Pilot & Returns') }]}
+        eyebrow={t('Revenue & Finance')}
+        breadcrumbs={[{ label: t('Revenue & Finance') }, { label: t('Property Tax Recovery') }, { label: t('Pilot & returns') }]}
         freshness={FRESHNESS}
         actions={
           <>
@@ -228,7 +228,7 @@ export function RecoveryPilotPage(): React.JSX.Element {
       {!wardsQuery.isLoading && !wardsQuery.error && candidates.length === 0 ? (
         <EmptyState
           title={t('No ward carries a review candidate')}
-          detail="No cross-register disagreements were raised within your authorised ward scope, so there is nothing to scope a pilot on."
+          detail={t('No cross-register disagreements were raised within your authorised ward scope, so there is nothing to scope a pilot on.')}
         />
       ) : null}
 
@@ -264,8 +264,8 @@ export function RecoveryPilotPage(): React.JSX.Element {
               value={formatRupees(pilot.recoveredValue)}
               support={
                 pilot.precisionPct === null
-                  ? 'No candidate decided yet'
-                  : `${formatPercent(pilot.precisionPct, 0)} of decided candidates converted`
+                  ? t('No candidate decided yet')
+                  : t('{0} of decided candidates converted', formatPercent(pilot.precisionPct, 0))
               }
             />
           </MetricGrid>
@@ -288,9 +288,9 @@ export function RecoveryPilotPage(): React.JSX.Element {
             onRowClick={(r) => setWardId(r.wardId)}
             activeRowKey={wardId}
             exportName="recovery-pilot-ward-ranking"
-            searchPlaceholder="Search wards"
+            searchPlaceholder={t('Search wards')}
             initialSort={{ columnId: 'indicative', direction: 'desc' }}
-            ariaLabel="Pilot ward ranking"
+            ariaLabel={t('Pilot ward ranking')}
           />
         </GovPanel>
       ) : null}
@@ -304,7 +304,7 @@ export function RecoveryPilotPage(): React.JSX.Element {
         dense
         actions={
           <Button size="sm" variant="primary" onClick={() => void runGenerate()} disabled={generating}>
-            {generating ? 'Generating…' : 'Generate the return'}
+            {generating ? 'Generating…' : t('Generate the return')}
           </Button>
         }
       >

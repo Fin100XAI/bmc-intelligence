@@ -62,6 +62,7 @@ import { departmentName, wardShortName } from '@/data/reference'
 import { isoFromAnchor } from '@/utils/deterministic'
 import { formatDateTime, formatRelative, sanitiseText, truncate } from '@/utils/format'
 import { cn } from '@/utils/cn'
+import { SHADE, type Shade } from '@/components/ui/shade'
 import { CLASSIFICATION_ORDER, DOMAIN_LABEL, type DataClassification } from '@/types/common'
 import type { RoleId, User } from '@/types/organisation'
 import type { AICitation, AIEntityKind, AIInterpretation, AIResponse, AIUseCase } from '@/types/ai'
@@ -82,6 +83,7 @@ import { AIRecommendationCard } from '@/components/cards/domain-cards'
 import { AnswerVisuals } from '@/components/ai/AnswerVisuals'
 import { t } from '@/i18n'
 import { registerLayer } from '@/data/runtime'
+import { meaningIcon } from '@/components/ui/meaning-icon'
 
 /**
  * src/pages/ai/CopilotPage.tsx
@@ -146,10 +148,10 @@ function icon(Node: typeof Compass): ReactNode {
  * reads as distinct entries rather than one undifferentiated list.
  */
 const ACCENT_CYCLE = [
-  { chip: 'bg-google-blue-50 text-google-blue-700 ring-google-blue-100', hoverBorder: 'hover:border-google-blue-200' },
-  { chip: 'bg-google-red-50 text-google-red-700 ring-google-red-100', hoverBorder: 'hover:border-google-red-200' },
-  { chip: 'bg-google-yellow-50 text-google-yellow-800 ring-google-yellow-100', hoverBorder: 'hover:border-google-yellow-300' },
-  { chip: 'bg-google-green-50 text-google-green-700 ring-google-green-100', hoverBorder: 'hover:border-google-green-200' },
+  { chip: 'bg-google-blue-50 text-google-blue-700 ring-google-blue-100', tile: 'border-google-blue-200 bg-google-blue-50', solid: 'bg-google-blue-600 text-white', hoverBorder: 'hover:border-google-blue-300' },
+  { chip: 'bg-google-red-50 text-google-red-700 ring-google-red-100', tile: 'border-google-red-200 bg-google-red-50', solid: 'bg-google-red-600 text-white', hoverBorder: 'hover:border-google-red-300' },
+  { chip: 'bg-google-yellow-50 text-google-yellow-800 ring-google-yellow-100', tile: 'border-google-yellow-200 bg-google-yellow-50', solid: 'bg-google-yellow-600 text-white', hoverBorder: 'hover:border-google-yellow-300' },
+  { chip: 'bg-google-green-50 text-google-green-700 ring-google-green-100', tile: 'border-google-green-200 bg-google-green-50', solid: 'bg-google-green-600 text-white', hoverBorder: 'hover:border-google-green-300' },
 ] as const
 
 function accentFor(index: number): (typeof ACCENT_CYCLE)[number] {
@@ -262,13 +264,19 @@ registerLayer(() => {
   BLOCKED_EXAMPLE = build$BLOCKED_EXAMPLE()
 })
 
-/** The pipeline an operator watches while a question is in flight. */
-const PIPELINE_STAGES = [
-  { id: 'gateway', label: 'Gateway policy', detail: 'Reserved acts refused before any model is called' },
-  { id: 'retrieval', label: 'Retrieval', detail: 'Locating the records that bear on the question' },
-  { id: 'scope', label: 'Scope filter', detail: 'Withholding anything outside your authorised scope' },
-  { id: 'compose', label: 'Composition', detail: 'Assembling the answer with its evidence and limits' },
-] as const
+/**
+ * The pipeline an operator watches while a question is in flight. A function,
+ * not a constant, so the stage text is read per render in the interface
+ * language.
+ */
+function pipelineStages() {
+  return [
+    { id: 'gateway', label: t('Gateway policy'), detail: t('Reserved acts refused before any model is called') },
+    { id: 'retrieval', label: t('Retrieval'), detail: t('Locating the records that bear on the question') },
+    { id: 'scope', label: t('Scope filter'), detail: t('Withholding anything outside your authorised scope') },
+    { id: 'compose', label: t('Composition'), detail: t('Assembling the answer with its evidence and limits') },
+  ] as const
+}
 
 function isBlockedResponse(response: AIResponse): boolean {
   return response.sources.some((s) => s.toLowerCase().includes('gateway policy'))
@@ -332,7 +340,7 @@ function build$STRENGTH_STYLE(): Record<
   partial: {
     label: t('Partial match'),
     sentence:
-      'This route scored highest, but the wording only partly selected it. Check the reading below before relying on the answer.',
+      t('This route scored highest, but the wording only partly selected it. Check the reading below before relying on the answer.'),
     surface: 'border-warn-200/80 bg-warn-50/35',
     rail: 'bg-warn-500',
     meter: 'bg-warn-500',
@@ -341,7 +349,7 @@ function build$STRENGTH_STYLE(): Record<
   weak: {
     label: t('Weak match'),
     sentence:
-      'No retrieval route was clearly selected by this wording. What follows is the closest reading available — treat it as a starting point, not as an answer to the question you asked.',
+      t('No retrieval route was clearly selected by this wording. What follows is the closest reading available — treat it as a starting point, not as an answer to the question you asked.'),
     surface: 'border-risk-300/80 bg-risk-50/45',
     rail: 'bg-risk-500',
     meter: 'bg-risk-500',
@@ -375,7 +383,7 @@ function buildRequestInput(question: string, response: AIResponse, latencyMs: nu
     citationCount: response.evidence.length,
     reviewStatus: response.recommendedActions.length > 0 ? 'pending' : 'not-required',
     policyStatus: blocked ? 'blocked' : 'passed',
-    policyNote: blocked ? 'Blocked at the AI gateway before reaching any model - see the recorded answer.' : undefined,
+    policyNote: blocked ? t('Blocked at the AI gateway before reaching any model - see the recorded answer.') : undefined,
     classification,
     tokensIn: Math.max(8, Math.ceil(question.length / 4)),
     tokensOut: Math.max(8, Math.ceil(response.answer.length / 4)),
@@ -571,7 +579,7 @@ export function CopilotPage(): React.JSX.Element {
     } catch (err) {
       patchMessage(id, {
         status: 'error',
-        errorMessage: err instanceof Error ? err.message : 'The Copilot could not process this request.',
+        errorMessage: err instanceof Error ? err.message : t('The Copilot could not process this request.'),
       })
     }
   }
@@ -671,13 +679,13 @@ export function CopilotPage(): React.JSX.Element {
             <GovStripCell
               label={t('Tasks raised')}
               value={sessionLedger.tasks}
-              background="gold"
+              background="amber"
               icon={<ClipboardPlus className="h-3 w-3" />}
             />
             <GovStripCell
               label={t('Briefs saved')}
               value={sessionLedger.briefs}
-              background="neutral"
+              background="teal"
               icon={<BookmarkPlus className="h-3 w-3" />}
             />
             <GovStripCell
@@ -696,14 +704,14 @@ export function CopilotPage(): React.JSX.Element {
         breadcrumbs={[{ label: t('AI & Automation') }, { label: t('{0} Municipal Copilot', cityName(corporation)) }]}
       />
 
-      <div className="grid min-w-0 gap-5 lg:grid-cols-[19rem_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 min-w-0 gap-5 lg:grid-cols-[19rem_minmax(0,1fr)]">
         {/* ---------------------------------------------------- Inspector
             Pinned to the same viewport box as the conversation card beside it
             and capped to the same height, so this rail scrolls within itself
             when its panels run long instead of stretching the page underneath
             both columns. */}
         <div className="scrollbar-slim min-w-0 space-y-4 overflow-y-auto lg:sticky lg:top-[4.5rem] lg:h-[calc(100vh-6.5rem)] lg:self-start">
-          <GovPanel title={t('Quick Intelligence')} tone="primary">
+          <GovPanel title={t('Quick Intelligence')} tone="teal">
             <div className="grid grid-cols-2 gap-2">
               {prompts.map((p, i) => {
                 const accent = accentFor(i)
@@ -714,13 +722,14 @@ export function CopilotPage(): React.JSX.Element {
                     disabled={busy}
                     onClick={() => void ask(p.question, p.queryEn)}
                     className={cn(
-                      'lift-on-hover flex flex-col items-start gap-1.5 rounded-lg border border-ink-100 p-2.5 text-left transition-all',
+                      'lift-on-hover flex flex-col items-start gap-1.5 rounded-lg border p-2.5 text-left transition-all',
+                      accent.tile,
                       accent.hoverBorder,
                       'focus-visible:ring-2 focus-visible:ring-govt-500/30 focus-visible:outline-none',
                       'disabled:cursor-not-allowed disabled:opacity-50',
                     )}
                   >
-                    <span className={cn('flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ring-1', accent.chip)}>
+                    <span className={cn('flex h-7 w-7 shrink-0 items-center justify-center rounded-lg', accent.solid)}>
                       {p.icon}
                     </span>
                     <span className="text-[0.75rem] leading-snug font-semibold text-ink-800">{p.label}</span>
@@ -783,14 +792,14 @@ export function CopilotPage(): React.JSX.Element {
           {sessionLedger.decisions + sessionLedger.tasks + sessionLedger.briefs > 0 ||
           escalations.length > 0 ||
           situationRoom.length > 0 ? (
-            <GovPanel title={t('Raised from this session')} tone="amber">
+            <GovPanel title={t('Raised from this session')} tone="blue">
               <p className="mb-3 text-xs leading-relaxed text-ink-500">
                 {t('What left this surface and became a record elsewhere.')}
               </p>
               <div className="mt-3.5 grid grid-cols-3 gap-2 text-center">
-                <LedgerStat label={t('Decisions')} value={sessionLedger.decisions} accent={accentFor(0)} />
-                <LedgerStat label={t('Tasks')} value={sessionLedger.tasks} accent={accentFor(2)} />
-                <LedgerStat label={t('Briefs')} value={sessionLedger.briefs} accent={accentFor(3)} />
+                <LedgerStat label={t('Decisions')} value={sessionLedger.decisions} shade="blue" />
+                <LedgerStat label={t('Tasks')} value={sessionLedger.tasks} shade="amber" />
+                <LedgerStat label={t('Briefs')} value={sessionLedger.briefs} shade="teal" />
               </div>
 
               {escalations.length > 0 ? (
@@ -842,7 +851,7 @@ export function CopilotPage(): React.JSX.Element {
             outside that scroll region and never moves. */}
         <Card
           flush
-          className="relative flex min-h-[36rem] min-w-0 flex-col overflow-hidden rounded-lg shadow-raised lg:sticky lg:top-[4.5rem] lg:h-[calc(100vh-6.5rem)] lg:min-h-0 lg:self-start"
+          className="relative flex h-[calc(100dvh-7rem)] min-h-[30rem] min-w-0 flex-col overflow-hidden rounded-lg shadow-raised lg:sticky lg:top-[4.5rem] lg:h-[calc(100vh-6.5rem)] lg:min-h-0 lg:self-start"
         >
           {/* A single hairline of institutional colour along the top edge. */}
           <span
@@ -992,16 +1001,21 @@ function RailRow({ label, value }: { label: string; value: ReactNode }): React.J
 function LedgerStat({
   label,
   value,
-  accent,
+  shade,
 }: {
   label: string
   value: number
-  accent: (typeof ACCENT_CYCLE)[number]
+  shade: Shade
 }): React.JSX.Element {
   return (
-    <div className={cn('rounded-lg px-2 py-2 ring-1', accent.chip)}>
-      <p className="numeric text-lg font-semibold text-ink-900">{value}</p>
-      <p className="mt-px text-[0.625rem] text-ink-600">{label}</p>
+    <div className={cn('flex items-center gap-2 rounded-lg border px-2 py-2', SHADE[shade].tile)}>
+      <span className={cn('flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-white', SHADE[shade].chip)}>
+        {meaningIcon(label, shade, 'h-3.5 w-3.5')}
+      </span>
+      <div className="min-w-0">
+        <p className={cn('numeric text-lg leading-tight font-bold', SHADE[shade].value)}>{value}</p>
+        <p className="mt-px truncate text-[0.625rem] text-ink-600">{label}</p>
+      </div>
     </div>
   )
 }
@@ -1107,7 +1121,7 @@ function ThinkingRail({ question }: { question: string }): React.JSX.Element {
         {t('Working through your question')}
       </p>
       <ol className="mt-3 space-y-2">
-        {PIPELINE_STAGES.map((stage) => {
+        {pipelineStages().map((stage) => {
           const isGateway = stage.id === 'gateway'
           const refusedHere = isGateway && !gate.permitted
           const skipped = !gate.permitted && !isGateway
@@ -1128,10 +1142,10 @@ function ThinkingRail({ question }: { question: string }): React.JSX.Element {
                   )}
                 >
                   {stage.label}
-                  {refusedHere ? ' — refused' : skipped ? ' — not reached' : ''}
+                  {refusedHere ? t(' — refused') : skipped ? t(' — not reached') : ''}
                 </p>
                 <p className={cn('mt-0.5 text-[0.6875rem] leading-relaxed', skipped ? 'text-ink-300' : 'text-ink-500')}>
-                  {refusedHere ? `Reserved act: ${gate.blockedIntent}` : stage.detail}
+                  {refusedHere ? t('Reserved act: {0}', gate.blockedIntent) : stage.detail}
                 </p>
               </div>
             </li>
@@ -1253,7 +1267,7 @@ function AnswerPanel({
           >
             {response.grounding === 'evidence-backed'
               ? `Evidence-backed · ${response.evidence.length} record${response.evidence.length === 1 ? '' : 's'}`
-              : 'General reasoning'}
+              : t('General reasoning')}
           </Badge>
         )}
         <ConfidenceBadge confidence={response.confidence} rationale={response.confidenceRationale} />
@@ -1262,7 +1276,7 @@ function AnswerPanel({
         {typeof latencyMs === 'number' ? (
           <span className="numeric hidden text-[0.625rem] text-ink-400 sm:inline">{latencyMs} ms</span>
         ) : null}
-        <IconButton label={copied ? 'Answer copied' : 'Copy answer'} onClick={copyAnswer}>
+        <IconButton label={copied ? t('Answer copied') : t('Copy answer')} onClick={copyAnswer}>
           {copied ? <Check className="h-3.5 w-3.5 text-ok-600" /> : <Copy className="h-3.5 w-3.5" />}
         </IconButton>
       </div>
@@ -1286,7 +1300,7 @@ function AnswerPanel({
           ]}
           value={tab}
           onChange={(id) => setTab(id as AnswerTab)}
-          ariaLabel="Answer sections"
+          ariaLabel={t('Answer sections')}
         />
       </div>
 
@@ -1467,7 +1481,7 @@ function AnswerPanel({
             ) : null}
             <ProvenanceRow
               label={t('Sources')}
-              value={response.sources.length > 0 ? response.sources.join(' · ') : 'None recorded.'}
+              value={response.sources.length > 0 ? response.sources.join(' · ') : t('None recorded.')}
             />
             <ProvenanceRow label={t('Data freshness')} value={response.dataFreshnessLabel} />
             <ProvenanceRow label={t('Model')} value={<span className="font-mono text-[0.75rem]">{response.modelId}</span>} />
@@ -1488,7 +1502,7 @@ function AnswerPanel({
           onClick={onCreateDecision}
           disabled={Boolean(actionState?.decisionId)}
         >
-          {actionState?.decisionId ? `Decision ${actionState.decisionRef}` : 'Decision case'}
+          {actionState?.decisionId ? t('Decision {0}', actionState.decisionRef) : t('Decision case')}
         </Button>
         <Button
           size="xs"
@@ -1515,7 +1529,7 @@ function AnswerPanel({
           onClick={onSaveBrief}
           disabled={actionState?.saved}
         >
-          {actionState?.saved ? 'Brief saved' : 'Save brief'}
+          {actionState?.saved ? t('Brief saved') : t('Save brief')}
         </Button>
         <Button
           size="xs"
@@ -1654,7 +1668,7 @@ function InterpretationStrip({
             <span className="text-ink-400">{t('Matched on')}</span> {interpretation.matchedTerms.join(' · ')}
           </>
         ) : (
-          'No term in the wording matched a retrieval route.'
+          t('No term in the wording matched a retrieval route.')
         )}
       </p>
 

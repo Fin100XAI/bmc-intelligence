@@ -15,8 +15,11 @@ import { SIGNAL_WEIGHTS, type HyperlocalCell } from '@/domains/hyperlocal/signal
 import { usePageMasthead } from '@/stores/masthead.store'
 import { useContextStore, useFilterStore, type FilterState } from '@/stores/ui.store'
 import { WARDS } from '@/data/reference'
+import { canAccess } from '@/security/access'
+import { useCurrentUser } from '@/stores/auth.store'
 import { isoFromAnchor } from '@/utils/deterministic'
 import { t } from '@/i18n'
+import { SHADE } from '@/components/ui/shade'
 
 /** Ward and signal-stacking are already covered by this page's own two
  *  selects (both server-scoped); the global bar adds severity and free text. */
@@ -74,6 +77,8 @@ export function HyperlocalIntelligencePage(): React.JSX.Element {
 
   const wardId = localWard.from === contextWardId ? localWard.wardId : contextWardId ?? ''
   const setWardId = (id: string): void => setLocalWard({ wardId: id, from: contextWardId })
+  const user = useCurrentUser()
+  const authorisedWards = useMemo(() => WARDS.filter((w) => canAccess(user, 'ward', 'view', { wardId: w.id }).allowed), [user])
 
   const [minTypes, setMinTypes] = useState<string>('')
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -122,8 +127,8 @@ export function HyperlocalIntelligencePage(): React.JSX.Element {
   return (
     <PageBody>
       <PageHeader
-        eyebrow={t('City Intelligence')}
-        breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Hyperlocal Intelligence') }]}
+        eyebrow={t('Wards & Citizens')}
+        breadcrumbs={[{ label: t('Wards & Citizens') }, { label: t('Ward Intelligence') }, { label: t('Localities') }]}
         freshness={FRESHNESS}
         controls={
           <>
@@ -136,7 +141,7 @@ export function HyperlocalIntelligencePage(): React.JSX.Element {
                 aria-label={t('Filter by ward')}
                 options={[
                   { value: '', label: t('All authorised wards') },
-                  ...WARDS.map((w) => ({ value: w.id, label: `${w.code} - ${w.name.split(' · ')[0]}` })),
+                  ...authorisedWards.map((w) => ({ value: w.id, label: `${w.code} - ${w.name.split(' · ')[0]}` })),
                 ]}
               />
             </div>
@@ -155,7 +160,7 @@ export function HyperlocalIntelligencePage(): React.JSX.Element {
                 ]}
               />
             </div>
-            <FilterBar show={['severity', 'search']} searchPlaceholder="Search locality or ward" />
+            <FilterBar show={['severity', 'search']} searchPlaceholder={t('Search locality or ward')} />
           </>
         }
       />
@@ -235,7 +240,7 @@ export function HyperlocalIntelligencePage(): React.JSX.Element {
               {cells.length === 0 ? (
                 <EmptyState
                   title={t('No locality reaches the reporting threshold')}
-                  detail="A locality needs at least two reports on record before it is shown. Relax the stacking filter to widen the set."
+                  detail={t('A locality needs at least two reports on record before it is shown. Relax the stacking filter to widen the set.')}
                 />
               ) : (
                 <ul className="scrollbar-slim max-h-[34rem] divide-y divide-ink-50 overflow-y-auto">
@@ -299,7 +304,7 @@ export function HyperlocalIntelligencePage(): React.JSX.Element {
                   {selected.signals.map((s, i) => (
                     <li
                       key={`${selected.id}-${s.kind}-${i}`}
-                      className="rounded-lg border border-ink-100 bg-surface-sunken p-2.5"
+                      className={`rounded-lg border p-2.5 ${SHADE[({ critical: 'red', high: 'orange', medium: 'amber', low: 'blue', info: 'teal' } as const)[s.severity]].tile}`}
                     >
                       <div className="flex items-start justify-between gap-2">
                         <p className="min-w-0 text-[0.8125rem] font-medium text-ink-800">{s.label}</p>
@@ -331,7 +336,7 @@ export function HyperlocalIntelligencePage(): React.JSX.Element {
             </>
           ) : (
             <Card>
-              <EmptyState title={t('No locality selected')} detail="Select a locality to read its signal composition." />
+              <EmptyState title={t('No locality selected')} detail={t('Select a locality to read its signal composition.')} />
             </Card>
           )
         }

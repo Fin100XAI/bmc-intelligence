@@ -14,7 +14,9 @@ import { queryKeys } from '@/app/queryClient'
 import { citizenService } from '@/services'
 import type { RecurringCluster } from '@/domains/citizen-services/root-cause'
 import { usePageMasthead } from '@/stores/masthead.store'
-import { useFilterStore, type FilterState } from '@/stores/ui.store'
+import { useContextStore, useFilterStore, type FilterState } from '@/stores/ui.store'
+import { canAccess } from '@/security/access'
+import { useCurrentUser } from '@/stores/auth.store'
 import { activeCorporation } from '@/config/municipality.config'
 import { WARDS } from '@/data/reference'
 import { COMPLAINT_CATEGORY_LABEL, type ComplaintCategory, type ComplaintChannel } from '@/types/operations'
@@ -22,6 +24,7 @@ import { formatNumber, formatPercent } from '@/utils/format'
 import { isoFromAnchor } from '@/utils/deterministic'
 import { t } from '@/i18n'
 import { registerLayer } from '@/data/runtime'
+import { SHADE } from '@/components/ui/shade'
 
 /** Ward and service category are already covered by this page's own two
  *  selects (both server-scoped); the global bar adds the dimensions those do
@@ -80,7 +83,18 @@ const FRESHNESS = {
 }
 
 export function CitizenServiceIntelligencePage(): React.JSX.Element {
-  const [wardId, setWardId] = useState<string>('')
+  /*
+   * The ward control composes with the command-bar ward context: a new
+   * selection in the command bar governs the page, and choosing here overrides
+   * it until the command bar moves again (the same pattern as Hyperlocal).
+   * Holding it purely locally made the shared ward selection inert here.
+   */
+  const contextWardId = useContextStore((s) => s.wardId)
+  const [localWard, setLocalWard] = useState<{ wardId: string; from: string | null }>({ wardId: '', from: null })
+  const wardId = localWard.from === contextWardId ? localWard.wardId : contextWardId ?? ''
+  const setWardId = (id: string): void => setLocalWard({ wardId: id, from: contextWardId })
+  const user = useCurrentUser()
+  const authorisedWards = useMemo(() => WARDS.filter((w) => canAccess(user, 'ward', 'view', { wardId: w.id }).allowed), [user])
   const [category, setCategory] = useState<string>('')
   const globalFilters = useFilterStore((s) => s.filters)
 
@@ -160,7 +174,7 @@ export function CitizenServiceIntelligencePage(): React.JSX.Element {
         <span className="numeric font-semibold text-ink-800">
           {c.recurring}
           <span className="ml-1 text-[0.625rem] font-normal text-ink-400">
-            {Math.round((c.recurring / c.complaints) * 100)}%
+            {c.complaints > 0 ? Math.round((c.recurring / c.complaints) * 100) : 0}%
           </span>
         </span>
       ),
@@ -186,8 +200,8 @@ export function CitizenServiceIntelligencePage(): React.JSX.Element {
   return (
     <PageBody>
       <PageHeader
-        eyebrow={t('City Intelligence')}
-        breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Citizen Service Intelligence') }]}
+        eyebrow={t('Wards & Citizens')}
+        breadcrumbs={[{ label: t('Wards & Citizens') }, { label: t('Grievance Resolution') }, { label: t('Service delivery') }]}
         freshness={FRESHNESS}
         controls={
           <>
@@ -200,7 +214,7 @@ export function CitizenServiceIntelligencePage(): React.JSX.Element {
                 aria-label={t('Filter by ward')}
                 options={[
                   { value: '', label: t('All authorised wards') },
-                  ...WARDS.map((w) => ({ value: w.id, label: `${w.code} - ${w.name.split(' · ')[0]}` })),
+                  ...authorisedWards.map((w) => ({ value: w.id, label: `${w.code} - ${w.name.split(' · ')[0]}` })),
                 ]}
               />
             </div>
@@ -217,7 +231,7 @@ export function CitizenServiceIntelligencePage(): React.JSX.Element {
                 ]}
               />
             </div>
-            <FilterBar show={['department', 'severity', 'search']} searchPlaceholder="Search locality or category" />
+            <FilterBar show={['department', 'severity', 'search']} searchPlaceholder={t('Search locality or category')} />
           </>
         }
       />
@@ -294,7 +308,7 @@ export function CitizenServiceIntelligencePage(): React.JSX.Element {
                 <EmptyState
                   className="mx-3 mb-3"
                   title={t('No recurring cluster reaches the reporting threshold')}
-                  detail="A cluster needs at least three reports at one locality in one service category before it is shown."
+                  detail={t('A cluster needs at least three reports at one locality in one service category before it is shown.')}
                 />
               ) : (
                 <ul className="divide-y divide-ink-50">
@@ -324,7 +338,7 @@ export function CitizenServiceIntelligencePage(): React.JSX.Element {
                           {a.issues.map((issue) => (
                             <li
                               key={`${a.cluster.id}-${issue.id}`}
-                              className="flex items-start gap-2 rounded-md border border-ink-100 bg-surface-sunken px-2.5 py-1.5"
+                              className={`flex items-start gap-2 rounded-md border px-2.5 py-1.5 ${SHADE[({ critical: 'red', high: 'orange', medium: 'amber', low: 'blue', info: 'teal' } as const)[issue.severity]].tile}`}
                             >
                               <SeverityBadge severity={issue.severity} />
                               <div className="min-w-0">
@@ -347,7 +361,7 @@ export function CitizenServiceIntelligencePage(): React.JSX.Element {
                 {t('Grouped by locality and service category - the unit a department can act on.')}
               </p>
               {clusters.length === 0 ? (
-                <EmptyState className="mx-3 mb-3" title={t('No clusters in scope')} detail="No locality reaches the reporting threshold." />
+                <EmptyState className="mx-3 mb-3" title={t('No clusters in scope')} detail={t('No locality reaches the reporting threshold.')} />
               ) : (
                 <DataTable
                   rows={clusters}
@@ -356,7 +370,7 @@ export function CitizenServiceIntelligencePage(): React.JSX.Element {
                   pageSize={12}
                   stickyHeader
                   maxHeight="28rem"
-                  searchPlaceholder="Search locality, ward or service"
+                  searchPlaceholder={t('Search locality, ward or service')}
                 />
               )}
             </GovPanel>
@@ -374,7 +388,7 @@ export function CitizenServiceIntelligencePage(): React.JSX.Element {
                     <div className="flex items-baseline justify-between gap-2">
                       <span className="truncate text-xs font-medium text-ink-700">{p.label}</span>
                       <span className="numeric shrink-0 text-[0.6875rem] text-ink-500">
-                        <span className="font-semibold text-ink-800">{formatPercent(p.recurringPct)}</span> repeat
+                        <span className="font-semibold text-ink-800">{formatPercent(p.recurringPct)}</span> {t('repeat')}
                       </span>
                     </div>
                     <MiniBar value={p.recurringPct} className="mt-1" />
@@ -395,7 +409,7 @@ export function CitizenServiceIntelligencePage(): React.JSX.Element {
               </p>
               <ul className="mt-3 space-y-2">
                 {handoffs.map((d) => (
-                  <li key={d.departmentId} className="rounded-lg border border-ink-100 p-2.5">
+                  <li key={d.departmentId} className={`rounded-lg border p-2.5 ${SHADE[d.slaCompliancePct >= 90 ? 'green' : d.slaCompliancePct >= 75 ? 'amber' : 'red'].tile}`}>
                     <div className="flex items-start justify-between gap-2">
                       <p className="min-w-0 truncate text-[0.8125rem] font-medium text-ink-800">{d.label}</p>
                       <Badge tone={d.slaCompliancePct >= 90 ? 'positive' : d.slaCompliancePct >= 75 ? 'warn' : 'critical'}>

@@ -123,7 +123,6 @@ export const MR_PART_42: Record<string, string> = {
   'Localities below the incident threshold today but already showing repeat reports - a candidate for pre-emptive inspection before it becomes a full incident.':
     'आज घटना-मर्यादेखाली असलेले परंतु आधीच पुनरावृत्त तक्रारी दाखवणारे परिसर - पूर्ण घटना होण्यापूर्वी पूर्वनिवारक तपासणीसाठी उमेदवार.',
   'No emerging cluster in scope': 'व्याप्तीत कोणताही उदयोन्मुख समूह नाही',
-  'No-Ping-Pong: Transfer Loops Detected': 'नो-पिंग-पॉंग: हस्तांतरण फेऱ्या आढळल्या',
   'Cases bouncing between departments instead of converging - a structural routing problem, not a complaint volume problem.':
     'एकत्र येण्याऐवजी विभागांदरम्यान फिरणारी प्रकरणे - ही संरचनात्मक मार्गनिर्देशन समस्या आहे, तक्रारींच्या संख्येची समस्या नाही.',
   'No transfer loop detected in scope': 'व्याप्तीत कोणतीही हस्तांतरण फेरी आढळली नाही',

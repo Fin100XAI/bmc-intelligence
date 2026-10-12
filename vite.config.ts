@@ -17,17 +17,45 @@ export default defineConfig({
     },
   },
   build: {
-    chunkSizeWarningLimit: 1400,
-    rollupOptions: {
+    // No chunk may exceed 800 kB. The Marathi catalogue (several MB) loads on
+    // demand, in its own chunks - see `src/i18n/index.ts`.
+    chunkSizeWarningLimit: 800,
+    rolldownOptions: {
       output: {
-        // Split the heaviest third-party dependencies so route chunks stay small.
-        manualChunks(id: string) {
-          if (!id.includes('node_modules')) return undefined
-          if (id.includes('recharts') || id.includes('d3-')) return 'vendor-charts'
-          if (id.includes('react-router')) return 'vendor-router'
-          if (id.includes('@tanstack')) return 'vendor-query'
-          if (id.includes('/react-dom/') || id.includes('/react/') || id.includes('scheduler')) return 'vendor-react'
-          return undefined
+        /*
+         * Vendor and catalogue chunks (rolldown `codeSplitting` groups).
+         *
+         * A group captures the modules it matches AND, by default, their
+         * dependencies. That is why the order (`priority`, highest first)
+         * matters: React must be claimed by `vendor-react` before the charts
+         * group runs, or recharts takes React (and the small libraries the
+         * shell also uses) into `vendor-charts`, which then becomes a static
+         * import of the entry and puts the whole charting library on the
+         * sign-in page's critical path.
+         */
+        codeSplitting: {
+          groups: [
+            {
+              name: 'vendor-react',
+              priority: 60,
+              test: /[\\/]node_modules[\\/](react|react-dom|scheduler|react-is|use-sync-external-store)[\\/]/,
+            },
+            { name: 'vendor-ui', priority: 55, test: /[\\/]node_modules[\\/](clsx|tailwind-merge|zustand)[\\/]/ },
+            { name: 'vendor-router', priority: 50, test: /[\\/]node_modules[\\/](react-router|react-router-dom)[\\/]/ },
+            { name: 'vendor-query', priority: 50, test: /[\\/]node_modules[\\/]@tanstack[\\/]/ },
+            { name: 'vendor-map', priority: 40, test: /[\\/]node_modules[\\/](leaflet|react-leaflet|@react-leaflet)[\\/]/ },
+            { name: 'vendor-graph', priority: 40, test: /[\\/]node_modules[\\/]cytoscape/ },
+            { name: 'vendor-charts', priority: 30, test: /[\\/]node_modules[\\/](recharts|d3-[\w-]+|victory-vendor)[\\/]/ },
+            // The Marathi catalogue: a single dynamic import, split into
+            // chunks of ten parts (~0.5 MB each) so no file is multi-megabyte
+            // and the browser fetches them in parallel. The parts import
+            // nothing, so capturing them pulls in no other module.
+            ...Array.from({ length: 10 }, (_, n) => ({
+              name: `i18n-mr-${n}`,
+              priority: 10,
+              test: new RegExp(`[\\\\/]src[\\\\/]i18n[\\\\/]mr[\\\\/]part-${n}\\d\\.ts$`),
+            })),
+          ],
         },
       },
     },

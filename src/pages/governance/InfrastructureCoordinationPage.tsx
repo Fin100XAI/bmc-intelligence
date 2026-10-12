@@ -108,7 +108,7 @@ export function InfrastructureCoordinationPage(): React.JSX.Element {
   if (loading) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('Projects, Procurement & Assets')} breadcrumbs={[{ label: t('Projects, Procurement & Assets') }, { label: t('Infrastructure Coordination') }]} />
+        <PageHeader eyebrow={t('Decision Intelligence')} breadcrumbs={[{ label: t('Decision Intelligence') }, { label: t('Public Money & Investment') }, { label: t('Agency coordination register') }]} />
         <LoadingState variant="metrics" />
         <LoadingState variant="table" rows={8} />
       </PageBody>
@@ -117,7 +117,7 @@ export function InfrastructureCoordinationPage(): React.JSX.Element {
   if (anyError) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('Projects, Procurement & Assets')} breadcrumbs={[{ label: t('Projects, Procurement & Assets') }, { label: t('Infrastructure Coordination') }]} />
+        <PageHeader eyebrow={t('Decision Intelligence')} breadcrumbs={[{ label: t('Decision Intelligence') }, { label: t('Public Money & Investment') }, { label: t('Agency coordination register') }]} />
         <ErrorState
           detail={anyError.message}
           onRetry={() => {
@@ -179,8 +179,8 @@ export function InfrastructureCoordinationPage(): React.JSX.Element {
   return (
     <PageBody>
       <PageHeader
-        eyebrow={t('Projects, Procurement & Assets')}
-        breadcrumbs={[{ label: t('Projects, Procurement & Assets') }, { label: t('Infrastructure Coordination') }]}
+        eyebrow={t('Decision Intelligence')}
+        breadcrumbs={[{ label: t('Decision Intelligence') }, { label: t('Public Money & Investment') }, { label: t('Agency coordination register') }]}
         hideProvenance
         controls={
           <FilterBar
@@ -277,7 +277,7 @@ export function InfrastructureCoordinationPage(): React.JSX.Element {
           {t('Utility shifting, road reinstatement, drain diversion and NOC issuance the Corporation owes to, or holds against, each agency-led corridor.')}
         </p>
         {filteredTasks.length === 0 ? (
-          <EmptyState title={t('No obligations match the current filters')} detail="Clear a filter to widen the register." />
+          <EmptyState title={t('No obligations match the current filters')} detail={t('Clear a filter to widen the register.')} />
         ) : (
           <DataTable rows={filteredTasks} columns={taskColumns} rowKey={(task) => task.id} pageSize={14} searchable={false} />
         )}

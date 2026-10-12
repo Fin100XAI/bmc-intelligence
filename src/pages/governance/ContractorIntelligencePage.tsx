@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { AlertTriangle, Building2, HardHat, Info, ShieldQuestion, TrendingDown } from 'lucide-react'
+import { AlertTriangle, Building2, Gauge, HardHat, Info, ShieldQuestion, TrendingDown } from 'lucide-react'
 import { PageBody, PageHeader, SplitLayout } from '@/components/layout/PageHeader'
 import { Badge, SeverityBadge, StateBadge } from '@/components/ui/badges'
 import {
@@ -30,6 +30,8 @@ import { OPERATIONAL_STATE_LABEL } from '@/types/common'
 import { formatCrore, formatPercent } from '@/utils/format'
 import { isoFromAnchor } from '@/utils/deterministic'
 import { t } from '@/i18n'
+import { cn } from '@/utils/cn'
+import { SHADE, type Shade } from '@/components/ui/shade'
 
 /**
  * src/pages/governance/ContractorIntelligencePage.tsx
@@ -192,8 +194,8 @@ export function ContractorIntelligencePage(): React.JSX.Element {
   return (
     <PageBody>
       <PageHeader
-        eyebrow={t('Projects, Procurement & Assets')}
-        breadcrumbs={[{ label: t('Projects, Procurement & Assets') }, { label: t('Contractor Intelligence') }]}
+        eyebrow={t('Revenue & Finance')}
+        breadcrumbs={[{ label: t('Revenue & Finance') }, { label: t('Procurement & Contractors') }, { label: t('Contractors') }]}
         freshness={FRESHNESS}
         controls={
           <>
@@ -234,7 +236,7 @@ export function ContractorIntelligencePage(): React.JSX.Element {
         <PartialDataWarning
           available={portfolio.suppliers}
           expected={portfolio.suppliers + portfolio.suppliersOutsideScope}
-          detail={`${portfolio.suppliersOutsideScope} empanelled supplier(s) hold no contract or project you are authorised to read, so they are not shown and the totals below cover only your authorised scope.`}
+          detail={t('{0} empanelled supplier(s) hold no contract or project you are authorised to read, so they are not shown and the totals below cover only your authorised scope.', portfolio.suppliersOutsideScope)}
         />
       ) : null}
 
@@ -301,7 +303,7 @@ export function ContractorIntelligencePage(): React.JSX.Element {
             {filtered.length === 0 ? (
               <EmptyState
                 title={t('No suppliers match this filter')}
-                detail="Relax the category or indicator filter to widen the set."
+                detail={t('Relax the category or indicator filter to widen the set.')}
               />
             ) : (
               <DataTable
@@ -403,7 +405,7 @@ export function ContractorIntelligencePage(): React.JSX.Element {
             </>
           ) : (
             <Card>
-              <EmptyState title={t('No supplier selected')} detail="Select a supplier to read its delivery profile." />
+              <EmptyState title={t('No supplier selected')} detail={t('Select a supplier to read its delivery profile.')} />
             </Card>
           )
         }
@@ -414,10 +416,15 @@ export function ContractorIntelligencePage(): React.JSX.Element {
         <p className="mb-3 text-xs leading-relaxed text-ink-500">{t('Banded distribution used when reporting supplier standing to the corporation.')}</p>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {(bandsQuery.data ?? []).map((band) => (
-            <div key={band.band} className="rounded-lg border border-ink-100 p-3">
-              <div className="flex items-baseline justify-between">
-                <p className="text-[0.8125rem] font-semibold text-ink-800">{band.band}</p>
-                <span className="numeric text-metric-sm font-semibold text-ink-900">{band.count}</span>
+            <div key={band.band} className={cn('rounded-lg border p-3', SHADE[BAND_SHADE[band.band] ?? 'auto'].tile)}>
+              <div className="flex items-center justify-between gap-2">
+                <p className="flex items-center gap-2 text-[0.8125rem] font-semibold text-ink-800">
+                  <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE[BAND_SHADE[band.band] ?? 'auto'].chip)} aria-hidden>
+                    <Gauge className="h-4 w-4" />
+                  </span>
+                  {band.band}
+                </p>
+                <span className={cn('numeric text-metric-sm font-semibold', SHADE[BAND_SHADE[band.band] ?? 'auto'].value)}>{band.count}</span>
               </div>
               <p className="numeric mt-0.5 text-[0.625rem] text-ink-400">
                 {t('Index {0}–{1}', band.min, band.max)}
@@ -429,6 +436,14 @@ export function ContractorIntelligencePage(): React.JSX.Element {
       </GovPanel>
     </PageBody>
   )
+}
+
+/** Each delivery band takes the shade of what it means (`@/components/ui/shade`). */
+const BAND_SHADE: Record<string, Shade> = {
+  'Review required': 'red',
+  'At risk': 'orange',
+  Degraded: 'amber',
+  'Meeting expectation': 'green',
 }
 
 export default ContractorIntelligencePage

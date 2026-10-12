@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ArrowUpRight, KeyRound, ShieldOff, Users as UsersIcon } from 'lucide-react'
+import { ArrowUpRight, KeyRound, ShieldOff, Users as UsersIcon, CheckCircle2, Crown, Eye, Globe2, ShieldAlert, UserCog, UserX, Users } from 'lucide-react'
 import { PageBody, PageHeader, SplitLayout } from '@/components/layout/PageHeader'
 import { Badge, ClassificationBadge } from '@/components/ui/badges'
 import {
@@ -36,6 +36,9 @@ import { departmentName, wardName } from '@/data/reference'
 import { formatDateTime, formatRelative } from '@/utils/format'
 import type { Role, RoleId, User } from '@/types/organisation'
 import { t } from '@/i18n'
+import { enumLabel } from '@/utils/enum-label'
+import { SHADE } from '@/components/ui/shade'
+import { cn } from '@/utils/cn'
 
 /**
  * src/pages/admin/UsersPage.tsx
@@ -315,7 +318,7 @@ export function UsersPage(): React.JSX.Element {
       header: t('MFA posture'),
       cell: (u) => (
         <Badge tone={u.mfaEnrolled ? 'positive' : 'critical'} dot>
-          {u.mfaEnrolled ? 'Enrolled' : 'Not enrolled'}
+          {u.mfaEnrolled ? t('Enrolled') : t('Not enrolled')}
         </Badge>
       ),
       sortValue: (u) => (u.mfaEnrolled ? 1 : 0),
@@ -331,7 +334,7 @@ export function UsersPage(): React.JSX.Element {
       header: t('Status'),
       cell: (u) => (
         <Badge tone={STATUS_TONE[u.status]} dot>
-          {u.status.replace('-', ' ')}
+          {enumLabel(u.status)}
         </Badge>
       ),
       sortValue: (u) => u.status,
@@ -377,7 +380,7 @@ export function UsersPage(): React.JSX.Element {
             ]}
             value={tab}
             onChange={(id) => setTab(id as DirectoryTab)}
-            ariaLabel="Access directory sections"
+            ariaLabel={t('Access directory sections')}
           />
           <FilterBar show={['ward', 'department', 'search']} />
         </>
@@ -417,29 +420,45 @@ export function UsersPage(): React.JSX.Element {
 
       {tab === 'users' ? (
         users.length === 0 ? (
-          <EmptyState title={t('No principals registered')} detail="The user roster returned no entries." />
+          <EmptyState title={t('No principals registered')} detail={t('The user roster returned no entries.')} />
         ) : (
           <>
             <MetricGrid columns={4}>
-              <Card background="red">
-                <p className="label-institutional">{t('Principals')}</p>
-                <p className="numeric mt-2 text-metric font-semibold text-ink-900">{globallyFilteredUsers.length}</p>
+              <Card className={cn(SHADE.blue.tile, 'flex items-start gap-3')}>
+                <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE.blue.chip)}>
+                  <Users className="h-4 w-4" aria-hidden />
+                </span>
+                <div className="min-w-0">
+                  <p className="label-institutional">{t('Principals')}</p>
+                  <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE.blue.value)}>{globallyFilteredUsers.length}</p>
+                </div>
               </Card>
-              <Card tone={withoutMfa > 0 ? 'warn' : 'default'} background="amber">
-                <p className="label-institutional">{t('Without MFA')}</p>
-                <p className="numeric mt-2 text-metric font-semibold text-ink-900">{withoutMfa}</p>
+              <Card className={cn(SHADE[withoutMfa > 0 ? 'amber' : 'green'].tile, 'flex items-start gap-3')}>
+                <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE[withoutMfa > 0 ? 'amber' : 'green'].chip)}>
+                  <ShieldOff className="h-4 w-4" aria-hidden />
+                </span>
+                <div className="min-w-0">
+                  <p className="label-institutional">{t('Without MFA')}</p>
+                  <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE[withoutMfa > 0 ? 'amber' : 'green'].value)}>{withoutMfa}</p>
+                </div>
               </Card>
-              <Card background="green">
-                <p className="label-institutional">{t('Active')}</p>
-                <p className="numeric mt-2 text-metric font-semibold text-ink-900">
-                  {globallyFilteredUsers.filter((u) => u.status === 'active').length}
-                </p>
+              <Card className={cn(SHADE.green.tile, 'flex items-start gap-3')}>
+                <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE.green.chip)}>
+                  <CheckCircle2 className="h-4 w-4" aria-hidden />
+                </span>
+                <div className="min-w-0">
+                  <p className="label-institutional">{t('Active')}</p>
+                  <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE.green.value)}>{globallyFilteredUsers.filter((u) => u.status === 'active').length}</p>
+                </div>
               </Card>
-              <Card>
-                <p className="label-institutional">{t('City-wide scope')}</p>
-                <p className="numeric mt-2 text-metric font-semibold text-ink-900">
-                  {globallyFilteredUsers.filter((u) => u.scope.wardIds === '*').length}
-                </p>
+              <Card className={cn(SHADE.teal.tile, 'flex items-start gap-3')}>
+                <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE.teal.chip)}>
+                  <Globe2 className="h-4 w-4" aria-hidden />
+                </span>
+                <div className="min-w-0">
+                  <p className="label-institutional">{t('City-wide scope')}</p>
+                  <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE.teal.value)}>{globallyFilteredUsers.filter((u) => u.scope.wardIds === '*').length}</p>
+                </div>
               </Card>
             </MetricGrid>
 
@@ -475,7 +494,7 @@ export function UsersPage(): React.JSX.Element {
                         </div>
                         <div className="w-36">
                           <Label htmlFor="filter-mfa" className="sr-only">
-                            MFA
+                            {t('MFA')}
                           </Label>
                           <Select
                             id="filter-mfa"
@@ -551,7 +570,7 @@ export function UsersPage(): React.JSX.Element {
                         <DefinitionRow label={t('Last sign-in')}>{formatDateTime(selectedUser.lastSignInAt)}</DefinitionRow>
                         <DefinitionRow label={t('Status')}>
                           <Badge tone={STATUS_TONE[selectedUser.status]} dot>
-                            {selectedUser.status.replace('-', ' ')}
+                            {enumLabel(selectedUser.status)}
                           </Badge>
                         </DefinitionRow>
                       </DefinitionList>
@@ -576,37 +595,56 @@ export function UsersPage(): React.JSX.Element {
       ) : roles.length === 0 ? (
         <EmptyState
           title={t('No roles configured')}
-          detail="The role catalogue returned no entries for your principal."
+          detail={t('The role catalogue returned no entries for your principal.')}
         />
       ) : (
         <>
           <MetricGrid columns={5}>
-            <Card background="red">
-              <p className="label-institutional">{t('Roles configured')}</p>
-              <p className="numeric mt-2 text-metric font-semibold text-ink-900">{filteredRoles.length}</p>
+            <Card className={cn(SHADE.blue.tile, 'flex items-start gap-3')}>
+              <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE.blue.chip)}>
+                <UserCog className="h-4 w-4" aria-hidden />
+              </span>
+              <div className="min-w-0">
+                <p className="label-institutional">{t('Roles configured')}</p>
+                <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE.blue.value)}>{filteredRoles.length}</p>
+              </div>
             </Card>
-            <Card background="amber">
-              <p className="label-institutional">{t('Executive band')}</p>
-              <p className="numeric mt-2 text-metric font-semibold text-ink-900">
-                {filteredRoles.filter((r) => r.band === 'executive').length}
-              </p>
+            <Card className={cn(SHADE.teal.tile, 'flex items-start gap-3')}>
+              <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE.teal.chip)}>
+                <Crown className="h-4 w-4" aria-hidden />
+              </span>
+              <div className="min-w-0">
+                <p className="label-institutional">{t('Executive band')}</p>
+                <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE.teal.value)}>{filteredRoles.filter((r) => r.band === 'executive').length}</p>
+              </div>
             </Card>
-            <Card background="green">
-              <p className="label-institutional">{t('Oversight band')}</p>
-              <p className="numeric mt-2 text-metric font-semibold text-ink-900">
-                {filteredRoles.filter((r) => r.band === 'oversight').length}
-              </p>
+            <Card className={cn(SHADE.green.tile, 'flex items-start gap-3')}>
+              <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE.green.chip)}>
+                <Eye className="h-4 w-4" aria-hidden />
+              </span>
+              <div className="min-w-0">
+                <p className="label-institutional">{t('Oversight band')}</p>
+                <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE.green.value)}>{filteredRoles.filter((r) => r.band === 'oversight').length}</p>
+              </div>
             </Card>
-            <Card>
-              <p className="label-institutional">{t('Restricted-ceiling roles')}</p>
-              <p className="numeric mt-2 text-metric font-semibold text-ink-900">
-                {filteredRoles.filter((r) => r.maxClassification === 'restricted').length}
-              </p>
+            <Card className={cn(SHADE.orange.tile, 'flex items-start gap-3')}>
+              <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE.orange.chip)}>
+                <ShieldAlert className="h-4 w-4" aria-hidden />
+              </span>
+              <div className="min-w-0">
+                <p className="label-institutional">{t('Restricted-ceiling roles')}</p>
+                <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE.orange.value)}>{filteredRoles.filter((r) => r.maxClassification === 'restricted').length}</p>
+              </div>
             </Card>
-            <Card tone={unheldRoles > 0 ? 'info' : 'default'}>
-              <p className="label-institutional">{t('Held by nobody')}</p>
-              <p className="numeric mt-2 text-metric font-semibold text-ink-900">{unheldRoles}</p>
-              <p className="mt-0.5 text-[0.6875rem] text-ink-500">{t('Configured, no principal provisioned')}</p>
+            <Card className={cn(SHADE[unheldRoles > 0 ? 'amber' : 'neutral'].tile, 'flex items-start gap-3')}>
+              <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE[unheldRoles > 0 ? 'amber' : 'neutral'].chip)}>
+                <UserX className="h-4 w-4" aria-hidden />
+              </span>
+              <div className="min-w-0">
+                <p className="label-institutional">{t('Held by nobody')}</p>
+                <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE[unheldRoles > 0 ? 'amber' : 'neutral'].value)}>{unheldRoles}</p>
+                <p className="mt-0.5 text-[0.6875rem] text-ink-500">{t('Configured, no principal provisioned')}</p>
+              </div>
             </Card>
           </MetricGrid>
 
@@ -651,7 +689,7 @@ export function UsersPage(): React.JSX.Element {
                             title={t('Show the principals holding this role in the user roster')}
                           >
                             <span className="truncate">
-                              {selectedRoleHolders} principal{selectedRoleHolders === 1 ? '' : 's'}
+                              {t('{0} principal{1}', selectedRoleHolders, selectedRoleHolders === 1 ? '' : 's')}
                             </span>
                             <ArrowUpRight className="h-3 w-3 shrink-0" aria-hidden />
                           </button>

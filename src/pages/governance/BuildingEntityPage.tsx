@@ -94,7 +94,7 @@ export function BuildingEntityPage(): React.JSX.Element {
   if (buildingsQuery.isLoading) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('Planning & Development Control')} breadcrumbs={[{ label: t('Planning & Development Control') }, { label: t('Building Entity') }]} />
+        <PageHeader eyebrow={t('Planning & Buildings')} breadcrumbs={[{ label: t('Planning & Buildings') }, { label: t('Buildings & Enforcement') }, { label: t('Building record') }]} />
         <LoadingState variant="table" rows={10} />
       </PageBody>
     )
@@ -102,7 +102,7 @@ export function BuildingEntityPage(): React.JSX.Element {
   if (buildingsQuery.error) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('Planning & Development Control')} breadcrumbs={[{ label: t('Planning & Development Control') }, { label: t('Building Entity') }]} />
+        <PageHeader eyebrow={t('Planning & Buildings')} breadcrumbs={[{ label: t('Planning & Buildings') }, { label: t('Buildings & Enforcement') }, { label: t('Building record') }]} />
         <ErrorState detail={buildingsQuery.error.message} onRetry={() => void buildingsQuery.refetch()} />
       </PageBody>
     )
@@ -156,8 +156,8 @@ export function BuildingEntityPage(): React.JSX.Element {
   return (
     <PageBody>
       <PageHeader
-        eyebrow={t('Planning & Development Control')}
-        breadcrumbs={[{ label: t('Planning & Development Control') }, { label: t('Building Entity') }]}
+        eyebrow={t('Planning & Buildings')}
+        breadcrumbs={[{ label: t('Planning & Buildings') }, { label: t('Buildings & Enforcement') }, { label: t('Building record') }]}
         hideProvenance
         controls={
           <FilterBar

@@ -14,6 +14,7 @@ import { useFilterStore } from '@/stores/ui.store'
 import { usePageMasthead } from '@/stores/masthead.store'
 import { DOMAIN_LABEL, type IntelligenceDomain } from '@/types/common'
 import { GRAPH_ENTITY_LABEL, type GraphEntityKind } from '@/types/governance'
+import { SHADE } from '@/components/ui/shade'
 import { cn } from '@/utils/cn'
 import { isoFromAnchor } from '@/utils/deterministic'
 import { t } from '@/i18n'
@@ -152,7 +153,7 @@ export function InfrastructureGraphPage(): React.JSX.Element {
                 <div key={step.kind} className="flex shrink-0 items-center gap-1">
                   {i > 0 ? (
                     <span className="flex flex-col items-center px-0.5 text-ink-300">
-                      <span className="text-[0.5625rem] whitespace-nowrap text-ink-400">{step.relation}</span>
+                      <span className="text-[0.625rem] whitespace-nowrap text-ink-400">{step.relation}</span>
                       <span aria-hidden>→</span>
                     </span>
                   ) : null}
@@ -172,20 +173,20 @@ export function InfrastructureGraphPage(): React.JSX.Element {
           <GovPanel
             dense
             tone="red"
-            title={chain ? `Chain from ${chain.anchor.label}` : 'Infrastructure chain'}
+            title={chain ? t('Chain from {0}', chain.anchor.label) : t('Infrastructure chain')}
             actions={
               chain ? (
                 <Badge tone="intel">
                   <Network className="mr-1 h-3 w-3" />
-                  {chain.edges.length} links
+                  {t('{0} links', chain.edges.length)}
                 </Badge>
               ) : undefined
             }
           >
             <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
               {chain
-                ? `${chain.nodes.length} connected entities across ${byDepth.size} hop(s) from the anchor.`
-                : 'Select an anchor to trace its chain.'}
+                ? t('{0} connected entities across {1} hop(s) from the anchor.', chain.nodes.length, byDepth.size)
+                : t('Select an anchor to trace its chain.')}
             </p>
 
             {chainQuery.isLoading ? (
@@ -193,7 +194,7 @@ export function InfrastructureGraphPage(): React.JSX.Element {
             ) : !chain ? (
               <EmptyState
                 title={t('No readable chain')}
-                detail="This anchor's chain contains nothing you are authorised to read."
+                detail={t('This anchor\'s chain contains nothing you are authorised to read.')}
               />
             ) : (
               <div className="space-y-4 px-3 pb-3">
@@ -201,7 +202,7 @@ export function InfrastructureGraphPage(): React.JSX.Element {
                   <PartialDataWarning
                     available={chain.nodes.length}
                     expected={chain.nodes.length + chain.prunedNodes}
-                    detail={`${chain.prunedNodes} connected entit(y/ies) in this chain sit outside your authorised scope and have been pruned. The chain you see is complete for what you may read.`}
+                    detail={t('{0} connected entit(y/ies) in this chain sit outside your authorised scope and have been pruned. The chain you see is complete for what you may read.', chain.prunedNodes)}
                   />
                 ) : null}
 
@@ -229,7 +230,7 @@ export function InfrastructureGraphPage(): React.JSX.Element {
                         {nodes.map((n) => (
                           <li
                             key={n.node.id}
-                            className="rounded-lg border border-ink-100 bg-surface p-2.5"
+                            className={cn('rounded-lg border p-2.5', SHADE.auto.tile)}
                           >
                             <div className="flex items-center justify-between gap-2">
                               <span className={cn('rounded px-1.5 py-0.5 text-[0.625rem] font-semibold', KIND_TONE[n.node.kind] ?? 'bg-ink-100 text-ink-700')}>

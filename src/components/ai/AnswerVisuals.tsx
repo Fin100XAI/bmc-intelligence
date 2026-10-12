@@ -35,10 +35,10 @@ import { t } from '@/i18n'
  * read from the corporation's position as it stands now. Stating that once,
  * uniformly, is honest; inventing a per-chart period would not be.
  */
-const VISUAL_TIMEFRAME = 'Current reporting period'
+const visualTimeframe = (): string => t('Current reporting period')
 
 /** The 0-100 scale `HeatmapMatrix` documents for its cell values. */
-const HEATMAP_UNIT = '0-100 index'
+const heatmapUnit = (): string => t('0-100 index')
 
 /**
  * The AI layer's tone vocabulary mapped onto the metric card's. Written out
@@ -149,7 +149,7 @@ function RankedBarVisual({
   const height = clampHeight(visual.data.length * 26 + 18, 130, 400)
   return (
     <div className="min-w-0">
-      <ChartFrame title={visual.caption} unit={visual.unit} timeframe={VISUAL_TIMEFRAME} height={height}>
+      <ChartFrame title={visual.caption} unit={visual.unit} timeframe={visualTimeframe()} height={height}>
         <RankedBarChart data={visual.data} unit={visual.unit} higherIsWorse={!visual.higherIsBetter} />
       </ChartFrame>
     </div>
@@ -196,7 +196,7 @@ function TrendVisual({ visual }: { visual: Extract<AIVisual, { kind: 'trend' }> 
           // titled by their own series, so no two frames claim the same label.
           title={index === 0 ? visual.caption : pair.primary.name}
           unit={pair.primary.unit || visual.unit}
-          timeframe={VISUAL_TIMEFRAME}
+          timeframe={visualTimeframe()}
           height={200}
           legend={
             <>
@@ -256,7 +256,7 @@ function HeatmapVisual({ visual }: { visual: Extract<AIVisual, { kind: 'heatmap'
   const height = clampHeight(visual.rows.length * 26 + 56, 170, 440)
   return (
     <div className="min-w-0">
-      <ChartFrame title={visual.caption} unit={HEATMAP_UNIT} timeframe={VISUAL_TIMEFRAME} height={height}>
+      <ChartFrame title={visual.caption} unit={heatmapUnit()} timeframe={visualTimeframe()} height={height}>
         {/* The ramp always runs favourable to adverse, so the legend states
             which end of the *value* range that is - otherwise a matrix where
             a high figure is good reads as a wall of alarm. */}

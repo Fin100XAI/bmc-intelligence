@@ -37,6 +37,7 @@ import { GovPanel } from '@/components/gov/GovPanel'
 import { MetricCard } from '@/components/cards'
 import { CategoryBarChart, ChartFrame, ContributionBars, DonutChart, MiniBar } from '@/components/charts'
 import { t } from '@/i18n'
+import { enumLabel } from '@/utils/enum-label'
 
 /**
  * Procurement Intelligence - flagship tenders, contracts and vendor surface.
@@ -94,6 +95,9 @@ function matchesGlobalFilters(contract: Contract, filters: FilterState): boolean
   return true
 }
 
+/** Fewest contracts in a category before its top-vendor share is a headline. */
+const MIN_CONTRACTS_FOR_CONCENTRATION = 3
+
 export function ProcurementIntelligencePage(): React.JSX.Element {
   // The shell's masthead carries the screen's name; the page states the wording.
   usePageMasthead(t('Procurement Intelligence'))
@@ -120,7 +124,13 @@ export function ProcurementIntelligencePage(): React.JSX.Element {
     const paid = contracts.reduce((s, c) => s + c.paidCrore, 0)
     const avgPerformance = vendors.length > 0 ? vendors.reduce((s, v) => s + v.performanceIndex, 0) / vendors.length : 0
     const repeatedExtensions = contracts.filter((c) => c.extensions >= 2).length
-    const topConcentration: CategoryConcentration | undefined = concentration[0]
+    // A category with one or two contracts is 100% or 50% "concentrated" by
+    // arithmetic alone, so the headline reads only categories with enough
+    // contracts for a share to mean something. Small categories stay in the
+    // detail list below.
+    const topConcentration: CategoryConcentration | undefined = [...concentration]
+      .filter((c) => c.contractCount >= MIN_CONTRACTS_FOR_CONCENTRATION)
+      .sort((a, b) => b.topVendorSharePct - a.topVendorSharePct)[0]
     return {
       active,
       totalValue: Math.round(totalValue * 10) / 10,
@@ -365,7 +375,7 @@ export function ProcurementIntelligencePage(): React.JSX.Element {
       header: t('State'),
       cell: (row) => (
         <Badge tone={row.state === 'operational' ? 'positive' : row.state === 'degraded' ? 'warn' : row.state === 'at-risk' ? 'risk' : 'critical'}>
-          {row.state.replace('-', ' ')}
+          {enumLabel(row.state)}
         </Badge>
       ),
       sortValue: (row) => row.state,
@@ -378,8 +388,8 @@ export function ProcurementIntelligencePage(): React.JSX.Element {
   return (
     <PageBody>
       <PageHeader
-        eyebrow={t('Projects, Procurement & Assets')}
-        breadcrumbs={[{ label: t('Projects, Procurement & Assets') }, { label: t('Procurement Intelligence') }]}
+        eyebrow={t('Revenue & Finance')}
+        breadcrumbs={[{ label: t('Revenue & Finance') }, { label: t('Procurement & Contractors') }]}
         freshness={FRESHNESS}
         actions={
           <LinkButton to={ROUTES.projects} variant="outline" icon={<HardHat className="h-3.5 w-3.5" />}>
@@ -407,7 +417,7 @@ export function ProcurementIntelligencePage(): React.JSX.Element {
       ) : null}
 
       {!anyLoading && !anyError && allContracts.length === 0 ? (
-        <EmptyState title={t('No contracts available')} detail="No contract records are available within your authorised scope." />
+        <EmptyState title={t('No contracts available')} detail={t('No contract records are available within your authorised scope.')} />
       ) : null}
 
       {!anyLoading && !anyError && allContracts.length > 0 ? (
@@ -427,7 +437,7 @@ export function ProcurementIntelligencePage(): React.JSX.Element {
               <MetricCard
                 label={t('Category concentration')}
                 value={summary.topConcentration ? formatPercent(summary.topConcentration.topVendorSharePct) : '-'}
-                support={summary.topConcentration ? `${PROJECT_CATEGORY_LABEL[summary.topConcentration.category]} - ${summary.topConcentration.topVendorName}` : 'No data'}
+                support={summary.topConcentration ? `${PROJECT_CATEGORY_LABEL[summary.topConcentration.category]} - ${summary.topConcentration.topVendorName}` : t('No category has {0} or more contracts', MIN_CONTRACTS_FOR_CONCENTRATION)}
                 tone={summary.topConcentration?.aboveThreshold ? 'warn' : 'default'}
               />
             </MetricGrid>
@@ -452,7 +462,7 @@ export function ProcurementIntelligencePage(): React.JSX.Element {
               pageSize={10}
               stickyHeader
               maxHeight="30rem"
-              searchPlaceholder="Search contracts"
+              searchPlaceholder={t('Search contracts')}
               onRowClick={(row) => {
                 setSelectedContractId(row.id)
                 openDrawer({ kind: 'contract', id: row.id })
@@ -473,7 +483,7 @@ export function ProcurementIntelligencePage(): React.JSX.Element {
                 <div key={c.category} className="p-4">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-medium text-ink-800">{PROJECT_CATEGORY_LABEL[c.category]}</span>
-                    <Badge tone="muted">{c.contractCount} contracts</Badge>
+                    <Badge tone="muted">{t('{0} contracts', c.contractCount)}</Badge>
                     <Badge tone="muted">{formatCrore(c.totalValueCrore)}</Badge>
                     <span className="text-xs text-ink-500">
                       {t('Top vendor:')}{' '}<span className="font-medium text-ink-700">{c.topVendorName}</span> - {formatPercent(c.topVendorSharePct)}
@@ -497,7 +507,7 @@ export function ProcurementIntelligencePage(): React.JSX.Element {
               pageSize={10}
               stickyHeader
               maxHeight="26rem"
-              searchPlaceholder="Search vendors"
+              searchPlaceholder={t('Search vendors')}
             />
           </GovPanel>
           </div>
@@ -508,7 +518,7 @@ export function ProcurementIntelligencePage(): React.JSX.Element {
               {t('Every contract\'s risk score is the weighted sum of five published indicators: category concentration, repeated extensions, unusual variation magnitude, milestone delivery delay and supplier performance deterioration. Select a contract in the table above to see its breakdown.')}
             </p>
             {!selectedContract ? (
-              <EmptyState title={t('Select a contract')} detail="Choose a contract from the table above to see its risk-indicator breakdown." compact />
+              <EmptyState title={t('Select a contract')} detail={t('Choose a contract from the table above to see its risk-indicator breakdown.')} compact />
             ) : (
               <div>
                 <div className="mb-3 flex flex-wrap items-center gap-2">
@@ -528,15 +538,15 @@ export function ProcurementIntelligencePage(): React.JSX.Element {
           </GovPanel>
 
             <Card>
-              <ChartFrame title={t('Concentration by category - value composition')} unit={t('₹ crore')} timeframe="Current contract set" freshness={FRESHNESS} height={240}>
-                <DonutChart data={categoryComposition} unit={t('₹ Cr')} centreValue={formatCrore(summary.totalValue, 0)} centreLabel="Total value" />
+              <ChartFrame title={t('Concentration by category - value composition')} unit={t('₹ crore')} timeframe={t('Current contract set')} freshness={FRESHNESS} height={240}>
+                <DonutChart data={categoryComposition} unit={t('₹ Cr')} centreValue={formatCrore(summary.totalValue, 0)} centreLabel={t('Total value')} />
               </ChartFrame>
             </Card>
             <Card>
               <ChartFrame
                 title={t('Stage funnel')}
-                unit="contracts"
-                timeframe="Current contract set"
+                unit={t('contracts')}
+                timeframe={t('Current contract set')}
                 description={t('Contract count at each stage of the procurement lifecycle, in natural progression order.')}
                 freshness={FRESHNESS}
                 height={240}

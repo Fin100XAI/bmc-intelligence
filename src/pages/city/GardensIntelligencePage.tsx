@@ -38,20 +38,25 @@ import { t } from '@/i18n'
 /**
  * src/pages/city/GardensIntelligencePage.tsx
  *
- * Gardens, open space and the Tree Authority.
+ * Gardens, open space and tree felling permissions (Maharashtra Tree Act, 1975).
  *
  * Open space per thousand residents is the figure a development plan is
  * actually judged against, and it is the one most easily lost sight of: a
  * corporation can add gardens every year and still fall behind if population
  * grows faster.
  *
- * The Tree Authority half of this page exists because of one specific failure
+ * The tree-felling half of this page exists because of one specific failure
  * mode. Felling permissions are granted on the condition of compensatory
  * planting, and a permission granted without the planting that conditioned it
  * is the only finding here that matters. So this page never shows permissions
  * granted without showing compensatory planting completed beside it - the two
  * figures are meaningless apart, and separating them is how the shortfall goes
  * unnoticed.
+ *
+ * In Maharashtra felling is regulated by the corporation's own Tree
+ * Authority under the Maharashtra (Urban Areas) Protection and Preservation
+ * of Trees Act, 1975, with permission and compensatory planting conditions;
+ * the felling figures here are modelled.
  */
 
 const KIND_COLOUR: Record<OpenSpaceKind, string> = {
@@ -235,7 +240,7 @@ export function GardensIntelligencePage(): React.JSX.Element {
 
       <DemonstrationNotice />
 
-      <FilterBar show={['ward', 'search']} searchPlaceholder="Search gardens and open spaces" />
+      <FilterBar show={['ward', 'search']} searchPlaceholder={t('Search gardens and open spaces')} />
 
       <MetricGrid columns={4}>
         <MetricCard
@@ -289,7 +294,7 @@ export function GardensIntelligencePage(): React.JSX.Element {
       </MetricGrid>
 
       {/* Two columns. The two registers — what the corporation maintains and
-          what the Tree Authority has granted against — carry the width, with
+          what the Tree Authority has permitted against — carry the width, with
           the planting comparison directly beneath them. The outstanding
           obligation, the provision ranking and the estate's composition read
           down the column beside. */}
@@ -300,13 +305,13 @@ export function GardensIntelligencePage(): React.JSX.Element {
               {t('Every garden, playground and recreation ground within your authorised ward scope.')}
             </p>
             {filtered.length === 0 ? (
-              <EmptyState title={t('No open spaces match the current filters')} detail="Clear a filter to widen the register." />
+              <EmptyState title={t('No open spaces match the current filters')} detail={t('Clear a filter to widen the register.')} />
             ) : (
               <DataTable rows={filtered} columns={spaceColumns} rowKey={(r) => r.id} pageSize={15} />
             )}
           </GovPanel>
 
-          <GovPanel title={t('Tree Authority position by ward')} tone="red" dense>
+          <GovPanel title={t('Tree felling permissions (Maharashtra Tree Act, 1975) by ward')} tone="red" dense>
             <p className="px-3 pt-3 pb-2 text-xs leading-relaxed text-ink-500">
               {t('Canopy, felling permissions and compensatory planting. Permissions and planting are never shown apart.')}
             </p>
@@ -343,8 +348,8 @@ export function GardensIntelligencePage(): React.JSX.Element {
               </p>
               <p className="mt-1 text-xs leading-relaxed text-ink-600">
                 {t('{0} {1} applications are pending decision.', plantingShortfall > 0
-                  ? `${formatNumber(plantingShortfall)} trees remain unplanted against permissions already granted. A permission is conditional on the planting that was required for it, so this shortfall is an outstanding obligation of the Tree Authority rather than a target it has yet to reach.`
-                  : 'Compensatory planting is complete against every permission granted in the last twelve months.', formatNumber(pendingFelling))}
+                  ? t('{0} trees remain unplanted against permissions already granted. A Tree Authority felling permission is conditional on the compensatory planting required for it, so this shortfall is an outstanding obligation rather than a target yet to be reached.', formatNumber(plantingShortfall))
+                  : t('Compensatory planting is complete against every permission granted in the last twelve months.'), formatNumber(pendingFelling))}
               </p>
             </div>
           </Card>
@@ -368,7 +373,7 @@ export function GardensIntelligencePage(): React.JSX.Element {
               <DonutChart
                 data={byKind.map((k) => ({ label: OPEN_SPACE_KIND_LABEL[k.kind], value: k.count, colour: KIND_COLOUR[k.kind] }))}
                 centreValue={String(filtered.length)}
-                centreLabel="spaces"
+                centreLabel={t('spaces')}
               />
             </div>
           </Card>

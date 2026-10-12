@@ -92,7 +92,10 @@ export function DigitalTwinPage(): React.JSX.Element {
   const filters = useFilterStore((s) => s.filters)
 
   // The shell's masthead states the screen's name; the page states the wording.
-  usePageMasthead(t('{0} Urban Digital Twin', cityName(corporation)))
+  usePageMasthead(
+    t('{0} Urban Digital Twin', cityName(corporation)),
+    t('A layered 2D spatial representation of municipal entity classes across the city - explicitly not a photorealistic or surveyed 3D model. Geometry is illustrative; every figure attached to an entity is drawn from the same service layer the rest of the platform reads.'),
+  )
 
   const [enabled, setEnabled] = useState<Record<LayerId, boolean>>({
     infrastructure: false,
@@ -412,7 +415,7 @@ export function DigitalTwinPage(): React.JSX.Element {
 
       {!anyLoading && !anyError ? (
         wards.length === 0 ? (
-          <EmptyState title={t('No ward records available')} detail="No ward records are visible within your authorised scope." />
+          <EmptyState title={t('No ward records available')} detail={t('No ward records are visible within your authorised scope.')} />
         ) : (
           /* ── Two columns ───────────────────────────────────────────
              The layer control sits directly above the map it governs, down the
@@ -523,7 +526,7 @@ export function DigitalTwinPage(): React.JSX.Element {
                       )}
                     </>
                   ) : (
-                    <EmptyState compact title={t('Nothing selected')} detail="Click a marker or ward on the map." />
+                    <EmptyState compact title={t('Nothing selected')} detail={t('Click a marker or ward on the map.')} />
                   )}
                 </GovPanel>
               </div>

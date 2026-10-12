@@ -116,7 +116,7 @@ const CITY_SCOPE = 'city'
 type RankMetric = 'unactioned' | 'outstanding'
 
 function build$BREADCRUMBS() {
-  return [{ label: t('Wards & Localities') }, { label: t('Ward Commitments Ledger') }]
+  return [{ label: t('Wards & Citizens') }, { label: t('Ward Intelligence') }, { label: t('Commitments') }]
 }
 let BREADCRUMBS: ReturnType<typeof build$BREADCRUMBS> = build$BREADCRUMBS()
 registerLayer(() => {
@@ -162,7 +162,7 @@ export function WardCommitmentsPage(): React.JSX.Element {
   if (ledgerQuery.isLoading) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('Wards & Localities')} breadcrumbs={BREADCRUMBS} />
+        <PageHeader eyebrow={t('Wards & Citizens')} breadcrumbs={BREADCRUMBS} />
         <LoadingState variant="metrics" />
         <LoadingState variant="table" rows={8} />
       </PageBody>
@@ -172,9 +172,9 @@ export function WardCommitmentsPage(): React.JSX.Element {
   if (ledgerQuery.error || !ledger) {
     return (
       <PageBody>
-        <PageHeader eyebrow={t('Wards & Localities')} breadcrumbs={BREADCRUMBS} />
+        <PageHeader eyebrow={t('Wards & Citizens')} breadcrumbs={BREADCRUMBS} />
         <ErrorState
-          detail={ledgerQuery.error?.message ?? 'The commitment ledger could not be assembled for this principal.'}
+          detail={ledgerQuery.error?.message ?? t('The commitment ledger could not be assembled for this principal.')}
           onRetry={() => {
             void ledgerQuery.refetch()
           }}
@@ -292,7 +292,7 @@ export function WardCommitmentsPage(): React.JSX.Element {
   return (
     <PageBody>
       <PageHeader
-        eyebrow={t('Wards & Localities')}
+        eyebrow={t('Wards & Citizens')}
         breadcrumbs={BREADCRUMBS}
         freshness={freshness}
         controls={
@@ -306,8 +306,8 @@ export function WardCommitmentsPage(): React.JSX.Element {
                   value: CITY_SCOPE,
                   label:
                     ledger.scope.wardsCovered > 0
-                      ? `City-wide (${ledger.scope.wardsCovered} wards)`
-                      : 'No authorised wards',
+                      ? t('City-wide ({0} wards)', ledger.scope.wardsCovered)
+                      : t('No authorised wards'),
                 },
                 ...wards.map((w) => ({ value: w.id, label: w.label })),
               ]}
@@ -317,10 +317,10 @@ export function WardCommitmentsPage(): React.JSX.Element {
             <StateBadge state={summary.state} />
             <span className="text-[0.6875rem] text-ink-400">
               {cityWide
-                ? 'Each matter counted once across the wards it names.'
-                : `Commitments naming ${summary.wardLabel}.`}
+                ? t('Each matter counted once across the wards it names.')
+                : t('Commitments naming {0}.', summary.wardLabel)}
             </span>
-            <FilterBar show={['date', 'ward', 'search']} searchPlaceholder="Search reference, subject or basis" />
+            <FilterBar show={['date', 'ward', 'search']} searchPlaceholder={t('Search reference, subject or basis')} />
           </div>
         }
       />
@@ -343,7 +343,7 @@ export function WardCommitmentsPage(): React.JSX.Element {
         <Card>
           <EmptyState
             title={t('No ward-named commitments on record')}
-            detail="No resolution, capital work, decision case or capital allocation within your authorised ward scope names a ward. Commitments made for the whole corporation are held in the registers they originate from."
+            detail={t('No resolution, capital work, decision case or capital allocation within your authorised ward scope names a ward. Commitments made for the whole corporation are held in the registers they originate from.')}
           />
         </Card>
       ) : (
@@ -362,12 +362,12 @@ export function WardCommitmentsPage(): React.JSX.Element {
               value={summary.unactioned}
               support={
                 summary.overdue > 0
-                  ? `A further ${summary.overdue} started and running late`
-                  : 'No further commitment is running late'
+                  ? t('A further {0} started and running late', summary.overdue)
+                  : t('No further commitment is running late')
               }
               tone={summary.unactioned > 0 ? 'critical' : 'positive'}
               icon={<Gavel className="h-4 w-4" />}
-              explanation={`Carried or sanctioned, the time in which something should have begun has passed, and nothing has begun at all. Held apart from "overdue", where work did start and is simply late. For a resolution the administrative window is ${RESOLUTION_ACTION_WINDOW_DAYS} days from the date the house decided.`}
+              explanation={t('Carried or sanctioned, the time in which something should have begun has passed, and nothing has begun at all. Held apart from "overdue", where work did start and is simply late. For a resolution the administrative window is {0} days from the date the house decided.', RESOLUTION_ACTION_WINDOW_DAYS)}
               background="amber"
             />
             <MetricCard
@@ -381,15 +381,15 @@ export function WardCommitmentsPage(): React.JSX.Element {
             <MetricCard
               label={t('Oldest unactioned')}
               value={summary.oldestUnactionedDays}
-              unit=" days"
+              unit={t(' days')}
               support={
                 summary.oldestUnactionedRef
-                  ? `${summary.oldestUnactionedRef} · mean ${summary.meanUnactionedAgeDays} days across all unactioned`
-                  : 'No commitment is currently unactioned'
+                  ? t('{0} · mean {1} days across all unactioned', summary.oldestUnactionedRef, summary.meanUnactionedAgeDays)
+                  : t('No commitment is currently unactioned')
               }
               tone={summary.oldestUnactionedDays > 180 ? 'critical' : summary.oldestUnactionedDays > 90 ? 'warn' : 'positive'}
               icon={<Timer className="h-4 w-4" />}
-              explanation="The accountability figure. Not how many commitments are outstanding, but how long the longest-standing one has sat with nothing done - which is the figure a corporator will quote back across the table."
+              explanation={t('The accountability figure. Not how many commitments are outstanding, but how long the longest-standing one has sat with nothing done - which is the figure a corporator will quote back across the table.')}
             />
           </MetricGrid>
 
@@ -442,7 +442,7 @@ export function WardCommitmentsPage(): React.JSX.Element {
                 <EmptyState
                   className="mx-3 mb-3"
                   title={t('No commitments match the current filters')}
-                  detail="Clear a filter to widen the ledger."
+                  detail={t('Clear a filter to widen the ledger.')}
                 />
               ) : (
                 <DataTable
@@ -451,14 +451,14 @@ export function WardCommitmentsPage(): React.JSX.Element {
                   rowKey={(c) => c.id}
                   pageSize={15}
                   searchable
-                  searchPlaceholder="Search reference, subject or basis"
+                  searchPlaceholder={t('Search reference, subject or basis')}
                   exportName={`Ward commitments - ${summary.wardLabel}`}
                   exportFilters={{
                     Ward: summary.wardLabel,
-                    Register: kindFilter ? COMMITMENT_KIND_LABEL[kindFilter] : 'All registers',
-                    Standing: standingFilter ? COMMITMENT_STANDING_LABEL[standingFilter] : 'All standings',
+                    Register: kindFilter ? COMMITMENT_KIND_LABEL[kindFilter] : t('All registers'),
+                    Standing: standingFilter ? COMMITMENT_STANDING_LABEL[standingFilter] : t('All standings'),
                   }}
-                  ariaLabel="Ward commitments ledger"
+                  ariaLabel={t('Ward commitments ledger')}
                 />
               )}
             </GovPanel>
@@ -466,7 +466,7 @@ export function WardCommitmentsPage(): React.JSX.Element {
 
             <div className="flex min-w-0 flex-col gap-4 xl:col-span-4">
               <GovPanel
-                title={rankMetric === 'unactioned' ? 'Wards by unactioned commitments' : 'Wards by value undelivered'}
+                title={rankMetric === 'unactioned' ? t('Wards by unactioned commitments') : t('Wards by value undelivered')}
                 tone="red"
                 dense
                 className="flex min-w-0 flex-col"
@@ -474,7 +474,7 @@ export function WardCommitmentsPage(): React.JSX.Element {
                   <SegmentedControl<RankMetric>
                     value={rankMetric}
                     onChange={setRankMetric}
-                    ariaLabel="Rank wards by"
+                    ariaLabel={t('Rank wards by')}
                     options={[
                       { value: 'unactioned', label: t('Unactioned') },
                       { value: 'outstanding', label: t('Value undelivered') },
@@ -488,8 +488,8 @@ export function WardCommitmentsPage(): React.JSX.Element {
                 {ranked.length === 0 ? (
                   <EmptyState
                     className="mx-3 mb-3"
-                    title={rankMetric === 'unactioned' ? 'No ward carries an unactioned commitment' : 'Nothing committed stands undelivered'}
-                    detail="Every commitment naming a ward within your authorised scope has either been delivered or is running within its expected period."
+                    title={rankMetric === 'unactioned' ? t('No ward carries an unactioned commitment') : t('Nothing committed stands undelivered')}
+                    detail={t('Every commitment naming a ward within your authorised scope has either been delivered or is running within its expected period.')}
                   />
                 ) : (
                   <div className="px-4 py-4" style={{ height: Math.max(220, ranked.length * 27) }}>
@@ -498,7 +498,7 @@ export function WardCommitmentsPage(): React.JSX.Element {
                         label: wardShortName(w.wardId),
                         value: rankMetric === 'unactioned' ? w.unactioned : w.valueOutstandingCrore,
                       }))}
-                      unit={rankMetric === 'unactioned' ? '' : ' Cr'}
+                      unit={rankMetric === 'unactioned' ? '' : t(' Cr')}
                     />
                   </div>
                 )}
@@ -526,12 +526,12 @@ export function WardCommitmentsPage(): React.JSX.Element {
                         </Badge>
                         <span className="min-w-0 flex-1 truncate text-[0.6875rem] text-ink-500">
                           {standing === 'unactioned'
-                            ? 'Nothing has started at all'
+                            ? t('Nothing has started at all')
                             : standing === 'overdue'
-                              ? 'Started and past its expected date'
+                              ? t('Started and past its expected date')
                               : standing === 'in-progress'
-                                ? 'Under way and within its period'
-                                : 'Recorded as done'}
+                                ? t('Under way and within its period')
+                                : t('Recorded as done')}
                         </span>
                         <span className="numeric text-xs font-semibold text-ink-900">{count}</span>
                         <span className="numeric w-9 shrink-0 text-right text-[0.6875rem] text-ink-400">{share}%</span>

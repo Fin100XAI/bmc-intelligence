@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { AlertTriangle, ShieldAlert } from 'lucide-react'
+import { AlertTriangle, ShieldAlert, FileSignature, KeyRound, Plug, PlugZap } from 'lucide-react'
 import { PageBody, PageHeader, SplitLayout } from '@/components/layout/PageHeader'
 import { Badge, ClassificationBadge, StateBadge } from '@/components/ui/badges'
 import { Card, DefinitionList, DefinitionRow, MetricGrid } from '@/components/ui/primitives'
@@ -18,6 +18,9 @@ import { CONNECTOR_TYPE_LABEL, type Connector } from '@/types/governance'
 import { DOMAIN_LABEL, OPERATIONAL_STATE_LABEL } from '@/types/common'
 import { t } from '@/i18n'
 import { registerLayer } from '@/data/runtime'
+import { enumLabel } from '@/utils/enum-label'
+import { SHADE } from '@/components/ui/shade'
+import { cn } from '@/utils/cn'
 
 /**
  * src/pages/admin/ConnectorsPage.tsx
@@ -46,15 +49,15 @@ registerLayer(() => {
 function provisioningPrerequisite(connector: Connector): string {
   switch (connector.health) {
     case 'review-required':
-      return 'Privacy and security review required before any provisioning step may begin.'
+      return t('Privacy and security review required before any provisioning step may begin.')
     case 'not-connected':
-      return 'No adapter provisioned. Requires a departmental data-sharing agreement and an integration design review before development.'
+      return t('No adapter provisioned. Requires a departmental data-sharing agreement and an integration design review before development.')
     case 'adapter-ready':
-      return 'Adapter contract implemented and tested against the published schema. Awaiting a departmental data-sharing agreement and endpoint provisioning.'
+      return t('Adapter contract implemented and tested against the published schema. Awaiting a departmental data-sharing agreement and endpoint provisioning.')
     case 'simulation':
-      return 'Operates as a demonstration data simulation. Moving to a live feed requires the same data-sharing agreement and security review as any not-yet-connected adapter.'
+      return t('Operates as a demonstration data simulation. Moving to a live feed requires the same data-sharing agreement and security review as any not-yet-connected adapter.')
     default:
-      return 'No prerequisite recorded.'
+      return t('No prerequisite recorded.')
   }
 }
 
@@ -90,7 +93,7 @@ export function ConnectorsPage(): React.JSX.Element {
   }
   const connectors = connectorsQuery.data ?? []
   if (connectors.length === 0) {
-    return <EmptyState title={t('No connectors configured')} detail="The connector registry returned no entries." />
+    return <EmptyState title={t('No connectors configured')} detail={t('The connector registry returned no entries.')} />
   }
 
   const domainOptions = Array.from(new Set(connectors.map((c) => c.domain))).sort((a, b) =>
@@ -141,7 +144,7 @@ export function ConnectorsPage(): React.JSX.Element {
     {
       id: 'environment',
       header: t('Environment'),
-      cell: (c) => <Badge tone="intel">{c.environment}</Badge>,
+      cell: (c) => <Badge tone="intel">{enumLabel(c.environment)}</Badge>,
       sortValue: (c) => c.environment,
       hideBelow: 'lg',
     },
@@ -186,23 +189,43 @@ export function ConnectorsPage(): React.JSX.Element {
       />
 
       <MetricGrid columns={4}>
-        <Card background="red">
-          <p className="label-institutional">{t('Connectors configured')}</p>
-          <p className="numeric mt-2 text-metric font-semibold text-ink-900">{filtered.length}</p>
+        <Card className={cn(SHADE.blue.tile, 'flex items-start gap-3')}>
+          <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE.blue.chip)}>
+            <Plug className="h-4 w-4" aria-hidden />
+          </span>
+          <div className="min-w-0">
+            <p className="label-institutional">{t('Connectors configured')}</p>
+            <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE.blue.value)}>{filtered.length}</p>
+          </div>
         </Card>
-        <Card tone={requiringReview > 0 ? 'warn' : 'default'} background="amber">
-          <p className="label-institutional">{t('Requiring review or agreement')}</p>
-          <p className="numeric mt-2 text-metric font-semibold text-ink-900">{requiringReview}</p>
+        <Card className={cn(SHADE[requiringReview > 0 ? 'amber' : 'green'].tile, 'flex items-start gap-3')}>
+          <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE[requiringReview > 0 ? 'amber' : 'green'].chip)}>
+            <FileSignature className="h-4 w-4" aria-hidden />
+          </span>
+          <div className="min-w-0">
+            <p className="label-institutional">{t('Requiring review or agreement')}</p>
+            <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE[requiringReview > 0 ? 'amber' : 'green'].value)}>{requiringReview}</p>
+          </div>
         </Card>
-        <Card background="green">
-          <p className="label-institutional">{t('Adapter ready')}</p>
-          <p className="numeric mt-2 text-metric font-semibold text-ink-900">
-            {filtered.filter((c) => c.health === 'adapter-ready').length}
-          </p>
+        <Card className={cn(SHADE.green.tile, 'flex items-start gap-3')}>
+          <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE.green.chip)}>
+            <PlugZap className="h-4 w-4" aria-hidden />
+          </span>
+          <div className="min-w-0">
+            <p className="label-institutional">{t('Adapter ready')}</p>
+            <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE.green.value)}>
+              {filtered.filter((c) => c.health === 'adapter-ready').length}
+            </p>
+          </div>
         </Card>
-        <Card tone={notConfigured > 0 ? 'critical' : 'default'}>
-          <p className="label-institutional">{t('Authentication not configured')}</p>
-          <p className="numeric mt-2 text-metric font-semibold text-ink-900">{notConfigured}</p>
+        <Card className={cn(SHADE[notConfigured > 0 ? 'red' : 'teal'].tile, 'flex items-start gap-3')}>
+          <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE[notConfigured > 0 ? 'red' : 'teal'].chip)}>
+            <KeyRound className="h-4 w-4" aria-hidden />
+          </span>
+          <div className="min-w-0">
+            <p className="label-institutional">{t('Authentication not configured')}</p>
+            <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE[notConfigured > 0 ? 'red' : 'teal'].value)}>{notConfigured}</p>
+          </div>
         </Card>
       </MetricGrid>
 
@@ -237,11 +260,10 @@ export function ConnectorsPage(): React.JSX.Element {
                   <DefinitionRow label={t('Target system')}>{selected.targetSystem}</DefinitionRow>
                   <DefinitionRow label={t('Operated by')}>{selected.sourceAuthority}</DefinitionRow>
                   <DefinitionRow label={t('Authentication mode')}>{AUTH_LABEL[selected.authenticationMode]}</DefinitionRow>
-                  <DefinitionRow label={t('Environment')}>{selected.environment}</DefinitionRow>
+                  <DefinitionRow label={t('Environment')}>{enumLabel(selected.environment)}</DefinitionRow>
                   <DefinitionRow label={t('Classification')}>
                     <ClassificationBadge classification={selected.classification} />
                   </DefinitionRow>
-                  <DefinitionRow label={t('Target system')}>{selected.targetSystem}</DefinitionRow>
                   {selected.lastSyncAt ? (
                     <DefinitionRow label={t('Last simulated sync')}>{formatRelative(selected.lastSyncAt)}</DefinitionRow>
                   ) : null}

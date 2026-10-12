@@ -96,8 +96,8 @@ export function DeathcarePage(): React.JSX.Element {
     return (
       <PageBody>
         <PageHeader
-          eyebrow={t('City Intelligence')}
-          breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Cemeteries & Crematoria') }]}
+          eyebrow={t('City Services')}
+          breadcrumbs={[{ label: t('City Services') }, { label: t('Civic Records & Markets') }, { label: t('Cemeteries & crematoria') }]}
         />
         <LoadingState variant="metrics" />
         <LoadingState variant="table" rows={8} />
@@ -108,8 +108,8 @@ export function DeathcarePage(): React.JSX.Element {
     return (
       <PageBody>
         <PageHeader
-          eyebrow={t('City Intelligence')}
-          breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Cemeteries & Crematoria') }]}
+          eyebrow={t('City Services')}
+          breadcrumbs={[{ label: t('City Services') }, { label: t('Civic Records & Markets') }, { label: t('Cemeteries & crematoria') }]}
         />
         <ErrorState
           detail={(facilitiesQuery.error ?? trendQuery.error)?.message}
@@ -279,14 +279,14 @@ export function DeathcarePage(): React.JSX.Element {
   return (
     <PageBody>
       <PageHeader
-        eyebrow={t('City Intelligence')}
-        breadcrumbs={[{ label: t('City Intelligence') }, { label: t('Cemeteries & Crematoria') }]}
+        eyebrow={t('City Services')}
+        breadcrumbs={[{ label: t('City Services') }, { label: t('Civic Records & Markets') }, { label: t('Cemeteries & crematoria') }]}
         freshness={freshness}
       />
 
       <DemonstrationNotice />
 
-      <FilterBar show={['ward', 'search']} searchPlaceholder="Search burial grounds and crematoria" />
+      <FilterBar show={['ward', 'search']} searchPlaceholder={t('Search burial grounds and crematoria')} />
 
       <MetricGrid columns={4}>
         <MetricCard
@@ -315,7 +315,7 @@ export function DeathcarePage(): React.JSX.Element {
         <MetricCard
           label={t('Mean family wait')}
           value={meanWait}
-          unit=" hours"
+          unit={t(' hours')}
           support={t('Arrival at the gate to commencement of the rite, weighted by the volume each facility carries')}
           tone={meanWait > 3 ? 'critical' : meanWait > 1.5 ? 'warn' : 'positive'}
           icon={<Clock3 className="h-4 w-4" />}
@@ -343,7 +343,7 @@ export function DeathcarePage(): React.JSX.Element {
             {filtered.length === 0 ? (
               <EmptyState
                 title={t('No facilities match the current filters')}
-                detail="Clear a filter to widen the estate."
+                detail={t('Clear a filter to widen the estate.')}
               />
             ) : (
               <DataTable rows={filtered} columns={columns} rowKey={(f) => f.id} pageSize={12} />
@@ -364,7 +364,7 @@ export function DeathcarePage(): React.JSX.Element {
               />
             </div>
             <p className="mt-2 text-[0.6875rem] leading-relaxed text-ink-500">
-              {t('Volumes rise through the pre-monsoon heat and the monsoon months, so a facility that copes comfortably in March can queue in July. Capacity has to be planned against the peak a family arrives in, not against the annual mean.')}
+              {t('Volumes rise through the humid April-to-May pre-monsoon heat and again in the south-west monsoon months, when fever and waterborne illness peak, so a facility that copes comfortably in February can queue in May or August. Capacity has to be planned against the peak a family arrives in, not against the annual mean.')}
             </p>
           </Card>
         </div>
@@ -386,11 +386,11 @@ export function DeathcarePage(): React.JSX.Element {
             </p>
             <div className="px-3 pb-3" style={{ height: Math.max(210, shortestHorizon.length * 26) }}>
               {shortestHorizon.length === 0 ? (
-                <EmptyState compact title={t('No facilities in scope')} detail="Clear a filter to widen the estate." />
+                <EmptyState compact title={t('No facilities in scope')} detail={t('Clear a filter to widen the estate.')} />
               ) : (
                 <RankedBarChart
                   data={shortestHorizon.map((f) => ({ label: f.name.slice(0, 22), value: f.estimatedYearsRemaining }))}
-                  unit=" yrs"
+                  unit={t(' yrs')}
                   higherIsWorse={false}
                 />
               )}

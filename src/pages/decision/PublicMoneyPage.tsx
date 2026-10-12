@@ -1,10 +1,13 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { CalendarClock, Clock3, Landmark, MapPinned, Wallet } from 'lucide-react'
+import { CalendarClock, Clock3, IndianRupee, Landmark, MapPinned, Wallet } from 'lucide-react'
 import { PageBody, PageHeader } from '@/components/layout/PageHeader'
 import { GovPanel } from '@/components/gov/GovPanel'
 import { Badge } from '@/components/ui/badges'
 import { Select } from '@/components/ui/primitives'
+import { EmptyState } from '@/components/ui/states'
+import { SHADE } from '@/components/ui/shade'
+import { cn } from '@/utils/cn'
 import { GeoMap, type GeoMapPoint } from '@/components/geo/GeoMap'
 import { activeCorporation } from '@/config/municipality.config'
 import { EvidenceValue, geoLevelLabel, useCases } from '@/components/decision'
@@ -86,8 +89,18 @@ export function PublicMoneyPage(): React.JSX.Element {
   const [scheme, setScheme] = useState('all')
   const now = layer.now
 
-  const schemes = useMemo(() => [...new Set(layer.projects.map((p) => p.scheme))].sort(), [layer])
-  const rows = layer.projects.filter((p) => (sector === 'all' || p.sector === sector) && (scheme === 'all' || p.scheme === scheme))
+  // Scheme choices follow the chosen sector, so the two selects can never
+  // combine into a pairing no work carries.
+  const schemes = useMemo(
+    () => [...new Set(layer.projects.filter((p) => sector === 'all' || p.sector === sector).map((p) => p.scheme))].sort(),
+    [layer, sector],
+  )
+  const activeScheme = scheme === 'all' || schemes.includes(scheme) ? scheme : 'all'
+  const rows = useMemo(
+    () => layer.projects.filter((p) => (sector === 'all' || p.sector === sector) && (activeScheme === 'all' || p.scheme === activeScheme)),
+    [layer, sector, activeScheme],
+  )
+  const filtered = sector !== 'all' || activeScheme !== 'all'
 
   /** Totals per sector, kept per money kind - never added across kinds. */
   const bySector = useMemo(() => {
@@ -104,7 +117,7 @@ export function PublicMoneyPage(): React.JSX.Element {
     return [...map.entries()].sort((a, b) => (b[1].projectCost ?? 0) + (b[1].sanctionedCost ?? 0) - ((a[1].projectCost ?? 0) + (a[1].sanctionedCost ?? 0)))
   }, [layer])
 
-  const points: GeoMapPoint[] = rows
+  const points: GeoMapPoint[] = useMemo(() => rows
     .filter((p) => p.location.point)
     .map((p) => {
       const money = MONEY_KINDS.map((k) => p.money[k]).find(Boolean)
@@ -119,12 +132,12 @@ export function PublicMoneyPage(): React.JSX.Element {
         positionBasis: 'osm-place',
         anchorPlace: p.location.point!.geocodedName,
       }
-    })
+    }), [rows])
 
   const coordinationFor = (id: string): number => cases.filter((c) => c.origin === 'coordination' && c.projectIds.includes(id)).length
 
   const windows: MilestoneWindow[] = ['next-30', 'next-60', 'next-90', 'passed-unconfirmed']
-  const milestoneRows = (w: MilestoneWindow): PublicProject[] => layer.projects.filter((p) => p.phase !== 'completed' && p.phase !== 'proposed' && milestoneWindow(p, now) === w)
+  const milestoneRows = (w: MilestoneWindow): PublicProject[] => rows.filter((p) => p.phase !== 'completed' && p.phase !== 'proposed' && milestoneWindow(p, now) === w)
 
   return (
     <PageBody width="full" className="space-y-3 p-3 sm:p-4">
@@ -139,22 +152,26 @@ export function PublicMoneyPage(): React.JSX.Element {
               onChange={(e) => setSector(e.target.value as Sector | 'all')}
               options={[{ value: 'all', label: t('All sectors') }, ...bySector.map(([s]) => ({ value: s, label: sectorLabel(s) }))]}
             />
-            <Select aria-label={t('Scheme')} value={scheme} onChange={(e) => setScheme(e.target.value)} options={[{ value: 'all', label: t('All schemes') }, ...schemes.map((s) => ({ value: s, label: s }))]} />
+            <Select aria-label={t('Scheme')} value={activeScheme} onChange={(e) => setScheme(e.target.value)} options={[{ value: 'all', label: t('All schemes') }, ...schemes.map((s) => ({ value: s, label: s }))]} />
           </>
         }
         hideProvenance
       />
 
-
       <GovPanel title={t('FY 2026-27 municipal budget')} subtitle={t('Click any figure for its source. The budget is not added to project costs: they are different accounting facts.')} tone="primary">
-        <dl className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+        <dl className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
           {layer.budget.map((b) => (
-            <div key={b.id} className="rounded-xl border border-ink-200 bg-surface p-3">
-              <dt className="text-[0.6875rem] font-semibold text-ink-500">{b.label}</dt>
-              <dd className="mt-1 text-[1.5rem] leading-none font-extrabold text-ink-900">
-                <EvidenceValue evidenceId={b.evidenceId} />
-              </dd>
-              <p className="mt-1 text-[0.625rem] text-ink-400">{b.period}</p>
+            <div key={b.id} className={cn('flex items-start gap-2.5 rounded-xl border p-3', SHADE.gold.tile)}>
+              <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE.gold.chip)}>
+                <IndianRupee className="h-4 w-4" />
+              </span>
+              <div className="min-w-0">
+                <dt className="text-[0.6875rem] font-semibold text-ink-500">{b.label}</dt>
+                <dd className={cn('mt-1 text-[1.25rem] leading-none font-extrabold break-words sm:text-[1.5rem]', SHADE.gold.value)}>
+                  <EvidenceValue evidenceId={b.evidenceId} />
+                </dd>
+                <p className="mt-1 text-[0.625rem] text-ink-400">{b.period}</p>
+              </div>
             </div>
           ))}
         </dl>
@@ -176,7 +193,7 @@ export function PublicMoneyPage(): React.JSX.Element {
             height={420}
             sizeByWeight
             showBadge={false}
-            fitKey={`${sector}:${scheme}`}
+            fitKey={`${sector}:${activeScheme}`}
             legendTitle={t('Sector')}
             legend={bySector.map(([s, e]) => ({ label: sectorLabel(s), color: SECTOR_HEX[s], count: e.count }))}
             ariaLabel={t('Map of publicly identified works in {0}', activeCorporation.shortName)}
@@ -186,7 +203,7 @@ export function PublicMoneyPage(): React.JSX.Element {
         <GovPanel title={t('Investment by sector')} subtitle={t('Totals are per money kind and are not added across kinds.')}>
           <ul className="space-y-2">
             {bySector.map(([s, e]) => (
-              <li key={s} className="rounded-lg border border-ink-200 p-2.5">
+              <li key={s} className={cn('rounded-lg border p-2.5', SHADE.auto.tile)}>
                 <div className="flex items-center justify-between gap-2">
                   <span className="flex items-center gap-2 text-[0.8125rem] font-bold text-ink-900">
                     <span className="h-2.5 w-2.5 rounded-full" style={{ background: SECTOR_HEX[s] }} aria-hidden />
@@ -207,14 +224,23 @@ export function PublicMoneyPage(): React.JSX.Element {
         </GovPanel>
       </div>
 
-      <GovPanel title={t('Milestones and public-evidence freshness')} subtitle={t('A passed date is "unconfirmed", never "overdue": public status reporting lags. Stale means old evidence, not delay.')}>
+      <GovPanel
+        title={t('Milestones and public-evidence freshness')}
+        subtitle={
+          filtered
+            ? t('Works in the selected sector and scheme. A passed date is "unconfirmed", never "overdue": public status reporting lags.')
+            : t('A passed date is "unconfirmed", never "overdue": public status reporting lags. Stale means old evidence, not delay.')
+        }
+      >
         <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-4">
           {windows.map((w) => {
             const list = milestoneRows(w)
             return (
-              <div key={w} className="rounded-lg border border-ink-200 bg-surface-sunken p-2.5">
+              <div key={w} className={cn('rounded-lg border p-2.5', SHADE.amber.tile)}>
                 <p className="flex items-center gap-1.5 text-[0.75rem] font-bold text-ink-900">
-                  <CalendarClock className="h-4 w-4 text-govt-600" aria-hidden />
+                  <span className={cn('flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-white', SHADE.amber.chip)} aria-hidden>
+                    <CalendarClock className="h-3.5 w-3.5" />
+                  </span>
                   {windowLabel(w)} <span className="numeric text-ink-500">({formatNumber(list.length)})</span>
                 </p>
                 <ul className="mt-1.5 space-y-1">
@@ -241,7 +267,14 @@ export function PublicMoneyPage(): React.JSX.Element {
           </Badge>
         }
       >
-        <div className="overflow-x-auto">
+        {rows.length === 0 ? (
+          <EmptyState
+            compact
+            title={t('No works match this sector and scheme')}
+            detail={t('Choose "All schemes" or another sector to see the portfolio.')}
+          />
+        ) : null}
+        <div className={cn('overflow-x-auto', rows.length === 0 && 'hidden')}>
           <table className="w-full min-w-[64rem] text-left text-[0.75rem]">
             <thead className="bg-surface-sunken text-[0.625rem] tracking-wide text-ink-500 uppercase">
               <tr>

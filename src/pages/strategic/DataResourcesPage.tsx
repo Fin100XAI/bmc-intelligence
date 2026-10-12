@@ -249,7 +249,7 @@ export function DataResourcesPage(): React.JSX.Element {
 
       <GovPanel title={t('Citation register')} tone="amber" dense>
         {filtered.length === 0 ? (
-          <EmptyState className="m-3" title={t('No citation matches the current filters')} detail="Adjust the search term or source-type filter above." />
+          <EmptyState className="m-3" title={t('No citation matches the current filters')} detail={t('Adjust the search term or source-type filter above.')} />
         ) : (
           <DataTable
             rows={filtered}
@@ -258,7 +258,7 @@ export function DataResourcesPage(): React.JSX.Element {
             pageSize={20}
             searchable={false}
             initialSort={{ columnId: 'field', direction: 'asc' }}
-            ariaLabel="Data resources citation register"
+            ariaLabel={t('Data resources citation register')}
           />
         )}
       </GovPanel>

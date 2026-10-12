@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Ban, CheckCircle2 } from 'lucide-react'
+import { Ban, CheckCircle2, ClipboardCheck, ScrollText } from 'lucide-react'
 import { PageBody, PageHeader, SplitLayout } from '@/components/layout/PageHeader'
 import { Badge, ClassificationBadge } from '@/components/ui/badges'
 import { Card, DefinitionList, DefinitionRow, MetricGrid } from '@/components/ui/primitives'
@@ -16,6 +16,8 @@ import { RESOURCE_LABEL, getRole, type ResourceType } from '@/security'
 import { userDisplayName } from '@/auth/demo-users'
 import { formatDate } from '@/utils/format'
 import { cn } from '@/utils/cn'
+import { enumLabel } from '@/utils/enum-label'
+import { SHADE } from '@/components/ui/shade'
 import type { AccessPolicy } from '@/types/governance'
 import { t } from '@/i18n'
 
@@ -36,7 +38,7 @@ const STATUS_TONE: Record<AccessPolicy['status'], 'positive' | 'neutral' | 'warn
 }
 
 const POLICY_STATUSES: Array<AccessPolicy['status']> = ['active', 'draft', 'review-required', 'retired']
-const statusOptions = POLICY_STATUSES.map((s) => ({ value: s, label: s.replace('-', ' ') }))
+const statusOptions = POLICY_STATUSES.map((s) => ({ value: s, label: enumLabel(s) }))
 
 /**
  * Only the dimensions this register genuinely carries: review status and free
@@ -69,7 +71,7 @@ export function PoliciesPage(): React.JSX.Element {
   }
   const policies = policiesQuery.data ?? []
   if (policies.length === 0) {
-    return <EmptyState title={t('No access policies registered')} detail="The policy register returned no entries." />
+    return <EmptyState title={t('No access policies registered')} detail={t('The policy register returned no entries.')} />
   }
 
   const filtered = policies.filter((p) => matchesGlobalFilters(p, filters))
@@ -127,7 +129,7 @@ export function PoliciesPage(): React.JSX.Element {
       header: t('Status'),
       cell: (p) => (
         <Badge tone={STATUS_TONE[p.status]} dot>
-          {p.status.replace('-', ' ')}
+          {enumLabel(p.status)}
         </Badge>
       ),
       sortValue: (p) => p.status,
@@ -157,25 +159,45 @@ export function PoliciesPage(): React.JSX.Element {
       />
 
       <MetricGrid columns={4}>
-        <Card background="red">
-          <p className="label-institutional">{t('Policies')}</p>
-          <p className="numeric mt-2 text-metric font-semibold text-ink-900">{filtered.length}</p>
+        <Card className={cn(SHADE.blue.tile, 'flex items-start gap-3')}>
+          <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE.blue.chip)}>
+            <ScrollText className="h-4 w-4" aria-hidden />
+          </span>
+          <div className="min-w-0">
+            <p className="label-institutional">{t('Policies')}</p>
+            <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE.blue.value)}>{filtered.length}</p>
+          </div>
         </Card>
-        <Card background="amber">
-          <p className="label-institutional">{t('Active')}</p>
-          <p className="numeric mt-2 text-metric font-semibold text-ink-900">
-            {filtered.filter((p) => p.status === 'active').length}
-          </p>
+        <Card className={cn(SHADE.green.tile, 'flex items-start gap-3')}>
+          <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE.green.chip)}>
+            <CheckCircle2 className="h-4 w-4" aria-hidden />
+          </span>
+          <div className="min-w-0">
+            <p className="label-institutional">{t('Active')}</p>
+            <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE.green.value)}>
+              {filtered.filter((p) => p.status === 'active').length}
+            </p>
+          </div>
         </Card>
-        <Card tone={denyCount > 0 ? 'critical' : 'default'} background="green">
-          <p className="label-institutional">{t('Deny policies')}</p>
-          <p className="numeric mt-2 text-metric font-semibold text-ink-900">{denyCount}</p>
+        <Card className={cn(SHADE[denyCount > 0 ? 'red' : 'teal'].tile, 'flex items-start gap-3')}>
+          <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE[denyCount > 0 ? 'red' : 'teal'].chip)}>
+            <Ban className="h-4 w-4" aria-hidden />
+          </span>
+          <div className="min-w-0">
+            <p className="label-institutional">{t('Deny policies')}</p>
+            <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE[denyCount > 0 ? 'red' : 'teal'].value)}>{denyCount}</p>
+          </div>
         </Card>
-        <Card>
-          <p className="label-institutional">{t('Review required')}</p>
-          <p className="numeric mt-2 text-metric font-semibold text-ink-900">
-            {filtered.filter((p) => p.status === 'review-required').length}
-          </p>
+        <Card className={cn(SHADE.amber.tile, 'flex items-start gap-3')}>
+          <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white', SHADE.amber.chip)}>
+            <ClipboardCheck className="h-4 w-4" aria-hidden />
+          </span>
+          <div className="min-w-0">
+            <p className="label-institutional">{t('Review required')}</p>
+            <p className={cn('numeric mt-1.5 text-[1.75rem] leading-none font-bold tabular-nums', SHADE.amber.value)}>
+              {filtered.filter((p) => p.status === 'review-required').length}
+            </p>
+          </div>
         </Card>
       </MetricGrid>
 
@@ -203,9 +225,9 @@ export function PoliciesPage(): React.JSX.Element {
               <Card tone={selected.effect === 'deny' ? 'critical' : 'sunken'}>
                 <div className="flex items-center gap-1.5">
                   <Badge tone={selected.effect === 'deny' ? 'critical' : 'positive'}>
-                    {selected.effect === 'deny' ? 'Deny policy' : 'Allow policy'}
+                    {selected.effect === 'deny' ? t('Deny policy') : t('Allow policy')}
                   </Badge>
-                  <Badge tone={STATUS_TONE[selected.status]}>{selected.status.replace('-', ' ')}</Badge>
+                  <Badge tone={STATUS_TONE[selected.status]}>{enumLabel(selected.status)}</Badge>
                 </div>
                 <p className="mt-2 text-[0.8125rem] font-semibold text-ink-900">{selected.name}</p>
                 <p className="mt-1 text-xs leading-relaxed text-ink-600">{selected.description}</p>

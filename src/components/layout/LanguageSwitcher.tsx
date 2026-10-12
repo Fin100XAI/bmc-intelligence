@@ -1,7 +1,7 @@
 import { Languages } from 'lucide-react'
 import { LOCALES, LOCALE_INFO, type Locale } from '@/i18n'
 import { t } from '@/i18n'
-import { useLocale, useSetLocale } from '@/stores/locale.store'
+import { useLocale, useLocaleStore, useSetLocale } from '@/stores/locale.store'
 import { cn } from '@/utils/cn'
 import { Tooltip } from '@/components/ui/overlays'
 
@@ -17,11 +17,14 @@ import { Tooltip } from '@/components/ui/overlays'
  *
  * Each option is labelled in ITS OWN language. A reader who cannot read the
  * current one still has to be able to find their own, which is why the Marathi
- * option says मराठी and not "Marathi".
+ * option says मराठी (from `LOCALE_INFO`) and not "Marathi".
  */
 export function LanguageSwitcher({ className }: { className?: string }): React.JSX.Element {
   const locale = useLocale()
   const setLocale = useSetLocale()
+  // The Marathi catalogue downloads on first use; the option pulses until it
+  // has arrived and the switch has taken effect.
+  const pending = useLocaleStore((s) => s.pending)
 
   return (
     <Tooltip
@@ -45,12 +48,14 @@ export function LanguageSwitcher({ className }: { className?: string }): React.J
         {LOCALES.map((id: Locale) => {
           const info = LOCALE_INFO[id]
           const isActive = id === locale
+          const isPending = id === pending
           return (
             <button
               key={id}
               type="button"
               lang={info.htmlLang}
               aria-pressed={isActive}
+              aria-busy={isPending || undefined}
               /* Named in English as well as in itself, so the control is
                  unambiguous to a screen reader in either language. */
               aria-label={`${info.nativeName} — ${info.englishName}`}
@@ -58,6 +63,7 @@ export function LanguageSwitcher({ className }: { className?: string }): React.J
               className={cn(
                 'rounded px-1.5 py-1 text-[0.6875rem] leading-none font-semibold transition-colors',
                 'focus-visible:ring-2 focus-visible:ring-govt-500/30 focus-visible:outline-none',
+                isPending && 'animate-pulse',
                 isActive
                   ? 'bg-surface text-govt-700 shadow-xs ring-1 ring-govt-200'
                   : 'text-ink-500 hover:bg-ink-100/70 hover:text-ink-700',
