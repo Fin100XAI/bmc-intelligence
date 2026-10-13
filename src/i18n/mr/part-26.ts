@@ -15,10 +15,6 @@ export const MR_PART_26: Record<string, string> = {
   'flood-prone': 'पूरप्रवण',
   'not classified as flood-prone': 'पूरप्रवण म्हणून वर्गीकृत नाही',
 
-  // --- Mira-Bhayandar ward committees, from the corporation's own pages ----
-
-  // --- Solapur zone offices ------------------------------------------------
-
   // --- Ichalkaranji --------------------------------------------------------
   'Prabhag {0}': 'प्रभाग {0}',
 }
