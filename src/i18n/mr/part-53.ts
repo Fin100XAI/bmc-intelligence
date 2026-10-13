@@ -1,5 +1,5 @@
 /** Marathi catalogue, part 53. Keyed by the exact English source.
- * The Command Centre pages in the NMMC infographic layout: Executive
+ * The Command Centre pages in the infographic layout: Executive
  * Overview, Commissioner Cockpit, City Intelligence Index, Situation Room,
  * City Command Map, Intelligence Feed and Alerts, and the ward map. */
 export const MR_PART_53: Record<string, string> = {

@@ -36,7 +36,7 @@ export const MR_PART_52: Record<string, string> = {
     'क्षमता नकाशा उघडा',
   'Counted from the platform itself, not typed in: the capability map, the evidence registry and the area briefs.':
     'प्लॅटफॉर्ममधूनच मोजलेले, हाताने टाइप केलेले नाही: क्षमता नकाशा, पुरावा नोंदवही आणि क्षेत्र सारांश.',
-  // Shared card, state and navigation strings carried over with the NMMC card style.
+  // Shared card, state and navigation strings.
   '{0} alternatives':
     '{0} पर्याय',
   '{0} evidence':

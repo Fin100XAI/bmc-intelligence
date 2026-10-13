@@ -328,8 +328,7 @@ export function MenuBar({ badges }: { badges: SidebarBadges }): React.JSX.Elemen
   return (
     <nav
       aria-label={t('Primary navigation')}
-      /* The masthead's exact blue — the institutional navy `govt-900`, as on
-         the NMMC platform —
+      /* The masthead's exact blue — the institutional navy `govt-900` —
          not a second one. The white top bar between them is what separates
          the two, and two near-but-not-equal blues a row apart read as a
          mistake rather than as a hierarchy.

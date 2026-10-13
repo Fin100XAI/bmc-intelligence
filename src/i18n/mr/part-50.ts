@@ -1,5 +1,5 @@
 /** Marathi catalogue, part 50. Keyed by the exact English source.
- * The NMMC-style portal, sign-in panel and page banners: Mumbai photographs,
+ * The portal, sign-in panel and page banners: Mumbai photographs,
  * captions and the banner figures. */
 export const MR_PART_50: Record<string, string> = {
   'Residents (Census 2011)':

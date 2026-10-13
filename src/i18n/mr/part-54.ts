@@ -1,5 +1,5 @@
 /** Marathi catalogue, part 54. Keyed by the exact English source.
- * Every page in the NMMC Intelligence format: city, ward, council,
+ * Every page in the Intelligence format: city, ward, council,
  * governance, strategic, decision, AI, trust and admin screens. */
 export const MR_PART_54: Record<string, string> = {
   "Ward outlines are the 24 administrative wards (2011 structure) from DataMeet’s open BMC ward boundaries (CC BY-SA 2.5 India), simplified for display. They are not BMC’s official GIS layer.":

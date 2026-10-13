@@ -63,8 +63,7 @@ import { registerLayer } from '@/data/runtime'
  * morning why collection is behind in three wards, so the tile is the screen
  * that answers that.
  *
- * The bands, in order - the same form as the Navi Mumbai deployment, so the two
- * corporations' portals read as one family:
+ * The bands, in order:
  *
  *   hero            what this is, over real photographs of Mumbai
  *   coverage        every service the city runs           [photographic]
