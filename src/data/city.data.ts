@@ -159,6 +159,25 @@ function impoundableSourceNames(count: number): ImpoundableSource[] {
   )
 }
 
+/**
+ * Brihanmumbai's seven supply lakes as read at 6 am on 8 October 2026 from the
+ * Hydraulic Engineer's Department daily lake report (`ev-lakes-2026-10-08`).
+ * Useful capacities are content / percentage for each lake and sum to the
+ * published 14,47,363 ML. The report gives last year's level only for the
+ * seven lakes combined (99.03% on the same date in 2025), so every lake is
+ * compared against that combined figure.
+ */
+const BMC_LAKES_2026_10_08: Array<{ name: string; capacityMl: number; contentMl: number; pct: number }> = [
+  { name: 'Bhatsa', capacityMl: 717037, contentMl: 694540, pct: 96.86 },
+  { name: 'Upper Vaitarna', capacityMl: 227047, contentMl: 218850, pct: 96.39 },
+  { name: 'Middle Vaitarna', capacityMl: 193530, contentMl: 193087, pct: 99.77 },
+  { name: 'Tansa', capacityMl: 145080, contentMl: 133502, pct: 92.02 },
+  { name: 'Modak Sagar', capacityMl: 128925, contentMl: 88570, pct: 68.7 },
+  { name: 'Vihar', capacityMl: 27698, contentMl: 27684, pct: 99.95 },
+  { name: 'Tulsi', capacityMl: 8046, contentMl: 7812, pct: 97.09 },
+]
+const BMC_LAKES_LAST_YEAR_PCT = 99.03
+
 function reservoirSpecs(): Array<{ id: string; name: string; storage: number }> {
   const waterRatio = CITY_SCALE.waterSupplyMLD / REFERENCE_SCALE.waterSupplyMLD
   const count = Math.max(3, Math.min(RESERVOIR_SHARES.length, scaledCount(RESERVOIR_SHARES.length, waterRatio, 3)))
@@ -457,22 +476,33 @@ registerLayer(() => {
 
   /** ------------------------------------------------------------------ Water */
 
-  RESERVOIRS = reservoirSpecs().map((spec) => {
-    const r = det(`reservoir:${spec.id}`)
-    const fillPct = r.round(38, 92, 1)
-    const current = Math.round(spec.storage * (fillPct / 100))
-    return {
-      id: spec.id,
-      name: spec.name,
-      usefulStorageMl: spec.storage,
-      currentStorageMl: current,
-      fillPct,
-      // Days this source alone would carry at the corporation's own daily draw.
-      daysOfSupply: Math.round(current / Math.max(scale.waterSupplyMLD, 1)),
-      lastYearFillPct: Math.round((fillPct + r.float(-14, 14)) * 10) / 10,
-      state: stateFrom(fillPct),
-    }
-  })
+  RESERVOIRS = corp.id === 'bmc'
+    ? BMC_LAKES_2026_10_08.map((lake, i) => ({
+        id: `res-${String(i + 1).padStart(2, '0')}`,
+        name: lake.name,
+        usefulStorageMl: lake.capacityMl,
+        currentStorageMl: lake.contentMl,
+        fillPct: lake.pct,
+        daysOfSupply: Math.round(lake.contentMl / Math.max(scale.waterSupplyMLD, 1)),
+        lastYearFillPct: BMC_LAKES_LAST_YEAR_PCT,
+        state: stateFrom(lake.pct),
+      }))
+    : reservoirSpecs().map((spec) => {
+      const r = det(`reservoir:${spec.id}`)
+      const fillPct = r.round(38, 92, 1)
+      const current = Math.round(spec.storage * (fillPct / 100))
+      return {
+        id: spec.id,
+        name: spec.name,
+        usefulStorageMl: spec.storage,
+        currentStorageMl: current,
+        fillPct,
+        // Days this source alone would carry at the corporation's own daily draw.
+        daysOfSupply: Math.round(current / Math.max(scale.waterSupplyMLD, 1)),
+        lastYearFillPct: Math.round((fillPct + r.float(-14, 14)) * 10) / 10,
+        state: stateFrom(fillPct),
+      }
+    })
 
   const zoneGroups = waterZoneGroups()
 
@@ -505,7 +535,9 @@ registerLayer(() => {
     const supply = Math.round(scale.waterSupplyMLD * share * r.float(0.9, 1.1) * 10) / 10
     const demand = Math.round(supply * r.float(0.98, 1.32) * 10) / 10
     const deficit = Math.round((demand - supply) * 10) / 10
-    const nrw = r.round(18, 42, 1)
+    // Brihanmumbai loses about 34% of supply (`ev-water-losses-2024`), so its
+    // zones spread around that figure; other corporations keep the wider band.
+    const nrw = corp.id === 'bmc' ? r.round(26, 42, 1) : r.round(18, 42, 1)
     const pressure = r.round(6.5, 21, 1)
     const supplyHours = r.round(2.5, 9, 1)
     const quality = r.round(88.5, 99.6, 1)

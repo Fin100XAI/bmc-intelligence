@@ -2,6 +2,8 @@
  * Every page in the NMMC Intelligence format: city, ward, council,
  * governance, strategic, decision, AI, trust and admin screens. */
 export const MR_PART_54: Record<string, string> = {
+  "On 8 October 2026 the seven lakes held 94.24% of useful storage, against 99.03% on the same date in 2025. Modak Sagar was lowest at 68.7%. The reservoir figures on this platform are that day's readings.":
+    "8 ऑक्टोबर 2026 रोजी सात तलावांमध्ये उपयुक्त साठ्याच्या 94.24% पाणी होते; 2025 मध्ये याच दिवशी ते 99.03% होते. 68.7% सह मोडक सागर सर्वात कमी होता. या प्लॅटफॉर्मवरील जलाशयांचे आकडे त्या दिवसाचे वाचन आहेत.",
   "In 2025-26 the Western Suburbs paid ₹3,721.33 cr of property tax, the City ₹2,102.60 cr and the Eastern Suburbs ₹1,457 cr. K/East was the highest ward at ₹719.23 cr. Ward targets on this platform follow that split.":
     "2025-26 मध्ये पश्चिम उपनगरांनी ₹3,721.33 कोटी, शहर विभागाने ₹2,102.60 कोटी आणि पूर्व उपनगरांनी ₹1,457 कोटी मालमत्ता कर भरला. ₹719.23 कोटींसह के/पूर्व हा सर्वाधिक वसुलीचा प्रभाग होता. या प्लॅटफॉर्मवरील प्रभागनिहाय उद्दिष्टे याच विभागणीनुसार आहेत.",
   "Wards & Citizens":

@@ -161,8 +161,9 @@ export function capabilityAreas(): CapabilityArea[] {
       status: 'partial',
       today: [{ label: t('Water Intelligence'), to: ROUTES.water }],
       next: t('Ward-level supply hours and metered consumption need the hydraulic engineering and AQUA billing extracts.'),
-      evidenceIds: ['ev-lake-capacity', 'ev-lake-stock-2026-10-03', 'ev-lake-stock-2026-06-16', 'ev-water-cut-2026', 'ev-water-supply-2024', 'ev-water-demand-2024', 'ev-water-losses-2024', 'ev-water-augmentation'],
+      evidenceIds: ['ev-lake-capacity', 'ev-lakes-2026-10-08', 'ev-lake-stock-2026-10-03', 'ev-lake-stock-2026-06-16', 'ev-water-cut-2026', 'ev-water-supply-2024', 'ev-water-demand-2024', 'ev-water-losses-2024', 'ev-water-augmentation'],
       insights: [
+        { kind: 'finding', text: t('On 8 October 2026 the seven lakes held 94.24% of useful storage, against 99.03% on the same date in 2025. Modak Sagar was lowest at 68.7%. The reservoir figures on this platform are that day\'s readings.'), evidenceIds: ['ev-lakes-2026-10-08'] },
         { kind: 'finding', text: t('The seven lakes stood at 95.84% of useful storage on 3 October 2026, against 10.35% on 16 June 2026, when a 10% cut was in force.'), evidenceIds: ['ev-lake-stock-2026-10-03', 'ev-lake-stock-2026-06-16', 'ev-water-cut-2026'] },
         { kind: 'finding', text: t('In October 2024, 3,950 MLD was supplied against a demand of 4,463 MLD, and 34% of water was being lost.'), evidenceIds: ['ev-water-supply-2024', 'ev-water-demand-2024', 'ev-water-losses-2024'] },
         { kind: 'decision', text: t('About 800 MLD of new supply is planned over four to five years. Set it against the losses, which may be quicker to recover.'), evidenceIds: ['ev-water-augmentation', 'ev-water-losses-2024'] },
