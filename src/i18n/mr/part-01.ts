@@ -170,8 +170,6 @@ export const MR_PART_01: Record<string, string> = {
   'Illustrative digital twin': 'दृष्टांतात्मक डिजिटल जुळे',
   'Illustrative spatial representation. {0} names and counts are {1}’s own published administrative divisions; the boundaries are a schematic tessellation generated for demonstration and are not official GIS boundaries.':
     'दृष्टांतात्मक भौगोलिक मांडणी. {0} ची नावे व संख्या ही {1} च्या स्वतःच्या प्रकाशित प्रशासकीय विभागणीनुसार आहेत; सीमारेषा या प्रात्यक्षिकासाठी तयार केलेली आकृतिबंधात्मक मांडणी असून त्या अधिकृत जीआयएस सीमारेषा नाहीत.',
-  'Illustrative spatial representation. Boundaries are generated for demonstration and are not official GIS boundaries.':
-    'दृष्टांतात्मक भौगोलिक मांडणी. सीमारेषा प्रात्यक्षिकासाठी तयार केल्या असून त्या अधिकृत जीआयएस सीमारेषा नाहीत.',
   India: 'भारत',
   'Input → Activity → Output → Outcome across every programme.':
     'प्रत्येक कार्यक्रमासाठी साधन → कृती → निर्गत → निष्पत्ती.',

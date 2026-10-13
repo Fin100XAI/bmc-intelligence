@@ -12,9 +12,12 @@ import type {
   OutcomeChain,
   PlanningIndicator,
 } from '@/types/city-domains'
+import type { GeoPoint } from '@/types/common'
 import type { CityFormType } from './geo-generator'
 import { det, isoDaysFromAnchor } from '@/utils/deterministic'
-import { WARDS, WARD_BY_ID } from './reference'
+import { WARDS, WARD_BY_ID, wardIdFromCode } from './reference'
+import { bmcWardCodeAt } from './bmc-ward-lookup'
+import { bmcAirStations, bmcHospitals } from '@/config/bmc/facilities'
 import { PUMPING_STATIONS, STORM_DRAINS, WATER_ZONES, stateFrom } from './city.data'
 import { severityFromScore } from './finance.data'
 import { CITY_SCALE, scaled, scaledCount } from './scale'
@@ -80,24 +83,33 @@ export let HOSPITALS: Hospital[] = []
  * even in the smallest corporation. Occupancy, staffing and serviceability are
  * percentages and are not scaled.
  */
-function buildHospital(name: string, type: Hospital['type'], seedIndex: number, forceWardId?: string): Hospital {
+function buildHospital(
+  name: string,
+  type: Hospital['type'],
+  seedIndex: number,
+  forceWardId?: string,
+  /** A real site: its position and, where published, its bed strength. */
+  site?: { location: GeoPoint; beds?: number },
+): Hospital {
   const r = det(`hospital:${name}`)
   const pop = CITY_SCALE.population
   const ward = forceWardId ? (WARD_BY_ID.get(forceWardId) ?? r.pick(WARDS)) : r.pick(WARDS)
   const bedsTotal =
-    type === 'major'
-      ? r.int(scaledCount(680, pop, 60), scaledCount(1850, pop, 180))
-      : type === 'peripheral'
-        ? r.int(scaledCount(120, pop, 25), scaledCount(420, pop, 90))
-        : type === 'maternity'
-          ? r.int(scaledCount(24, pop, 10), scaledCount(90, pop, 30))
-          : r.int(0, scaledCount(12, pop, 6))
+    site?.beds !== undefined
+      ? site.beds
+      : type === 'major'
+        ? r.int(scaledCount(680, pop, 60), scaledCount(1850, pop, 180))
+        : type === 'peripheral' || type === 'speciality'
+          ? r.int(scaledCount(120, pop, 25), scaledCount(420, pop, 90))
+          : type === 'maternity'
+            ? r.int(scaledCount(24, pop, 10), scaledCount(90, pop, 30))
+            : r.int(0, scaledCount(12, pop, 6))
   const occupancy = r.round(52, 98, 1)
   const bedsOccupied = Math.round(bedsTotal * (occupancy / 100))
   const icuTotal =
     type === 'major'
       ? r.int(scaledCount(40, pop, 4), scaledCount(140, pop, 12))
-      : type === 'peripheral'
+      : type === 'peripheral' || type === 'speciality'
         ? r.int(scaledCount(6, pop, 1), scaledCount(30, pop, 4))
         : 0
   const icuOccupancy = r.round(56, 99, 1)
@@ -113,7 +125,7 @@ function buildHospital(name: string, type: Hospital['type'], seedIndex: number, 
     name,
     type,
     wardId: ward.id,
-    location: ward.centroid,
+    location: site?.location ?? ward.centroid,
     bedsTotal,
     bedsOccupied,
     occupancyPct: occupancy,
@@ -474,13 +486,26 @@ registerLayer(() => {
   // outgrows the gap reserved for it, which is exactly what produced
   // duplicate `hos-061`..`hos-070` ids once the maternity tier reached 30.
   let hospitalSeedIndex = 0
+  // Brihanmumbai's own hospitals are named, placed and, where BMC or the press
+  // publishes it, given their real bed strength (`@/config/bmc/facilities`).
+  const hospitalTiers =
+    corp.id === 'bmc'
+      ? bmcHospitals().map((h) =>
+          buildHospital(h.name, h.type, hospitalSeedIndex++, wardIdFromCode(bmcWardCodeAt(h.lat, h.lng)), {
+            location: { lat: h.lat, lng: h.lng },
+            beds: h.beds,
+          }),
+        )
+      : [
+          ...hospitalLocalities
+            .slice(0, majorCount)
+            .map((locality) => buildHospital(`${locality} Municipal General Hospital`, 'major', hospitalSeedIndex++)),
+          ...hospitalLocalities
+            .slice(majorCount)
+            .map((locality) => buildHospital(`${locality} Municipal Hospital`, 'peripheral', hospitalSeedIndex++)),
+        ]
   HOSPITALS = [
-    ...hospitalLocalities
-      .slice(0, majorCount)
-      .map((locality) => buildHospital(`${locality} Municipal General Hospital`, 'major', hospitalSeedIndex++)),
-    ...hospitalLocalities
-      .slice(majorCount)
-      .map((locality) => buildHospital(`${locality} Municipal Hospital`, 'peripheral', hospitalSeedIndex++)),
+    ...hospitalTiers,
     ...maternityLocalities.map((locality, i) => {
       const ward = WARDS[i % WARDS.length]!
       return buildHospital(`${locality} Maternity Home`, 'maternity', hospitalSeedIndex++, ward.id)
@@ -546,23 +571,45 @@ registerLayer(() => {
 
   /** ----------------------------------------------------------- Environment */
 
-  AIR_QUALITY_STATIONS = WARDS.map((ward) => {
-    const r = det(`aqi:${ward.id}`)
-    // July monsoon conditions suppress particulate levels across the city.
-    const aqi = r.int(34, 148)
-    return {
-      id: `aq-${ward.id}`,
-      name: t('{0} Monitoring Station', ward.name.split(' · ')[0]),
-      wardId: ward.id,
-      aqi,
-      category: aqiCategory(aqi),
-      pm25: Math.round(aqi * r.float(0.32, 0.55)),
-      pm10: Math.round(aqi * r.float(0.62, 1.1)),
-      no2: Math.round(aqi * r.float(0.18, 0.42)),
-      observedAt: isoDaysFromAnchor(0),
-      trend: r.weighted([['up', 3], ['down', 3], ['flat', 4]] as const),
-    }
-  })
+  // Brihanmumbai's stations are the CPCB-listed sites inside BMC limits. Their
+  // readings stay modelled - the per-station feed is not connected - but sit
+  // around the city's 24-hour AQI of 81 in the CPCB bulletin of 12 Oct 2026
+  // (`ev-aqi-2026-10-12`) rather than a generic monsoon band.
+  AIR_QUALITY_STATIONS = corp.id === 'bmc'
+    ? bmcAirStations().map((station, i) => {
+        const wardId = wardIdFromCode(bmcWardCodeAt(station.lat, station.lng))
+        const r = det(`aqi:bmc:${i}`)
+        const aqi = r.int(58, 108)
+        return {
+          id: `aq-${String(i + 1).padStart(2, '0')}`,
+          name: `${station.name} (${station.operator})`,
+          wardId,
+          aqi,
+          category: aqiCategory(aqi),
+          pm25: Math.round(aqi * r.float(0.32, 0.55)),
+          pm10: Math.round(aqi * r.float(0.8, 1.1)),
+          no2: Math.round(aqi * r.float(0.18, 0.42)),
+          observedAt: isoDaysFromAnchor(0),
+          trend: r.weighted([['up', 3], ['down', 3], ['flat', 4]] as const),
+        }
+      })
+    : WARDS.map((ward) => {
+      const r = det(`aqi:${ward.id}`)
+      // July monsoon conditions suppress particulate levels across the city.
+      const aqi = r.int(34, 148)
+      return {
+        id: `aq-${ward.id}`,
+        name: t('{0} Monitoring Station', ward.name.split(' · ')[0]),
+        wardId: ward.id,
+        aqi,
+        category: aqiCategory(aqi),
+        pm25: Math.round(aqi * r.float(0.32, 0.55)),
+        pm10: Math.round(aqi * r.float(0.62, 1.1)),
+        no2: Math.round(aqi * r.float(0.18, 0.42)),
+        observedAt: isoDaysFromAnchor(0),
+        trend: r.weighted([['up', 3], ['down', 3], ['flat', 4]] as const),
+      }
+    })
 
   NOISE_READINGS = WARDS.flatMap((ward) => {
     const zones: NoiseReading['zoneType'][] = ['silence', 'residential', 'commercial', 'industrial']

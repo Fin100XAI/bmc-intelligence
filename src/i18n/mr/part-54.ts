@@ -2,6 +2,8 @@
  * Every page in the NMMC Intelligence format: city, ward, council,
  * governance, strategic, decision, AI, trust and admin screens. */
 export const MR_PART_54: Record<string, string> = {
+  "Ward outlines are the 24 administrative wards (2011 structure) from DataMeet’s open BMC ward boundaries (CC BY-SA 2.5 India), simplified for display. They are not BMC’s official GIS layer.":
+    "प्रभागांच्या सीमा या DataMeet च्या खुल्या BMC प्रभाग-सीमा डेटातील (CC BY-SA 2.5 India) 24 प्रशासकीय प्रभाग (2011 रचना) आहेत, प्रदर्शनासाठी सोप्या केलेल्या. हा BMC चा अधिकृत GIS स्तर नाही.",
   "On 8 October 2026 the seven lakes held 94.24% of useful storage, against 99.03% on the same date in 2025. Modak Sagar was lowest at 68.7%. The reservoir figures on this platform are that day's readings.":
     "8 ऑक्टोबर 2026 रोजी सात तलावांमध्ये उपयुक्त साठ्याच्या 94.24% पाणी होते; 2025 मध्ये याच दिवशी ते 99.03% होते. 68.7% सह मोडक सागर सर्वात कमी होता. या प्लॅटफॉर्मवरील जलाशयांचे आकडे त्या दिवसाचे वाचन आहेत.",
   "In 2025-26 the Western Suburbs paid ₹3,721.33 cr of property tax, the City ₹2,102.60 cr and the Eastern Suburbs ₹1,457 cr. K/East was the highest ward at ₹719.23 cr. Ward targets on this platform follow that split.":

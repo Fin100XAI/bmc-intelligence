@@ -183,7 +183,7 @@ export function capabilityAreas(): CapabilityArea[] {
         { label: t('Public Money & Investment'), to: ROUTES.publicMoney },
       ],
       next: t('Plant-by-plant inflow and treated output need the Sewerage Operations records.'),
-      evidenceIds: ['ev-stp-capacity', 'ev-stp-cost', 'ev-sewage-generation', 'ev-sewer-coverage', 'ev-fpj-stp-ghatkopar-date', 'ev-fpj-stp-versova-date', 'ev-fpj-stp-bhandup-date', 'ev-fpj-stp-stalled'],
+      evidenceIds: ['ev-stp-capacity', 'ev-stp-cost', 'ev-sewage-generation', 'ev-sewer-coverage', 'ev-fpj-stp-ghatkopar-date', 'ev-fpj-stp-versova-date', 'ev-fpj-stp-bhandup-date', 'ev-fpj-stp-stalled', 'ev-stp-capacities-2026', 'ev-stp-colaba'],
       insights: [
         { kind: 'finding', text: t('The seven new plants will add 2,464 MLD of secondary treatment, against 2,190 MLD of sewage generated a day.'), evidenceIds: ['ev-stp-capacity', 'ev-sewage-generation'] },
         { kind: 'gap', text: t('Ghatkopar and Versova were due in July 2026 and Bhandup in August 2026. No public source yet confirms whether they were commissioned.'), evidenceIds: ['ev-fpj-stp-ghatkopar-date', 'ev-fpj-stp-versova-date', 'ev-fpj-stp-bhandup-date'] },
@@ -203,7 +203,7 @@ export function capabilityAreas(): CapabilityArea[] {
         { label: t('Storm Water Intelligence'), to: ROUTES.stormwater },
       ],
       next: t('Station-by-station pumping logs and desilting quantities need the SWD department\'s records.'),
-      evidenceIds: ['ev-flood-spots-498', 'ev-flood-hotspots-plan', 'ev-dm-api-flood-spots', 'ev-dewatering-pumps', 'ev-brimstowad-stations', 'ev-brimstowad-capacity', 'ev-fpj-mogra-status', 'ev-fpj-mahul-status'],
+      evidenceIds: ['ev-flood-spots-498', 'ev-flood-hotspots-plan', 'ev-dm-api-flood-spots', 'ev-dewatering-pumps', 'ev-brimstowad-stations', 'ev-brimstowad-capacity', 'ev-fpj-mogra-status', 'ev-fpj-mahul-status', 'ev-flood-spots-2026', 'ev-pump-britannia', 'ev-pump-mogra-2026'],
       insights: [
         { kind: 'finding', text: t('Three counts of flooding spots are published - 498 in the budget, 300-350 chronic hotspots in the flood plan, and 110 in the live list - and they count different things.'), evidenceIds: ['ev-flood-spots-498', 'ev-flood-hotspots-plan', 'ev-dm-api-flood-spots'] },
         { kind: 'decision', text: t('Six of the eight BRIMSTOWAD pumping stations run. Mogra is stalled and Mahul awaits land: the two remaining stations are a decision on land and contract, not on pumps.'), evidenceIds: ['ev-brimstowad-stations', 'ev-fpj-mogra-status', 'ev-fpj-mahul-status'] },
@@ -223,7 +223,7 @@ export function capabilityAreas(): CapabilityArea[] {
         { label: t('Situation Room'), to: ROUTES.situationRoom },
       ],
       next: t('Station readings over time need read access to the disaster management feed.'),
-      evidenceIds: ['ev-aws-active-api', 'ev-aws-2023', 'ev-rainfall-santacruz-2026', 'ev-rainfall-2005'],
+      evidenceIds: ['ev-aws-active-api', 'ev-aws-2023', 'ev-rainfall-santacruz-2026', 'ev-rainfall-2005', 'ev-rain-santacruz-2026', 'ev-rain-colaba-2026'],
       insights: [
         { kind: 'finding', text: t('120 automatic weather stations are active in the disaster management network, up from 60 reported in 2023.'), evidenceIds: ['ev-aws-active-api', 'ev-aws-2023'] },
       ],
@@ -238,7 +238,7 @@ export function capabilityAreas(): CapabilityArea[] {
       status: 'partial',
       today: [{ label: t('Solid Waste Intelligence'), to: ROUTES.waste }],
       next: t('Ward-level collection and vehicle trips need the Solid Waste Management records.'),
-      evidenceIds: ['ev-waste-tpd', 'ev-kanjurmarg-tpd', 'ev-deonar-tpd-fpj', 'ev-deonar-tpd-orf', 'ev-deonar-bioremediation-official', 'ev-deonar-tender-orf', 'ev-swachh-rank'],
+      evidenceIds: ['ev-waste-tpd', 'ev-kanjurmarg-tpd', 'ev-deonar-tpd-fpj', 'ev-deonar-tpd-orf', 'ev-deonar-bioremediation-official', 'ev-deonar-tender-orf', 'ev-swachh-rank', 'ev-waste-tpd-2026', 'ev-mulund-legacy-2026', 'ev-rts-list'],
       insights: [
         { kind: 'finding', text: t('Kanjurmarg receives 5,900 of the 6,500 MT the city handles a day - about nine-tenths.'), evidenceIds: ['ev-kanjurmarg-tpd', 'ev-waste-tpd'] },
         { kind: 'gap', text: t('Deonar\'s daily intake is reported as 500-700 MT and as 4,000 TPD, and its bioremediation as ₹3,035.55 cr and ₹2,368 cr. Both are kept until confirmed.'), evidenceIds: ['ev-deonar-tpd-fpj', 'ev-deonar-tpd-orf', 'ev-deonar-bioremediation-official', 'ev-deonar-tender-orf'] },
@@ -255,7 +255,7 @@ export function capabilityAreas(): CapabilityArea[] {
       status: 'live',
       today: [{ label: t('Roads Intelligence'), to: ROUTES.roads }],
       next: t('Complaint locations over time need read access to the pothole dashboard\'s records.'),
-      evidenceIds: ['ev-road-network', 'ev-concretisation-576', 'ev-pothole-complaints-2026', 'ev-fpj-ccroads-overall'],
+      evidenceIds: ['ev-road-network', 'ev-concretisation-576', 'ev-pothole-complaints-2026', 'ev-fpj-ccroads-overall', 'ev-roads-budget-2026-27', 'ev-sion-rob-2026'],
       insights: [
         { kind: 'finding', text: t('Between 10 June and 20 August 2026, 8,032 pothole complaints were made and 7,829 resolved.'), evidenceIds: ['ev-pothole-complaints-2026'] },
       ],
@@ -309,7 +309,7 @@ export function capabilityAreas(): CapabilityArea[] {
       status: 'partial',
       today: [{ label: t('Public Health'), to: ROUTES.health }],
       next: t('Facility-level attendance and bed occupancy need the HMIS extract.'),
-      evidenceIds: ['ev-health-budget-2026-27', 'ev-hbt-dawakhana', 'ev-major-hospital-opd'],
+      evidenceIds: ['ev-health-budget-2026-27', 'ev-hbt-dawakhana', 'ev-major-hospital-opd', 'ev-beds-kem', 'ev-beds-ltmg', 'ev-beds-cooper', 'ev-beds-rajawadi', 'ev-new-beds-2026-27', 'ev-malaria-2026', 'ev-dengue-2026', 'ev-lepto-2026'],
     },
     {
       n: 13,
@@ -337,7 +337,7 @@ export function capabilityAreas(): CapabilityArea[] {
       status: 'partial',
       today: [{ label: t('Environment Intelligence'), to: ROUTES.environment }],
       next: t('Station readings over time need a read feed from the monitoring networks.'),
-      evidenceIds: ['ev-aq-stations'],
+      evidenceIds: ['ev-aq-stations', 'ev-aqi-2026-10-12', 'ev-caaqms-count-2026'],
     },
     {
       n: 15,

@@ -23,7 +23,9 @@ import type {
 } from '@/types/city-domains'
 import type { RiskDriver } from '@/types/finance'
 import { det, isoDaysFromAnchor, isoFromAnchor } from '@/utils/deterministic'
-import { WARDS, WARD_BY_ID, wardName } from './reference'
+import { WARDS, WARD_BY_ID, wardIdFromCode, wardName } from './reference'
+import { bmcWardCodeAt } from './bmc-ward-lookup'
+import { bmcPumpingStations, bmcTreatmentPlants, bmcWasteFacilities } from '@/config/bmc/facilities'
 import { severityFromScore } from './finance.data'
 import { CITY_SCALE, REFERENCE_SCALE, scaled, scaledCount } from './scale'
 import { facilityName, localityNames, waterSourceNames } from './naming'
@@ -604,8 +606,37 @@ registerLayer(() => {
   const facilityCount = scaledCount(9, population, 3)
   const facilityLocalities = localityNames(facilityCount)
 
+  // Brihanmumbai's treatment facilities are the Mumbai Sewage Disposal
+  // Project's eight plants at their published capacities
+  // (`ev-stp-capacities-2026`, `ev-stp-colaba`); load and compliance stay
+  // modelled. Plants still being upgraded are marked for review.
+  const bmcPlants =
+    corp.id === 'bmc'
+      ? bmcTreatmentPlants().map((plant, i) => {
+          const r = det(`sewfac:bmc:${plant.name}`)
+          const load = Math.round(plant.capacityMld * r.float(0.55, 0.98))
+          const compliance = r.round(62, 98, 1)
+          const upgrading = plant.status.startsWith('due')
+          return {
+            id: `swg-fac-${i + 1}`,
+            tenantId: TENANT_ID,
+            name: `${plant.name} (${plant.status})`,
+            wardId: wardIdFromCode(bmcWardCodeAt(plant.lat, plant.lng)),
+            type: 'treatment-facility' as const,
+            designCapacityMld: plant.capacityMld,
+            currentLoadMld: load,
+            utilisationPct: Math.round((load / plant.capacityMld) * 1000) / 10,
+            treatmentCompliancePct: compliance,
+            blockages30d: r.int(0, 6),
+            overflowEvents30d: r.int(0, 5),
+            conditionIndex: r.int(45, 94),
+            state: upgrading ? ('review-required' as const) : stateFrom(compliance),
+          }
+        })
+      : null
+
   SEWERAGE_NODES = [
-    ...facilityLocalities.map((locality, i) => {
+    ...(bmcPlants ?? facilityLocalities.map((locality, i) => {
       const r = det(`sewfac:${locality}`)
       const ward = r.pick(WARDS)
       const capacity = Math.max(1, Math.round((sewerageTreatmentMld / facilityCount) * r.float(0.45, 1.6)))
@@ -626,7 +657,7 @@ registerLayer(() => {
         conditionIndex: r.int(45, 94),
         state: stateFrom(compliance),
       }
-    }),
+    })),
     ...WARDS.map((ward, i) => {
       const r = det(`sewnode:${ward.id}`)
       const share = ward.population / totalWardPopulation
@@ -741,7 +772,34 @@ registerLayer(() => {
   const pumpCount = scaledCount(18, scale.area, 5)
   const pumpCapacityCeiling = Math.max(10, scaled(68, scale.area, 10))
 
-  PUMPING_STATIONS = localityNames(pumpCount).map((locality, i) => {
+  // Brihanmumbai's six BRIMSTOWAD stations at their real sites, each pump
+  // lifting 6 m3/s (`ev-pump-britannia`); readiness stays modelled.
+  const bmcPumps =
+    corp.id === 'bmc'
+      ? bmcPumpingStations().map((station, i) => {
+          const r = det(`pump:bmc:${station.name}`)
+          const operational = Math.max(1, station.pumps - r.weighted([[0, 6], [1, 3], [2, 1]] as const))
+          const standby = r.chance(0.8)
+          const readiness = Math.min(100, Math.round((operational / station.pumps) * 70 + (standby ? 30 : 8)))
+          return {
+            id: `ps-${String(i + 1).padStart(2, '0')}`,
+            tenantId: TENANT_ID,
+            name: station.name,
+            wardId: wardIdFromCode(bmcWardCodeAt(station.lat, station.lng)),
+            capacityCumecs: station.pumps * 6,
+            pumpsTotal: station.pumps,
+            pumpsOperational: operational,
+            standbyPowerAvailable: standby,
+            readinessIndex: readiness,
+            state: stateFrom(readiness),
+            lastTestedAt: isoDaysFromAnchor(-r.int(1, 45)),
+            location: { lat: station.lat, lng: station.lng },
+            hoursRun30d: r.int(0, 220),
+          }
+        })
+      : null
+
+  PUMPING_STATIONS = bmcPumps ?? localityNames(pumpCount).map((locality, i) => {
     const r = det(`pump:${locality}`)
     const floodWards = WARDS.filter((w) => w.floodProne)
     const ward = floodWards.length > 0 ? r.pick(floodWards) : r.pick(WARDS)
@@ -959,7 +1017,33 @@ registerLayer(() => {
     })
   })
 
-  WASTE_FACILITIES = wasteFacilitySpecs().map((spec, i) => {
+  // Brihanmumbai's named processing, disposal and transfer sites
+  // (`ev-rts-list`, `ev-mulund-legacy-2026`, `ev-kanjurmarg-tpd`,
+  // `ev-deonar-tpd-fpj`). Kanjurmarg's and Deonar's daily
+  // intake are as reported (5,900 and 500-700 t); every capacity is approximate.
+  const bmcWaste =
+    corp.id === 'bmc'
+      ? bmcWasteFacilities().map((site, i) => {
+          const r = det(`wfac:bmc:${site.name}`)
+          const load = site.capacityTpd > 0 ? (site.loadTpd ?? Math.round(site.capacityTpd * r.float(0.6, 0.98))) : 0
+          const util = site.capacityTpd > 0 ? Math.round((load / site.capacityTpd) * 1000) / 10 : 0
+          return {
+            id: `wf-${i + 1}`,
+            tenantId: TENANT_ID,
+            name: site.name,
+            type: site.type,
+            wardId: wardIdFromCode(bmcWardCodeAt(site.lat, site.lng)),
+            capacityTpd: site.capacityTpd,
+            currentLoadTpd: load,
+            utilisationPct: util,
+            state: site.capacityTpd === 0 ? ('planned' as const) : stateFrom(100 - Math.max(0, util - 70) * 2),
+            location: { lat: site.lat, lng: site.lng },
+            remainingLifeYears: site.type === 'landfill' && site.capacityTpd > 0 ? r.int(1, 5) : undefined,
+          }
+        })
+      : null
+
+  WASTE_FACILITIES = bmcWaste ?? wasteFacilitySpecs().map((spec, i) => {
     const r = det(`wfac:${spec.name}`)
     const ward = r.pick(WARDS)
     const load = spec.capacity > 0 ? Math.round(spec.capacity * r.float(0.55, 1.04)) : 0

@@ -324,7 +324,7 @@ export function buildMunicipalityConfig(corp: CorporationRef): MunicipalityConfi
       centre: corp.latLng,
       provenanceStatement:
         corp.id === 'bmc'
-          ? t('Illustrative spatial representation. Boundaries are generated for demonstration and are not official GIS boundaries.')
+          ? t('Ward outlines are the 24 administrative wards (2011 structure) from DataMeet’s open BMC ward boundaries (CC BY-SA 2.5 India), simplified for display. They are not BMC’s official GIS layer.')
           : t(
               'Illustrative spatial representation. {0} names and counts are {1}’s own published administrative divisions; the boundaries are a schematic tessellation generated for demonstration and are not official GIS boundaries.',
               unit,

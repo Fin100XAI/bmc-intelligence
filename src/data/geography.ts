@@ -2,6 +2,8 @@ import type { GeoPoint } from '@/types/common'
 import { activeCorporation } from '@/config/municipality.config'
 import { resolveDivisions, resolveZoneCount } from '@/config/corporations'
 import { generateCityGeography } from './geo-generator'
+import { bmcWards } from '@/config/bmc/wards'
+import { BMC_WARD_BOUNDARIES } from './bmc-ward-boundaries'
 import { registerLayer } from './runtime'
 import { t } from '@/i18n'
 
@@ -607,6 +609,24 @@ export function polygonPoints(polygon: Array<[number, number]>): string {
  * These three exports are LIVE BINDINGS, rebuilt on every corporation switch.
  * ------------------------------------------------------------------- */
 
+/**
+ * Brihanmumbai's wards with their surveyed shape, area and centroid
+ * (`./bmc-ward-boundaries.ts`, DataMeet, CC BY-SA 2.5 India) and their Census
+ * 2011 population (`@/config/bmc/wards`, summing to 12,442,373). Names, zones
+ * and the flood flag stay as authored above. A ward missing from either source
+ * keeps its authored figures.
+ */
+function withSurveyedMumbaiWards(specs: WardGeometrySpec[]): WardGeometrySpec[] {
+  const census = new Map(bmcWards().map((w) => [w.code, w.population2011]))
+  return specs.map((spec) => {
+    const bound = BMC_WARD_BOUNDARIES[spec.code]
+    const population = census.get(spec.code) ?? spec.population
+    return bound
+      ? { ...spec, polygon: bound.polygon, centroid: bound.centroid, areaSqKm: bound.areaSqKm, population }
+      : { ...spec, population }
+  })
+}
+
 export let WARD_GEOMETRY: WardGeometrySpec[] = MUMBAI_WARD_GEOMETRY
 export let ZONE_SPECS: ZoneSpec[] = MUMBAI_ZONE_SPECS
 export let MAP_BACKDROP_FEATURES: MapBackdropFeature[] = MUMBAI_BACKDROP_FEATURES
@@ -615,9 +635,14 @@ registerLayer(() => {
   const corp = activeCorporation
 
   if (corp.id === 'bmc') {
-    WARD_GEOMETRY = MUMBAI_WARD_GEOMETRY
+    WARD_GEOMETRY = withSurveyedMumbaiWards(MUMBAI_WARD_GEOMETRY)
     ZONE_SPECS = MUMBAI_ZONE_SPECS
-    MAP_BACKDROP_FEATURES = MUMBAI_BACKDROP_FEATURES
+    // The hand-drawn sea, harbour and creek shapes were placed for the
+    // schematic outlines and no longer line up with surveyed ones, so the
+    // backdrop is plain water behind the land the wards themselves draw.
+    MAP_BACKDROP_FEATURES = [
+      { id: 'sea', label: t('Arabian Sea'), kind: 'water', polygon: [[0, 0], [100, 0], [100, 100], [0, 100]] },
+    ]
     return
   }
 
