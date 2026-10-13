@@ -1894,4 +1894,8 @@ export const MR_PART_54: Record<string, string> = {
     "झोन इंटेलिजन्स",
   "Zones supplied within 5% of assessed demand":
     "मूल्यांकित मागणीच्या 5% च्या आत पाणीपुरवठा झालेले झोन",
+  "Hide legend":
+    "संकेतसूची लपवा",
+  "Legend":
+    "संकेतसूची",
 }

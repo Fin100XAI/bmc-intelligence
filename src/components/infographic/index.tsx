@@ -91,7 +91,7 @@ export function KpiTile({
       </span>
       <div className="min-w-0">
         <p className={cn('numeric text-2xl leading-none font-bold tabular-nums', s ? s.value : TONE_TEXT[tone])}>{value}</p>
-        <p className="mt-1 truncate text-[0.6875rem] font-semibold text-ink-700">{label}</p>
+        <p className="mt-1 line-clamp-2 text-[0.6875rem] leading-snug font-semibold text-ink-700">{label}</p>
         {reading ? <p className="truncate text-[0.625rem] text-ink-500">{reading}</p> : null}
       </div>
     </div>

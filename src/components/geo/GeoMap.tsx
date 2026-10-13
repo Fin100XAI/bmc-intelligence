@@ -161,6 +161,11 @@ export function GeoMap({
   const rendererRef = useRef<Canvas | null>(null)
   const leafletRef = useRef<typeof import('leaflet') | null>(null)
   const [status, setStatus] = useState<EngineStatus>(() => (canRunLeaflet() ? 'loading' : 'fallback'))
+  // On a phone the legend would cover a third of the city, so it starts folded
+  // behind a button there; from `sm` up it is open as before.
+  const [legendOpen, setLegendOpen] = useState(
+    () => typeof window === 'undefined' || !window.matchMedia || window.matchMedia('(min-width: 640px)').matches,
+  )
   const [tilesFailed, setTilesFailed] = useState(false)
 
   const shown = useMemo(
@@ -359,9 +364,31 @@ export function GeoMap({
         </div>
       ) : null}
 
-      {(legend && legend.length > 0) || approxCount > 0 ? (
+      {((legend && legend.length > 0) || approxCount > 0) && !legendOpen ? (
+        <button
+          type="button"
+          onClick={() => setLegendOpen(true)}
+          aria-expanded={false}
+          className="absolute bottom-2 left-2 z-[1000] rounded-md border border-ink-200 bg-surface/95 px-2 py-1 text-[0.6875rem] font-semibold text-ink-700 shadow-xs"
+        >
+          {t('Legend')}
+        </button>
+      ) : null}
+
+      {((legend && legend.length > 0) || approxCount > 0) && legendOpen ? (
         <div className="absolute bottom-2 left-2 z-[1000] max-w-[260px] rounded-md border border-ink-200 bg-surface/95 px-2 py-1.5 shadow-xs">
-          {legendTitle ? <p className="mb-1 text-[0.59375rem] font-bold tracking-[0.08em] text-ink-500 uppercase">{legendTitle}</p> : null}
+          <div className="flex items-start gap-2">
+            {legendTitle ? <p className="mb-1 min-w-0 flex-1 text-[0.59375rem] font-bold tracking-[0.08em] text-ink-500 uppercase">{legendTitle}</p> : <span className="flex-1" />}
+            <button
+              type="button"
+              onClick={() => setLegendOpen(false)}
+              aria-expanded
+              aria-label={t('Hide legend')}
+              className="-mt-0.5 shrink-0 text-[0.75rem] leading-none text-ink-400 hover:text-ink-700 sm:hidden"
+            >
+              ×
+            </button>
+          </div>
           {(legend ?? []).map((l) => (
             <div key={l.label} className="flex items-center gap-1.5 text-[0.65625rem] text-ink-700">
               <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: l.color }} aria-hidden />
