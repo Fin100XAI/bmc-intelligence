@@ -29,3 +29,8 @@ vite.config.ts.timestamp-*
 
 # Persisted demonstration state (dev-server only, see scripts/state-persistence-plugin.ts)
 .data/
+
+# Generated working files (i18n chunking, map preview) - local only
+scripts/.i18n-chunks*/
+scripts/.i18n-keys.json
+map-preview.html

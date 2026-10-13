@@ -54,8 +54,7 @@ import { t } from '@/i18n'
  * Executive Overview — the corporation's own record of its position, and the
  * screen every principal who may read it lands on after sign-in.
  *
- * The layout is the one the NMMC and Thane (TMC) platforms in this programme use, so
- * the two read as one family: a six-figure status strip, then the city health
+ * The layout follows the programme's shared executive overview: a six-figure status strip, then the city health
  * index beside revenue & finance and service delivery, then the ward picture,
  * capital works, the map and the live column below.
  *
