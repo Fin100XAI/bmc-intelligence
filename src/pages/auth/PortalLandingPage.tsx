@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   ArrowRight,
@@ -29,10 +29,13 @@ import {
   Siren,
   Smartphone,
   Trash2,
+  Users,
+  Vote,
+  Map as MapIcon,
   Waves,
   type LucideIcon,
 } from 'lucide-react'
-import { corporationName } from '@/config/corporations'
+import { cityName, corporationName } from '@/config/corporations'
 import { coverPhotos, type CoverPhoto } from '@/config/coverPhotos'
 import { municipality } from '@/config/municipality.config'
 import { NAV_SECTIONS, ROUTES } from '@/config/navigation'
@@ -186,9 +189,17 @@ let SURFACES: PortalSurface[] = build$SURFACES()
    The banner
    ========================================================================== */
 
+/** The hero figures a slide can spotlight - keys into `heroFacts`. */
+type HeroFactId = 'population' | 'seats' | 'budget' | 'water' | 'area' | 'wards' | 'sewage'
+
 interface BannerSlide {
+  /** The short tab label the slide is known by in the slider controls. */
+  kicker: string
   heading: string
-  features: string[]
+  /** One sentence. A rotating band read in seven seconds holds one idea. */
+  lead: string
+  /** Three figures, the first spotlighted. Missing ones are skipped. */
+  facts: HeroFactId[]
   action: string
   to: string
   /** The civic photograph that fills the band behind the copy. */
@@ -196,41 +207,31 @@ interface BannerSlide {
 }
 
 function build$BANNER_SLIDES(): BannerSlide[] {
-  const unit = municipality.terminology.primaryUnitSingular
   const photos = coverPhotos()
   return [
     {
+      kicker: t('The platform'),
       heading: municipality.branding.productShortName,
-      features: [
-        t('One decision surface for every municipal mandate'),
-        t('English and Marathi throughout, figures unchanged'),
-        t('Every action recorded against the post that took it'),
-        t('Deploys to any corporation in the state unchanged'),
-      ],
+      lead: t('One decision surface for every municipal mandate - in English and Marathi, every action recorded against the post that took it.'),
+      facts: ['population', 'area', 'wards'],
       action: t('See what it decides'),
       to: '#surfaces',
       photo: photos.skylineNight,
     },
     {
+      kicker: t('City operations'),
       heading: t('The city on one screen, ordered by what needs deciding'),
-      features: [
-        t('Live incidents, escalations and the control-room picture'),
-        t('Each {0} scored on service, equity and delivery', unit),
-        t('Rain, tide and flooding spots read together, so a cause is read once'),
-        t('Standing resilience picture ahead of the incident'),
-      ],
+      lead: t('Live incidents, ward performance and rain, tide and flooding spots - read together, so a cause is read once.'),
+      facts: ['water', 'sewage', 'seats'],
       action: t('Open the commissioner’s cockpit'),
       to: ROUTES.cockpit,
       photo: photos.seaLink,
     },
     {
+      kicker: t('Revenue and finance'),
       heading: t('Every rupee demanded, collected and accounted for'),
-      features: [
-        t('Demand, collection and arrears against the register'),
-        t('A recovery worklist ranked by what is recoverable'),
-        t('Contractors read across their whole book of work'),
-        t('Budget heads tracked while there is time to spend them'),
-      ],
+      lead: t('Demand, collection and arrears against the register, with a recovery worklist ranked by what is recoverable.'),
+      facts: ['budget', 'population', 'wards'],
       action: t('Open revenue and finance'),
       to: ROUTES.financialIntelligence,
       photo: photos.bmcHeadOffice,
@@ -561,6 +562,24 @@ const ASSURANCE_BARS = [
 /** Paired one-to-one with `CARD_WASH`, for the two-item notice feature cards. */
 const NOTICE_ACCENT = ['border-b-google-blue-600', 'border-b-google-red-600'] as const
 
+/**
+ * Icon, tone and bento cell for each figure in "The city at a glance". The
+ * cells tile the grid in `GLANCE_ORDER`: population on a photograph, the rest
+ * each on its own hue.
+ */
+const GLANCE_LOOK: Record<HeroFactId, { icon: LucideIcon; tone: string; cell: string }> = {
+  population: { icon: Users, tone: 'photo', cell: 'col-span-2 lg:col-span-1' },
+  seats: { icon: Vote, tone: 'rose', cell: '' },
+  budget: { icon: IndianRupee, tone: 'green', cell: '' },
+  water: { icon: Droplets, tone: 'sky', cell: '' },
+  area: { icon: MapIcon, tone: 'amber', cell: '' },
+  wards: { icon: Building2, tone: 'violet', cell: '' },
+  sewage: { icon: Waves, tone: 'teal', cell: '' },
+}
+
+/** Display order for the bento grid - see `GLANCE_LOOK`. */
+const GLANCE_ORDER: HeroFactId[] = ['population', 'budget', 'seats', 'wards', 'water', 'sewage', 'area']
+
 /** The hero's own bullet markers, cycled the same way. */
 const HERO_DOT_HUES = [
   'bg-google-blue-400',
@@ -667,49 +686,73 @@ export function PortalLandingPage(): React.JSX.Element {
   const photos = coverPhotos()
   /* Headline figures for the hero. Every value is read from the corporation
      record (src/config/corporations.ts), where each carries its source. */
-  const heroFacts = [
+  const heroFacts = ([
     {
+      id: 'population',
       label: t('Residents in corporation limits'),
       value: formatNumber(corporation.population2011),
       source: t('Census of India 2011'),
     },
     {
+      id: 'seats',
       label: t('Corporator seats'),
       value: corporation.electoralWards ? formatNumber(corporation.electoralWards) : '—',
       source: t('Elected corporators'),
     },
     {
+      id: 'budget',
       label: t('Budget {0}', corporation.budgetFinancialYear ?? ''),
       value: corporation.budgetCrore ? t('₹{0} cr', formatNumber(corporation.budgetCrore, 2)) : '—',
       source: t('Approved by the General Body'),
     },
     {
+      id: 'water',
       label: t('Water supplied daily'),
       value: corporation.waterSupplyMLD ? t('{0} MLD', formatNumber(corporation.waterSupplyMLD)) : '—',
       source: t('Reported daily supply'),
     },
     {
+      id: 'area',
       label: t('Area'),
       value: t('{0} km²', formatNumber(corporation.areaSqKm, 2)),
       source: t('Corporation jurisdiction'),
     },
     {
+      id: 'wards',
       label: t('Administrative wards'),
       value: formatNumber(corporation.administrativeWards ?? municipality.administrativeUnits.wards),
       source: t('Ward offices of the corporation'),
     },
     {
+      id: 'sewage',
       label: t('Sewage treatment'),
       value: corporation.sewageTreatmentMLD ? t('{0} MLD', formatNumber(corporation.sewageTreatmentMLD)) : '—',
       source: t('Combined treatment capacity'),
     },
-  ].filter((fact) => fact.value !== '—')
+  ] satisfies { id: HeroFactId; label: string; value: string; source: string }[]).filter((fact) => fact.value !== '—')
 
   const [query, setQuery] = useState('')
   const [fontStep, setFontStep] = useState(0)
   const [feedPaused, setFeedPaused] = useState(false)
   const [bannerSlide, setBannerSlide] = useState(0)
   const [bannerPaused, setBannerPaused] = useState(false)
+  const [bannerHovered, setBannerHovered] = useState(false)
+  const glanceRef = useRef<HTMLElement>(null)
+  // Starts true where there is no IntersectionObserver (tests, old browsers),
+  // so the figures are never left hidden waiting for a scroll that cannot fire.
+  const [glanceSeen, setGlanceSeen] = useState(() => typeof IntersectionObserver === 'undefined')
+  useEffect(() => {
+    const node = glanceRef.current
+    if (glanceSeen || !node) return
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) setGlanceSeen(true)
+      },
+      { threshold: 0.15 },
+    )
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [glanceSeen])
   const [noticeTab, setNoticeTab] = useState(NOTICE_TABS[0]?.id ?? 'new')
 
   // The related-links carousel runs four to a page and wraps at both ends.
@@ -717,30 +760,12 @@ export function PortalLandingPage(): React.JSX.Element {
   // switch rebuilds the catalogue, and a carousel parked past the last page
   // would render an empty band until the reader happened to press an arrow.
 
-  /**
-   * The banner's rotation.
-   *
-   * Seven seconds, which is long enough to read four bullets and short enough
-   * that a visitor who ignores the dots still sees the second argument.
-   *
-   * Three things stop it: hover, focus inside the band, and a reduced-motion
-   * preference. The last is not a nicety - a slide that changes under a
-   * reader who cannot dismiss it is the failure mode this pattern is known
-   * for, so a stated preference for less motion stops it outright rather than
-   * merely shortening the fade.
-   */
-  useEffect(() => {
-    if (bannerPaused || BANNER_SLIDES.length < 2) return
-    const root = document.documentElement
-    const stillPreferred =
-      root.dataset.motion === 'reduced' ||
-      (root.dataset.motion !== 'full' && window.matchMedia('(prefers-reduced-motion: reduce)').matches)
-    if (stillPreferred) return
-    const timer = window.setInterval(() => {
-      setBannerSlide((current) => (current + 1) % BANNER_SLIDES.length)
-    }, 7000)
-    return () => window.clearInterval(timer)
-  }, [bannerPaused, locale])
+  /* The banner's rotation is driven by the active tab's progress bar
+     (`.mcgm-progress`, seven seconds): the slide advances when the bar
+     finishes. Hover, focus inside the band and the pause button freeze the
+     bar; a reduced-motion preference removes its animation, which stops the
+     rotation outright - a slide that changes under a reader who cannot
+     dismiss it is the failure mode this pattern is known for. */
 
   /**
    * The A- / A / A+ control, doing what the equivalent control on a government
@@ -1177,50 +1202,41 @@ export function PortalLandingPage(): React.JSX.Element {
           </div>
 
           <div
-            className="mx-auto grid max-w-[80rem] grid-cols-1 px-4 pt-14 pb-14 lg:pt-20 lg:pb-20"
-            onMouseEnter={() => setBannerPaused(true)}
-            onMouseLeave={() => setBannerPaused(false)}
-            onFocusCapture={() => setBannerPaused(true)}
-            onBlurCapture={() => setBannerPaused(false)}
+            className="mx-auto grid max-w-[80rem] grid-cols-1 px-4 pt-10 pb-8 sm:pt-14 lg:pt-20 lg:pb-10"
+            onMouseEnter={() => setBannerHovered(true)}
+            onMouseLeave={() => setBannerHovered(false)}
+            onFocusCapture={() => setBannerHovered(true)}
+            onBlurCapture={() => setBannerHovered(false)}
           >
             {BANNER_SLIDES.map((slide, index) => {
               const active = index === bannerSlide
               const Heading = index === 0 ? 'h1' : 'p'
+              const facts = slide.facts
+                .map((id) => heroFacts.find((fact) => fact.id === id))
+                .filter((fact): fact is (typeof heroFacts)[number] => fact !== undefined)
+              const [spotlight, ...supporting] = facts
               return (
                 <div
                   key={slide.heading}
-                  className="mcgm-slide grid grid-cols-1 items-center gap-10 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]"
+                  className="mcgm-slide grid grid-cols-1 items-center gap-8 lg:gap-14 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,0.75fr)]"
                   data-active={active}
                   aria-hidden={!active}
                 >
                   <div className="min-w-0">
-                    <p className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-[0.6875rem] font-bold tracking-[0.14em] text-white uppercase ring-1 ring-white/25 backdrop-blur">
-                      {t('{0} · Maharashtra', corporationName(corporation))}
+                    <p className="inline-flex items-center gap-2 text-[0.75rem] font-bold tracking-[0.16em] text-white/85 uppercase">
+                      <span aria-hidden className={cn('h-2 w-2 rounded-full', HERO_DOT_HUES[index % HERO_DOT_HUES.length])} />
+                      {slide.kicker}
                     </p>
-                    <Heading className="mt-5 max-w-2xl text-[clamp(2rem,4.2vw,3.4rem)] leading-[1.08] font-extrabold tracking-[-0.025em] text-white drop-shadow-[0_2px_12px_rgb(0_0_0/0.45)]">
+                    <Heading className="mt-4 max-w-2xl text-[clamp(2rem,4.6vw,3.75rem)] leading-[1.05] font-extrabold tracking-[-0.03em] text-balance text-white drop-shadow-[0_2px_12px_rgb(0_0_0/0.45)]">
                       {slide.heading}
                     </Heading>
+                    <p className="mt-5 max-w-xl text-[1rem] leading-relaxed text-white/85 sm:text-[1.125rem]">{slide.lead}</p>
 
-                    <ul className="mt-7 grid max-w-2xl grid-cols-1 gap-2.5 sm:grid-cols-2">
-                      {slide.features.map((feature, featureIndex) => (
-                        <li
-                          key={feature}
-                          className="flex items-start gap-2.5 rounded-lg bg-white/10 px-3 py-2 text-[0.875rem] leading-snug text-white/95 ring-1 ring-white/15 backdrop-blur-sm"
-                        >
-                          <span
-                            aria-hidden
-                            className={cn('mt-1.5 h-2 w-2 shrink-0 rounded-full', HERO_DOT_HUES[featureIndex % HERO_DOT_HUES.length])}
-                          />
-                          {feature}
-                        </li>
-                      ))}
-                    </ul>
-
-                    <div className="mt-8 flex flex-wrap items-center gap-3">
+                    <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
                       <a
                         href={signInFor(slide.to, isAuthenticated)}
                         tabIndex={active ? undefined : -1}
-                        className="interactive-surface inline-flex items-center gap-2 rounded-md bg-white px-6 py-3.5 text-[0.9375rem] font-bold text-[color:var(--mcgm-ground-deep)] shadow-lg transition-transform hover:scale-[1.02] hover:bg-white/90"
+                        className="interactive-surface inline-flex items-center gap-2 rounded-full bg-white px-6 py-3.5 text-[0.9375rem] font-bold text-[color:var(--mcgm-ground-deep)] shadow-lg transition-transform hover:scale-[1.02] hover:bg-white/90"
                       >
                         {slide.action}
                         <ArrowRight className="h-4 w-4" aria-hidden />
@@ -1228,78 +1244,99 @@ export function PortalLandingPage(): React.JSX.Element {
                       <a
                         href="#coverage"
                         tabIndex={active ? undefined : -1}
-                        className="interactive-surface inline-flex items-center gap-2 rounded-md px-5 py-3.5 text-[0.9375rem] font-semibold text-white ring-1 ring-white/50 hover:bg-white/10"
+                        className="interactive-surface inline-flex items-center gap-1.5 text-[0.9375rem] font-semibold text-white underline-offset-4 hover:underline"
                       >
                         {t('See what we cover')}
+                        <ArrowRight className="h-4 w-4" aria-hidden />
                       </a>
                     </div>
                   </div>
 
-                  {/* Published figures, in large type on glass. Every value is
-                      read from the corporation record, which carries its source. */}
-                  <div className="hidden grid-cols-2 gap-3 lg:grid">
-                    {heroFacts.map((fact, index) => (
-                      <div
-                        key={fact.label}
-                        className={cn(
-                          'rounded-xl bg-white/10 p-4 ring-1 ring-white/20 backdrop-blur-md',
-                          // An odd count would leave a hole in the two-column
-                          // grid; the lead figure takes the full row instead.
-                          heroFacts.length % 2 === 1 && index === 0 && 'col-span-2',
-                        )}
-                      >
-                        <p className="numeric text-[1.75rem] leading-none font-extrabold text-white">{fact.value}</p>
-                        <p className="mt-1.5 text-[0.75rem] leading-snug font-semibold text-white/90">{fact.label}</p>
-                        <p className="mt-0.5 text-[0.625rem] text-white/60">{fact.source}</p>
+                  {/* Three published figures per slide, the first spotlighted.
+                      Every value is read from the corporation record, which
+                      carries its source. */}
+                  {spotlight && (
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="col-span-2 rounded-2xl bg-white/15 p-5 ring-1 ring-white/25 backdrop-blur-md sm:p-6">
+                        <p className="numeric text-[2.25rem] leading-none font-extrabold break-words text-white sm:text-[3rem]">{spotlight.value}</p>
+                        <p className="mt-2 text-[0.875rem] font-semibold text-white/90">{spotlight.label}</p>
+                        <p className="mt-0.5 text-[0.6875rem] text-white/60">{spotlight.source}</p>
                       </div>
-                    ))}
-                  </div>
+                      {supporting.map((fact) => (
+                        <div key={fact.id} className="min-w-0 rounded-xl bg-white/10 p-3.5 ring-1 ring-white/15 backdrop-blur-md sm:p-4">
+                          <p className="numeric text-[1.25rem] leading-none font-extrabold break-words text-white sm:text-[1.5rem]">{fact.value}</p>
+                          <p className="mt-1.5 text-[0.75rem] leading-snug font-semibold text-white/85">{fact.label}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )
             })}
           </div>
-        </section>
 
-        {/* The slider's own controls, on the pale ground under the band so
-            they never sit over the artwork. A dot per slide, plus the
-            corporation strip and the officer's door - neither of which the
-            reference band has an equivalent for, and neither of which this
-            page can do without. */}
-        <div className="border-b border-ink-200 bg-surface">
-          <div className="mx-auto flex max-w-[80rem] flex-col gap-5 px-4 py-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2" role="tablist" aria-label={t('Platform highlights')}>
-                {BANNER_SLIDES.map((slide, index) => (
+          {/* The slider's controls: one labelled tab per slide, each with a bar
+              that fills over the slide's time on screen. The slide advances
+              when the bar finishes, so pausing the bar pauses the slider, and
+              a reduced-motion preference (which removes the animation) stops
+              it outright. */}
+          <div className="mx-auto flex max-w-[80rem] items-center gap-3 px-4 pb-8 lg:pb-12">
+            <div className="grid flex-1 grid-cols-3 gap-2 sm:gap-4" role="tablist" aria-label={t('Platform highlights')}>
+              {BANNER_SLIDES.map((slide, index) => {
+                const active = index === bannerSlide
+                return (
                   <button
                     key={slide.heading}
                     type="button"
                     role="tab"
-                    aria-selected={index === bannerSlide}
+                    aria-selected={active}
                     aria-label={t('Show highlight {0}', formatNumber(index + 1))}
                     onClick={() => {
                       setBannerSlide(index)
                       setBannerPaused(true)
                     }}
-                    className="mcgm-dot relative h-2 w-2 rounded-full before:absolute before:-inset-2.5 before:content-['']"
-                    data-active={index === bannerSlide}
-                  />
-                ))}
-              </div>
-              <button
-                type="button"
-                onClick={() => setBannerPaused((paused) => !paused)}
-                aria-pressed={bannerPaused}
-                className="interactive-surface rounded p-1 text-ink-400 hover:bg-ink-100 hover:text-ink-700"
-                title={bannerPaused ? t('Resume the banner') : t('Pause the banner')}
-                aria-label={bannerPaused ? t('Resume the banner') : t('Pause the banner')}
-              >
-                {bannerPaused ? (
-                  <Play className="h-3.5 w-3.5" aria-hidden />
-                ) : (
-                  <Pause className="h-3.5 w-3.5" aria-hidden />
-                )}
-              </button>
+                    className="group min-w-0 py-1 text-left"
+                  >
+                    <span className="mcgm-track block">
+                      {active && (
+                        <span
+                          key={`${bannerSlide}-${locale}`}
+                          className="mcgm-progress block"
+                          data-paused={bannerPaused || bannerHovered}
+                          onAnimationEnd={() => setBannerSlide((current) => (current + 1) % BANNER_SLIDES.length)}
+                        />
+                      )}
+                    </span>
+                    <span
+                      className={cn(
+                        'mt-2 flex items-baseline gap-2 text-[0.75rem] font-semibold transition-colors',
+                        active ? 'text-white' : 'text-white/55 group-hover:text-white/85',
+                      )}
+                    >
+                      <span className="numeric">{String(index + 1).padStart(2, '0')}</span>
+                      <span className="hidden truncate sm:inline">{slide.kicker}</span>
+                    </span>
+                  </button>
+                )
+              })}
             </div>
+            <button
+              type="button"
+              onClick={() => setBannerPaused((paused) => !paused)}
+              aria-pressed={bannerPaused}
+              className="interactive-surface shrink-0 rounded-full p-2 text-white/80 ring-1 ring-white/30 hover:bg-white/10 hover:text-white"
+              title={bannerPaused ? t('Resume the banner') : t('Pause the banner')}
+              aria-label={bannerPaused ? t('Resume the banner') : t('Pause the banner')}
+            >
+              {bannerPaused ? <Play className="h-3.5 w-3.5" aria-hidden /> : <Pause className="h-3.5 w-3.5" aria-hidden />}
+            </button>
+          </div>
+        </section>
+
+        {/* The corporation strip and the officer's door, on the pale ground
+            under the band. */}
+        <div className="border-b border-ink-200 bg-surface">
+          <div className="mx-auto flex max-w-[80rem] flex-col gap-5 px-4 py-4 lg:flex-row lg:items-center lg:justify-between">
 
             {/* The active corporation's own figures. Deliberately labelled
                 with literal terms ("Administrative wards", "Zones")
@@ -1344,6 +1381,67 @@ export function PortalLandingPage(): React.JSX.Element {
             </a>
           </div>
         </div>
+
+        {/* ============================================================ */}
+        {/* The city at a glance - every published headline figure       */}
+        {/* ============================================================ */}
+        {/* The banner spotlights three figures per slide; this is where all
+            of them are read together, each with its source - a light band
+            (so it never reads as a second banner) with a bento grid of solid
+            colour tiles: population on a photograph of the city, the rest
+            each on its own hue. Cards rise into place once, when the band
+            scrolls in. */}
+        <section ref={glanceRef} aria-labelledby="glance-heading" className="glance-band" data-seen={glanceSeen}>
+          <div className="mx-auto max-w-[80rem] px-4 py-10 lg:py-12">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+              <div>
+                <p className="glance-kicker text-[0.75rem] font-bold tracking-[0.18em] uppercase">{t('{0} in figures', cityName(corporation))}</p>
+                <h2 id="glance-heading" className="mt-2 text-[clamp(1.5rem,3vw,2.25rem)] leading-[1.1] font-extrabold tracking-[-0.03em] text-ink-900">
+                  {t('The city at a glance')}
+                </h2>
+              </div>
+              <p className="max-w-md text-[0.875rem] leading-relaxed text-ink-600">
+                {t('Every figure is the corporation’s own published record, with its source beneath it.')}
+              </p>
+            </div>
+            <ul className="mt-7 grid grid-cols-2 gap-2.5 lg:grid-cols-7 lg:gap-3">
+              {[...heroFacts].sort((a, b) => GLANCE_ORDER.indexOf(a.id) - GLANCE_ORDER.indexOf(b.id)).map((fact, index) => {
+                const look = GLANCE_LOOK[fact.id]
+                const Icon = look.icon
+                const hero = fact.id === 'population'
+                return (
+                  <li
+                    key={fact.id}
+                    className={cn('glance-card flex min-w-0 flex-col p-3.5 xl:p-4', look.cell, `glance-card--${look.tone}`)}
+                    style={{ animationDelay: `${index * 90}ms` }}
+                  >
+                    {hero && (
+                      <span aria-hidden className="absolute inset-0 -z-10">
+                        <img
+                          src={photos.marineDrive.src}
+                          alt=""
+                          loading="lazy"
+                          decoding="async"
+                          style={{ objectPosition: photos.marineDrive.focus }}
+                          className="h-full w-full object-cover"
+                        />
+                        <span className="glance-photo-shade absolute inset-0" />
+                      </span>
+                    )}
+                    <span className="glance-icon inline-flex h-8 w-8 items-center justify-center rounded-lg">
+                      <Icon className="h-4 w-4" aria-hidden />
+                    </span>
+                    <p className="glance-value numeric mt-4 text-[1.5rem] leading-none font-extrabold tracking-[-0.03em] whitespace-nowrap lg:text-[1.0625rem] xl:text-[1.3rem]">
+                      {fact.value}
+                    </p>
+                    <p className="mt-2 text-[0.75rem] leading-snug font-semibold text-white xl:text-[0.8125rem]">{fact.label}</p>
+                    <p className="mt-auto pt-1 text-[0.625rem] leading-snug text-white/65">{fact.source}</p>
+                  </li>
+                )
+              })}
+            </ul>
+          </div>
+        </section>
 
         {/* ============================================================ */}
         {/* What we cover - real photographs of Mumbai                   */}

@@ -1904,4 +1904,14 @@ export const MR_PART_54: Record<string, string> = {
     "संकेतसूची लपवा",
   "Legend":
     "संकेतसूची",
+
+  // --- Landing page: slide tabs and the city at a glance ---
+  'One decision surface for every municipal mandate - in English and Marathi, every action recorded against the post that took it.': 'प्रत्येक महानगरपालिका आदेशासाठी एकच निर्णय पृष्ठ - इंग्रजी व मराठीत, प्रत्येक कृती ती करणाऱ्या पदाच्या नावे नोंदवली जाते.',
+  'City operations': 'शहर कामकाज',
+  'Live incidents, ward performance and rain, tide and flooding spots - read together, so a cause is read once.': 'सद्यस्थितीतील घटना, विभागांची कामगिरी आणि पाऊस, भरती व पूरप्रवण ठिकाणे - एकत्र वाचली जातात, त्यामुळे कारण एकदाच समजते.',
+  'Revenue and finance': 'महसूल व वित्त',
+  'Demand, collection and arrears against the register, with a recovery worklist ranked by what is recoverable.': 'नोंदवहीच्या तुलनेत मागणी, वसुली व थकबाकी, आणि काय वसूल होऊ शकते त्यानुसार क्रम लावलेली वसुली कार्यसूची.',
+  '{0} in figures': 'आकड्यांत {0}',
+  'The city at a glance': 'एका दृष्टिक्षेपात शहर',
+  'Every figure is the corporation’s own published record, with its source beneath it.': 'प्रत्येक आकडा महानगरपालिकेच्या स्वतःच्या प्रकाशित नोंदीतून घेतला आहे, त्याचा स्रोत त्याखाली दिला आहे.',
 }

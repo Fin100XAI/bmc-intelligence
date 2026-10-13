@@ -176,8 +176,6 @@ export const MR_PART_50: Record<string, string> = {
     'उच्च भरतीवेळचा मुसळधार पाऊस, पाणी साचण्याची ठिकाणे आणि आयएमडी मुंबईच्या सूचना - सर्वात महत्त्वाचा ऋतू.',
   'The seven lakes from source to tap, and the sewage treatment that follows.':
     'स्रोतापासून नळापर्यंत सात तलाव, आणि त्यानंतरची मलनिःसारण प्रक्रिया.',
-  'Rain, tide and flooding spots read together, so a cause is read once':
-    'पाऊस, भरती आणि पाणी साचण्याची ठिकाणे एकत्रित वाचली जातात, त्यामुळे कारण एकदाच समजते',
   'Rivers, nullahs & storm water':
     'नद्या, नाले आणि पर्जन्यजल',
   'The Mithi and the city’s nullahs, pumping stations, flooding spots and the subways that flood first.':

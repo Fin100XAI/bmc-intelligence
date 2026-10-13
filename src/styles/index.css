@@ -626,15 +626,146 @@
       visibility 0s;
   }
 
-  .mcgm-dot {
-    background: rgb(255 255 255 / 0.34);
-    transition:
-      width 260ms var(--ease-calm),
-      background-color 260ms var(--ease-calm);
+  /* The slider tabs: a hairline track per slide, and on the active one a bar
+     that fills over the slide's time on screen. The slide advances on the
+     bar's `animationend`, so this duration IS the rotation interval. */
+  .mcgm-track {
+    position: relative;
+    height: 3px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: rgb(255 255 255 / 0.25);
   }
-  .mcgm-dot[data-active='true'] {
-    width: 1.5rem;
+  .mcgm-progress {
+    height: 100%;
+    border-radius: inherit;
     background: var(--mcgm-ring);
+    transform-origin: left center;
+    animation: mcgm-progress 7s linear forwards;
+  }
+  .mcgm-progress[data-paused='true'] {
+    animation-play-state: paused;
+  }
+  @keyframes mcgm-progress {
+    from {
+      transform: scaleX(0);
+    }
+    to {
+      transform: scaleX(1);
+    }
+  }
+
+  /* "The city at a glance": the headline figures as a bento grid of solid
+     colour tiles on a light, dotted ground - deliberately the opposite of the
+     dark banner above it, so the two read as different sections. */
+  .glance-band {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    background:
+      radial-gradient(38% 55% at 100% 0%, rgb(26 115 232 / 0.10) 0%, transparent 70%),
+      radial-gradient(35% 55% at 0% 100%, rgb(249 171 0 / 0.10) 0%, transparent 70%),
+      radial-gradient(circle at 1px 1px, rgb(16 29 69 / 0.09) 1px, transparent 0) 0 0 / 22px 22px,
+      #f6f8fd;
+  }
+  .glance-kicker {
+    color: #1a73e8;
+  }
+  .glance-card {
+    --glance-from: #1a73e8;
+    --glance-to: #0b4fb3;
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    border-radius: 1.25rem;
+    color: #ffffff;
+    background: linear-gradient(140deg, var(--glance-from), var(--glance-to));
+    box-shadow: 0 22px 40px -26px color-mix(in srgb, var(--glance-to) 90%, #000000);
+    transition:
+      transform 260ms var(--ease-calm),
+      box-shadow 260ms var(--ease-calm);
+  }
+  /* Two hairline rings in the tile corner, the banner motif in miniature. */
+  .glance-card::before {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    top: -45%;
+    right: -25%;
+    width: 75%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    pointer-events: none;
+    background:
+      radial-gradient(circle, transparent 54%, rgb(255 255 255 / 0.16) 54.6%, transparent 56.5%),
+      radial-gradient(circle, transparent 34%, rgb(255 255 255 / 0.12) 34.6%, transparent 36.5%),
+      radial-gradient(circle, rgb(255 255 255 / 0.14), transparent 62%);
+  }
+  .glance-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 30px 50px -24px color-mix(in srgb, var(--glance-to) 95%, #000000);
+  }
+  .glance-icon {
+    color: #ffffff;
+    background: rgb(255 255 255 / 0.2);
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.3);
+    backdrop-filter: blur(6px);
+  }
+  .glance-value {
+    color: #ffffff;
+  }
+  .glance-card--photo {
+    --glance-to: #101d45;
+  }
+  .glance-card--photo::before {
+    display: none;
+  }
+  .glance-card--photo .glance-value {
+    text-shadow: 0 4px 24px rgb(0 0 0 / 0.45);
+  }
+  .glance-photo-shade {
+    background: linear-gradient(180deg, rgb(11 22 54 / 0.1) 0%, rgb(11 22 54 / 0.5) 45%, rgb(11 22 54 / 0.9) 100%);
+  }
+  .glance-card--green {
+    --glance-from: #1e8e3e;
+    --glance-to: #0b5d26;
+  }
+  .glance-card--rose {
+    --glance-from: #e8453c;
+    --glance-to: #a50e0e;
+  }
+  .glance-card--sky {
+    --glance-from: #1a73e8;
+    --glance-to: #0b4fb3;
+  }
+  .glance-card--amber {
+    --glance-from: #f29900;
+    --glance-to: #c26401;
+  }
+  .glance-card--violet {
+    --glance-from: #8e44ec;
+    --glance-to: #5a1fb0;
+  }
+  .glance-card--teal {
+    --glance-from: #12a4af;
+    --glance-to: #00717b;
+  }
+  /* Cards rise into place once, when the band first scrolls into view. */
+  .glance-band[data-seen='false'] .glance-card {
+    opacity: 0;
+  }
+  .glance-band[data-seen='true'] .glance-card {
+    animation: glance-rise 640ms var(--ease-calm) both;
+  }
+  @keyframes glance-rise {
+    from {
+      opacity: 0;
+      transform: translateY(1.25rem) scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
   }
 
   /* ------------------------------------------------------------------------
@@ -691,6 +822,24 @@
 
   .mcgm-more {
     color: #a8801d;
+  }
+
+  /* No animation, no rotation: the active bar shows full and stays put. */
+  @media (prefers-reduced-motion: reduce) {
+    :root:not([data-motion='full']) .mcgm-progress {
+      animation: none;
+    }
+    :root:not([data-motion='full']) .glance-band .glance-card {
+      opacity: 1;
+      animation: none;
+    }
+  }
+  :root[data-motion='reduced'] .mcgm-progress {
+    animation: none;
+  }
+  :root[data-motion='reduced'] .glance-band .glance-card {
+    opacity: 1;
+    animation: none;
   }
 
   @media (prefers-reduced-motion: reduce) {
