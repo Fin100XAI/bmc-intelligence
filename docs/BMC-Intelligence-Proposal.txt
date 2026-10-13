@@ -1,0 +1,253 @@
+BMC INTELLIGENCE PLATFORM
+Summary and Proposal for Brihanmumbai Municipal Corporation
+Date: 13 October 2026
+=====================================================================
+
+
+1. SUMMARY IN ONE PARAGRAPH
+---------------------------------------------------------------------
+BMC already runs strong transaction systems: SAP S/4HANA for finance
+and HR, SAP CRM and the MyBMC portal for citizen services, SAP SRM for
+tenders, MyBMC MARG and the 1916 helpline for complaints, the Disaster
+Management portal with its rain gauges, AQUA for water billing, HMIS for
+hospitals, AutoDCR for building approvals, and many department
+dashboards. Each one records its own work well. None of them reads
+across the others. The BMC Intelligence Platform is not a replacement
+for any of these systems. It is a decision layer that sits on top of
+them. It brings their data together by ward, explains what is happening
+and why, ranks what needs a decision today, and records who decided
+what. It works in English and Marathi.
+
+
+2. THE GAP IN THE EXISTING SYSTEMS
+---------------------------------------------------------------------
+We reviewed BMC's public systems and every section of
+portal.mcgm.gov.in (checked 11 October 2026). Gaps we found:
+
+  a) Data sits in silos. Property tax is in SAP, complaints in MARG and
+     UGMS, rainfall in the DM portal, lake levels in daily press notes,
+     road works in the Roads Monitoring System, desilting in the SWD
+     dashboard. Nobody sees them together for one ward.
+
+  b) Financial data is mostly PDF. Budgets, annual accounts and audited
+     accounts are published as PDFs. They are not available as a
+     revenue, expenditure and reserve time series.
+
+  c) Collection efficiency and arrears by ward are not visible in one
+     place. There is no ranked recovery list.
+
+  d) Grievances are recorded but not analysed. Pendency, repeat
+     complaints and citizens' charter breaches by ward are not
+     published or trended.
+
+  e) Monsoon signals are separate. Rain gauges, tide tables, flooding
+     spots, pumping stations and desilting progress are on different
+     pages. There is no ward-level warning that combines them.
+
+  f) Air quality is spread over four sites (MPCB, CPCB, SAFAR and BMC).
+
+  g) Project pages show no linked physical and financial progress.
+
+  h) Tender lists are HTML. Award values and contractor concentration
+     are not analysed.
+
+  i) Officers' dashboards are login-only and specific to each
+     department. There is no single picture for the Commissioner.
+
+  j) Decisions are not tracked from evidence to action to outcome.
+
+
+3. WHAT THE PLATFORM ADDS: INTELLIGENCE OVER THE EXISTING SYSTEMS
+---------------------------------------------------------------------
+The platform has over 100 screens in 20 areas. The main capabilities:
+
+  COMMAND AND DECISIONS
+  - Commissioner Cockpit: what needs attention today, ranked by
+    severity and exposure, with the weights shown.
+  - Executive Overview and City Intelligence Index: the health of the
+    city on one screen.
+  - Situation Room and City Command Map: live incidents, alerts and
+    the response on a map of the 24 wards.
+  - Decision Centre and My Tasks: every decision is carried from
+    evidence to a named officer, an action and a measured outcome.
+  - Alerts and Escalations: what has passed its standard and who
+    holds it now.
+
+  REVENUE, PROPERTY TAX AND FINANCE
+  - Revenue Intelligence: each revenue stream against target. Uses
+    Budget Estimates 2026-27: property tax ₹7,000 cr, water charges
+    ₹2,393 cr, development charges ₹12,050 cr.
+  - Ward property-tax targets built from FY26 collections (for
+    example K/East ₹719 cr, K/West ₹622 cr).
+  - Registry Reconciliation: finds properties missing from the tax
+    register by matching it against other registers.
+  - Recovery Worklist: arrears ranked by what can actually be
+    recovered.
+  - Budget Intelligence and Public Money: tracks budget heads while
+    there is still time to spend them, and covers capital
+    commitments, liabilities and pending state dues.
+  - Procurement and Contractor Intelligence: reads each contractor's
+    whole book of work, award values and vendor concentration.
+
+  WARDS
+  - Ward Intelligence on the real 24 ward boundaries, with Census
+    population.
+  - Ward League Table, Equity and Allocation, Trajectory,
+    Commitments, and Like-for-Like Performance, so wards are compared
+    fairly.
+
+  MONSOON AND DISASTER
+  - Monsoon Intelligence: heavy rain on a high tide, flooding spots,
+    rain gauges, the six BRIMSTOWAD pumping stations (Irla, Haji Ali,
+    Love Grove, Cleveland Bunder, Britannia, Gazdarbandh) and
+    desilting, all read together, so a cause is read once.
+  - Disaster, Fire and Emergency, and Urban Resilience screens.
+
+  WATER, SEWERAGE, STORM WATER AND WASTE
+  - Water Intelligence: the seven supply lakes from the Hydraulic
+    Engineer's report (8 Oct 2026), supply and losses.
+  - Sewerage: the eight wastewater treatment facilities (Colaba,
+    Worli, Bandra, Dharavi, Versova, Ghatkopar, Bhandup, Malad) with
+    their capacities and upgrade dates.
+  - Solid Waste: Kanjurmarg, Deonar, Mulund biomining and the refuse
+    transfer stations, with daily intake.
+
+  ROADS, HEALTH, ENVIRONMENT AND MORE
+  - Roads: condition, defects and an explainable priority engine for
+    repairs.
+  - Hospitals: 15 named BMC hospitals (KEM, Sion, Nair, Cooper and
+    the peripheral hospitals) with published bed counts; disease
+    surveillance for malaria, dengue and leptospirosis.
+  - Air quality: all 28 monitoring stations inside BMC limits (MPCB,
+    SAFAR and BMC) in one view.
+  - Also covered: planning, buildings, encroachment, education,
+    housing, welfare, markets, heritage, gardens, coastal areas,
+    council and committees, legal, HR and workforce.
+
+  CITIZEN SERVICES
+  - Grievance Resolution: why problems keep coming back, and who
+    should own them.
+  - Notified Services Register: right-to-services deadlines and
+    breaches.
+
+  AI, MADE SAFE FOR GOVERNMENT USE
+  - Municipal Copilot: officers ask questions in English or Marathi
+    and get answers with their sources.
+  - AI recommendations, agents and workflows, governed by a model
+    registry, evaluation, a prompt registry and AI incident logging.
+
+  TRUST AND EVIDENCE
+  - Evidence Registry: 126 published figures from 75 public sources,
+    each with its source, date and level of confidence.
+  - Every number on screen is marked as published, modelled or
+    demonstration.
+  - Audit trail, data lineage, role-based access and privacy
+    governance.
+
+  STATE BENCHMARKING
+  - Compares BMC with other Maharashtra corporations on published
+    figures.
+
+
+4. WHAT IS DIFFERENT, IN SHORT
+---------------------------------------------------------------------
+  Existing systems                     BMC Intelligence Platform
+  -----------------------------------  --------------------------------
+  Record transactions                  Explains and ranks for decisions
+  One department each                  All departments, by ward
+  PDFs and separate dashboards         One picture, with time series
+  Show what happened                   Shows why, and what to do next
+  Login-only, by department            One view for the Commissioner,
+                                       with role-based access
+  Decisions not tracked                Evidence -> decision -> action
+                                       -> outcome, by officer
+  English portal, Marathi menus        Full English and Marathi
+  Numbers without a source             Every figure with its source
+
+
+5. EXPECTED BENEFITS
+---------------------------------------------------------------------
+  - Revenue: higher property-tax and water-charge collection through
+    ward targets, a ranked recovery list and properties found missing
+    from the register.
+  - Monsoon: earlier ward-level warnings by combining rain, tide,
+    flooding spots and pumping status.
+  - Service: fewer repeat complaints and fewer charter breaches,
+    because the cause and the owner are identified.
+  - Accountability: every decision recorded against the post that
+    took it.
+  - Time: officers stop assembling the same reports by hand from
+    several systems.
+  - Transparency: published figures with sources, ready for the
+    General Body and the public.
+
+  These benefits will be measured during the pilot against a
+  starting baseline. No numbers are promised in advance.
+
+
+6. CURRENT STATUS (STATED HONESTLY)
+---------------------------------------------------------------------
+  - The platform is a working demonstration. Every screen runs.
+  - Real public BMC data is already in use for: budget and revenue
+    heads, ward property tax, the seven lakes, ward boundaries,
+    hospitals and beds, treatment plants, pumping stations, waste
+    sites, air-quality stations, flooding spots, rainfall, roads
+    budget and disease cases.
+  - Operational figures (for example daily occupancy, live complaints
+    and plant loads) are modelled and clearly labelled as modelled,
+    until BMC data access is given.
+  - Ward boundaries come from public survey data (DataMeet). They are
+    not BMC's official GIS layer and should be replaced with it.
+  - It is NOT BMC's live portal and does not say it is.
+
+
+7. PROPOSAL: HOW TO DEPLOY IT
+---------------------------------------------------------------------
+  PHASE 1: Pilot (8 to 12 weeks)
+  - Scope: property tax and revenue, grievances, and monsoon, in 3 to
+    4 pilot wards (for example K/East, K/West, H/West and one ward in
+    the island city).
+  - BMC provides read-only data: SAP property-tax and water-billing
+    extracts, MARG/UGMS complaint exports, DM portal APIs (already
+    public), the official ward GIS layer, and the SWD desilting
+    status.
+  - Output: baseline measures, a ward recovery list, a complaint
+    root-cause view and a monsoon ward-risk board, used weekly by the
+    pilot ward officers.
+
+  PHASE 2: City-wide (3 to 6 months)
+  - All 24 wards and all departments.
+  - Scheduled connectors to SAP S/4HANA, SAP SRM, HMIS, AutoDCR,
+    Roads Monitoring, AQUA and MyBMC Building ID.
+  - Commissioner Cockpit and Decision Centre in daily use.
+
+  PHASE 3: Institutionalise (6 to 12 months)
+  - AI copilot and recommendations, with the governance layer in
+    place.
+  - Training for ward officers and department heads.
+  - Hand-over of operations to the BMC IT Department.
+
+  WHAT BMC NEEDS TO PROVIDE
+  - A nodal officer and a sponsor at the level of an Additional
+    Municipal Commissioner.
+  - A data-sharing order for read-only access.
+  - The official ward GIS layer.
+  - Hosting on BMC infrastructure or a MeitY-empanelled government
+    cloud.
+
+  SAFEGUARDS
+  - Read-only. The platform never writes to SAP or any source system.
+  - Citizen personal data is masked. Role-based access and a full
+    audit trail.
+  - Data stays in India, on BMC or government cloud infrastructure.
+
+
+8. NEXT STEP
+---------------------------------------------------------------------
+  A 45-minute demonstration for the Municipal Commissioner and
+  department heads, then agreement on the pilot wards and the
+  data-sharing order.
+
+=====================================================================
+Prepared by the BMC Intelligence team. Every figure quoted is from
+the platform's Evidence Registry, which names its public source.
