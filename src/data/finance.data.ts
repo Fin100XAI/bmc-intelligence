@@ -754,22 +754,34 @@ const STREAMS: RevenueStream[] = [
 
 /**
  * Annual target by revenue head, in INR crore. The base figures are
- * Brihanmumbai's own composition of receipts and are scaled to the active
- * corporation's outlay, which keeps each head's share of the budget - and
- * therefore the shape of the receipts pie every corporation is shown -
- * unchanged while the rupee figures follow the corporation actually being
- * rendered.
+ * Brihanmumbai's own Budget Estimates 2026-27 (`ev-revenue-heads-2026-27`) and
+ * are scaled to the active corporation's outlay, which keeps each head's share
+ * of the budget - and therefore the shape of the receipts pie every
+ * corporation is shown - unchanged while the rupee figures follow the
+ * corporation actually being rendered. For Brihanmumbai the scale is 1, so the
+ * heads read exactly as published and sum to the ₹51,510.94 crore revenue
+ * income estimate.
+ *
+ * The budget does not publish advertisement or rental income as heads of their
+ * own. Those two are modelled and taken out of `other`, which carries interest,
+ * supervision charges, State grants, fire brigade, roads, hospital and the
+ * budget's own "others" line, so the total stays the published one.
  */
+const ADVERTISEMENT_MODELLED = 310
+const RENTALS_MODELLED = 260
+
 function streamTargets(): Record<RevenueStream, number> {
   const base: Record<RevenueStream, number> = {
-    'property-tax': 6200,
-    'water-charges': 1850,
-    'development-charges': 3400,
-    'licence-fees': 420,
-    advertisement: 310,
-    rentals: 260,
-    'octroi-compensation': 12400,
-    other: 780,
+    'property-tax': 7000,
+    'water-charges': 2393.46,
+    'development-charges': 12050,
+    'licence-fees': 381.55,
+    advertisement: ADVERTISEMENT_MODELLED,
+    rentals: RENTALS_MODELLED,
+    'octroi-compensation': 15550.02,
+    // Interest 2,572.23 + supervision 3,298.45 + State grants 1,461.57 + fire
+    // brigade 827.00 + roads 575.66 + hospitals 505.51 + others 4,895.49.
+    other: 14135.91 - ADVERTISEMENT_MODELLED - RENTALS_MODELLED,
   }
   const out = {} as Record<RevenueStream, number>
   for (const stream of STREAMS) {
@@ -788,6 +800,44 @@ function moneyPerResident(): number {
   return CITY_SCALE.budget / Math.max(CITY_SCALE.population, 1e-6)
 }
 
+/**
+ * Brihanmumbai's FY 2025-26 property tax collection by region and, for the
+ * wards the press reported, by ward (`ev-ptax-region-*-fy26`,
+ * `ev-ptax-ward-*-fy26`). Each ward's share of last year's collection sets its
+ * share of this year's target: a reported ward takes its own figure, and every
+ * other ward splits what is left of its region by population.
+ */
+const PTAX_REGION_FY26: Record<string, number> = {
+  City: 2102.6,
+  'Western Suburbs': 3721.33,
+  'Eastern Suburbs': 1457,
+}
+const PTAX_WARD_FY26: Record<string, number> = {
+  'K/E': 719.23,
+  'K/W': 622.16,
+  'H/E': 577.78,
+  'H/W': 536.55,
+}
+
+/** Ward share of the city's property tax collection, or null where no published split applies. */
+function bmcPropertyTaxShares(): Map<string, number> | null {
+  if (activeCorporation.id !== 'bmc') return null
+  const regions = new Set(WARDS.map((w) => w.region))
+  if ([...regions].some((r) => !(r in PTAX_REGION_FY26))) return null
+  const total = Object.values(PTAX_REGION_FY26).reduce((s, v) => s + v, 0)
+  const shares = new Map<string, number>()
+  for (const region of regions) {
+    const wards = WARDS.filter((w) => w.region === region)
+    const reported = wards.filter((w) => w.code in PTAX_WARD_FY26)
+    const remainder = (PTAX_REGION_FY26[region] ?? 0) - reported.reduce((s, w) => s + (PTAX_WARD_FY26[w.code] ?? 0), 0)
+    const rest = wards.filter((w) => !(w.code in PTAX_WARD_FY26))
+    const restPopulation = rest.reduce((s, w) => s + w.population, 0) || 1
+    for (const w of reported) shares.set(w.id, (PTAX_WARD_FY26[w.code] ?? 0) / total)
+    for (const w of rest) shares.set(w.id, ((remainder * w.population) / restPopulation) / total)
+  }
+  return shares
+}
+
 export let REVENUE_RECORDS: RevenueRecord[] = []
 
 function buildRevenueRecords(): RevenueRecord[] {
@@ -798,6 +848,7 @@ function buildRevenueRecords(): RevenueRecord[] {
   // corporation would be shown a property tax book several times the size of
   // its whole revenue budget.
   const wardPopulationTotal = WARDS.reduce((s, w) => s + w.population, 0) || 1
+  const publishedShares = bmcPropertyTaxShares()
 
   return [
     // City-wide position by stream.
@@ -827,8 +878,11 @@ function buildRevenueRecords(): RevenueRecord[] {
     // Ward-level property tax position.
     ...WARDS.map((ward) => {
       const r = det(`revenue:ward:${ward.id}`)
-      const scale = (ward.population / wardPopulationTotal) * targets['property-tax']
-      const target = Math.round(scale * r.float(0.7, 1.6) * 100) / 100
+      const publishedShare = publishedShares?.get(ward.id)
+      const target =
+        publishedShare !== undefined
+          ? Math.round(publishedShare * targets['property-tax'] * 100) / 100
+          : Math.round((ward.population / wardPopulationTotal) * targets['property-tax'] * r.float(0.7, 1.6) * 100) / 100
       const assessed = Math.round(target * r.float(1.02, 1.2) * 100) / 100
       const efficiencyBase = 34 + (ward.healthScore - 50) * 0.35
       const efficiency = Math.round(Math.min(72, Math.max(14, efficiencyBase + r.float(-9, 9))) * 10) / 10

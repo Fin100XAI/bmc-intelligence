@@ -108,11 +108,12 @@ export function capabilityAreas(): CapabilityArea[] {
         { label: t('Recovery worklist'), to: ROUTES.recoveryWorklist },
       ],
       next: t('Ward-level demand, collection and arrears need the assessment register and payment history from the property tax system.'),
-      evidenceIds: ['ev-ptax-be-2026-27', 'ev-ptax-re-2025-26', 'ev-ptax-actual-jan-2026', 'ev-ptax-fy26-angelone', 'ev-ptax-fy26-navbharat', 'ev-state-dues-jan-2026'],
+      evidenceIds: ['ev-ptax-be-2026-27', 'ev-ptax-re-2025-26', 'ev-ptax-actual-jan-2026', 'ev-ptax-fy26-fpj', 'ev-ptax-fy26-angelone', 'ev-ptax-fy26-navbharat', 'ev-ptax-region-ws-fy26', 'ev-ptax-region-city-fy26', 'ev-ptax-region-es-fy26', 'ev-ptax-attach-fy26', 'ev-state-dues-jan-2026'],
       insights: [
         { kind: 'finding', text: t('By 31 January 2026, ₹4,812.34 cr of property tax had been received against a revised estimate of ₹6,200 cr for 2025-26.'), evidenceIds: ['ev-ptax-actual-jan-2026', 'ev-ptax-re-2025-26'] },
+        { kind: 'finding', text: t('In 2025-26 the Western Suburbs paid ₹3,721.33 cr of property tax, the City ₹2,102.60 cr and the Eastern Suburbs ₹1,457 cr. K/East was the highest ward at ₹719.23 cr. Ward targets on this platform follow that split.'), evidenceIds: ['ev-ptax-region-ws-fy26', 'ev-ptax-region-city-fy26', 'ev-ptax-region-es-fy26', 'ev-ptax-ward-ke-fy26'] },
         { kind: 'decision', text: t('₹10,948.58 cr is pending from State Government offices. That is settled between governments, not by a field recovery drive - a dues-settlement review for the Commissioner.'), evidenceIds: ['ev-state-dues-jan-2026'] },
-        { kind: 'gap', text: t('Two reports give different year-end totals for 2025-26, ₹7,610.90 cr and ₹7,309.77 cr. Both are kept until the audited figure is published.'), evidenceIds: ['ev-ptax-fy26-angelone', 'ev-ptax-fy26-navbharat'] },
+        { kind: 'gap', text: t('Two reports give different year-end totals for 2025-26, ₹7,610.90 cr and ₹7,309.77 cr. Both are kept until the audited figure is published.'), evidenceIds: ['ev-ptax-fy26-fpj', 'ev-ptax-fy26-angelone', 'ev-ptax-fy26-navbharat'] },
       ],
     },
     {

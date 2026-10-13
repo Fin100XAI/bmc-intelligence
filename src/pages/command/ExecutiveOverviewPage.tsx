@@ -486,7 +486,7 @@ export function ExecutiveOverviewPage(): React.JSX.Element {
             {isBmc ? (
               <p className="bg-surface-sunken px-3 pb-1.5 text-[0.625rem] leading-snug text-ink-500">
                 {t('For context (published): property tax collected')}{' '}
-                <EvidenceValue evidenceId="ev-ptax-fy26-navbharat" className="font-semibold text-ink-700" />{' '}
+                <EvidenceValue evidenceId="ev-ptax-fy26-fpj" className="font-semibold text-ink-700" />{' '}
                 {t('in FY 2025-26; the FY 2026-27 budget estimates')}{' '}
                 <EvidenceValue evidenceId="ev-ptax-be-2026-27" className="font-semibold text-ink-700" />
                 {t('. The property-tax line above is modelled.')}
